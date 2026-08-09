@@ -40,7 +40,20 @@ async function loadWorkbook(source) {
   if (/^https?:/.test(source)) {
     const res = await fetch(source)
     if (!res.ok) throw new Error(`Fetching sheet failed: HTTP ${res.status}`)
-    return XLSX.read(new Uint8Array(await res.arrayBuffer()), { type: 'array' })
+    const bytes = new Uint8Array(await res.arrayBuffer())
+
+    // An xlsx is a zip, so it starts "PK". Anything else means we were handed a
+    // page instead of a file — almost always Google's sign-in page because the
+    // sheet is not link-readable. Say that rather than letting SheetJS report
+    // a confusing HTML parse error.
+    if (bytes[0] !== 0x50 || bytes[1] !== 0x4b) {
+      throw new Error(
+        'That URL returned a web page, not a spreadsheet.\n' +
+        '  Check the sheet is shared as "Anyone with the link -> Viewer",\n' +
+        '  and that the URL ends in /export?format=xlsx',
+      )
+    }
+    return XLSX.read(bytes, { type: 'array' })
   }
   const path = source.replace(/^~/, homedir())
   return XLSX.read(await readFile(path), { type: 'buffer' })

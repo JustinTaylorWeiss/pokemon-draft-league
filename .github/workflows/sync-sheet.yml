@@ -1,0 +1,60 @@
+name: Sync league sheet
+
+# Re-imports the master spreadsheet and commits the result only when something
+# actually changed. Pushing to main triggers the Pages deploy, so the site
+# follows the sheet without anyone running anything by hand.
+#
+# Setup: add a repository secret named LEAGUE_SHEET_URL holding
+#   https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=xlsx
+# and share the sheet as "Anyone with the link -> Viewer".
+
+on:
+  schedule:
+    # Hourly. Cron here is UTC; GitHub may delay a run under load.
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-sheet
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Import the sheet
+        env:
+          LEAGUE_SHEET_URL: ${{ secrets.LEAGUE_SHEET_URL }}
+        run: |
+          if [ -z "$LEAGUE_SHEET_URL" ]; then
+            echo "LEAGUE_SHEET_URL is not set — add it as a repository secret." >&2
+            exit 1
+          fi
+          npm run import:league -- "$LEAGUE_SHEET_URL"
+
+      # Type-check before committing, so a shape change in the sheet cannot
+      # push a build-breaking data file to the site.
+      - name: Verify the site still builds
+        run: npm run build
+
+      - name: Commit if the data changed
+        run: |
+          if git diff --quiet -- public/data/league.json; then
+            echo "No change in league.json."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/league.json
+          git commit -m "Sync league data from the sheet"
+          git push

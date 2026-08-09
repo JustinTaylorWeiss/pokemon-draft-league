@@ -56,6 +56,22 @@ of silently vanishing.
 
 **The importer never writes back to the sheet.** Read-only access is all it needs.
 
+### Keeping the site in sync automatically
+
+1. In the sheet: **Share → General access → Anyone with the link → Viewer**.
+2. Take the sheet id out of its URL and add a repository secret
+   `LEAGUE_SHEET_URL` set to
+   `https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=xlsx`.
+
+`.github/workflows/sync-sheet.yml` then re-imports hourly, builds to prove the
+new data does not break the site, and commits `league.json` only when it
+actually changed — which triggers the normal Pages deploy. Run it on demand
+from the Actions tab with **Run workflow**.
+
+If the sheet is not link-readable, Google serves a sign-in page instead of a
+file; the importer detects that and says so rather than failing on a confusing
+HTML parse error.
+
 ### League Sheet view
 
 Four tabs in a secondary nav under the main one:
