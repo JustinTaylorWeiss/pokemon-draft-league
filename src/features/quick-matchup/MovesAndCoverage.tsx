@@ -11,7 +11,8 @@ const TABS = [
   { key: 'coverage', label: 'Coverage' },
 ]
 
-const POWER_STEPS = [0, 60, 75, 90]
+/** Chip pool floor. Below this, universal TMs hand out most of the type chart. */
+const MIN_POWER = 60
 
 interface Props {
   analyzed: Team
@@ -28,9 +29,6 @@ interface Props {
 export function MovesAndCoverage({ analyzed, other, chart, moves, learnsets }: Props) {
   const [tab, setTab] = useState('moves')
   const [useAbilities, setUseAbilities] = useState(true)
-  // 75 is roughly "a move you would actually click". At 0 nearly every Pokémon
-  // reads 100% because Gen 9 TMs hand out weak coverage of half the type chart.
-  const [minPower, setMinPower] = useState(75)
   const [resetKey, setResetKey] = useState(0)
   const [sets, setSets] = useState<SetDex | null>(null)
   useEffect(() => { loadSets().then(setSets, () => {}) }, [])
@@ -46,12 +44,6 @@ export function MovesAndCoverage({ analyzed, other, chart, moves, learnsets }: P
       actions={onCoverage ? (
         <>
           <label className="toggle">
-            <span>Show moves</span>
-            <select value={minPower} onChange={(e) => setMinPower(Number(e.target.value))}>
-              {POWER_STEPS.map((p) => <option key={p} value={p}>{p ? `${p}+ BP` : 'all'}</option>)}
-            </select>
-          </label>
-          <label className="toggle">
             <input type="checkbox" checked={useAbilities} onChange={(e) => setUseAbilities(e.target.checked)} />
             <span>Abilities</span>
           </label>
@@ -65,7 +57,7 @@ export function MovesAndCoverage({ analyzed, other, chart, moves, learnsets }: P
       {onCoverage ? (
         <CoverageBody
           attackers={analyzed} defenders={other} chart={chart} moves={moves} learnsets={learnsets}
-          useAbilities={useAbilities} minPower={minPower} resetKey={resetKey}
+          useAbilities={useAbilities} minPower={MIN_POWER} resetKey={resetKey}
           sets={sets}
         />
       ) : (

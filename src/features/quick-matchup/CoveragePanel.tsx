@@ -70,6 +70,35 @@ export function CoverageBody({
     return out
   }, [attackers.members, custom, defaults])
 
+  /**
+   * The moves behind each chip, so hovering a type says what it is actually
+   * attacking with. Set moves come first and are marked; the rest follow by
+   * base power, capped so a wide movepool does not produce a wall of text.
+   */
+  const moveNames = useMemo(() => {
+    const out: Record<string, Record<string, string>> = {}
+    for (const m of attackers.members) {
+      const setMoves = new Set(sets?.[m.id]?.moves ?? [])
+      const byKey: Record<string, { name: string; power: number; inSet: boolean }[]> = {}
+      for (const moveId of Object.keys(learnsets[m.id] ?? {})) {
+        const move = moves[moveId]
+        if (!move || move.category === 'Status' || move.basePower <= 0) continue
+        const inSet = setMoves.has(moveId)
+        if (!inSet && move.basePower < minPower) continue
+        const key = `${move.category}:${move.type}`
+        ;(byKey[key] ??= []).push({ name: move.name, power: move.basePower, inSet })
+      }
+      out[m.id] = {}
+      for (const [key, list] of Object.entries(byKey)) {
+        list.sort((a, b) => Number(b.inSet) - Number(a.inSet) || b.power - a.power)
+        const shown = list.slice(0, 4).map((x) => `${x.name} (${x.power})${x.inSet ? ' ★' : ''}`)
+        const extra = list.length - shown.length
+        out[m.id][key] = shown.join('\n') + (extra > 0 ? `\n+${extra} more` : '')
+      }
+    }
+    return out
+  }, [attackers.members, learnsets, moves, minPower, sets])
+
   const results = useMemo(
     () => coverage(chart, attackers.members, defenders.members, learnsets, moves, useAbilities, selected, minPower, sets ?? undefined),
     [chart, attackers.members, defenders.members, learnsets, moves, useAbilities, selected, minPower, sets],
@@ -94,15 +123,18 @@ export function CoverageBody({
     <ul className="coverage-list">
         {results.map((r) => {
           const on = selected[r.id]
-          const chip = (t: TypeName) => (
-            <TypeChip
-              key={t}
-              type={t}
-              muted={!on?.has(t)}
-              onClick={() => toggle(r.id, t)}
-              title={on?.has(t) ? `Exclude ${t}` : `Include ${t}`}
-            />
-          )
+          const chip = (category: 'Physical' | 'Special') => (t: TypeName) => {
+            const list = moveNames[r.id]?.[`${category}:${t}`]
+            return (
+              <TypeChip
+                key={t}
+                type={t}
+                muted={!on?.has(t)}
+                onClick={() => toggle(r.id, t)}
+                title={list ? `${t} — ${category}\n${list}` : t}
+              />
+            )
+          }
           return (
             <li key={r.id} className="coverage-row">
               <div className="coverage-mon">
@@ -116,12 +148,12 @@ export function CoverageBody({
               <div className="coverage-types">
                 <div className="coverage-line">
                   <span className="cat-tag cat-physical">Phys</span>
-                  {[...available[r.id].physical].sort().map(chip)}
+                  {[...available[r.id].physical].sort().map(chip('Physical'))}
                   {!available[r.id].physical.size && <em className="none">none</em>}
                 </div>
                 <div className="coverage-line">
                   <span className="cat-tag cat-special">Spec</span>
-                  {[...available[r.id].special].sort().map(chip)}
+                  {[...available[r.id].special].sort().map(chip('Special'))}
                   {!available[r.id].special.size && <em className="none">none</em>}
                 </div>
               </div>
