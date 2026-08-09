@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useState } from 'react'
 import { Widget } from '../../components/Widget'
 import type { LearnsetDex, MoveDex, TypeChart } from '../../data/types'
 import { LearnedMovesBody } from './LearnedMoves'
@@ -31,9 +31,6 @@ export function MovesAndCoverage({ analyzed, other, chart, moves, learnsets }: P
   // reads 100% because Gen 9 TMs hand out weak coverage of half the type chart.
   const [minPower, setMinPower] = useState(75)
   const [resetKey, setResetKey] = useState(0)
-  const [counts, setCounts] = useState({ shown: 0, total: 0 })
-
-  const onCount = useCallback((shown: number, total: number) => setCounts({ shown, total }), [])
 
   const onCoverage = tab === 'coverage'
 
@@ -57,9 +54,7 @@ export function MovesAndCoverage({ analyzed, other, chart, moves, learnsets }: P
           </label>
           <button type="button" className="btn ghost sm" onClick={() => setResetKey((k) => k + 1)}>Reset</button>
         </>
-      ) : (
-        <span className="widget-count">{counts.shown} of {counts.total}</span>
-      )}
+      ) : undefined}
       footnote={onCoverage
         ? 'Percentages count opponents hit for at least 2×. Click a type to drop it from the calculation.'
         : undefined}
@@ -70,7 +65,7 @@ export function MovesAndCoverage({ analyzed, other, chart, moves, learnsets }: P
           useAbilities={useAbilities} minPower={minPower} resetKey={resetKey}
         />
       ) : (
-        <LearnedMovesBody team={analyzed} moves={moves} learnsets={learnsets} onCount={onCount} />
+        <LearnedMovesBody team={analyzed} moves={moves} learnsets={learnsets} />
       )}
     </Widget>
   )

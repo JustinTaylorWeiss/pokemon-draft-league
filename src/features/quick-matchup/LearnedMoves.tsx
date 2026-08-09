@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { spriteUrl } from '../../data/load'
 import type { LearnsetDex, MoveDex, TypeName } from '../../data/types'
 import { MOVE_TAGS, tagsFor, type MoveTag } from '../../lib/matchup'
@@ -9,7 +9,6 @@ interface Props {
   team: Team
   moves: MoveDex
   learnsets: LearnsetDex
-  onCount?: (shown: number, total: number) => void
 }
 
 interface Row {
@@ -26,7 +25,7 @@ interface Row {
  * Every move anyone on the team can learn, with the Pokémon that learn it.
  * Filtering by tag is how you answer "who has hazard control?" at a glance.
  */
-export function LearnedMovesBody({ team, moves, learnsets, onCount }: Props) {
+export function LearnedMovesBody({ team, moves, learnsets }: Props) {
   const [query, setQuery] = useState('')
   const [activeTags, setActiveTags] = useState<Set<MoveTag>>(new Set())
 
@@ -74,8 +73,6 @@ export function LearnedMovesBody({ team, moves, learnsets, onCount }: Props) {
       return next
     })
 
-  useEffect(() => { onCount?.(visible.length, rows.length) }, [visible.length, rows.length, onCount])
-
   if (!team.members.length) return null
 
   return (
@@ -85,6 +82,7 @@ export function LearnedMovesBody({ team, moves, learnsets, onCount }: Props) {
           type="search" value={query} onChange={(e) => setQuery(e.target.value)}
           placeholder="Search move or type…" aria-label="Search moves"
         />
+        <span className="count moves-count">{visible.length} of {rows.length}</span>
         <div className="tag-row">
           {MOVE_TAGS.map((t) => (
             <button

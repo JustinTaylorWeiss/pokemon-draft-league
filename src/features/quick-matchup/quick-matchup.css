@@ -307,3 +307,6 @@ button.type-chip { cursor: pointer; }
 /* Keeps Moves/Coverage directly beneath the summary card instead of letting
    flex-wrap place it on whatever row has room. */
 .matchup-column { display: flex; flex-direction: column; gap: 16px; }
+
+/* Sits between the search box and the tag pills rather than up in the header. */
+.moves-count { flex: 0 0 auto; white-space: nowrap; font-size: 0.78rem; }
