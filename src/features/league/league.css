@@ -215,7 +215,8 @@
 
 .stats-table { table-layout: fixed; width: 100%; }
 .stats-table th:nth-child(1) { width: 3rem; }
-.stats-table th:nth-child(2) { width: 40%; }
+/* Wide enough for the longest name plus two type chips (~318px measured). */
+.stats-table th:nth-child(2) { width: 26rem; }
 /* Name and types share one line here rather than stacking, and the whole cell
    centres against the sprite. */
 .stats-name {
@@ -223,9 +224,9 @@
   align-items: center; gap: 0.5rem; min-width: 0;
   font-size: 1rem; font-weight: 600;
 }
-/* Flex rather than baseline alignment, so the name sits level with the sprite
-   whether or not the types wrap. */
-.stats-table .col-name {
+/* Body cells only: making the header a flex box stops it being a table-cell,
+   and the column width rule above then has nothing to apply to. */
+.stats-table tbody .col-name {
   display: flex; align-items: center; gap: 0.5rem;
   height: 100%; min-height: 2.6rem;
 }
