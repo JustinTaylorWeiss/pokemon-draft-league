@@ -3,6 +3,7 @@ import { spriteUrl } from '../../data/load'
 import type { StatKey } from '../../data/types'
 import { BST_ORDER, STAT_LABELS, bulk, summarize } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
+import { Widget } from '../../components/Widget'
 import type { Team } from './TeamEditor'
 
 /**
@@ -37,9 +38,10 @@ export function DraftSummary({ team }: { team: Team }) {
   if (!rows.length) return null
 
   return (
-    <section className="panel">
-      <header className="panel-head">
-        <h2>Draft Summary</h2>
+    <Widget
+      title="Draft Summary"
+      width={731}
+      actions={
         <label className="neutral-control">
           <span>Neutral</span>
           <input
@@ -48,8 +50,9 @@ export function DraftSummary({ team }: { team: Team }) {
           />
           <output>{neutral}</output>
         </label>
-      </header>
-
+      }
+      footnote="Bulk is HP × the matching defense ÷ 100 — BST hides that HP multiplies with defenses instead of adding to them."
+    >
       <div className="table-scroll">
         <table className="stat-table">
           <thead>
@@ -104,9 +107,6 @@ export function DraftSummary({ team }: { team: Team }) {
           </tfoot>
         </table>
       </div>
-      <p className="panel-note">
-        Bulk columns are HP × the matching defense ÷ 100 — BST hides that HP multiplies with defenses instead of adding to them.
-      </p>
-    </section>
+    </Widget>
   )
 }

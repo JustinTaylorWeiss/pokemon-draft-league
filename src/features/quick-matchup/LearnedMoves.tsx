@@ -3,6 +3,7 @@ import { spriteUrl } from '../../data/load'
 import type { LearnsetDex, MoveDex, TypeName } from '../../data/types'
 import { MOVE_TAGS, tagsFor, type MoveTag } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
+import { Widget } from '../../components/Widget'
 import type { Team } from './TeamEditor'
 
 interface Props {
@@ -76,12 +77,11 @@ export function LearnedMoves({ team, moves, learnsets }: Props) {
   if (!team.members.length) return null
 
   return (
-    <section className="panel">
-      <header className="panel-head">
-        <h2>Learned Moves</h2>
-        <span className="panel-count">{visible.length} of {rows.length}</span>
-      </header>
-
+    <Widget
+      title="Learned Moves"
+      width={504}
+      actions={<span className="widget-count">{visible.length} of {rows.length}</span>}
+    >
       <div className="moves-controls">
         <input
           type="search" value={query} onChange={(e) => setQuery(e.target.value)}
@@ -125,7 +125,7 @@ export function LearnedMoves({ team, moves, learnsets }: Props) {
           </li>
         ))}
       </ul>
-      {!visible.length && <p className="panel-note">No moves match those filters.</p>}
-    </section>
+      {!visible.length && <p className="widget-note">No moves match those filters.</p>}
+    </Widget>
   )
 }

@@ -1,38 +1,38 @@
-.shell {
-  max-width: 1240px;
-  margin: 0 auto;
-  padding: 1.5rem 1.25rem 4rem;
+/* Full-bleed bars; only their contents are constrained. */
+.topbar {
+  background: var(--widget);
+  border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 30;
+}
+.subbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  position: sticky; top: 52px; z-index: 29;
 }
 
-.masthead {
-  display: flex;
-  align-items: baseline;
-  gap: 1.5rem;
-  flex-wrap: wrap;
-  margin-bottom: 1.25rem;
+.bar-inner {
+  max-width: 1440px; margin: 0 auto;
+  padding: 0 1.25rem;
+  display: flex; align-items: center; gap: 1.5rem;
 }
 
-.masthead h1 {
-  margin: 0;
-  font-size: 1.5rem;
-  letter-spacing: -0.02em;
-}
+.brand { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
 
 .main-nav { display: flex; gap: 0.25rem; }
-
 .main-nav button {
-  background: none;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  color: var(--muted);
-  font: inherit;
-  padding: 0.3rem 0.6rem;
-  cursor: pointer;
+  background: none; border: 0; border-bottom: 2px solid transparent;
+  color: var(--muted); font: inherit; font-weight: 600;
+  padding: 0.9rem 0.75rem; cursor: pointer; white-space: nowrap;
 }
+.main-nav button:hover { color: var(--fg); }
+.main-nav button.is-active { color: var(--fg); border-bottom-color: var(--accent); }
 
-.main-nav button.is-active {
-  color: var(--fg);
-  border-bottom-color: var(--accent);
+.shell {
+  /* Wide enough for the matchup widgets to pack two-up: the overview (516) and
+     Draft Summary (731) need 1263 on one row, and the type chart needs 933. */
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 1.5rem 1.25rem 4rem;
 }
 
 /* ---- dex ---- */
@@ -51,6 +51,41 @@
 
 .controls input { flex: 1 1 16rem; max-width: 24rem; }
 .count { color: var(--muted); font-size: 0.85rem; }
+
+/* Each filter is its own labelled control rather than one overloaded box. */
+.filters {
+  display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end;
+  padding: 0.85rem; border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
+}
+.filter { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+.filter > span:not(.count) {
+  font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+}
+/* Explicit height on both: selects and inputs disagree on intrinsic height, so
+   without it the dropdowns sit a few pixels short of the text fields. */
+.filter input, .filter select {
+  height: 2.2rem; padding: 0 0.6rem; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--bg); color: inherit; font: inherit; font-size: 0.85rem; line-height: 1;
+}
+.filter select {
+  appearance: none;
+  padding-right: 1.7rem;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+                    linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 0.95rem) 50%, calc(100% - 0.6rem) 50%;
+  background-size: 0.35rem 0.35rem, 0.35rem 0.35rem;
+  background-repeat: no-repeat;
+}
+.filter-wide input { min-width: 14rem; }
+.filter select { min-width: 8rem; }
+.stat-row { display: flex; gap: 0.3rem; }
+.stat-row select { min-width: 0; }
+.stat-row select:first-child { width: 5.5rem; }
+.stat-row select:nth-child(2) { width: 3.5rem; }
+.stat-row input { width: 5.5rem; }
+.filter-actions { flex-direction: row; align-items: center; gap: 0.6rem; margin-left: auto; }
+
+.dex-abilities { margin-top: 0.25rem; font-size: 0.68rem; color: var(--muted); }
 
 .dex-grid {
   list-style: none;
@@ -99,3 +134,10 @@
 
 .dex-stats em { font-style: normal; opacity: 0.6; margin-right: 0.2rem; }
 .dex-stats .bst { color: var(--fg); font-weight: 600; }
+
+.match-why {
+  margin-top: 0.25rem;
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+.match-why strong { color: var(--accent); font-weight: 600; }

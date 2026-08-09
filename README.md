@@ -53,11 +53,27 @@ of silently vanishing.
 
 **The importer never writes back to the sheet.** Read-only access is all it needs.
 
-### League view
+### League Sheet view
 
-Four tabs: **Standings** (re-ranked, since the sheet's RANK column repeats
-values), **Rosters** for all 20 teams, **Schedule** with results, and the
-**Draft Board** filterable by tier and by whether a Pokémon is still available.
+Four tabs in a secondary nav under the main one:
+
+- **Standings** — re-ranked, since the sheet's RANK column repeats values. Gold,
+  silver, and bronze on the podium.
+- **Rosters** — all 20 teams, each sorted best tier first.
+- **Schedule** — winners outlined green, losers red.
+- **Draft Board** — every column sortable, with tier and availability pill
+  filters beside the search. Taken names are red, available ones green.
+
+### Sheet precedence
+
+The spreadsheet outranks the Showdown dataset. `mergeDex()` in
+`src/data/league.ts` layers the sheet's name, stats, and tier over the dex
+entry, and the dex only supplies what the sheet has no opinion about — types,
+abilities, learnsets, sprites. Every view reads the merged result.
+
+Today the two agree on all 762 board entries, so nothing visibly changes; the
+importer reports the count of differing entries on each run so a divergence
+surfaces rather than hides.
 
 ## Quick Matchup
 

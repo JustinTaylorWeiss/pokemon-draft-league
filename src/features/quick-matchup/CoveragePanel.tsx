@@ -3,6 +3,7 @@ import { spriteUrl } from '../../data/load'
 import type { LearnsetDex, MoveDex, TypeChart, TypeName } from '../../data/types'
 import { attackingTypes, coverage } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
+import { Widget } from '../../components/Widget'
 import type { Team } from './TeamEditor'
 
 interface Props {
@@ -65,10 +66,11 @@ export function CoveragePanel({ attackers, defenders, chart, moves, learnsets }:
   if (!attackers.members.length || !defenders.members.length) return null
 
   return (
-    <section className="panel">
-      <header className="panel-head">
-        <h2>Coverage</h2>
-        <div className="head-actions">
+    <Widget
+      title="Coverage"
+      width={584}
+      actions={
+        <>
           <label className="toggle">
             <span>Min BP</span>
             <select value={minPower} onChange={(e) => setMinPower(Number(e.target.value))}>
@@ -79,10 +81,11 @@ export function CoveragePanel({ attackers, defenders, chart, moves, learnsets }:
             <input type="checkbox" checked={useAbilities} onChange={(e) => setUseAbilities(e.target.checked)} />
             <span>Abilities</span>
           </label>
-          <button type="button" className="btn ghost sm" onClick={() => setDeselected({})}>Reset all</button>
-        </div>
-      </header>
-
+          <button type="button" className="btn ghost sm" onClick={() => setDeselected({})}>Reset</button>
+        </>
+      }
+      footnote="Percentages count opponents hit for at least 2×. Click a type to drop it from the calculation."
+    >
       <ul className="coverage-list">
         {results.map((r) => {
           const off = deselected[r.id]
@@ -136,9 +139,6 @@ export function CoveragePanel({ attackers, defenders, chart, moves, learnsets }:
           )
         })}
       </ul>
-      <p className="panel-note">
-        Percentages count opponents hit for at least 2×. Click a type to drop it from the calculation.
-      </p>
-    </section>
+    </Widget>
   )
 }

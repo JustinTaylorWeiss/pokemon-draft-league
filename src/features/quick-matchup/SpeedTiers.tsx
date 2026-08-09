@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { spriteUrl } from '../../data/load'
 import { speedTiers } from '../../lib/stats'
 import type { Team, TeamEntry } from './TeamEditor'
+import { Widget } from '../../components/Widget'
 
 interface Props {
   teamOne: Team
@@ -37,15 +38,16 @@ export function SpeedTiers({ teamOne, teamTwo }: Props) {
   if (!all.length) return null
 
   return (
-    <section className="panel">
-      <header className="panel-head">
-        <h2>Speed Tiers</h2>
+    <Widget
+      title="Speed Tiers"
+      width={444}
+      actions={
         <label className="toggle">
           <input type="checkbox" checked={showZero} onChange={(e) => setShowZero(e.target.checked)} />
-          <span>Show uninvested</span>
+          <span>Uninvested</span>
         </label>
-      </header>
-
+      }
+    >
       <div className="speed-layout">
         <div className="speed-bases">
           <h3>Base Speed</h3>
@@ -73,6 +75,6 @@ export function SpeedTiers({ teamOne, teamTwo }: Props) {
           </ul>
         </div>
       </div>
-    </section>
+    </Widget>
   )
 }

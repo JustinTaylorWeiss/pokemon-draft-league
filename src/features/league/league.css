@@ -1,20 +1,16 @@
 .league { display: flex; flex-direction: column; gap: 1rem; }
 
-.league-meta { flex-direction: row; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap; }
+.league-meta { gap: 0.25rem; }
 .league-meta h2 { margin: 0; font-size: 1.15rem; }
 
-.tier-limits {
-  list-style: none; margin: 0; padding: 0; margin-left: auto;
-  display: flex; gap: 0.75rem; flex-wrap: wrap; font-size: 0.78rem; color: var(--muted);
-}
-.tier-limits li { display: flex; align-items: center; gap: 0.35rem; }
-
-.sub-nav { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--line); }
+.sub-nav { display: flex; gap: 0.25rem; }
 .sub-nav button {
-  background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px;
-  color: var(--muted); font: inherit; padding: 0.4rem 0.8rem; cursor: pointer;
+  background: none; border: 0; border-bottom: 2px solid transparent;
+  color: var(--muted); font: inherit; font-size: 0.88rem;
+  padding: 0.6rem 0.75rem; cursor: pointer; white-space: nowrap;
 }
-.sub-nav button.is-active { color: var(--fg); border-bottom-color: var(--accent); }
+.sub-nav button:hover { color: var(--fg); }
+.sub-nav button.is-active { color: var(--accent); border-bottom-color: var(--accent); }
 
 /* Draft tiers use their own ramp, separate from the Smogon tier chips. */
 .tier {
@@ -29,6 +25,17 @@
 
 /* ---- standings ---- */
 .standings-table td, .standings-table th { white-space: nowrap; }
+.rank-cell { font-variant-numeric: tabular-nums; }
+.medal { font-size: 1.05rem; line-height: 1; }
+
+/* A tinted left edge so the podium reads even when the emoji is small. */
+.medal-row td:first-child { position: relative; }
+.medal-1 { background: rgb(212 175 55 / 9%); }
+.medal-2 { background: rgb(170 175 185 / 9%); }
+.medal-3 { background: rgb(176 118 68 / 9%); }
+.medal-1 td:first-child { box-shadow: inset 3px 0 0 #d4af37; }
+.medal-2 td:first-child { box-shadow: inset 3px 0 0 #aaafb9; }
+.medal-3 td:first-child { box-shadow: inset 3px 0 0 #b07644; }
 .standings-table .pos { color: #4fb573; }
 .standings-table .neg { color: #e8615f; }
 
@@ -52,21 +59,24 @@
 .schedule h3 { margin: 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
 .match-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.25rem; }
 .match-list li {
-  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 0.75rem;
-  padding: 0.35rem 0.6rem; border: 1px solid var(--line); border-radius: 8px; font-size: 0.85rem;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: stretch; gap: 0.5rem;
+  font-size: 0.85rem;
 }
-.match-list .side { min-width: 0; overflow-wrap: anywhere; }
-.match-list .side:last-child { text-align: right; }
-.match-list .side.won { color: var(--fg); font-weight: 600; }
-.match-list .side.lost { color: var(--muted); }
+.match-list .side {
+  min-width: 0; overflow-wrap: anywhere;
+  padding: 0.35rem 0.6rem; border: 1px solid var(--line); border-radius: 8px;
+  display: flex; align-items: center;
+}
+.match-list .side:last-child { text-align: right; justify-content: flex-end; }
+.match-list .side.won {
+  border-color: #3f9d6d; background: rgb(63 157 109 / 12%); color: var(--fg); font-weight: 600;
+}
+.match-list .side.lost { border-color: #b8474f; background: rgb(184 71 79 / 10%); color: var(--muted); }
+.match-list .side.drew { border-color: var(--line); }
 .match-list .score {
-  font-variant-numeric: tabular-nums; color: var(--muted); font-size: 0.8rem;
-  background: var(--chip); padding: 0.1rem 0.5rem; border-radius: 999px;
+  align-self: center; font-variant-numeric: tabular-nums; color: var(--muted);
+  font-size: 0.8rem; background: var(--chip); padding: 0.1rem 0.5rem; border-radius: 999px;
 }
-
-/* ---- board ---- */
-.board-table tr.is-drafted { opacity: 0.55; }
-.board-table td.col-abil { white-space: normal; max-width: 22rem; }
 
 /* ---- pickers in the matchup wizard ---- */
 .roster-picker select, .schedule-picker select {
@@ -74,3 +84,56 @@
   border-radius: 8px; padding: 0.5rem 0.7rem; font: inherit; width: 100%;
 }
 .schedule-picker { max-width: 32rem; }
+
+/* ---- pill filters ---- */
+.board-controls {
+  display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;
+}
+.board-controls > input[type="search"] {
+  height: 2.2rem; padding: 0 0.7rem; flex: 0 1 18rem;
+  border: 1px solid var(--line); border-radius: 8px;
+  background: var(--surface); color: inherit; font: inherit; font-size: 0.85rem;
+}
+.board-controls .count { margin-left: auto; }
+.pill-group { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+
+.pill {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font: inherit; font-size: 0.74rem; font-weight: 600;
+  padding: 0.25rem 0.7rem; border-radius: 999px; cursor: pointer;
+  background: none; color: var(--muted);
+  border: 1px solid var(--line);
+}
+.pill em {
+  font-style: normal; font-weight: 500; font-size: 0.68rem; opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+.pill:hover { color: var(--fg); }
+
+/* Active pills adopt their tier colour so the filter state is readable at a glance. */
+.pill.is-active { color: #08090b; }
+.pill-top.is-active    { background: #e8615f; border-color: #e8615f; color: #fff; }
+.pill-high.is-active   { background: #e79445; border-color: #e79445; }
+.pill-mid.is-active    { background: #4fb573; border-color: #4fb573; }
+.pill-low.is-active    { background: #56a4d8; border-color: #56a4d8; }
+.pill-banned.is-active { background: #4a4d57; border-color: #4a4d57; color: #fff; }
+.pill-available.is-active { background: #4fb573; border-color: #4fb573; }
+.pill-drafted.is-active   { background: #b8474f; border-color: #b8474f; color: #fff; }
+.pill-clear { border-color: transparent; text-decoration: underline; }
+
+/* ---- board ---- */
+.board-table th.sortable { padding: 0 !important; }
+.board-table th.sortable button {
+  width: 100%; background: none; border: 0; color: inherit; font: inherit; font-size: 0.72rem;
+  font-weight: 600; padding: 0.3rem 0.45rem; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 0.2rem; justify-content: center;
+  white-space: nowrap;
+}
+.board-table th.col-name.sortable button { justify-content: flex-start; }
+.board-table th.sortable:hover button { color: var(--fg); }
+.board-table th.is-sorted button { color: var(--accent); }
+.sort-arrow { font-size: 0.55rem; min-width: 0.6em; }
+
+.name-taken { color: #e8615f; font-weight: 600; }
+.name-open  { color: #4fb573; font-weight: 600; }
+.board-table td.col-abil { white-space: normal; max-width: 18rem; }

@@ -3,6 +3,7 @@ import { spriteUrl } from '../../data/load'
 import type { TypeChart } from '../../data/types'
 import { BATTLE_TYPES, defensiveChart } from '../../lib/matchup'
 import type { Team } from './TeamEditor'
+import { Widget } from '../../components/Widget'
 
 interface Props {
   team: Team
@@ -32,15 +33,17 @@ export function DefensiveChart({ team, chart }: Props) {
   if (!rows.length) return null
 
   return (
-    <section className="panel">
-      <header className="panel-head">
-        <h2>Defensive Type Chart</h2>
+    <Widget
+      title="Defensive Type Chart"
+      width={933}
+      actions={
         <label className="toggle">
           <input type="checkbox" checked={useAbilities} onChange={(e) => setUseAbilities(e.target.checked)} />
           <span>Abilities</span>
         </label>
-      </header>
-
+      }
+      footnote="Delta is resists minus weaknesses. Negative columns are types this team struggles to switch into."
+    >
       <div className="table-scroll">
         <table className="type-table">
           <thead>
@@ -90,9 +93,6 @@ export function DefensiveChart({ team, chart }: Props) {
           </tfoot>
         </table>
       </div>
-      <p className="panel-note">
-        Delta is resists minus weaknesses. Negative columns are types this team struggles to switch into.
-      </p>
-    </section>
+    </Widget>
   )
 }

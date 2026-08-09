@@ -6,6 +6,8 @@
   --line: #282b33;
   --chip: #22252c;
   --accent: #4ec3f7;
+  /* Widget panels sit slightly above the page, matching DraftZone's #141414. */
+  --widget: #141414;
 
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;

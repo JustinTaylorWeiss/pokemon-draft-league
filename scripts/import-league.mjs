@@ -109,17 +109,28 @@ function main(source) {
     }
 
     // ---- Pokémon List: the draft board -----------------------------------
+    // The sheet is authoritative. Its name, tier, and stats are carried through
+    // and override the Showdown dex at read time, so a correction made in the
+    // spreadsheet shows up here without touching the Pokémon dataset.
     const board = {}
+    let statOverrides = 0
     for (const r of grid('Pokémon List').slice(3)) {
       if (isBlank(r[1]) || isBlank(r[2])) continue
       const id = resolve(r[1], 'Pokémon List')
       if (!id) continue
       const draftedBy = clean(r[11])
+      const stats = { hp: r[4], atk: r[5], def: r[6], spa: r[7], spd: r[8], spe: r[9] }
+      const hasStats = Object.values(stats).every((v) => typeof v === 'number')
+      if (hasStats) {
+        const dexStats = dex[id].baseStats
+        if (Object.keys(stats).some((k) => stats[k] !== dexStats[k])) statOverrides++
+      }
       board[id] = {
         name: clean(r[1]),
         tier: clean(r[2]),
         note: isBlank(r[10]) ? null : clean(r[10]),
         draftedBy: isBlank(draftedBy) ? null : draftedBy,
+        ...(hasStats && { baseStats: stats, bst: typeof r[3] === 'number' ? r[3] : null }),
       }
     }
 
@@ -202,6 +213,8 @@ function main(source) {
     console.log(`  draft      ${draft.length} picks`)
     console.log(`  schedule   ${schedule.length} matches over ${new Set(schedule.map((m) => m.week)).size} weeks`)
     console.log(`  standings  ${standings.length} rows`)
+
+    console.log(`  ${statOverrides} board entries have stats differing from the Showdown dex (sheet wins)`)
 
     const rostersMissing = players.filter((p) => !rosters[p.id]).map((p) => p.name)
     if (rostersMissing.length) console.log(`\n  no roster found for: ${rostersMissing.join(', ')}`)

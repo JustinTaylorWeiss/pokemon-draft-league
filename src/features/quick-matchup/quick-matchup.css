@@ -64,40 +64,6 @@
 .accent-one { --team: #4aa8ff; }
 .accent-two { --team: #ff9440; }
 
-/* ---- results shell ---- */
-.results-head { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
-.perspective { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; }
-.perspective > span { font-size: 0.78rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
-.segmented { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
-.segmented button {
-  background: none; border: 0; color: var(--muted); font: inherit;
-  padding: 0.35rem 0.9rem; cursor: pointer;
-}
-.segmented button.is-active { background: var(--accent); color: #06232e; font-weight: 600; }
-
-.panel {
-  border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
-  padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;
-}
-.panel-head { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
-.panel-head h2 { margin: 0; font-size: 1.05rem; letter-spacing: -0.01em; }
-.panel-count, .panel-note { color: var(--muted); font-size: 0.8rem; margin: 0; }
-.head-actions { margin-left: auto; display: flex; align-items: center; gap: 0.75rem; }
-.panel-head .toggle, .panel-head .neutral-control { margin-left: auto; }
-.head-actions .toggle { margin-left: 0; }
-
-.toggle { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: var(--muted); cursor: pointer; }
-.neutral-control { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; color: var(--muted); }
-.neutral-control output { min-width: 2ch; text-align: right; font-variant-numeric: tabular-nums; }
-
-/* ---- rosters ---- */
-.rosters { flex-direction: row; gap: 1rem; flex-wrap: wrap; }
-.roster-col { flex: 1 1 16rem; }
-.roster-col h3 { margin: 0 0 0.5rem; font-size: 0.9rem; color: var(--team, var(--accent)); }
-.roster-col ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; }
-.roster-col li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; }
-.roster-col strong { margin-left: auto; font-variant-numeric: tabular-nums; }
-
 /* ---- tables ---- */
 .table-scroll { overflow-x: auto; }
 .stat-table, .type-table { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
@@ -185,9 +151,11 @@ button.type-chip { cursor: pointer; }
 .tag-btn.clear { color: #e05563; border-color: #e05563; }
 
 .move-grid {
-  list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  max-height: 34rem; overflow-y: auto;
+  list-style: none; margin: 0; padding: 0 16px; display: grid; gap: 0.4rem;
+  /* DraftZone packs move cards three-up at 152px; matching that keeps the
+     widget the same shape as theirs. */
+  grid-template-columns: repeat(3, 152px);
+  max-height: 46rem; overflow-y: auto;
 }
 .move-card { border: 1px solid var(--line); border-radius: 8px; padding: 0.4rem 0.5rem; display: flex; flex-direction: column; gap: 0.25rem; }
 .move-head { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; }
@@ -208,3 +176,82 @@ button.type-chip { cursor: pointer; }
   background: var(--surface); border: 1px solid var(--line); color: inherit;
   border-radius: 6px; padding: 0.15rem 0.3rem; font: inherit; font-size: 0.8rem;
 }
+
+/* ---- results shell: DraftZone's centered flex-wrap widget grid ---- */
+.results { display: flex; flex-direction: column; gap: 1rem; }
+
+.matchup-title {
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+  padding: 0 0.5rem;
+}
+.matchup-title h2 { margin: 0; font-size: 1.5rem; letter-spacing: -0.02em; }
+.edit-teams { order: -1; }
+
+.matchup-meta { display: flex; gap: 1.25rem; margin: 0; }
+.matchup-meta div { display: flex; flex-direction: column; }
+.matchup-meta dt {
+  font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
+}
+.matchup-meta dd { margin: 0; font-size: 0.85rem; font-weight: 600; }
+
+.perspective { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; }
+.perspective > span { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.segmented { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
+.segmented button {
+  background: none; border: 0; color: var(--muted); font: inherit;
+  padding: 0.35rem 0.9rem; cursor: pointer; white-space: nowrap;
+}
+.segmented button.is-active { background: var(--accent); color: #06232e; font-weight: 600; }
+
+/* Widgets size to their content; this packs them into rows and centers the
+   leftovers, which is what produces the uneven two-up look. */
+.matchup-container {
+  display: flex; flex-wrap: wrap; gap: 16px;
+  justify-content: center; align-items: start;
+}
+
+.widget {
+  background: var(--widget); border-radius: 16px; padding: 12px;
+  display: flex; flex-direction: column;
+  max-width: 100%; min-width: 0;
+}
+.widget-header {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0 16px 8px; min-height: 1.9rem;
+}
+.widget-label { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
+.widget-actions { margin-left: auto; display: flex; align-items: center; gap: 0.75rem; }
+.widget-body { min-width: 0; }
+.widget-note { margin: 0.6rem 16px 0; color: var(--muted); font-size: 0.72rem; }
+.widget-count { color: var(--muted); font-size: 0.78rem; }
+
+/* ---- overview: the two rosters, second one mirrored ---- */
+.overview { padding: 12px; }
+.overview-wrapper { display: grid; grid-template-columns: 242px 242px; gap: 8px; }
+.team-container { min-width: 0; }
+.team-name-title {
+  font-weight: 700; font-size: 0.95rem; text-align: center;
+  padding-bottom: 0.4rem; margin-bottom: 0.3rem;
+  border-bottom: 2px solid var(--team, var(--accent)); color: var(--team, var(--accent));
+}
+.team-body { display: flex; flex-direction: column; }
+.overview-row {
+  display: grid; grid-template-columns: 52px 1fr 2.4rem;
+  align-items: center; gap: 0.3rem; padding: 0.1rem 0.2rem;
+}
+.team-container.alternate .overview-row {
+  grid-template-columns: 2.4rem 1fr 52px;
+  direction: rtl;
+}
+.team-container.alternate .overview-row > * { direction: ltr; }
+.overview-row.header {
+  font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 0.2rem;
+}
+.overview-row .name-cell {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.82rem;
+}
+.overview-row .speed-cell { text-align: right; font-variant-numeric: tabular-nums; font-size: 0.82rem; }
+.team-container.alternate .overview-row .speed-cell { text-align: left; }
+.overview-row .sprite-cell { display: flex; }
+.overview-row img { image-rendering: pixelated; object-fit: contain; }

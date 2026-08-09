@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { loadCore, loadLearnsets, spriteUrl } from '../../data/load'
+import { loadCore, loadLearnsets } from '../../data/load'
 import type { AbilityDex, LearnsetDex, MoveDex, PokemonDex, TypeChart } from '../../data/types'
-import { byId, loadLeague, type League } from '../../data/league'
-import { statAt100 } from '../../lib/stats'
+import { byId, loadLeague, mergeDex, type League } from '../../data/league'
 import { TeamEditor, type Team, type TeamEntry } from './TeamEditor'
+import { Overview } from './Overview'
 import { DraftSummary } from './DraftSummary'
 import { SpeedTiers } from './SpeedTiers'
 import { DefensiveChart } from './DefensiveChart'
@@ -62,7 +62,12 @@ export function QuickMatchup() {
     loadCore().then((c) => {
       setCore(c)
       const saved = restoreTeams(c.pokemon)
-      if (saved) { setTeamOne(saved.one); setTeamTwo(saved.two) }
+      if (!saved) return
+      setTeamOne(saved.one)
+      setTeamTwo(saved.two)
+      // Both sides already filled means the last visit got as far as the
+      // analysis; go straight back to it instead of re-walking the wizard.
+      if (saved.one.members.length && saved.two.members.length) setStep('results')
     }, (err: Error) => setError(err.message))
   }, [])
 
@@ -76,6 +81,27 @@ export function QuickMatchup() {
 
   useEffect(() => { if (core) saveTeams(teamOne, teamTwo) }, [core, teamOne, teamTwo])
 
+  /**
+   * The spreadsheet outranks the Showdown dataset, so every panel reads from
+   * this merged view rather than the raw dex.
+   */
+  const dex = useMemo(
+    () => (core ? mergeDex(core.pokemon, league) : null),
+    [core, league],
+  )
+
+  // Teams restored from storage were built against the raw dex. Re-point them
+  // at the merged one when it arrives so sheet stats and names take effect.
+  useEffect(() => {
+    if (!dex) return
+    const rehydrate = (t: Team): Team => ({
+      ...t,
+      members: t.members.map((m) => (dex[m.id] ? { id: m.id, pokemon: dex[m.id] } : m)),
+    })
+    setTeamOne(rehydrate)
+    setTeamTwo(rehydrate)
+  }, [dex])
+
   const canSubmit = teamOne.members.length > 0 && teamTwo.members.length > 0
 
   const [analyzed, other] = useMemo(
@@ -84,7 +110,7 @@ export function QuickMatchup() {
   )
 
   if (error) return <p className="error">Could not load data: {error}</p>
-  if (!core) return <p className="loading">Loading dex…</p>
+  if (!core || !dex) return <p className="loading">Loading dex…</p>
 
   /**
    * A scheduled match is 2v2 partners, so each side is two players' rosters
@@ -92,7 +118,7 @@ export function QuickMatchup() {
    * bring, and it is what the panels should analyze.
    */
   const loadScheduledMatch = (key: string) => {
-    if (!league || !core || !key) return
+    if (!league || !dex || !key) return
     const [week, idx] = key.split(':').map(Number)
     const m = league.schedule.filter((x) => x.week === week)[idx]
     if (!m) return
@@ -102,9 +128,9 @@ export function QuickMatchup() {
       const members: TeamEntry[] = []
       for (const pid of ids) {
         for (const pick of league.rosters[pid] ?? []) {
-          if (seen.has(pick.pokemon) || !core.pokemon[pick.pokemon]) continue
+          if (seen.has(pick.pokemon) || !dex[pick.pokemon]) continue
           seen.add(pick.pokemon)
-          members.push({ id: pick.pokemon, pokemon: core.pokemon[pick.pokemon] })
+          members.push({ id: pick.pokemon, pokemon: dex[pick.pokemon] })
         }
       }
       return { name: ids.map((p) => people[p]?.name ?? p).join(' + '), members }
@@ -152,9 +178,9 @@ export function QuickMatchup() {
         </ol>
 
         {step === 'team1' ? (
-          <TeamEditor dex={core.pokemon} team={teamOne} onChange={setTeamOne} accent="one" league={league} />
+          <TeamEditor dex={dex} team={teamOne} onChange={setTeamOne} accent="one" league={league} />
         ) : (
-          <TeamEditor dex={core.pokemon} team={teamTwo} onChange={setTeamTwo} accent="two" league={league} />
+          <TeamEditor dex={dex} team={teamTwo} onChange={setTeamTwo} accent="two" league={league} />
         )}
 
         <div className="wizard-actions">
@@ -180,8 +206,13 @@ export function QuickMatchup() {
 
   return (
     <div className="results">
-      <div className="results-head">
-        <button type="button" className="btn ghost sm" onClick={() => setStep('team1')}>Edit teams</button>
+      <div className="matchup-title">
+        <button type="button" className="btn ghost sm edit-teams" onClick={() => setStep('team1')}>Edit</button>
+        <h2>Quick Matchup</h2>
+        <dl className="matchup-meta">
+          <div><dt>Ruleset</dt><dd>{league?.meta.regulation ? `Gen 9 Reg ${league.meta.regulation.replace(/\s*\(.*$/, '')}` : 'Gen 9'}</dd></div>
+          <div><dt>Format</dt><dd>{league?.meta.format?.replace(/\s*\(.*$/, '') ?? 'Singles'}</dd></div>
+        </dl>
         <div className="perspective">
           <span>Analyzing</span>
           <div className="segmented">
@@ -201,42 +232,26 @@ export function QuickMatchup() {
         </div>
       </div>
 
-      <section className="panel rosters">
-        {[teamOne, teamTwo].map((t, i) => (
-          <div key={i} className={`roster-col accent-${i === 0 ? 'one' : 'two'}`}>
-            <h3>{t.name || `Team ${i + 1}`}</h3>
-            <ul>
-              {[...t.members]
-                .sort((a, b) => b.pokemon.baseStats.spe - a.pokemon.baseStats.spe)
-                .map((m) => (
-                  <li key={m.id}>
-                    <img src={spriteUrl(m.pokemon)} alt="" width={44} height={36} />
-                    <span>{m.pokemon.name}</span>
-                    <strong title="Speed at Lv 100, 252 EVs, neutral nature">
-                      {statAt100(m.pokemon.baseStats.spe)}
-                    </strong>
-                  </li>
-                ))}
-            </ul>
-          </div>
-        ))}
-      </section>
+      {/* Widgets carry their own intrinsic width and this container packs them,
+          so the page reads as an uneven two-up grid the way DraftZone's does. */}
+      <div className="matchup-container">
+        <Overview teamOne={teamOne} teamTwo={teamTwo} />
+        <DraftSummary team={analyzed} />
+        <SpeedTiers teamOne={teamOne} teamTwo={teamTwo} />
+        <DefensiveChart team={analyzed} chart={core.typechart} />
 
-      <DraftSummary team={analyzed} />
-      <SpeedTiers teamOne={teamOne} teamTwo={teamTwo} />
-      <DefensiveChart team={analyzed} chart={core.typechart} />
-
-      {learnsets ? (
-        <>
-          <CoveragePanel
-            attackers={analyzed} defenders={other}
-            chart={core.typechart} moves={core.moves} learnsets={learnsets}
-          />
-          <LearnedMoves team={analyzed} moves={core.moves} learnsets={learnsets} />
-        </>
-      ) : (
-        <p className="loading">Loading learnsets…</p>
-      )}
+        {learnsets ? (
+          <>
+            <LearnedMoves team={analyzed} moves={core.moves} learnsets={learnsets} />
+            <CoveragePanel
+              attackers={analyzed} defenders={other}
+              chart={core.typechart} moves={core.moves} learnsets={learnsets}
+            />
+          </>
+        ) : (
+          <p className="loading">Loading learnsets…</p>
+        )}
+      </div>
     </div>
   )
 }
