@@ -214,7 +214,18 @@
 .stats-view .count { margin-left: auto; }
 
 .stats-table { table-layout: fixed; width: 100%; }
-.stats-table th:nth-child(1) { width: 40%; }
+.stats-table th:nth-child(1) { width: 3rem; }
+.stats-table th:nth-child(2) { width: 40%; }
+/* Name and types share one line here rather than stacking. */
+.stats-name {
+  display: inline-flex !important; flex-direction: row !important;
+  align-items: center; gap: 0.4rem; min-width: 0;
+}
+.stats-name .row-types { flex: none; }
+.rank-col {
+  width: 3rem; color: var(--muted); font-variant-numeric: tabular-nums;
+  font-size: 0.78rem;
+}
 .stats-table th.sortable { padding: 0 !important; }
 .stats-table th.sortable button {
   width: 100%; background: none; border: 0; color: inherit; font: inherit;

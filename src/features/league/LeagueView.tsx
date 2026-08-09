@@ -143,6 +143,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           <table className="stat-table stats-table">
             <thead>
               <tr>
+                <th className="rank-col">#</th>
                 {([['name', 'Pokémon'], ['gamesPlayed', 'Games'], ['kills', 'Kills'],
                    ['killsPerGame', 'K/Game'], ['deaths', 'Deaths'],
                    ['diff', '+/-']] as [StatSort, string][]).map(([key, label]) => (
@@ -162,17 +163,19 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
               </tr>
             </thead>
             <tbody>
-              {rows.map((t) => {
+              {rows.map((t, i) => {
                 const mon = dex[t.pokemon]
                 return (
                   <tr key={t.pokemon}>
+                    {/* Position under the current sort — the power ranking. */}
+                    <td className="rank-col">{i + 1}</td>
                     <th scope="row" className="col-name">
                       {mon && (
                         <PokemonLink id={t.pokemon} title={mon.name}>
                           <img src={spriteUrl(mon)} alt="" width={40} height={32} loading="lazy" />
                         </PokemonLink>
                       )}
-                      <span>
+                      <span className="stats-name">
                         <PokemonLink id={t.pokemon}>{mon?.name ?? t.pokemon}</PokemonLink>
                         {mon && (
                           <span className="row-types">
