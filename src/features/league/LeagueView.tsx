@@ -50,10 +50,16 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
   )
 }
 
-type StatSort = 'kills' | 'deaths' | 'diff' | 'gamesPlayed' | 'name'
+type StatSort = 'kills' | 'deaths' | 'diff' | 'gamesPlayed' | 'killsPerGame' | 'name'
 
 function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
-  const [sort, setSort] = useState<StatSort>('kills')
+  const [sort, setSort] = useState<{ key: StatSort; dir: 1 | -1 }>({ key: 'kills', dir: -1 })
+
+  const toggleSort = (key: StatSort) =>
+    setSort((prev) =>
+      // Numbers open highest-first; the name column opens A-Z.
+      prev.key === key ? { key, dir: prev.dir === 1 ? -1 : 1 } : { key, dir: key === 'name' ? 1 : -1 },
+    )
   const [week, setWeek] = useState<number | 'all'>('all')
   const [query, setQuery] = useState('')
 
@@ -69,9 +75,17 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
     const q = query.trim().toLowerCase()
     return totals
       .filter((t) => !q || dex[t.pokemon]?.name.toLowerCase().includes(q))
+      // Kills per game breaks ties: two Pokémon on the same total are separated
+      // by how few games it took. The tiebreak keeps its own direction so it
+      // stays meaningful when the column is flipped.
       .sort((a, b) => {
-        if (sort === 'name') return (dex[a.pokemon]?.name ?? '').localeCompare(dex[b.pokemon]?.name ?? '')
-        return b[sort] - a[sort] || b.kills - a.kills
+        const nameA = dex[a.pokemon]?.name ?? ''
+        const nameB = dex[b.pokemon]?.name ?? ''
+        if (sort.key === 'name') return nameA.localeCompare(nameB) * sort.dir
+        // dir -1 is descending, so subtract in ascending order and flip.
+        return (a[sort.key] - b[sort.key]) * sort.dir
+          || b.killsPerGame - a.killsPerGame
+          || nameA.localeCompare(nameB)
       })
   }, [totals, sort, query, dex])
 
@@ -122,13 +136,18 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
             <thead>
               <tr>
                 {([['name', 'Pokémon'], ['gamesPlayed', 'Games'], ['kills', 'Kills'],
-                   ['deaths', 'Deaths'], ['diff', '+/-']] as [StatSort, string][]).map(([key, label]) => (
+                   ['killsPerGame', 'K/Game'], ['deaths', 'Deaths'],
+                   ['diff', '+/-']] as [StatSort, string][]).map(([key, label]) => (
                   <th
                     key={key}
-                    className={`sortable${key === 'name' ? ' col-name' : ''}${sort === key ? ' is-sorted' : ''}`}
+                    className={`sortable${key === 'name' ? ' col-name' : ''}${sort.key === key ? ' is-sorted' : ''}`}
+                    aria-sort={sort.key === key ? (sort.dir === 1 ? 'ascending' : 'descending') : 'none'}
                   >
-                    <button type="button" onClick={() => setSort(key)}>
-                      {label}<span className="sort-arrow">{sort === key ? '▼' : ''}</span>
+                    <button type="button" onClick={() => toggleSort(key)}>
+                      {label}
+                      <span className="sort-arrow">
+                        {sort.key === key ? (sort.dir === 1 ? '▲' : '▼') : ''}
+                      </span>
                     </button>
                   </th>
                 ))}
@@ -156,6 +175,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                     </th>
                     <td>{t.gamesPlayed}</td>
                     <td>{t.kills}</td>
+                    <td>{t.killsPerGame.toFixed(2)}</td>
                     <td>{t.deaths}</td>
                     <td className={t.diff > 0 ? 'pos' : t.diff < 0 ? 'neg' : ''}>
                       {t.diff > 0 ? `+${t.diff}` : t.diff}

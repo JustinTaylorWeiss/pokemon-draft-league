@@ -122,6 +122,8 @@ export interface PokemonTotals {
   kills: number
   deaths: number
   diff: number
+  /** Kills per game — the rate behind the total, and the sort tiebreaker. */
+  killsPerGame: number
 }
 
 export interface League {
@@ -208,12 +210,13 @@ export function totalsFromMatches(matches: MatchStat[]): Record<string, PokemonT
     for (const side of [match.a, match.b]) {
       for (const line of side.lines) {
         const t = (out[line.pokemon] ??= {
-          pokemon: line.pokemon, gamesPlayed: 0, kills: 0, deaths: 0, diff: 0,
+          pokemon: line.pokemon, gamesPlayed: 0, kills: 0, deaths: 0, diff: 0, killsPerGame: 0,
         })
         t.gamesPlayed++
         t.kills += line.kills || 0
         t.deaths += line.deaths || 0
         t.diff = t.kills - t.deaths
+        t.killsPerGame = t.gamesPlayed ? t.kills / t.gamesPlayed : 0
       }
     }
   }
