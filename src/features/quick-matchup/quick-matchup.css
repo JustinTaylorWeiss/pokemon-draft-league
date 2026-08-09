@@ -66,6 +66,10 @@
 
 /* ---- tables ---- */
 .table-scroll { overflow-x: auto; }
+/* Sized by its content instead of scrolling inside a fixed-width widget. */
+.summary-table { width: auto; }
+.summary-table .col-abil { white-space: normal; max-width: 8rem; font-size: 0.7rem; }
+.summary-table th, .summary-table td { padding: 0.25rem 0.3rem; }
 .stat-table, .type-table { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
 .stat-table th, .stat-table td, .type-table th, .type-table td {
   border: 1px solid var(--line); padding: 0.3rem 0.45rem; text-align: center;
@@ -93,19 +97,28 @@
 .mx-strong-weak { background: rgb(200 50 60 / 60%); }
 
 /* ---- speed tiers ---- */
-.speed-layout { display: flex; gap: 1rem; flex-wrap: wrap; }
-.speed-bases { flex: 0 0 8rem; }
-.speed-groups { flex: 1 1 20rem; min-width: 0; }
+.speed-layout { display: flex; gap: 0.6rem; }
+.speed-bases { flex: 0 0 4.6rem; }
+.speed-groups { flex: 1 1 auto; min-width: 0; }
 .speed-layout h3 { margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em; }
-.speed-layout h3 span { float: right; text-transform: none; }
-.speed-layout ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; max-height: 26rem; overflow-y: auto; }
+.speed-layout h3 span { float: right; text-transform: none; font-size: 0.68rem; }
+/* No inner scroll: the widget grows so the Uninvested toggle visibly adds rows. */
+.speed-layout ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
 .speed-layout li {
-  display: flex; align-items: center; gap: 0.4rem; padding: 0.15rem 0.4rem;
-  border: 1px solid var(--line); border-radius: 6px; font-size: 0.8rem;
+  border: 1px solid var(--line); border-radius: 6px; font-size: 0.76rem;
+  transition: opacity 0.12s, border-color 0.12s;
+}
+.speed-layout li button {
+  display: flex; align-items: center; gap: 0.3rem; width: 100%;
+  padding: 0.1rem 0.35rem; background: none; border: 0; color: inherit;
+  font: inherit; font-size: inherit; cursor: pointer; text-align: left;
 }
 .speed-layout li.side-one { border-left: 3px solid #4aa8ff; }
 .speed-layout li.side-two { border-left: 3px solid #ff9440; }
+.speed-layout li.is-selected { border-color: var(--accent); background: rgb(78 195 247 / 12%); }
+.speed-layout li.is-dimmed { opacity: 0.28; }
 .speed-layout strong { margin-left: auto; font-variant-numeric: tabular-nums; }
+.speed-bases li button { justify-content: space-between; }
 .speed-layout img { image-rendering: pixelated; object-fit: contain; }
 .badge { font-size: 0.68rem; padding: 0.05rem 0.35rem; border-radius: 4px; background: var(--chip); color: var(--muted); }
 .badge-ability { color: var(--accent); }
@@ -140,10 +153,13 @@ button.type-chip { cursor: pointer; }
 .coverage-targets .miss { opacity: 0.3; filter: grayscale(1); }
 
 /* ---- learned moves ---- */
-.moves-controls { display: flex; flex-direction: column; gap: 0.5rem; }
-.moves-controls input { max-width: 20rem; }
-.tag-row { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.moves-controls { display: flex; flex-direction: column; gap: 0.5rem; padding: 0 16px; }
+.moves-controls input { width: 100%; max-width: none; }
+/* Pills share the row evenly rather than bunching at the left. */
+.tag-row { display: flex; flex-wrap: wrap; gap: 0.25rem; justify-content: space-between; }
+.tag-row .tag-btn { flex: 1 1 auto; justify-content: center; text-align: center; }
 .tag-btn {
+  display: inline-flex; align-items: center;
   font-size: 0.66rem; letter-spacing: 0.03em; padding: 0.2rem 0.5rem; border-radius: 999px;
   background: none; border: 1px solid var(--line); color: var(--muted); cursor: pointer; font-family: inherit;
 }
@@ -227,7 +243,7 @@ button.type-chip { cursor: pointer; }
 
 /* ---- overview: the two rosters, second one mirrored ---- */
 .overview { padding: 12px; }
-.overview-wrapper { display: grid; grid-template-columns: 242px 242px; gap: 8px; }
+.overview-wrapper { display: grid; grid-template-columns: 150px 150px; gap: 8px; }
 .team-container { min-width: 0; }
 .team-name-title {
   font-weight: 700; font-size: 0.95rem; text-align: center;
@@ -236,11 +252,11 @@ button.type-chip { cursor: pointer; }
 }
 .team-body { display: flex; flex-direction: column; }
 .overview-row {
-  display: grid; grid-template-columns: 52px 1fr 2.4rem;
-  align-items: center; gap: 0.3rem; padding: 0.1rem 0.2rem;
+  display: grid; grid-template-columns: 32px 1fr 2rem;
+  align-items: center; gap: 0.2rem; padding: 0.05rem 0.1rem;
 }
 .team-container.alternate .overview-row {
-  grid-template-columns: 2.4rem 1fr 52px;
+  grid-template-columns: 2rem 1fr 32px;
   direction: rtl;
 }
 .team-container.alternate .overview-row > * { direction: ltr; }
@@ -249,9 +265,31 @@ button.type-chip { cursor: pointer; }
   color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 0.2rem;
 }
 .overview-row .name-cell {
-  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.82rem;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.72rem;
 }
-.overview-row .speed-cell { text-align: right; font-variant-numeric: tabular-nums; font-size: 0.82rem; }
+.overview-row .speed-cell { text-align: right; font-variant-numeric: tabular-nums; font-size: 0.72rem; }
 .team-container.alternate .overview-row .speed-cell { text-align: left; }
 .overview-row .sprite-cell { display: flex; }
 .overview-row img { image-rendering: pixelated; object-fit: contain; }
+
+/* ---- widget tabs ---- */
+/* Each tab owns an equal share of the title bar and underlines its own half. */
+.widget-tabs { display: flex; width: 100%; margin-bottom: 8px; }
+.widget-tabs button {
+  flex: 1 1 0; min-width: 0;
+  background: none; border: 0; border-bottom: 2px solid var(--line);
+  color: var(--muted); font: inherit; font-size: 0.95rem; font-weight: 700;
+  padding: 0.15rem 0.5rem 0.4rem; cursor: pointer; letter-spacing: -0.01em;
+  white-space: nowrap; text-align: center;
+}
+.widget-tabs button:hover { color: var(--fg); }
+.widget-tabs button.is-active { color: var(--fg); border-bottom-color: var(--accent); }
+
+.widget-toolbar {
+  display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem;
+  padding: 0 16px 8px;
+}
+
+/* Keeps Moves/Coverage directly beneath the summary card instead of letting
+   flex-wrap place it on whatever row has room. */
+.matchup-column { display: flex; flex-direction: column; gap: 16px; }

@@ -1,13 +1,13 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { spriteUrl } from '../../data/load'
 import type { TypeChart } from '../../data/types'
 import { BATTLE_TYPES, defensiveChart } from '../../lib/matchup'
 import type { Team } from './TeamEditor'
-import { Widget } from '../../components/Widget'
 
 interface Props {
   team: Team
   chart: TypeChart
+  useAbilities: boolean
 }
 
 /** Blank for neutral so the eye only catches the cells that matter. */
@@ -22,8 +22,8 @@ function cellClass(mult: number): string {
 
 const label = (m: number) => (m === 1 ? '' : m === 0 ? '0' : String(m))
 
-export function DefensiveChart({ team, chart }: Props) {
-  const [useAbilities, setUseAbilities] = useState(true)
+/** The Abilities toggle is owned by the parent card's header. */
+export function DefensiveChartBody({ team, chart, useAbilities }: Props) {
 
   const { rows, summary } = useMemo(
     () => defensiveChart(chart, team.members, useAbilities),
@@ -33,18 +33,7 @@ export function DefensiveChart({ team, chart }: Props) {
   if (!rows.length) return null
 
   return (
-    <Widget
-      title="Defensive Type Chart"
-      width={933}
-      actions={
-        <label className="toggle">
-          <input type="checkbox" checked={useAbilities} onChange={(e) => setUseAbilities(e.target.checked)} />
-          <span>Abilities</span>
-        </label>
-      }
-      footnote="Delta is resists minus weaknesses. Negative columns are types this team struggles to switch into."
-    >
-      <div className="table-scroll">
+    <div className="table-scroll">
         <table className="type-table">
           <thead>
             <tr>
@@ -91,8 +80,7 @@ export function DefensiveChart({ team, chart }: Props) {
               ))}
             </tr>
           </tfoot>
-        </table>
-      </div>
-    </Widget>
+      </table>
+    </div>
   )
 }

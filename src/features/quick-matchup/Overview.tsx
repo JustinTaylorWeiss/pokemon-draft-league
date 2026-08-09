@@ -7,14 +7,12 @@ import type { Team } from './TeamEditor'
  * mirrored — speed, name, sprite — so both teams read outward from the centre,
  * matching DraftZone's overview.
  */
-export function Overview({ teamOne, teamTwo }: { teamOne: Team; teamTwo: Team }) {
+export function TeamsBody({ teamOne, teamTwo }: { teamOne: Team; teamTwo: Team }) {
   return (
-    <section className="widget overview">
-      <div className="overview-wrapper">
-        <TeamColumn team={teamOne} side="one" />
-        <TeamColumn team={teamTwo} side="two" alternate />
-      </div>
-    </section>
+    <div className="overview-wrapper">
+      <TeamColumn team={teamOne} side="one" />
+      <TeamColumn team={teamTwo} side="two" alternate />
+    </div>
   )
 }
 
@@ -35,9 +33,9 @@ function TeamColumn({ team, side, alternate }: { team: Team; side: 'one' | 'two'
         {rows.map((m) => (
           <div key={m.id} className="overview-row">
             <span className="sprite-cell">
-              <img src={spriteUrl(m.pokemon)} alt="" width={52} height={44} />
+              <img src={spriteUrl(m.pokemon)} alt="" width={32} height={28} />
             </span>
-            <span className="name-cell">{m.pokemon.name}</span>
+            <span className="name-cell" title={m.pokemon.name}>{m.pokemon.name}</span>
             <span className="speed-cell" title="Speed at Lv 100, 252 EVs, neutral nature">
               {statAt100(m.pokemon.baseStats.spe)}
             </span>

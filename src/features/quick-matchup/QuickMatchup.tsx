@@ -3,12 +3,9 @@ import { loadCore, loadLearnsets } from '../../data/load'
 import type { AbilityDex, LearnsetDex, MoveDex, PokemonDex, TypeChart } from '../../data/types'
 import { byId, loadLeague, mergeDex, type League } from '../../data/league'
 import { TeamEditor, type Team, type TeamEntry } from './TeamEditor'
-import { Overview } from './Overview'
-import { DraftSummary } from './DraftSummary'
-import { SpeedTiers } from './SpeedTiers'
-import { DefensiveChart } from './DefensiveChart'
-import { CoveragePanel } from './CoveragePanel'
-import { LearnedMoves } from './LearnedMoves'
+import { TeamsAndSpeed } from './TeamsAndSpeed'
+import { SummaryAndTypes } from './SummaryAndTypes'
+import { MovesAndCoverage } from './MovesAndCoverage'
 import './quick-matchup.css'
 
 type Step = 'team1' | 'team2' | 'results'
@@ -235,22 +232,21 @@ export function QuickMatchup() {
       {/* Widgets carry their own intrinsic width and this container packs them,
           so the page reads as an uneven two-up grid the way DraftZone's does. */}
       <div className="matchup-container">
-        <Overview teamOne={teamOne} teamTwo={teamTwo} />
-        <DraftSummary team={analyzed} />
-        <SpeedTiers teamOne={teamOne} teamTwo={teamTwo} />
-        <DefensiveChart team={analyzed} chart={core.typechart} />
+        <TeamsAndSpeed teamOne={teamOne} teamTwo={teamTwo} />
 
-        {learnsets ? (
-          <>
-            <LearnedMoves team={analyzed} moves={core.moves} learnsets={learnsets} />
-            <CoveragePanel
-              attackers={analyzed} defenders={other}
+        {/* Stacked so Moves/Coverage sits directly under the summary card
+            rather than being packed onto the next available row. */}
+        <div className="matchup-column">
+          <SummaryAndTypes team={analyzed} chart={core.typechart} />
+          {learnsets ? (
+            <MovesAndCoverage
+              analyzed={analyzed} other={other}
               chart={core.typechart} moves={core.moves} learnsets={learnsets}
             />
-          </>
-        ) : (
-          <p className="loading">Loading learnsets…</p>
-        )}
+          ) : (
+            <p className="loading">Loading learnsets…</p>
+          )}
+        </div>
       </div>
     </div>
   )

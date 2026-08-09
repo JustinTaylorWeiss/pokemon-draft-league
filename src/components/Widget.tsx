@@ -1,7 +1,17 @@
 import type { ReactNode } from 'react'
 
+export interface WidgetTab {
+  key: string
+  label: string
+}
+
 interface Props {
-  title: string
+  /** Used when the widget shows a single panel. Ignored if `tabs` is given. */
+  title?: string
+  /** Turns the header into a tab strip so two panels can share one card. */
+  tabs?: WidgetTab[]
+  active?: string
+  onTab?: (key: string) => void
   /** Controls rendered on the right of the header, e.g. toggles. */
   actions?: ReactNode
   /** Intrinsic width; the container is flex-wrap, so widgets flow into rows. */
@@ -15,13 +25,32 @@ interface Props {
  * fixed intrinsic width and lets a centered flex-wrap row pack them, which is
  * why the results page reads as an uneven two-up grid rather than a stack.
  */
-export function Widget({ title, actions, width, children, footnote }: Props) {
+export function Widget({ title, tabs, active, onTab, actions, width, children, footnote }: Props) {
   return (
     <section className="widget" style={width ? { width } : undefined}>
-      <header className="widget-header">
-        <span className="widget-label">{title}</span>
-        {actions && <div className="widget-actions">{actions}</div>}
-      </header>
+      {tabs ? (
+        <>
+          {/* Tabs split the title bar evenly, each underlining its own half. */}
+          <div className="widget-tabs" role="tablist">
+            {tabs.map((t) => (
+              <button
+                key={t.key} type="button" role="tab"
+                aria-selected={active === t.key}
+                className={active === t.key ? 'is-active' : ''}
+                onClick={() => onTab?.(t.key)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          {actions && <div className="widget-toolbar">{actions}</div>}
+        </>
+      ) : (
+        <header className="widget-header">
+          <span className="widget-label">{title}</span>
+          {actions && <div className="widget-actions">{actions}</div>}
+        </header>
+      )}
       <div className="widget-body">{children}</div>
       {footnote && <p className="widget-note">{footnote}</p>}
     </section>

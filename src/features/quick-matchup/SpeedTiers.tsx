@@ -1,21 +1,25 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { spriteUrl } from '../../data/load'
 import { speedTiers } from '../../lib/stats'
 import type { Team, TeamEntry } from './TeamEditor'
-import { Widget } from '../../components/Widget'
 
 interface Props {
   teamOne: Team
   teamTwo: Team
+  showZero: boolean
+  selected: string | null
+  onSelect: (id: string | null) => void
 }
 
 /**
  * Both teams' speeds interleaved in one ranked list, which is the only way to
  * see who actually outruns whom. Each Pokémon appears once per investment
  * spread it could plausibly run.
+ *
+ * Selection and the Uninvested toggle live in the parent so the shared card
+ * header can own them while this renders only the body.
  */
-export function SpeedTiers({ teamOne, teamTwo }: Props) {
-  const [showZero, setShowZero] = useState(false)
+export function SpeedTiersBody({ teamOne, teamTwo, showZero, selected, onSelect }: Props) {
 
   const side = useMemo(() => {
     const map = new Map<string, 'one' | 'two'>()
@@ -37,44 +41,41 @@ export function SpeedTiers({ teamOne, teamTwo }: Props) {
 
   if (!all.length) return null
 
+  const toggle = (id: string) => onSelect(selected === id ? null : id)
+  const rowClass = (id: string) =>
+    `side-${side.get(id)}${selected === id ? ' is-selected' : selected ? ' is-dimmed' : ''}`
+
   return (
-    <Widget
-      title="Speed Tiers"
-      width={444}
-      actions={
-        <label className="toggle">
-          <input type="checkbox" checked={showZero} onChange={(e) => setShowZero(e.target.checked)} />
-          <span>Uninvested</span>
-        </label>
-      }
-    >
-      <div className="speed-layout">
+    <div className="speed-layout">
         <div className="speed-bases">
-          <h3>Base Speed</h3>
+          <h3>Base</h3>
           <ul>
             {bases.map((b) => (
-              <li key={b.id} className={`side-${side.get(b.id)}`}>
-                <strong>{b.pokemon.baseStats.spe}</strong>
-                <img src={spriteUrl(b.pokemon)} alt={b.pokemon.name} title={b.pokemon.name} width={36} height={30} />
+              <li key={b.id} className={rowClass(b.id)}>
+                <button type="button" onClick={() => toggle(b.id)} title={b.pokemon.name}>
+                  <strong>{b.pokemon.baseStats.spe}</strong>
+                  <img src={spriteUrl(b.pokemon)} alt={b.pokemon.name} width={32} height={26} />
+                </button>
               </li>
             ))}
           </ul>
         </div>
 
         <div className="speed-groups">
-          <h3>Speed Tier Groups <span>Lv 100</span></h3>
+          <h3>Tiers <span>Lv 100</span></h3>
           <ul>
             {all.map((t, i) => (
-              <li key={`${t.id}-${t.investment}-${t.ability ?? ''}-${i}`} className={`side-${side.get(t.id)}`}>
-                <img src={spriteUrl(t.pokemon)} alt={t.pokemon.name} title={t.pokemon.name} width={36} height={30} />
-                <span className="badge">{t.investment}</span>
-                {t.ability && <span className="badge badge-ability">{t.ability}</span>}
-                <strong>{t.speed}</strong>
+              <li key={`${t.id}-${t.investment}-${t.ability ?? ''}-${i}`} className={rowClass(t.id)}>
+                <button type="button" onClick={() => toggle(t.id)} title={t.pokemon.name}>
+                  <img src={spriteUrl(t.pokemon)} alt={t.pokemon.name} width={32} height={26} />
+                  <span className="badge">{t.investment}</span>
+                  {t.ability && <span className="badge badge-ability">{t.ability}</span>}
+                  <strong>{t.speed}</strong>
+                </button>
               </li>
             ))}
           </ul>
-        </div>
       </div>
-    </Widget>
+    </div>
   )
 }

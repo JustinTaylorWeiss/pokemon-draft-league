@@ -1,9 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { spriteUrl } from '../../data/load'
 import type { StatKey } from '../../data/types'
 import { BST_ORDER, STAT_LABELS, bulk, summarize } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
-import { Widget } from '../../components/Widget'
 import type { Team } from './TeamEditor'
 
 /**
@@ -18,8 +17,8 @@ function heat(value: number, neutral: number): string {
     : `rgba(200, 60, 70, ${alpha.toFixed(3)})`
 }
 
-export function DraftSummary({ team }: { team: Team }) {
-  const [neutral, setNeutral] = useState(80)
+/** `neutral` is owned by the parent card so the slider can live in its header. */
+export function DraftSummaryBody({ team, neutral }: { team: Team; neutral: number }) {
 
   const rows = useMemo(
     () => [...team.members].sort((a, b) => b.pokemon.bst - a.pokemon.bst),
@@ -38,23 +37,7 @@ export function DraftSummary({ team }: { team: Team }) {
   if (!rows.length) return null
 
   return (
-    <Widget
-      title="Draft Summary"
-      width={731}
-      actions={
-        <label className="neutral-control">
-          <span>Neutral</span>
-          <input
-            type="range" min={40} max={140} value={neutral}
-            onChange={(e) => setNeutral(Number(e.target.value))}
-          />
-          <output>{neutral}</output>
-        </label>
-      }
-      footnote="Bulk is HP × the matching defense ÷ 100 — BST hides that HP multiplies with defenses instead of adding to them."
-    >
-      <div className="table-scroll">
-        <table className="stat-table">
+    <table className="stat-table summary-table">
           <thead>
             <tr>
               <th className="col-name">Name</th>
@@ -105,8 +88,6 @@ export function DraftSummary({ team }: { team: Team }) {
               </tr>
             ))}
           </tfoot>
-        </table>
-      </div>
-    </Widget>
+    </table>
   )
 }

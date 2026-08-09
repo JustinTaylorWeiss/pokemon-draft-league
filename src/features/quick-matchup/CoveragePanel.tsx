@@ -1,9 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { spriteUrl } from '../../data/load'
 import type { LearnsetDex, MoveDex, TypeChart, TypeName } from '../../data/types'
 import { attackingTypes, coverage } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
-import { Widget } from '../../components/Widget'
 import type { Team } from './TeamEditor'
 
 interface Props {
@@ -12,9 +11,11 @@ interface Props {
   chart: TypeChart
   moves: MoveDex
   learnsets: LearnsetDex
+  useAbilities: boolean
+  minPower: number
+  /** Bumping this clears every per-Pokémon type exclusion. */
+  resetKey: number
 }
-
-const POWER_STEPS = [0, 60, 75, 90]
 
 /**
  * Which of the opposing team each Pokémon can threaten. Type chips start with
@@ -22,12 +23,11 @@ const POWER_STEPS = [0, 60, 75, 90]
  * off to ask "what if I only run these moves?" — the percentage recomputes
  * against the narrowed set.
  */
-export function CoveragePanel({ attackers, defenders, chart, moves, learnsets }: Props) {
-  const [useAbilities, setUseAbilities] = useState(true)
-  // 75 is roughly "a move you would actually click". At 0 nearly every Pokémon
-  // reads 100% because Gen 9 TMs hand out weak coverage of half the type chart.
-  const [minPower, setMinPower] = useState(75)
+export function CoverageBody({
+  attackers, defenders, chart, moves, learnsets, useAbilities, minPower, resetKey,
+}: Props) {
   const [deselected, setDeselected] = useState<Record<string, Set<TypeName>>>({})
+  useEffect(() => { setDeselected({}) }, [resetKey])
 
   const available = useMemo(() => {
     const out: Record<string, { physical: Set<TypeName>; special: Set<TypeName> }> = {}
@@ -66,27 +66,7 @@ export function CoveragePanel({ attackers, defenders, chart, moves, learnsets }:
   if (!attackers.members.length || !defenders.members.length) return null
 
   return (
-    <Widget
-      title="Coverage"
-      width={584}
-      actions={
-        <>
-          <label className="toggle">
-            <span>Min BP</span>
-            <select value={minPower} onChange={(e) => setMinPower(Number(e.target.value))}>
-              {POWER_STEPS.map((p) => <option key={p} value={p}>{p || 'any'}</option>)}
-            </select>
-          </label>
-          <label className="toggle">
-            <input type="checkbox" checked={useAbilities} onChange={(e) => setUseAbilities(e.target.checked)} />
-            <span>Abilities</span>
-          </label>
-          <button type="button" className="btn ghost sm" onClick={() => setDeselected({})}>Reset</button>
-        </>
-      }
-      footnote="Percentages count opponents hit for at least 2×. Click a type to drop it from the calculation."
-    >
-      <ul className="coverage-list">
+    <ul className="coverage-list">
         {results.map((r) => {
           const off = deselected[r.id]
           const chip = (t: TypeName) => (
@@ -137,8 +117,7 @@ export function CoveragePanel({ attackers, defenders, chart, moves, learnsets }:
               </div>
             </li>
           )
-        })}
-      </ul>
-    </Widget>
+      })}
+    </ul>
   )
 }
