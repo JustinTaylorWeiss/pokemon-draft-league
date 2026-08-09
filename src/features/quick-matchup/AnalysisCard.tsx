@@ -6,6 +6,7 @@ import { DraftSummaryBody } from './DraftSummary'
 import { DefensiveChartBody } from './DefensiveChart'
 import { buildMoveRows, LearnedMovesBody } from './LearnedMoves'
 import { CoverageBody } from './CoveragePanel'
+import { ZoomControl } from './ZoomControl'
 import type { Team } from './TeamEditor'
 
 const TABS = [
@@ -43,6 +44,12 @@ export function AnalysisCard({ analyzed, other, chart, moves, learnsets }: Props
   const [defenseAbilities, setDefenseAbilities] = useState(true)
   const [coverageAbilities, setCoverageAbilities] = useState(true)
   const [resetKey, setResetKey] = useState(0)
+  // Per panel, because the two are different shapes and want different zooms.
+  // Null means "follow the panel's own fit", which is where both start.
+  const [summaryZoom, setSummaryZoom] = useState<number | null>(null)
+  const [typesZoom, setTypesZoom] = useState<number | null>(null)
+  const [summaryFit, setSummaryFit] = useState(1)
+  const [typesFit, setTypesFit] = useState(1)
 
   // Descriptions for the ability pills' tooltips.
   const [abilityDex, setAbilityDex] = useState<AbilityDex | null>(null)
@@ -64,23 +71,29 @@ export function AnalysisCard({ analyzed, other, chart, moves, learnsets }: Props
 
   const actions = {
     summary: (
-      <label className="neutral-control">
-        <span>Neutral</span>
-        <input
-          type="range" min={40} max={140} value={neutral}
-          onChange={(e) => setNeutral(Number(e.target.value))}
-        />
-        <output>{neutral}</output>
-      </label>
+      <>
+        <label className="neutral-control">
+          <span>Neutral</span>
+          <input
+            type="range" min={40} max={140} value={neutral}
+            onChange={(e) => setNeutral(Number(e.target.value))}
+          />
+          <output>{neutral}</output>
+        </label>
+        <ZoomControl value={summaryZoom} fitted={summaryFit} onChange={setSummaryZoom} />
+      </>
     ),
     types: (
-      <label className="toggle">
-        <input
-          type="checkbox" checked={defenseAbilities}
-          onChange={(e) => setDefenseAbilities(e.target.checked)}
-        />
-        <span>Abilities</span>
-      </label>
+      <>
+        <label className="toggle">
+          <input
+            type="checkbox" checked={defenseAbilities}
+            onChange={(e) => setDefenseAbilities(e.target.checked)}
+          />
+          <span>Abilities</span>
+        </label>
+        <ZoomControl value={typesZoom} fitted={typesFit} onChange={setTypesZoom} />
+      </>
     ),
     coverage: (
       <>
@@ -107,10 +120,16 @@ export function AnalysisCard({ analyzed, other, chart, moves, learnsets }: Props
       className="analysis-card" actions={actions} footnote={footnote}
     >
       {tab === 'summary' && (
-        <DraftSummaryBody team={analyzed} neutral={neutral} abilities={abilityDex} />
+        <DraftSummaryBody
+          team={analyzed} neutral={neutral} abilities={abilityDex}
+          zoom={summaryZoom} onFitted={setSummaryFit}
+        />
       )}
       {tab === 'types' && (
-        <DefensiveChartBody team={analyzed} chart={chart} useAbilities={defenseAbilities} />
+        <DefensiveChartBody
+          team={analyzed} chart={chart} useAbilities={defenseAbilities}
+          zoom={typesZoom} onFitted={setTypesFit}
+        />
       )}
       {/* Only these two need the learnsets, so the other tabs stay usable while
           that file is still downloading. */}

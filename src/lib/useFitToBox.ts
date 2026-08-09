@@ -22,7 +22,10 @@ const CUSHION = 4
  * box too. A transform only changes what is painted, so the parent would keep
  * reserving the unscaled height and carry on scrolling.
  */
-export function useFitToBox<T extends HTMLElement>(): [(el: T | null) => void, number] {
+export function useFitToBox<T extends HTMLElement>(
+  /** Manual zoom from the card's slider. Null leaves the panel on auto-fit. */
+  override: number | null = null,
+): [(el: T | null) => void, number] {
   const [node, setNode] = useState<T | null>(null)
   const [scale, setScale] = useState(1)
   // Held in a ref as well so measure() can read it without being re-created.
@@ -40,16 +43,20 @@ export function useFitToBox<T extends HTMLElement>(): [(el: T | null) => void, n
 
     // Scaling rounds row heights up, so dividing by the exact space available
     // lands a few pixels over it and the box scrolls anyway. Aim slightly under.
-    const next = natural > available && natural > 0
+    const fitted = natural > available && natural > 0
       ? Math.max(MIN_SCALE, (available - CUSHION) / natural)
       : 1
 
-    node.style.zoom = next === 1 ? '' : String(next)
-    if (Math.abs(next - scaleRef.current) > 0.005) {
-      scaleRef.current = next
-      setScale(next)
+    // A slider value wins outright, including zooming past the point where the
+    // panel has to scroll — that is the point of being able to zoom in.
+    const applied = override ?? fitted
+
+    node.style.zoom = applied === 1 ? '' : String(applied)
+    if (Math.abs(fitted - scaleRef.current) > 0.005) {
+      scaleRef.current = fitted
+      setScale(fitted)
     }
-  }, [node])
+  }, [node, override])
 
   useEffect(() => {
     const box = node?.parentElement
@@ -66,5 +73,7 @@ export function useFitToBox<T extends HTMLElement>(): [(el: T | null) => void, n
   // roster, or the type chart's Abilities toggle adding a row of zeroes.
   useEffect(measure)
 
+  // The auto-fit scale, which the card shows as the slider's value until the
+  // reader moves it.
   return [setNode, scale]
 }

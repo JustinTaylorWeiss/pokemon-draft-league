@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { spriteUrl } from '../../data/load'
 import type { TypeChart } from '../../data/types'
 import { BATTLE_TYPES, defensiveChart } from '../../lib/matchup'
@@ -11,6 +11,8 @@ interface Props {
   team: Team
   chart: TypeChart
   useAbilities: boolean
+  zoom: number | null
+  onFitted: (scale: number) => void
 }
 
 /** Blank for neutral so the eye only catches the cells that matter. */
@@ -26,14 +28,15 @@ function cellClass(mult: number): string {
 const label = (m: number) => (m === 1 ? '' : m === 0 ? '0' : String(m))
 
 /** The Abilities toggle is owned by the parent card's header. */
-export function DefensiveChartBody({ team, chart, useAbilities }: Props) {
+export function DefensiveChartBody({ team, chart, useAbilities, zoom, onFitted }: Props) {
 
   const { rows, summary } = useMemo(
     () => defensiveChart(chart, team.members, useAbilities),
     [chart, team.members, useAbilities],
   )
 
-  const [fitRef] = useFitToBox<HTMLDivElement>()
+  const [fitRef, fitted] = useFitToBox<HTMLDivElement>(zoom)
+  useEffect(() => { onFitted(fitted) }, [fitted, onFitted])
 
   if (!rows.length) return null
 

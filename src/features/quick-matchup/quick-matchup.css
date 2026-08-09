@@ -70,24 +70,30 @@
 .table-scroll { overflow-x: auto; }
 .widget-body { overflow-x: auto; }
 
-/* Both of these are dense grids — 9 columns of stats, 18 of type matchups — so
-   cell padding and sprite size, not the numbers, decide how much of the card
-   they eat. They size to their content and centre in the card rather than being
-   stretched across it, which was inflating three-digit stat columns to 77px. */
-.stat-table, .type-table {
-  border-collapse: collapse; width: auto; margin: 0 auto; font-size: 0.78rem;
-}
+/* Shared shape. `.stat-table` is also the league's standings, Pokemon stats and
+   draft board, so anything here reaches those too. */
+.stat-table, .type-table { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
 .stat-table th, .stat-table td, .type-table th, .type-table td {
-  border: 1px solid var(--line); padding: 0.1rem 0.3rem; text-align: center;
+  border: 1px solid var(--line); padding: 0.3rem 0.45rem; text-align: center;
   font-variant-numeric: tabular-nums;
+}
+
+/* The matchup's own two are dense grids — 9 columns of stats, 18 of type
+   matchups — read at a glance inside a card, so cell padding and sprite size
+   decide how much of it they eat. They size to their content and centre rather
+   than stretching, which was inflating three-digit stat columns to 77px. */
+.summary-table, .type-table { width: auto; margin: 0 auto; font-size: 0.78rem; }
+.summary-table th, .summary-table td, .type-table th, .type-table td {
+  padding: 0.1rem 0.3rem;
 }
 .summary-table .col-abil {
   white-space: normal; max-width: 8rem; font-size: 0.66rem; line-height: 1.25;
 }
 .stat-table thead th, .type-table thead th { color: var(--muted); font-weight: 600; font-size: 0.72rem; }
 .col-name { text-align: left !important; white-space: nowrap; }
-.col-name span { display: inline-flex; flex-direction: column; gap: 0.1rem; vertical-align: middle; align-items: flex-start; }
-.col-name img { vertical-align: middle; margin-right: 0.3rem; image-rendering: pixelated; width: 26px; height: 21px; }
+.col-name span { display: inline-flex; flex-direction: column; gap: 0.15rem; vertical-align: middle; align-items: flex-start; }
+.col-name img { vertical-align: middle; margin-right: 0.4rem; image-rendering: pixelated; }
+.summary-table .col-name img { margin-right: 0.3rem; width: 26px; height: 21px; }
 /* Still one width for every type, just a smaller one than the standalone chips. */
 .summary-table .type-chip { min-width: 4.6em; font-size: 0.54rem; padding: 0 0.2rem; line-height: 1.35; }
 .summary-table .col-name { font-size: 0.74rem; line-height: 1.2; }
@@ -402,7 +408,13 @@ button.type-chip { cursor: pointer; }
 .widget-toolbar {
   display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem;
   padding: 0 16px 8px;
+  /* The summary tab carries two sliders; they stack rather than squeeze. */
+  flex-wrap: wrap; row-gap: 0.4rem;
 }
+/* Narrower than the neutral slider: it shares the bar with one. */
+.zoom-control input[type="range"] { width: 5rem; }
+.zoom-control output { width: 2.8rem; }
+.zoom-control .link-btn { font-size: 0.72rem; }
 
 /* Asks for the 700px the tightened type chart needs, but grows into spare room
    and shrinks on narrow screens. Without an explicit basis it would expand to
