@@ -428,3 +428,38 @@ button.type-chip { cursor: pointer; }
 
 /* Abilities are plain text; hovering one still shows its description. */
 .summary-table .col-abil span { cursor: help; }
+
+/* ---- Draft Summary neutral slider ----
+   The range input's intrinsic box does not centre against the text beside it,
+   so the track and thumb are drawn explicitly at a known height. */
+.neutral-control {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.82rem; color: var(--muted); line-height: 1;
+}
+.neutral-control > span { line-height: 1; white-space: nowrap; }
+.neutral-control output {
+  /* Fixed width so the slider does not shift as the value gains a digit. */
+  width: 2.2rem; text-align: right; font-variant-numeric: tabular-nums; line-height: 1;
+}
+
+.neutral-control input[type="range"] {
+  appearance: none; -webkit-appearance: none;
+  margin: 0; padding: 0; width: 7rem; height: 0.85rem;
+  background: transparent; cursor: pointer; display: block; flex: none;
+}
+.neutral-control input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 999px; background: var(--chip);
+}
+.neutral-control input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--team-accent, var(--accent)); border: 0;
+  margin-top: -4px; /* centres the thumb on the 4px track */
+}
+.neutral-control input[type="range"]::-moz-range-track {
+  height: 4px; border-radius: 999px; background: var(--chip);
+}
+.neutral-control input[type="range"]::-moz-range-thumb {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--team-accent, var(--accent)); border: 0;
+}

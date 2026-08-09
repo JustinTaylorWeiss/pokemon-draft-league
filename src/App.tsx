@@ -79,20 +79,20 @@ export default function App() {
             ))}
           </nav>
 
-          {/* One season for now; this is where other seasons or leagues will be
-              chosen once there is more than one to import. */}
-          {league && (
-            <label className="season-picker">
-              <select value="current" onChange={() => {}} aria-label="League and season">
-                <option value="current">{seasonLabel(league.meta.name)}</option>
-              </select>
-            </label>
-          )}
+          <div className="nav-tail">
+            <span className={`refresh-stamp${refreshError ? ' is-error' : ''}`}>
+              {refreshError
+                ? refreshError
+                : dataAt
+                  ? `Updated ${dataAt.toLocaleString(undefined, {
+                      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+                    })}`
+                  : ''}
+            </span>
 
-          {/* Re-reads the master sheet. This only ever GETs — the sheet is
-              read-only, see CLAUDE.md. */}
-          <div className="refresh-wrap">
-          <button
+            {/* Re-reads the master sheet. This only ever GETs — the sheet is
+                read-only, see CLAUDE.md. */}
+            <button
             type="button"
             className={`refresh-btn${refreshing ? ' is-busy' : ''}`}
             onClick={refresh}
@@ -101,20 +101,20 @@ export default function App() {
             aria-label="Refresh league data from the sheet"
           >
             <span className="refresh-icon" aria-hidden="true">⟳</span>
-            <span className="refresh-label">
-              {refreshing ? 'Refreshing…' : refreshError ? 'Retry' : 'Refresh'}
-            </span>
-          </button>
+              <span className="refresh-label">
+                {refreshing ? 'Refreshing…' : refreshError ? 'Retry' : 'Refresh'}
+              </span>
+            </button>
 
-          <span className={`refresh-stamp${refreshError ? ' is-error' : ''}`}>
-            {refreshError
-              ? refreshError
-              : dataAt
-                ? `Updated ${dataAt.toLocaleString(undefined, {
-                    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-                  })}`
-                : ''}
-          </span>
+            {/* One season for now; this is where other seasons or leagues will
+                be chosen once there is more than one to import. */}
+            {league && (
+              <label className="season-picker">
+                <select value="current" onChange={() => {}} aria-label="League and season">
+                  <option value="current">{seasonLabel(league.meta.name)}</option>
+                </select>
+              </label>
+            )}
           </div>
         </div>
       </header>

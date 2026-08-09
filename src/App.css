@@ -36,9 +36,7 @@
 
 /* Season picker: currently one option, but it is where other seasons or
    leagues will be selected. */
-.season-picker {
-  margin-left: auto; display: flex; align-items: center; min-width: 0; padding: 0.4rem 0;
-}
+.season-picker { display: flex; align-items: center; min-width: 0; padding: 0.4rem 0; }
 .season-picker select {
   background: var(--surface); border: 1px solid var(--line); color: var(--accent);
   border-radius: 10px; padding: 0.3rem 0.6rem; font: inherit;
@@ -199,14 +197,14 @@
 .match-why strong { color: var(--accent); font-weight: 600; }
 
 /* Re-reads the master sheet in place. Read-only — a GET, never a write. */
-/* Button and its timestamp stack together at the end of the bar. */
-.refresh-wrap {
-  display: flex; flex-direction: column; align-items: stretch;
-  gap: 0.15rem; margin-left: 0.75rem; flex: none;
+/* End of the bar, left to right: last-updated, Refresh, season. */
+.nav-tail {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin-left: auto; flex: none;
 }
 .refresh-stamp {
-  font-size: 0.66rem; color: var(--muted); text-align: center;
-  max-width: 12rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 0.7rem; color: var(--muted); text-align: right;
+  max-width: 14rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .refresh-stamp.is-error { color: var(--nav-red); }
 
