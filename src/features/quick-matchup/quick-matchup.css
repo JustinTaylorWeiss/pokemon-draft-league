@@ -14,7 +14,7 @@
 .wizard-actions { display: flex; gap: 0.6rem; justify-content: flex-end; }
 
 .btn {
-  background: var(--accent); color: #06232e; border: 0; font: inherit; font-weight: 600;
+  background: var(--accent); color: var(--accent-ink); border: 0; font: inherit; font-weight: 600;
   padding: 0.5rem 1.2rem; border-radius: 999px; cursor: pointer;
 }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -263,7 +263,7 @@ button.type-chip { cursor: pointer; }
   background: none; border: 0; color: var(--muted); font: inherit; font-size: 0.85rem;
   padding: 0.35rem 0.9rem; cursor: pointer; white-space: nowrap;
 }
-.segmented button.is-active { background: var(--team-accent, var(--accent)); color: #10131a; font-weight: 600; }
+.segmented button.is-active { background: var(--team-accent, var(--accent)); color: var(--accent-ink); font-weight: 600; }
 
 /* Widgets size to their content; this packs them into rows and centers the
    leftovers, which is what produces the uneven two-up look. */

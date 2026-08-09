@@ -29,7 +29,10 @@ export default function App() {
     <PokemonModalProvider>
       <header className="topbar">
         <div className="bar-inner">
-          <span className="brand">Draft League</span>
+          <span className="brand">
+            <span className="brand-mark" aria-hidden="true" />
+            <span className="brand-text">Draft League</span>
+          </span>
           <nav className="main-nav">
             {VIEWS.map((v) => (
               <button

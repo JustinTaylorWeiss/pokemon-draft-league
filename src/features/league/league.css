@@ -12,7 +12,7 @@
   padding: 0.95rem 0.85rem; cursor: pointer; white-space: nowrap;
 }
 .sub-nav button:hover { color: var(--fg); }
-.sub-nav button.is-active { color: var(--accent); border-bottom-color: var(--accent); }
+.sub-nav button.is-active { color: var(--nav-red); border-bottom-color: var(--nav-red); }
 
 /* Draft tiers use their own ramp, separate from the Smogon tier chips. */
 .tier {
@@ -155,8 +155,10 @@
 .board-table th.is-sorted button { color: var(--accent); }
 .sort-arrow { font-size: 0.55rem; min-width: 0.6em; }
 
-.name-taken { color: #e8615f; font-weight: 600; }
-.name-open  { color: #4fb573; font-weight: 600; }
+/* Raised above .mon-link's `color: inherit`, which otherwise wins on order. */
+.name-taken, .mon-link.name-taken { color: var(--nav-red); font-weight: 600; }
+.name-open, .mon-link.name-open { color: #4fb573; font-weight: 600; }
+.mon-link.name-taken:hover, .mon-link.name-open:hover { filter: brightness(1.25); }
 .board-table td.col-abil { white-space: normal; max-width: 18rem; }
 
 
@@ -185,3 +187,15 @@
   background: rgb(231 148 69 / 10%);
 }
 .rulebook-footer { text-align: center; }
+
+/* Fixed layout so re-sorting cannot resize the columns: with auto layout the
+   widest cell in each column sets its width, and that changes with the order. */
+.board-table { table-layout: fixed; width: 100%; }
+.board-table th:nth-child(1) { width: 20%; }
+.board-table th:nth-child(2) { width: 5.5rem; }
+.board-table th:nth-child(3) { width: 4rem; }
+.board-table th:nth-child(n+4):nth-child(-n+9) { width: 3.5rem; }
+.board-table th:nth-child(10) { width: 13%; }
+.board-table td.col-abil { max-width: none; overflow-wrap: anywhere; }
+.board-table .col-name span { max-width: 100%; }
+.board-table .pick-name, .board-table .col-name .mon-link { overflow: hidden; text-overflow: ellipsis; }

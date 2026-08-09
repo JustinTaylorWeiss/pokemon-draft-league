@@ -5,12 +5,17 @@
   --muted: #8d919c;
   --line: #282b33;
   --chip: #22252c;
-  --accent: #4ec3f7;
+  /* Three-colour identity: blue leads the primary nav, red the secondary, and
+     purple is the neutral accent everything else reaches for. */
+  --nav-blue: #4aa8ff;
+  --nav-red: #e8615f;
+  --accent: #a78bfa;
+  --accent-ink: #16112b;
   /* Team 1 is blue, Team 2 red; panels tint to whichever is being analyzed. */
-  --team-one: #4aa8ff;
-  --team-two: #e8615f;
-  /* The teams/speed card belongs to neither side, so it gets its own colour. */
-  --team-both: #a78bfa;
+  --team-one: var(--nav-blue);
+  --team-two: var(--nav-red);
+  /* The teams/speed card belongs to neither side, so it takes the neutral. */
+  --team-both: var(--accent);
   /* Widget panels sit slightly above the page, matching DraftZone's #141414. */
   --widget: #141414;
 
