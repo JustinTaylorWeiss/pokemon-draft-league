@@ -3,7 +3,7 @@ import { loadPokemon, spriteUrl } from '../../data/load'
 import type { PokemonDex } from '../../data/types'
 import {
   byId, byTier, loadLeague, mergeDex, subscribeLeague, tierClass, totalsFromMatches,
-  type League, type LeaguePokemon,
+  type League, type LeaguePokemon, type PokemonTotals,
 } from '../../data/league'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
@@ -55,11 +55,23 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
 /** A full week is every player paired off: 20 players, 4 per match. */
 const WEEK_MATCHES = 5
 
+/**
+ * The ranking shown when no column is sorted: best differential first, then
+ * kills per game, then raw kills, then fewest deaths. Each step only decides
+ * rows the one before it left tied.
+ */
+const byPowerRanking = (a: PokemonTotals, b: PokemonTotals) =>
+  b.diff - a.diff
+  || b.killsPerGame - a.killsPerGame
+  || b.kills - a.kills
+  || a.deaths - b.deaths
+
 type StatSort = 'kills' | 'deaths' | 'diff' | 'gamesPlayed' | 'killsPerGame' | 'name'
 
 function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
-  // dir 0 means unsorted, so a column cycles through both directions and off.
-  const [sort, setSort] = useState<{ key: StatSort; dir: 1 | -1 | 0 }>({ key: 'kills', dir: -1 })
+  // dir 0 is the power ranking above; a column cycles through both directions
+  // and back to it.
+  const [sort, setSort] = useState<{ key: StatSort; dir: 1 | -1 | 0 }>({ key: 'kills', dir: 0 })
 
   const toggleSort = (key: StatSort) =>
     setSort((prev) => {
@@ -89,9 +101,9 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
       // by how few games it took. The tiebreak keeps its own direction so it
       // stays meaningful when the column is flipped.
       .sort((a, b) => {
-        if (!sort.dir) return 0
         const nameA = dex[a.pokemon]?.name ?? ''
         const nameB = dex[b.pokemon]?.name ?? ''
+        if (!sort.dir) return byPowerRanking(a, b) || nameA.localeCompare(nameB)
         if (sort.key === 'name') return nameA.localeCompare(nameB) * sort.dir
         // dir -1 is descending, so subtract in ascending order and flip.
         return (a[sort.key] - b[sort.key]) * sort.dir
