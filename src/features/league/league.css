@@ -46,19 +46,24 @@
   display: grid; gap: 0.75rem;
   grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
 }
-/* Each roster gets its own visible box. */
+/* Each roster gets its own visible box; the rows inside stay unboxed. */
 .roster-card { padding: 0.75rem; gap: 0.5rem; border: 1px solid var(--line); }
-.roster-card li {
-  padding: 0.15rem 0.35rem; border: 1px solid var(--line); border-radius: 6px;
-}
 .roster-card header { display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap; }
 .roster-card h3 { margin: 0; font-size: 0.95rem; }
 .roster-card ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
-.roster-card li { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; }
+/* Fixed columns so names, types, and tiers line up down the whole card. */
+.roster-card li {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr) 8.4rem 3.2rem;
+  align-items: center; gap: 0.4rem; font-size: 0.82rem;
+  padding: 0.1rem 0.15rem;
+}
+.roster-card li + li { border-top: 1px solid var(--line); }
 .roster-card img { image-rendering: pixelated; object-fit: contain; flex: none; }
-.pick-name { font-weight: 600; }
-.pick-types { display: flex; gap: 0.15rem; }
-.roster-card .tier { margin-left: auto; }
+.pick-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Never wraps: the widest pair (Electric/Fighting) fits the column at this size. */
+.pick-types { display: flex; gap: 0.15rem; flex-wrap: nowrap; }
+.pick-types .type-chip { font-size: 0.6rem; padding: 0.1rem 0.3rem; }
+.roster-card .tier { justify-self: end; }
 
 /* ---- schedule ---- */
 .schedule { display: flex; flex-direction: column; gap: 0.75rem; }
@@ -100,7 +105,15 @@
   border: 1px solid var(--line); border-radius: 8px;
   background: var(--surface); color: inherit; font: inherit; font-size: 0.85rem;
 }
-.board-controls .count { margin-left: auto; }
+/* Key and count share the right end of the control row. */
+.board-controls .board-key { margin-left: auto; }
+.board-key {
+  display: flex; gap: 0.75rem; margin: 0; align-items: center;
+  padding: 0.2rem 0.6rem; border: 1px solid var(--line); border-radius: 8px;
+}
+.board-key div { display: flex; align-items: baseline; gap: 0.3rem; }
+.board-key dt { font-size: 0.72rem; font-weight: 700; }
+.board-key dd { margin: 0; font-size: 0.72rem; color: var(--muted); }
 /* Separates the tier pills from the availability pills. */
 .pill-group { display: flex; gap: 0.3rem; flex-wrap: wrap; }
 .pill-divider { width: 1px; align-self: stretch; background: var(--line); margin: 0 0.25rem; }
@@ -145,3 +158,4 @@
 .name-taken { color: #e8615f; font-weight: 600; }
 .name-open  { color: #4fb573; font-weight: 600; }
 .board-table td.col-abil { white-space: normal; max-width: 18rem; }
+

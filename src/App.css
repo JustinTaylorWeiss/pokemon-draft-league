@@ -18,6 +18,14 @@
 
 .brand { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em; white-space: nowrap; }
 
+/* The season's identity rides in the secondary nav rather than each page. */
+.league-badge {
+  margin-left: auto; text-align: right; display: flex; flex-direction: column;
+  gap: 0.05rem; min-width: 0; padding: 0.35rem 0;
+}
+.league-badge strong { font-size: 0.85rem; letter-spacing: -0.01em; }
+.league-badge span { font-size: 0.7rem; color: var(--muted); }
+
 .main-nav { display: flex; gap: 0.25rem; }
 .main-nav button {
   background: none; border: 0; border-bottom: 2px solid transparent;

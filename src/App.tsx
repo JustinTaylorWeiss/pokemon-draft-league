@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { QuickMatchup } from './features/quick-matchup/QuickMatchup'
 import { LeagueView } from './features/league/LeagueView'
 import { LEAGUE_TABS, type LeagueTab } from './features/league/tabs'
+import { loadLeague, type League } from './data/league'
 import { Dex } from './features/dex/Dex'
 import './App.css'
 
@@ -17,6 +18,10 @@ export default function App() {
   const [view, setView] = useState<View>('league')
   // Lifted so the secondary bar can sit directly under the primary one.
   const [leagueTab, setLeagueTab] = useState<LeagueTab>('standings')
+  // Loaded here too so the secondary nav can name the season; the loader caches,
+  // so this shares one fetch with the views below.
+  const [league, setLeague] = useState<League | null>(null)
+  useEffect(() => { loadLeague().then(setLeague, () => {}) }, [])
 
   return (
     <>
@@ -51,6 +56,17 @@ export default function App() {
                 </button>
               ))}
             </nav>
+            {league && (
+              <div className="league-badge">
+                <strong>{league.meta.name ?? 'Draft League'}</strong>
+                <span>
+                  {[league.meta.format, league.meta.regulation && `Reg ${league.meta.regulation}`,
+                    league.meta.seriesLength, league.meta.weeks && `${league.meta.weeks} weeks`,
+                    league.meta.picksPerPlayer && `${league.meta.picksPerPlayer} picks each`]
+                    .filter(Boolean).join(' · ')}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       )}

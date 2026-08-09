@@ -36,19 +36,8 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
   }
   if (!league || !dex) return <p className="loading">Loading league…</p>
 
-  const { meta } = league
-
   return (
     <div className="league">
-      <section className="panel league-meta">
-        <h2>{meta.name ?? 'Draft League'}</h2>
-        <p className="panel-note league-meta-line">
-          {[meta.format, meta.regulation && `Reg ${meta.regulation}`, meta.seriesLength,
-            meta.weeks && `${meta.weeks} weeks`, meta.picksPerPlayer && `${meta.picksPerPlayer} picks each`]
-            .filter(Boolean).join(' · ')}
-        </p>
-      </section>
-
       {tab === 'standings' && <Standings league={league} />}
       {tab === 'rosters' && <Rosters league={league} dex={dex} />}
       {tab === 'schedule' && <Schedule league={league} />}
@@ -318,6 +307,11 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
             Clear
           </button>
         )}
+        {/* Explains the name colouring in the table below. */}
+        <dl className="board-key">
+          <div><dt className="name-open">Green</dt><dd>available</dd></div>
+          <div><dt className="name-taken">Red</dt><dd>taken</dd></div>
+        </dl>
         <span className="count">{rows.length} shown</span>
       </div>
 
