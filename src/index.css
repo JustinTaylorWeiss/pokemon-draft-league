@@ -1,25 +1,15 @@
 :root {
-  --bg: #f7f7f8;
-  --surface: #ffffff;
-  --fg: #1a1a1c;
-  --muted: #6b6b73;
-  --line: #e2e2e6;
-  --chip: #eeeef1;
+  --bg: #0d0e11;
+  --surface: #16181d;
+  --fg: #e9eaee;
+  --muted: #8d919c;
+  --line: #282b33;
+  --chip: #22252c;
+  --accent: #4ec3f7;
 
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.5;
-  color-scheme: light dark;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #131316;
-    --surface: #1b1b1f;
-    --fg: #ececef;
-    --muted: #9a9aa4;
-    --line: #2c2c33;
-    --chip: #26262d;
-  }
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -30,3 +20,27 @@ body {
   color: var(--fg);
   -webkit-font-smoothing: antialiased;
 }
+
+.loading, .error { color: var(--muted); font-size: 0.9rem; }
+.error { color: #e05563; }
+
+/* Type colors are global so chips render the same in every panel. */
+.type-normal   { background: #9fa19f; }
+.type-grass    { background: #48a53c; }
+.type-water    { background: #3692dc; }
+.type-fire     { background: #e8722c; }
+.type-electric { background: #c9a800; }
+.type-ground   { background: #a3822d; }
+.type-rock     { background: #b6a136; }
+.type-flying   { background: #7f9fdc; }
+.type-ice      { background: #3fb3c4; }
+.type-fighting { background: #c22e28; }
+.type-poison   { background: #9459a3; }
+.type-bug      { background: #8fa32c; }
+.type-psychic  { background: #e0447f; }
+.type-dark     { background: #5c5366; }
+.type-ghost    { background: #6b4d92; }
+.type-dragon   { background: #6c4ad0; }
+.type-steel    { background: #6b8a95; }
+.type-fairy    { background: #d685ad; }
+.type-stellar  { background: #4d8f8b; }

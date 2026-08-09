@@ -15,6 +15,43 @@ npm install
 npm run dev
 ```
 
+## Quick Matchup
+
+Build two teams, then analyze the matchup. Modelled on
+[Pokémon DraftZone's](https://pokemondraftzone.com/tools/quick-matchup) tool of
+the same name, with five panels:
+
+| Panel | What it answers |
+| --- | --- |
+| **Draft Summary** | Stat table, heat-mapped against an adjustable neutral value, plus effective bulk |
+| **Speed Tiers** | Both teams' speeds interleaved at Lv 100, so you can read off who outruns whom |
+| **Defensive Type Chart** | Per-Pokémon weaknesses and resistances, with weak/resist/delta totals |
+| **Coverage** | Which opponents each Pokémon can hit super-effectively |
+| **Learned Moves** | Every move the team can learn, filterable by role (setup, hazard control, …) |
+
+Teams persist in `localStorage`, so a refresh does not lose them.
+
+### Where this matches DraftZone, and where it does not
+
+Two calculations were verified directly against their output on the same teams:
+
+- **Speed tiers** — identical on every case checked (Dragapult 252+ → 421,
+  Iron Valiant 252+ under Quark Drive → 546).
+- **Defensive type chart** — weakness and resistance counts match on all 18
+  columns, including ability effects like Water Absorb.
+
+Two deliberately differ:
+
+- **Coverage.** Their percentages come from a curated movepool that is not
+  published, and no rule I tested reproduced them. This version is explicit
+  instead: it counts attacking moves at or above a base-power floor you choose,
+  and every type chip can be toggled off to model a specific set. At the default
+  of 75 BP, a wide-movepool Pokémon legitimately threatens most teams.
+- **"CST".** Their summary has a column that runs slightly above BST
+  (Zamazenta 660 → 666) with no published weighting. Rather than invent a
+  formula, this shows physical and special bulk — HP × the matching defense —
+  which BST hides because HP multiplies with defenses instead of adding to them.
+
 ## The dataset
 
 `npm run build:data` regenerates `public/data/` from

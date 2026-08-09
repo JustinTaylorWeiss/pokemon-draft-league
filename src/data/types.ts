@@ -38,6 +38,8 @@ export interface Pokemon {
   eggGroups?: string[]
 }
 
+export type StatKey = keyof BaseStats
+
 export interface Move {
   name: string
   type: TypeName
@@ -49,6 +51,24 @@ export interface Move {
   priority: number
   target: string
   shortDesc: string
+  /** Present only when the move does the thing; absent otherwise. */
+  boosts?: Partial<Record<StatKey | 'accuracy' | 'evasion', number>>
+  status?: string
+  volatileStatus?: string
+  sideCondition?: string
+  slotCondition?: string
+  weather?: string
+  terrain?: string
+  selfSwitch?: boolean
+  forceSwitch?: boolean
+  drain?: [number, number]
+  recoil?: [number, number]
+  heal?: [number, number]
+  sound?: boolean
+  contact?: boolean
+  reflectable?: boolean
+  wind?: boolean
+  pivot?: boolean
 }
 
 export interface Ability {

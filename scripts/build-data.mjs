@@ -96,6 +96,9 @@ async function main() {
   const movesOut = {}
   for (const [id, m] of Object.entries(moves)) {
     if (!isCurrentGen(m)) continue
+    // Anything that shifts a stat, on either side of the field. Showdown splits
+    // these across three places depending on whether the move targets self.
+    const boosts = m.boosts ?? m.self?.boosts ?? m.selfBoost?.boosts ?? null
     movesOut[id] = {
       name: m.name,
       type: m.type,
@@ -106,6 +109,23 @@ async function main() {
       priority: m.priority,
       target: m.target,
       shortDesc: m.shortDesc ?? m.desc ?? '',
+      ...(boosts && { boosts }),
+      ...(m.status && { status: m.status }),
+      ...(m.volatileStatus && { volatileStatus: m.volatileStatus }),
+      ...(m.sideCondition && { sideCondition: m.sideCondition }),
+      ...(m.slotCondition && { slotCondition: m.slotCondition }),
+      ...(m.weather && { weather: m.weather }),
+      ...(m.terrain && { terrain: m.terrain }),
+      ...(m.selfSwitch && { selfSwitch: true }),
+      ...(m.forceSwitch && { forceSwitch: true }),
+      ...(m.drain && { drain: m.drain }),
+      ...(m.recoil && { recoil: m.recoil }),
+      ...(m.heal && { heal: m.heal }),
+      ...(m.flags?.sound && { sound: true }),
+      ...(m.flags?.contact && { contact: true }),
+      ...(m.flags?.reflectable && { reflectable: true }),
+      ...(m.flags?.wind && { wind: true }),
+      ...(m.flags?.pivot && { pivot: true }),
     }
   }
   stats.moves = { kept: Object.keys(movesOut).length, dropped: Object.keys(moves).length - Object.keys(movesOut).length }

@@ -1,5 +1,5 @@
 import type {
-  AbilityDex, LearnsetDex, MoveDex, PokemonDex, TypeChart, TypeName,
+  AbilityDex, LearnsetDex, MoveDex, Pokemon, PokemonDex, TypeChart, TypeName,
 } from './types'
 
 /**
@@ -47,11 +47,25 @@ export function effectiveness(
   return defending.reduce((mult, def) => mult * (chart.chart[attacking]?.[def] ?? 1), 1)
 }
 
-/** Sprite URLs are derivable from the Showdown id, so we don't store them. */
-export const spriteUrl = (id: string, animated = false) =>
+const toId = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
+
+/**
+ * Showdown's sprite filenames strip spaces inside a name but keep the hyphen
+ * between species and forme: "Iron Treads" is irontreads, "Landorus-Therian" is
+ * landorus-therian. Our dex ids strip everything, so alternate formes have to
+ * be rebuilt from baseSpecies + forme or 143 of them 404.
+ */
+export function spriteName(pokemon: Pokemon): string {
+  return pokemon.forme && pokemon.baseSpecies
+    ? `${toId(pokemon.baseSpecies)}-${toId(pokemon.forme)}`
+    : toId(pokemon.name)
+}
+
+/** Sprite URLs are derivable from the name, so we don't store them. */
+export const spriteUrl = (pokemon: Pokemon, animated = false) =>
   animated
-    ? `https://play.pokemonshowdown.com/sprites/ani/${id}.gif`
-    : `https://play.pokemonshowdown.com/sprites/gen5/${id}.png`
+    ? `https://play.pokemonshowdown.com/sprites/ani/${spriteName(pokemon)}.gif`
+    : `https://play.pokemonshowdown.com/sprites/gen5/${spriteName(pokemon)}.png`
 
 export const artworkUrl = (num: number) =>
   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${num}.png`
