@@ -213,7 +213,7 @@ export function Dex() {
           </select>
         </label>
 
-        <label className="filter">
+        <label className="filter filter-narrow">
           <span>Ability</span>
           <input
             type="search" value={ability} onChange={(e) => setAbility(e.target.value)}
@@ -224,7 +224,7 @@ export function Dex() {
           </datalist>
         </label>
 
-        <label className="filter">
+        <label className="filter filter-narrow">
           <span>Move</span>
           <input
             type="search" value={move} onChange={(e) => setMove(e.target.value)}

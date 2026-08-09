@@ -65,7 +65,7 @@
   position: relative;
   /* Top-aligned so extra stat rows grow downward instead of pushing every
      other filter to the bottom of the panel. */
-  display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-start;
+  display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: flex-start;
   /* Room along the top for the corner reset. */
   padding: 2.1rem 0.85rem 0.85rem;
   border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
@@ -90,10 +90,13 @@
   background-size: 0.35rem 0.35rem, 0.35rem 0.35rem;
   background-repeat: no-repeat;
 }
-.filter-wide input { min-width: 10.5rem; }
-.filter select { min-width: 7rem; }
+.filter-wide input { min-width: 9rem; }
+.filter select { min-width: 6.5rem; }
 /* Both type dropdowns fixed to one width so they read as a matched pair. */
 .filter-type select { width: 8.5rem; min-width: 0; }
+/* Ability and Move are datalist-backed, so they can be narrower than a plain
+   text field and still leave room for the count on the same row. */
+.filter-narrow input { width: 8.5rem; min-width: 0; }
 /* Extra conditions stack under the first, each able to close itself. */
 .filter-stat { gap: 0.3rem; align-items: flex-start; }
 .stat-step {
@@ -109,9 +112,9 @@
 
 .stat-row { display: flex; gap: 0.3rem; }
 .stat-row select { min-width: 0; }
-.stat-row select:first-child { width: 5.5rem; }
-.stat-row select:nth-child(2) { width: 3.5rem; }
-.stat-row input { width: 5.5rem; }
+.stat-row select:first-child { width: 5.2rem; }
+.stat-row select:nth-child(2) { width: 3.1rem; }
+.stat-row input { width: 4.5rem; }
 /* Sits on the same line as the filters; auto margin only pushes it right
    once there is room left over. */
 .filter-actions { margin-left: auto; }

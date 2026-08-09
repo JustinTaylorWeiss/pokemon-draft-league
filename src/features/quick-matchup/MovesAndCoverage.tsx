@@ -32,9 +32,6 @@ export function MovesAndCoverage({ analyzed, other, chart, moves, learnsets }: P
   // reads 100% because Gen 9 TMs hand out weak coverage of half the type chart.
   const [minPower, setMinPower] = useState(75)
   const [resetKey, setResetKey] = useState(0)
-  // Coverage defaults to what people actually run rather than every move a
-  // Pokémon could learn, which otherwise reports near-100% for everyone.
-  const [useCommonSets, setUseCommonSets] = useState(true)
   const [sets, setSets] = useState<SetDex | null>(null)
   useEffect(() => { loadSets().then(setSets, () => {}) }, [])
 
@@ -49,23 +46,11 @@ export function MovesAndCoverage({ analyzed, other, chart, moves, learnsets }: P
       actions={onCoverage ? (
         <>
           <label className="toggle">
-            <span>Moves</span>
-            <select
-              value={useCommonSets ? 'common' : 'all'}
-              onChange={(e) => setUseCommonSets(e.target.value === 'common')}
-            >
-              <option value="common">Common set</option>
-              <option value="all">Full movepool</option>
+            <span>Show moves</span>
+            <select value={minPower} onChange={(e) => setMinPower(Number(e.target.value))}>
+              {POWER_STEPS.map((p) => <option key={p} value={p}>{p ? `${p}+ BP` : 'all'}</option>)}
             </select>
           </label>
-          {!useCommonSets && (
-            <label className="toggle">
-              <span>Min BP</span>
-              <select value={minPower} onChange={(e) => setMinPower(Number(e.target.value))}>
-                {POWER_STEPS.map((p) => <option key={p} value={p}>{p || 'any'}</option>)}
-              </select>
-            </label>
-          )}
           <label className="toggle">
             <input type="checkbox" checked={useAbilities} onChange={(e) => setUseAbilities(e.target.checked)} />
             <span>Abilities</span>
@@ -74,16 +59,14 @@ export function MovesAndCoverage({ analyzed, other, chart, moves, learnsets }: P
         </>
       ) : undefined}
       footnote={onCoverage
-        ? (useCommonSets
-          ? 'Types come from each Pokémon\u2019s most-used set. Click a type to drop it from the calculation.'
-          : 'Every move at or above the power floor. Click a type to drop it from the calculation.')
+        ? 'Lit types are the Pokémon\u2019s most-used set; the dim ones are everything else it can learn. Click any to toggle.'
         : undefined}
     >
       {onCoverage ? (
         <CoverageBody
           attackers={analyzed} defenders={other} chart={chart} moves={moves} learnsets={learnsets}
           useAbilities={useAbilities} minPower={minPower} resetKey={resetKey}
-          sets={useCommonSets ? sets : null}
+          sets={sets}
         />
       ) : (
         <LearnedMovesBody team={analyzed} moves={moves} learnsets={learnsets} />

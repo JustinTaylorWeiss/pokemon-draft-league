@@ -28,26 +28,47 @@ interface Props {
 export function CoverageBody({
   attackers, defenders, chart, moves, learnsets, useAbilities, minPower, resetKey, sets,
 }: Props) {
-  const [deselected, setDeselected] = useState<Record<string, Set<TypeName>>>({})
-  useEffect(() => { setDeselected({}) }, [resetKey])
+  // A Pokémon appears here only once it has been toggled; until then it uses
+  // the default selection below.
+  const [custom, setCustom] = useState<Record<string, Set<TypeName>>>({})
+  useEffect(() => { setCustom({}) }, [resetKey])
 
+  /** Every type the Pokémon could attack with, split by category. */
   const available = useMemo(() => {
     const out: Record<string, { physical: Set<TypeName>; special: Set<TypeName> }> = {}
     for (const m of attackers.members) {
-      out[m.id] = attackingTypes(learnsets[m.id], moves, minPower, sets?.[m.id]?.moves)
+      const pool = attackingTypes(learnsets[m.id], moves, minPower)
+      // A set can include a move under the power floor; it still belongs here.
+      const fromSet = attackingTypes(learnsets[m.id], moves, 0, sets?.[m.id]?.moves)
+      out[m.id] = {
+        physical: new Set([...pool.physical, ...fromSet.physical]),
+        special: new Set([...pool.special, ...fromSet.special]),
+      }
     }
     return out
   }, [attackers.members, learnsets, moves, minPower, sets])
 
-  const selected = useMemo(() => {
+  /** Ticked on load: what the Pokémon actually runs, per its most-used set. */
+  const defaults = useMemo(() => {
     const out: Record<string, Set<TypeName>> = {}
     for (const m of attackers.members) {
-      const all = new Set<TypeName>([...available[m.id].physical, ...available[m.id].special])
-      const off = deselected[m.id]
-      out[m.id] = off ? new Set([...all].filter((t) => !off.has(t))) : all
+      const set = sets?.[m.id]?.moves
+      if (set) {
+        const t = attackingTypes(learnsets[m.id], moves, 0, set)
+        out[m.id] = new Set([...t.physical, ...t.special])
+      } else {
+        // No set on record, so fall back to everything it can throw.
+        out[m.id] = new Set([...available[m.id].physical, ...available[m.id].special])
+      }
     }
     return out
-  }, [attackers.members, available, deselected])
+  }, [attackers.members, learnsets, moves, sets, available])
+
+  const selected = useMemo(() => {
+    const out: Record<string, Set<TypeName>> = {}
+    for (const m of attackers.members) out[m.id] = custom[m.id] ?? defaults[m.id]
+    return out
+  }, [attackers.members, custom, defaults])
 
   const results = useMemo(
     () => coverage(chart, attackers.members, defenders.members, learnsets, moves, useAbilities, selected, minPower, sets ?? undefined),
@@ -60,8 +81,8 @@ export function CoverageBody({
   )
 
   const toggle = (attackerId: string, type: TypeName) =>
-    setDeselected((prev) => {
-      const next = new Set(prev[attackerId] ?? [])
+    setCustom((prev) => {
+      const next = new Set(prev[attackerId] ?? selected[attackerId])
       if (next.has(type)) next.delete(type)
       else next.add(type)
       return { ...prev, [attackerId]: next }
@@ -72,14 +93,14 @@ export function CoverageBody({
   return (
     <ul className="coverage-list">
         {results.map((r) => {
-          const off = deselected[r.id]
+          const on = selected[r.id]
           const chip = (t: TypeName) => (
             <TypeChip
               key={t}
               type={t}
-              muted={off?.has(t)}
+              muted={!on?.has(t)}
               onClick={() => toggle(r.id, t)}
-              title={off?.has(t) ? `Include ${t}` : `Exclude ${t}`}
+              title={on?.has(t) ? `Exclude ${t}` : `Include ${t}`}
             />
           )
           return (
@@ -95,13 +116,13 @@ export function CoverageBody({
               <div className="coverage-types">
                 <div className="coverage-line">
                   <span className="cat-tag cat-physical">Phys</span>
-                  {[...r.physical].sort().map(chip)}
-                  {!r.physical.size && <em className="none">none</em>}
+                  {[...available[r.id].physical].sort().map(chip)}
+                  {!available[r.id].physical.size && <em className="none">none</em>}
                 </div>
                 <div className="coverage-line">
                   <span className="cat-tag cat-special">Spec</span>
-                  {[...r.special].sort().map(chip)}
-                  {!r.special.size && <em className="none">none</em>}
+                  {[...available[r.id].special].sort().map(chip)}
+                  {!available[r.id].special.size && <em className="none">none</em>}
                 </div>
               </div>
 

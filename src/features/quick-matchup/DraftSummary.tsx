@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { spriteUrl } from '../../data/load'
-import type { StatKey } from '../../data/types'
+import { spriteUrl, toId } from '../../data/load'
+import type { AbilityDex, StatKey } from '../../data/types'
 import { BST_ORDER, STAT_LABELS, bulk, summarize } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
 import type { Team } from './TeamEditor'
@@ -18,7 +18,9 @@ function heat(value: number, neutral: number): string {
 }
 
 /** `neutral` is owned by the parent card so the slider can live in its header. */
-export function DraftSummaryBody({ team, neutral }: { team: Team; neutral: number }) {
+export function DraftSummaryBody(
+  { team, neutral, abilities }: { team: Team; neutral: number; abilities: AbilityDex | null },
+) {
 
   const rows = useMemo(
     () => [...team.members].sort((a, b) => b.pokemon.bst - a.pokemon.bst),
@@ -62,7 +64,18 @@ export function DraftSummaryBody({ team, neutral }: { team: Team; neutral: numbe
                       </span>
                     </span>
                   </th>
-                  <td className="col-abil">{Object.values(pokemon.abilities).join(', ')}</td>
+                  <td className="col-abil">
+                    <span className="ability-pills">
+                      {Object.values(pokemon.abilities).map((name) => {
+                        const desc = abilities?.[toId(name)]?.shortDesc
+                        return (
+                          <span key={name} className="ability-pill" title={desc || name}>
+                            {name}
+                          </span>
+                        )
+                      })}
+                    </span>
+                  </td>
                   {BST_ORDER.map((k: StatKey) => (
                     <td key={k} style={{ background: heat(pokemon.baseStats[k], neutral) }}>
                       {pokemon.baseStats[k]}

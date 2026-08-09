@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Widget } from '../../components/Widget'
-import type { TypeChart } from '../../data/types'
+import type { AbilityDex, TypeChart } from '../../data/types'
+import { loadAbilities } from '../../data/load'
 import { DraftSummaryBody } from './DraftSummary'
 import { DefensiveChartBody } from './DefensiveChart'
 import type { Team } from './TeamEditor'
@@ -15,6 +16,9 @@ export function SummaryAndTypes({ team, chart }: { team: Team; chart: TypeChart 
   const [tab, setTab] = useState('summary')
   const [neutral, setNeutral] = useState(80)
   const [useAbilities, setUseAbilities] = useState(true)
+  // Descriptions for the ability pills' tooltips.
+  const [abilityDex, setAbilityDex] = useState<AbilityDex | null>(null)
+  useEffect(() => { loadAbilities().then(setAbilityDex, () => {}) }, [])
 
   const onTypes = tab === 'types'
 
@@ -45,7 +49,7 @@ export function SummaryAndTypes({ team, chart }: { team: Team; chart: TypeChart 
     >
       {onTypes
         ? <DefensiveChartBody team={team} chart={chart} useAbilities={useAbilities} />
-        : <DraftSummaryBody team={team} neutral={neutral} />}
+        : <DraftSummaryBody team={team} neutral={neutral} abilities={abilityDex} />}
     </Widget>
   )
 }
