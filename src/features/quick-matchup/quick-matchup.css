@@ -409,8 +409,12 @@ button.type-chip { cursor: pointer; }
 }
 .source-chips button:hover { color: #e05563; }
 
-.builder-actions { display: flex; align-items: center; justify-content: flex-end; gap: 1rem; }
+/* Sits under the drafted-teams card, centred in the left column. */
+.builder-actions {
+  display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+}
 .builder-counts { color: var(--muted); font-size: 0.82rem; }
+.builder-done { width: 100%; max-width: 22rem; padding: 0.65rem 1.2rem; font-size: 1rem; }
 
 @media (max-width: 1100px) {
   .builder-columns { grid-template-columns: 1fr; }

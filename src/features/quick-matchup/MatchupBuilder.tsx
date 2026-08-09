@@ -174,6 +174,14 @@ export function MatchupBuilder({
           )}
         </section>
 
+          <div className="builder-actions">
+            <span className="builder-counts">
+              {teamOne.members.length} vs {teamTwo.members.length} Pokémon
+            </span>
+            <button type="button" className="btn builder-done" disabled={!canAnalyze} onClick={onDone}>
+              Done
+            </button>
+          </div>
         </div>
 
         {/* ---- 3. build by hand: both sides visible at once ---- */}
@@ -196,15 +204,6 @@ export function MatchupBuilder({
             </div>
           </Widget>
         </section>
-      </div>
-
-      <div className="builder-actions">
-        <span className="builder-counts">
-          {teamOne.members.length} vs {teamTwo.members.length} Pokémon
-        </span>
-        <button type="button" className="btn" disabled={!canAnalyze} onClick={onDone}>
-          Done
-        </button>
       </div>
     </div>
   )
