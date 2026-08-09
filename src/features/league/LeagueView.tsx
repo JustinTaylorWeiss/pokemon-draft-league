@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { loadPokemon, spriteUrl } from '../../data/load'
 import type { PokemonDex } from '../../data/types'
 import {
-  byId, byTier, loadLeague, mergeDex, tierClass, totalsFromMatches,
+  byId, byTier, loadLeague, mergeDex, subscribeLeague, tierClass, totalsFromMatches,
   type League, type LeaguePokemon,
 } from '../../data/league'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
@@ -21,6 +21,8 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
       ([l, d]) => { setLeague(l); setRawDex(d) },
       (err: Error) => setError(err.message),
     )
+    // A sheet refresh republishes the league; pick it up without a reload.
+    return subscribeLeague(setLeague)
   }, [])
 
   /** Sheet values win over the Showdown dataset everywhere they overlap. */
@@ -56,13 +58,18 @@ const WEEK_MATCHES = 5
 type StatSort = 'kills' | 'deaths' | 'diff' | 'gamesPlayed' | 'killsPerGame' | 'name'
 
 function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
-  const [sort, setSort] = useState<{ key: StatSort; dir: 1 | -1 }>({ key: 'kills', dir: -1 })
+  // dir 0 means unsorted, so a column cycles through both directions and off.
+  const [sort, setSort] = useState<{ key: StatSort; dir: 1 | -1 | 0 }>({ key: 'kills', dir: -1 })
 
   const toggleSort = (key: StatSort) =>
-    setSort((prev) =>
+    setSort((prev) => {
       // Numbers open highest-first; the name column opens A-Z.
-      prev.key === key ? { key, dir: prev.dir === 1 ? -1 : 1 } : { key, dir: key === 'name' ? 1 : -1 },
-    )
+      const first: 1 | -1 = key === 'name' ? 1 : -1
+      if (prev.key !== key) return { key, dir: first }
+      if (prev.dir === first) return { key, dir: (first === 1 ? -1 : 1) as 1 | -1 }
+      if (prev.dir !== 0) return { key, dir: 0 }
+      return { key, dir: first }
+    })
   const [week, setWeek] = useState<number | 'all'>('all')
   const [query, setQuery] = useState('')
 
@@ -82,6 +89,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
       // by how few games it took. The tiebreak keeps its own direction so it
       // stays meaningful when the column is flipped.
       .sort((a, b) => {
+        if (!sort.dir) return 0
         const nameA = dex[a.pokemon]?.name ?? ''
         const nameB = dex[b.pokemon]?.name ?? ''
         if (sort.key === 'name') return nameA.localeCompare(nameB) * sort.dir
@@ -149,13 +157,14 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                    ['diff', '+/-']] as [StatSort, string][]).map(([key, label]) => (
                   <th
                     key={key}
-                    className={`sortable${key === 'name' ? ' col-name' : ''}${sort.key === key ? ' is-sorted' : ''}`}
-                    aria-sort={sort.key === key ? (sort.dir === 1 ? 'ascending' : 'descending') : 'none'}
+                    className={`sortable${key === 'name' ? ' col-name' : ''}${sort.key === key && sort.dir ? ' is-sorted' : ''}`}
+                    aria-sort={sort.key === key && sort.dir
+                      ? (sort.dir === 1 ? 'ascending' : 'descending') : 'none'}
                   >
-                    <button type="button" onClick={() => toggleSort(key)}>
+                    <button type="button" onClick={() => toggleSort(key)} title="Click to cycle ascending, descending, off">
                       {label}
                       <span className="sort-arrow">
-                        {sort.key === key ? (sort.dir === 1 ? '▲' : '▼') : ''}
+                        {sort.key === key ? (sort.dir === 1 ? '▲' : sort.dir === -1 ? '▼' : '') : ''}
                       </span>
                     </button>
                   </th>
@@ -458,7 +467,8 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
   // complete and each pill narrows it.
   const [tiers, setTiers] = useState<Set<string>>(new Set())
   const [avail, setAvail] = useState<Set<'available' | 'drafted'>>(new Set())
-  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: 'bst', dir: -1 })
+  // dir 0 means unsorted, so a column cycles through both directions and off.
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 | 0 }>({ key: 'bst', dir: -1 })
 
   const toggleIn = <T,>(setter: (fn: (prev: Set<T>) => Set<T>) => void, value: T) =>
     setter((prev) => {
@@ -469,12 +479,14 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
     })
 
   const toggleSort = (key: SortKey) =>
-    setSort((prev) =>
-      prev.key === key
-        ? { key, dir: prev.dir === 1 ? -1 : 1 }
-        // Numbers are most useful highest-first; text reads better A–Z.
-        : { key, dir: BOARD_COLUMNS.find((c) => c.key === key)?.numeric ? -1 : 1 },
-    )
+    setSort((prev) => {
+      // Numbers are most useful highest-first; text reads better A–Z.
+      const first: 1 | -1 = BOARD_COLUMNS.find((c) => c.key === key)?.numeric ? -1 : 1
+      if (prev.key !== key) return { key, dir: first }
+      if (prev.dir === first) return { key, dir: (first === 1 ? -1 : 1) as 1 | -1 }
+      if (prev.dir !== 0) return { key, dir: 0 }
+      return { key, dir: first }
+    })
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -488,6 +500,7 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
       .map(([id, e]) => ({ id, entry: e, mon: dex[id] }))
 
     const { key, dir } = sort
+    if (!dir) return list
     return list.sort((a, b) => {
       if (key === 'tier') return byTier(a.entry.tier, b.entry.tier) * dir
       if (key === 'bst') return ((a.mon?.bst ?? 0) - (b.mon?.bst ?? 0)) * dir
@@ -567,14 +580,14 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
             <thead>
               <tr>
                 {BOARD_COLUMNS.map((c) => {
-                  const active = sort.key === c.key
+                  const active = sort.key === c.key && sort.dir !== 0
                   return (
                     <th
                       key={c.key}
                       className={`sortable${c.key === 'name' ? ' col-name' : ''}${c.key === 'draftedBy' || c.key === 'note' ? ' col-abil' : ''}${active ? ' is-sorted' : ''}`}
                       aria-sort={active ? (sort.dir === 1 ? 'ascending' : 'descending') : 'none'}
                     >
-                      <button type="button" onClick={() => toggleSort(c.key)}>
+                      <button type="button" onClick={() => toggleSort(c.key)} title="Click to cycle ascending, descending, off">
                         {c.label}
                         <span className="sort-arrow">{active ? (sort.dir === 1 ? '▲' : '▼') : ''}</span>
                       </button>

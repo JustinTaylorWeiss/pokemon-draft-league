@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { loadCore, loadLearnsets } from '../../data/load'
 import type { AbilityDex, LearnsetDex, MoveDex, PokemonDex, TypeChart } from '../../data/types'
-import { loadLeague, mergeDex, type League } from '../../data/league'
+import { loadLeague, mergeDex, subscribeLeague, type League } from '../../data/league'
 import type { Team } from './TeamEditor'
 import { MatchupBuilder } from './MatchupBuilder'
 import { useElementHeight } from '../../lib/useElementHeight'
@@ -77,7 +77,10 @@ export function QuickMatchup() {
 
   // The league sheet is optional: the tool still works as a scratch pad if the
   // import has not been run.
-  useEffect(() => { loadLeague().then(setLeague, () => {}) }, [])
+  useEffect(() => {
+    loadLeague().then(setLeague, () => {})
+    return subscribeLeague(setLeague)
+  }, [])
 
   useEffect(() => { if (core) saveTeams(teamOne, teamTwo) }, [core, teamOne, teamTwo])
 

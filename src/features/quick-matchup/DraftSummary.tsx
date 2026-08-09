@@ -68,16 +68,12 @@ export function DraftSummaryBody(
                     </span>
                   </th>
                   <td className="col-abil">
-                    <span className="ability-pills">
-                      {Object.values(pokemon.abilities).map((name) => {
-                        const desc = abilities?.[toId(name)]?.shortDesc
-                        return (
-                          <span key={name} className="ability-pill" title={desc || name}>
-                            {name}
-                          </span>
-                        )
-                      })}
-                    </span>
+                    {/* Plain text: the description still shows on hover. */}
+                    {Object.values(pokemon.abilities).map((name, i) => (
+                      <span key={name} title={abilities?.[toId(name)]?.shortDesc || name}>
+                        {i > 0 && ', '}{name}
+                      </span>
+                    ))}
                   </td>
                   {BST_ORDER.map((k: StatKey) => (
                     <td key={k} style={{ background: heat(pokemon.baseStats[k], neutral) }}>

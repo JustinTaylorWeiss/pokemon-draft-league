@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { loadAbilities, loadLearnsets, loadMoves, loadPokemon, spriteUrl, toId } from '../../data/load'
 import type { AbilityDex, LearnsetDex, MoveDex, PokemonDex, StatKey, TypeName } from '../../data/types'
-import { loadLeague, mergeDex, tierClass, type League, type LeaguePokemon } from '../../data/league'
+import { loadLeague, mergeDex, subscribeLeague, tierClass, type League, type LeaguePokemon } from '../../data/league'
 import { STAT_LABELS, BST_ORDER } from '../../lib/stats'
 import { BATTLE_TYPES } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
@@ -57,7 +57,10 @@ export function Dex() {
   const [move, setMove] = useState('')
 
   useEffect(() => { loadPokemon().then(setRawDex, (e: Error) => setError(e.message)) }, [])
-  useEffect(() => { loadLeague().then(setLeague, () => {}) }, [])
+  useEffect(() => {
+    loadLeague().then(setLeague, () => {})
+    return subscribeLeague(setLeague)
+  }, [])
   // Only the ability and move filters need these, so they stream in behind the
   // Pokémon list rather than blocking it.
   useEffect(() => { loadAbilities().then(setAbilities, () => {}) }, [])

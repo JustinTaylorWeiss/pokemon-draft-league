@@ -1,222 +1,35 @@
 # Pokémon Draft League
 
-A static site for running a Pokémon draft league: browse the dex, see every
-player's drafted team, and check weekly matchups. Friends log in with a league
-code — there is no backend, so everything runs in the browser and deploys to
-GitHub Pages.
+A custom site for organizing a Pokémon draft league.
 
-**Generation 9 only.** Anything that predates Scarlet/Violet is stripped out at
-build time.
+> ### ⚠️ The league spreadsheet is read-only
+>
+> Nothing in this project may write to the league's Google Sheet. The only
+> permitted access is an HTTP `GET` of its export URL. Never edit, append to,
+> re-upload, or reshare it — not even to correct data an import flags as wrong.
+> Report the problem and let a human change the sheet.
+>
+> Restated in `CLAUDE.md`, `scripts/import-league.mjs`,
+> `src/lib/parseLeagueSheet.js`, and `.github/workflows/sync-sheet.yml`.
 
-## Getting started
+## Running it
 
 ```bash
 npm install
 npm run dev
 ```
 
-## The league sheet
+## Data
 
-The season is run from a master spreadsheet; this site is a read-only front end
-for it. Re-import whenever the sheet changes:
-
-```bash
-npm run import:league -- "~/Downloads/Copy of Doubles Draft League Season Reg F.xlsx"
-```
-
-It also takes a URL, which is how this will work once the sheet is shared
-read-only — take the Google Sheets link and swap the trailing `/edit...` for
-`/export?format=xlsx`:
-
-```bash
-npm run import:league -- "https://docs.google.com/spreadsheets/d/<id>/export?format=xlsx"
-```
-
-That writes `public/data/league.json` (~80 KB) from six of the thirteen tabs:
-
-| Sheet | Pulled out |
+| Command | What it does |
 | --- | --- |
-| Setup | League name, format, week count, picks per player, per-tier draft limits, the 20 players and team names |
-| Pokémon List | The 762-Pokémon draft board — tier, note, who drafted it |
-| Draft | All 140 picks in order |
-| Rosters | Each player's 7 Pokémon with draft tiers |
-| Schedule | 40 matches over 8 weeks, with scores |
-| Standings | W/L, games, Pokémon differential, points |
-| Rules | The rulebook — sections, each rule's label and text, and any callouts |
-| Match Stats | Every recorded game: both pairs, the score, and each Pokémon's kills and deaths |
-| Pokémon Stats | The sheet's own per-Pokémon totals (still being filled in) |
+| `npm run import:league -- <file-or-url>` | Reads the league sheet into `public/data/league.json` |
+| `npm run build:data` | Rebuilds the Gen 9 Pokémon dataset from Pokémon Showdown |
 
-The `Pokédex`, `Pokémon Stats`, and `Data` tabs are skipped — the Showdown
-dataset already covers that ground more accurately.
+The site also has a **Refresh** button that re-reads the sheet in the browser,
+so the data updates without a deploy.
 
-Every Pokémon name in the sheet is resolved to a dex id at import, so the
-matchup tools can join against stats and learnsets. All 762 currently resolve.
-Anything that stops resolving is reported by name at the end of the run instead
-of silently vanishing.
-
-**The importer never writes back to the sheet.** Read-only access is all it needs.
-
-### Keeping the site in sync automatically
-
-1. In the sheet: **Share → General access → Anyone with the link → Viewer**.
-2. Take the sheet id out of its URL and add a repository secret
-   `LEAGUE_SHEET_URL` set to
-   `https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=xlsx`.
-
-`.github/workflows/sync-sheet.yml` then re-imports hourly, builds to prove the
-new data does not break the site, and commits `league.json` only when it
-actually changed — which triggers the normal Pages deploy. Run it on demand
-from the Actions tab with **Run workflow**.
-
-If the sheet is not link-readable, Google serves a sign-in page instead of a
-file; the importer detects that and says so rather than failing on a confusing
-HTML parse error.
-
-### League Sheet view
-
-Four tabs in a secondary nav under the main one:
-
-- **Standings** — re-ranked, since the sheet's RANK column repeats values. Gold,
-  silver, and bronze on the podium.
-- **Rosters** — all 20 teams, each sorted best tier first.
-- **Schedule** — winners outlined green, losers red.
-- **Draft Board** — every column sortable, with tier and availability pill
-  filters beside the search. Taken names are red, available ones green.
-- **Stats** — a per-Pokémon leaderboard (games, kills, deaths, differential),
-  filterable by week, over a card per recorded match.
-- **Rules** — the sheet's rulebook, one card per numbered section.
-
-The leaderboard is totalled from the **Match Stats** log rather than the sheet's
-own `Pokémon Stats` tab. That tab is mid-construction: of its 140 entries, 4
-agree with the game record, 110 are still blank where games were played, and 13
-conflict. The import reports that split on every run, and the Stats tab says how
-many disagree, so the gap stays visible instead of being silently papered over.
-
-### Sheet precedence
-
-The spreadsheet outranks the Showdown dataset. `mergeDex()` in
-`src/data/league.ts` layers the sheet's name, stats, and tier over the dex
-entry, and the dex only supplies what the sheet has no opinion about — types,
-abilities, learnsets, sprites. Every view reads the merged result.
-
-Today the two agree on all 762 board entries, so nothing visibly changes; the
-importer reports the count of differing entries on each run so a divergence
-surfaces rather than hides.
-
-## Quick Matchup
-
-Teams come from three places, in rough order of how often they get used:
-
-1. **A scheduled match** — pick a week and matchup and both sides load at once.
-   This is a 2v2 partner league, so each side pools its two players' rosters
-   into one 14-Pokémon team, which is what that pair can actually bring.
-2. **A drafted roster** — pick any player to load their 7 picks.
-3. **By hand** — autocomplete one at a time, or paste a list.
-
-Then analyze. Modelled on
-[Pokémon DraftZone's](https://pokemondraftzone.com/tools/quick-matchup) tool of
-the same name, with five panels:
-
-| Panel | What it answers |
-| --- | --- |
-| **Draft Summary** | Stat table, heat-mapped against an adjustable neutral value, plus effective bulk |
-| **Speed Tiers** | Both teams' speeds interleaved at Lv 100, so you can read off who outruns whom |
-| **Defensive Type Chart** | Per-Pokémon weaknesses and resistances, with weak/resist/delta totals |
-| **Coverage** | Which opponents each Pokémon can hit super-effectively |
-| **Learned Moves** | Every move the team can learn, filterable by role (setup, hazard control, …) |
-
-Teams persist in `localStorage`, so a refresh does not lose them.
-
-### Where this matches DraftZone, and where it does not
-
-Two calculations were verified directly against their output on the same teams:
-
-- **Speed tiers** — identical on every case checked (Dragapult 252+ → 421,
-  Iron Valiant 252+ under Quark Drive → 546).
-- **Defensive type chart** — weakness and resistance counts match on all 18
-  columns, including ability effects like Water Absorb.
-
-Two deliberately differ:
-
-- **Coverage.** Their percentages come from a curated movepool that is not
-  published, and no rule I tested reproduced them. This version is explicit
-  instead: it counts attacking moves at or above a base-power floor you choose,
-  and every type chip can be toggled off to model a specific set. At the default
-  of 75 BP, a wide-movepool Pokémon legitimately threatens most teams.
-- **"CST".** Their summary has a column that runs slightly above BST
-  (Zamazenta 660 → 666) with no published weighting. Rather than invent a
-  formula, this shows physical and special bulk — HP × the matching defense —
-  which BST hides because HP multiplies with defenses instead of adding to them.
-
-## Dex
-
-Filters are separate controls rather than one overloaded search box:
-
-| Filter | Default | Notes |
-| --- | --- | --- |
-| Name | Any | Substring match |
-| Type 1 / Type 2 | Any | The pair is order-independent, so Fire + Flying finds Charizard. Type 2 offers **None** for mono-types |
-| Tier | Any | Draft tier when the Pokémon is on the board, Smogon tier otherwise |
-| Stat | HP ≥ 0 | A no-op by default. `+` and `-` beside the label stack more conditions, and they AND together |
-| Ability | Any | Substring match, with a datalist of all 310 |
-| Move | Any | An exact name wins; otherwise every partial match counts |
-
-## The dataset
-
-`npm run build:data` regenerates `public/data/` from
-[Pokémon Showdown's](https://play.pokemonshowdown.com/data/) battle data. The
-committed output is what ships, so you only need to re-run this when a patch
-changes tiers or adds Pokémon.
-
-Showdown is the source rather than PokéAPI because it is already organized
-around competitive play — base stats, abilities, learnsets, and Smogon tiers —
-instead of lore and flavor text. A single PokéAPI `/pokemon` record is ~362 KB
-because it repeats every move's learn data once per game version; the entire
-dataset here is smaller than four of those records.
-
-| File | Raw | Gzipped | Contents |
-| --- | ---: | ---: | --- |
-| `pokemon.json` | 275 KB | 45 KB | 876 Pokémon — stats, types, abilities, tiers |
-| `moves.json` | 130 KB | 19 KB | 685 moves — power, accuracy, category |
-| `learnsets.json` | 819 KB | 95 KB | Gen 9 learn data for 818 Pokémon |
-| `abilities.json` | 38 KB | 10 KB | 310 abilities with descriptions |
-| `typechart.json` | 4 KB | 0.6 KB | 19×19 effectiveness multipliers |
-| **Total** | **1.24 MB** | **169 KB** | |
-
-`learnsets.json` is ~5× everything else combined, so `loadCore()` skips it.
-Call `loadLearnsets()` only from views that need move coverage.
-
-### What gets dropped
-
-Filtering to Gen 9 removes roughly two-thirds of the source data:
-
-- **641 of 1517 Pokémon** — Megas, past-gen-only species, and CAP fakemon
-- **269 of 954 moves** — moves cut from Scarlet/Violet
-- **174,263 of 225,240 learnset entries** — every pre-Gen-9 learn source
-
-What remains is 733 species plus 143 alternate formes (regionals, Paradox forms,
-Ogerpon masks, and similar).
-
-### Notes on the shape
-
-- `accuracy: true` means the move bypasses accuracy checks, not 100%.
-- Learn sources drop the redundant generation digit: `"M"` is a TM, `"L45"` is
-  level 45, `"E"` is an egg move, `"T"` is a tutor.
-- Showdown stores the type chart inverted, as damage *taken*. The build script
-  flips it, so `chart[attacking][defending]` is a plain multiplier.
-- Sprites are derived from the Pokémon's id rather than stored — see
-  `spriteUrl()` and `artworkUrl()` in `src/data/load.ts`.
-
-## Deploying
-
-Pushing to `main` triggers `.github/workflows/deploy.yml`, which builds and
-publishes to GitHub Pages. Enable it once under **Settings → Pages → Source →
-GitHub Actions**.
-
-`vite.config.ts` sets `base` to `/pokemon-draft-league/` for production. Rename
-the repo and that needs to change too.
-
-## Data credit
+## Credit
 
 Pokémon data from [Pokémon Showdown](https://github.com/smogon/pokemon-showdown)
 and sprites from [PokéAPI](https://github.com/PokeAPI/sprites). Pokémon is a

@@ -4,6 +4,11 @@ name: Sync league sheet
 # actually changed. Pushing to main triggers the Pages deploy, so the site
 # follows the sheet without anyone running anything by hand.
 #
+# READ-ONLY: the league's share link grants edit access, but this workflow must
+# never use it. It performs a single HTTP GET of the export URL and writes only
+# into this repository. It must never edit, append to, re-upload, or reshare the
+# sheet. See CLAUDE.md.
+#
 # Setup: add a repository secret named LEAGUE_SHEET_URL holding
 #   https://docs.google.com/spreadsheets/d/<SHEET_ID>/export?format=xlsx
 # and share the sheet as "Anyone with the link -> Viewer".
@@ -32,7 +37,8 @@ jobs:
           cache: npm
       - run: npm ci
 
-      - name: Import the sheet
+      # GET only — never writes to the sheet.
+      - name: Import the sheet (read-only)
         env:
           LEAGUE_SHEET_URL: ${{ secrets.LEAGUE_SHEET_URL }}
         run: |

@@ -216,10 +216,18 @@
 .stats-table { table-layout: fixed; width: 100%; }
 .stats-table th:nth-child(1) { width: 3rem; }
 .stats-table th:nth-child(2) { width: 40%; }
-/* Name and types share one line here rather than stacking. */
+/* Name and types share one line here rather than stacking, and the whole cell
+   centres against the sprite. */
 .stats-name {
   display: inline-flex !important; flex-direction: row !important;
-  align-items: center; gap: 0.4rem; min-width: 0;
+  align-items: center; gap: 0.5rem; min-width: 0;
+  font-size: 1rem; font-weight: 600;
+}
+/* Flex rather than baseline alignment, so the name sits level with the sprite
+   whether or not the types wrap. */
+.stats-table .col-name {
+  display: flex; align-items: center; gap: 0.5rem;
+  height: 100%; min-height: 2.6rem;
 }
 .stats-name .row-types { flex: none; }
 .rank-col {

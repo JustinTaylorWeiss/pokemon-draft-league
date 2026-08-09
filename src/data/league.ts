@@ -140,6 +140,7 @@ export interface League {
 }
 
 let pending: Promise<League> | null = null
+const listeners = new Set<(l: League) => void>()
 
 export function loadLeague(): Promise<League> {
   if (!pending) {
@@ -150,6 +151,46 @@ export function loadLeague(): Promise<League> {
     pending.catch(() => { pending = null })
   }
   return pending
+}
+
+/** Notified when a refresh replaces the data, so views re-render in place. */
+export function subscribeLeague(fn: (l: League) => void): () => void {
+  listeners.add(fn)
+  return () => { listeners.delete(fn) }
+}
+
+/** Replaces the cached league after an in-page refresh from the sheet. */
+export function publishLeague(next: League) {
+  pending = Promise.resolve(next)
+  for (const fn of listeners) fn(next)
+}
+
+/**
+ * Re-reads the master sheet in the browser and republishes the result.
+ *
+ * READ-ONLY: this is a single GET of the export URL. Nothing here writes to
+ * the sheet, and nothing may be added that does — see CLAUDE.md. SheetJS and
+ * the parser load on demand so the initial bundle does not carry them.
+ */
+export async function refreshLeagueFromSheet(sheetUrl: string): Promise<League> {
+  const [{ read }, { parseLeagueSheet }, dexRes, sheetRes] = await Promise.all([
+    import('xlsx'),
+    import('../lib/parseLeagueSheet.js'),
+    fetch(`${import.meta.env.BASE_URL}data/pokemon.json`),
+    // no-store or the browser replays the previous refresh's copy and the
+    // button appears to do nothing.
+    fetch(sheetUrl, { method: 'GET', cache: 'no-store' }),
+  ])
+  if (!sheetRes.ok) throw new Error(`Could not reach the sheet (HTTP ${sheetRes.status})`)
+  const bytes = new Uint8Array(await sheetRes.arrayBuffer())
+  // An xlsx is a zip; anything else means a sign-in page came back instead.
+  if (bytes[0] !== 0x50 || bytes[1] !== 0x4b) {
+    throw new Error('The sheet link did not return a spreadsheet — check it is shared for reading.')
+  }
+  const wb = read(bytes, { type: 'array' })
+  const { league } = parseLeagueSheet(wb, await dexRes.json())
+  publishLeague(league as League)
+  return league as League
 }
 
 export const playerLabel = (p: Player) => (p.team ? `${p.name} — ${p.team}` : p.name)

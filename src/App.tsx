@@ -2,11 +2,20 @@ import { useEffect, useState } from 'react'
 import { QuickMatchup } from './features/quick-matchup/QuickMatchup'
 import { LeagueView } from './features/league/LeagueView'
 import { LEAGUE_TABS, type LeagueTab } from './features/league/tabs'
-import { loadLeague, type League } from './data/league'
+import { loadLeague, refreshLeagueFromSheet, subscribeLeague, type League } from './data/league'
 import { Dex } from './features/dex/Dex'
 import { PokemonModalProvider } from './features/pokemon/PokemonModalContext'
 import { PokemonModal } from './features/pokemon/PokemonModal'
 import './App.css'
+
+/**
+ * The league's master sheet, exported as xlsx.
+ *
+ * READ-ONLY. The share link grants edit access; nothing in this app may use
+ * it. The refresh below performs a single GET. See CLAUDE.md.
+ */
+const LEAGUE_SHEET_URL =
+  'https://docs.google.com/spreadsheets/d/1xnKp-XtR9o-zJy1BNS78PxXy891zv_n4rawKto6rlyE/export?format=xlsx'
 
 type View = 'league' | 'matchup' | 'dex'
 
@@ -23,7 +32,29 @@ export default function App() {
   // Loaded here too so the secondary nav can name the season; the loader caches,
   // so this shares one fetch with the views below.
   const [league, setLeague] = useState<League | null>(null)
-  useEffect(() => { loadLeague().then(setLeague, () => {}) }, [])
+  const [refreshing, setRefreshing] = useState(false)
+  const [refreshError, setRefreshError] = useState<string | null>(null)
+  const [refreshedAt, setRefreshedAt] = useState<Date | null>(null)
+
+  useEffect(() => {
+    loadLeague().then(setLeague, () => {})
+    // A refresh republishes the league, and every view listens for it.
+    return subscribeLeague(setLeague)
+  }, [])
+
+  /** Re-reads the sheet in the browser. Read-only: a GET, nothing more. */
+  const refresh = async () => {
+    setRefreshing(true)
+    setRefreshError(null)
+    try {
+      await refreshLeagueFromSheet(LEAGUE_SHEET_URL)
+      setRefreshedAt(new Date())
+    } catch (err) {
+      setRefreshError(err instanceof Error ? err.message : 'Refresh failed')
+    } finally {
+      setRefreshing(false)
+    }
+  }
 
   return (
     <PokemonModalProvider>
@@ -60,6 +91,26 @@ export default function App() {
               </span>
             </label>
           )}
+
+          {/* Re-reads the master sheet. This only ever GETs — the sheet is
+              read-only, see CLAUDE.md. */}
+          <button
+            type="button"
+            className={`refresh-btn${refreshing ? ' is-busy' : ''}`}
+            onClick={refresh}
+            disabled={refreshing}
+            title={refreshError
+              ? refreshError
+              : refreshedAt
+                ? `Updated at ${refreshedAt.toLocaleTimeString()}`
+                : 'Fetch the latest data from the league sheet'}
+            aria-label="Refresh league data from the sheet"
+          >
+            <span className="refresh-icon" aria-hidden="true">⟳</span>
+            <span className="refresh-label">
+              {refreshing ? 'Refreshing…' : refreshError ? 'Retry' : 'Refresh'}
+            </span>
+          </button>
         </div>
       </header>
 
