@@ -54,12 +54,12 @@ export function Widget({
           </div>
           {actions && <div className="widget-toolbar">{actions}</div>}
         </>
-      ) : (
+      ) : (title || actions) ? (
         <header className="widget-header">
-          <span className="widget-label">{title}</span>
+          {title && <span className="widget-label">{title}</span>}
           {actions && <div className="widget-actions">{actions}</div>}
         </header>
-      )}
+      ) : null}
       <div className="widget-body">{children}</div>
       {footnote && <p className="widget-note">{footnote}</p>}
     </section>

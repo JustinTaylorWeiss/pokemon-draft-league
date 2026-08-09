@@ -186,7 +186,7 @@ export function MatchupBuilder({
 
         {/* ---- 3. build by hand: both sides visible at once ---- */}
         <section className="builder-col builder-col-custom">
-          <Widget title="Build by hand" footnote="Type a name and pick from the list, or paste a whole team.">
+          <Widget footnote="Type a name and pick from the list, or paste a whole team.">
             <div className="custom-teams">
               {(['one', 'two'] as Side[]).map((side) => (
                 <div key={side} className={`custom-team accent-${side}`}>
