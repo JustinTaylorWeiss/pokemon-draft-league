@@ -45,7 +45,7 @@ export function SummaryAndTypes({ team, chart }: { team: Team; chart: TypeChart 
       )}
       footnote={onTypes
         ? 'Delta is resists minus weaknesses. Negative columns are types this team struggles to switch into.'
-        : 'Bulk is HP × the matching defense ÷ 100 — BST hides that HP multiplies with defenses instead of adding to them.'}
+        : undefined}
     >
       {onTypes
         ? <DefensiveChartBody team={team} chart={chart} useAbilities={useAbilities} />

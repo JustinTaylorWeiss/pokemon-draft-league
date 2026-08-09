@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useElementHeight } from './lib/useElementHeight'
 import { QuickMatchup } from './features/quick-matchup/QuickMatchup'
 import { LeagueView } from './features/league/LeagueView'
 import { LEAGUE_TABS, type LeagueTab } from './features/league/tabs'
@@ -40,6 +41,13 @@ export default function App() {
   const [refreshError, setRefreshError] = useState<string | null>(null)
   const [dataAt, setDataAt] = useState<Date | null>(null)
 
+  // The primary bar wraps to two rows on narrow screens, so the secondary bar
+  // cannot assume a fixed offset to stick below.
+  const [topbarRef, topbarHeight] = useElementHeight<HTMLElement>()
+  useEffect(() => {
+    if (topbarHeight) document.documentElement.style.setProperty('--topbar-h', `${topbarHeight}px`)
+  }, [topbarHeight])
+
   useEffect(() => {
     loadLeague().then((l) => { setLeague(l); setDataAt(leagueTimestamp()) }, () => {})
     // A refresh republishes the league, and every view listens for it.
@@ -61,7 +69,7 @@ export default function App() {
 
   return (
     <PokemonModalProvider>
-      <header className="topbar">
+      <header className="topbar" ref={topbarRef}>
         <div className="bar-inner">
           <span className="brand">
             <span className="brand-mark" aria-hidden="true" />

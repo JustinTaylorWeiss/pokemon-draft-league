@@ -35,7 +35,9 @@ export function Widget({
   return (
     <section
       className={`widget${className ? ` ${className}` : ''}`}
-      style={{ ...(width && { width }), ...(maxHeight && { maxHeight }) }}
+      // width is an intrinsic target, not a fixed size: below it the widget
+      // shrinks to the container instead of forcing the page wide.
+      style={{ ...(width && { width, maxWidth: '100%' }), ...(maxHeight && { maxHeight }) }}
     >
       {tabs ? (
         <>

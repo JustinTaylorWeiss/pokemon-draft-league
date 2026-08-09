@@ -1,4 +1,4 @@
-import type { BaseStats, Pokemon, StatKey } from '../data/types'
+import type { Pokemon, StatKey } from '../data/types'
 
 /**
  * Gen 3+ stat formula at level 100 with 31 IVs. Verified against DraftZone's
@@ -78,22 +78,6 @@ export function speedTiers(entries: { id: string; pokemon: Pokemon }[]): SpeedTi
 export const BST_ORDER: StatKey[] = ['hp', 'atk', 'def', 'spa', 'spd', 'spe']
 export const STAT_LABELS: Record<StatKey, string> = {
   hp: 'HP', atk: 'ATK', def: 'DEF', spa: 'SPA', spd: 'SPD', spe: 'SPE',
-}
-
-/**
- * Effective bulk: how much damage a Pokémon absorbs, which BST alone hides
- * because HP multiplies with both defenses rather than adding to them. Scaled
- * down so it sits in the same visual range as the other columns.
- *
- * This replaces DraftZone's "CST" column. Theirs runs slightly above BST
- * (Zamazenta 660 -> 666, Raging Bolt 590 -> 606) but the weighting is not
- * published, so this is our own metric rather than a guess at theirs.
- */
-export function bulk(stats: BaseStats): { physical: number; special: number } {
-  return {
-    physical: Math.round((stats.hp * stats.def) / 100),
-    special: Math.round((stats.hp * stats.spd) / 100),
-  }
 }
 
 export function summarize(values: number[]) {

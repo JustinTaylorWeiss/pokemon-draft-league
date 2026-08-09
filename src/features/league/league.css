@@ -5,7 +5,11 @@
 .league-meta h2 { margin: 0; font-size: 1.15rem; white-space: nowrap; }
 .league-meta-line { flex: 1 1 auto; }
 
-.sub-nav { display: flex; gap: 0.25rem; }
+.sub-nav {
+  display: flex; gap: 0.25rem; min-width: 0;
+  overflow-x: auto; scrollbar-width: none;
+}
+.sub-nav::-webkit-scrollbar { display: none; }
 .sub-nav button {
   background: none; border: 0; border-bottom: 2px solid transparent;
   color: var(--muted); font: inherit; font-size: 0.92rem;
@@ -282,3 +286,35 @@
 .week-pill.is-partial { color: #e79445; }
 .week-pill.is-complete.is-active { background: #4fb573; border-color: #4fb573; color: #06231a; }
 .week-pill.is-partial.is-active { background: #e79445; border-color: #e79445; color: #2a1704; }
+
+
+/* ---- narrow screens ---- */
+@media (max-width: 900px) {
+  /* Wide tables scroll inside their card rather than stretching the page. */
+  .board-table, .stats-table, .standings-table { table-layout: auto; min-width: 44rem; }
+  .stats-table th:nth-child(2) { width: auto; min-width: 15rem; }
+  .board-table th:nth-child(1) { width: auto; min-width: 11rem; }
+
+  .match-cards { grid-template-columns: 1fr; }
+  .roster-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .rulebook-grid { grid-template-columns: 1fr; }
+
+  .board-controls, .stats-view .controls { gap: 0.5rem; }
+  .board-controls > input[type="search"] { flex: 1 1 100%; }
+  .board-controls .count, .stats-view .count { margin-left: 0; }
+  .board-key { margin-left: 0; }
+}
+
+@media (max-width: 620px) {
+  .league-meta { padding: 0.75rem; }
+  .match-sides { grid-template-columns: 1fr; gap: 0.75rem; }
+  .match-card header { grid-template-columns: 1fr; gap: 0.2rem; text-align: left; }
+  .match-card header span:last-child { text-align: left; }
+  .match-card header strong { justify-self: start; }
+  .match-list li { grid-template-columns: 1fr; gap: 0.25rem; }
+  .match-list .side:last-child { text-align: left; justify-content: flex-start; }
+  .roster-grid { grid-template-columns: 1fr; }
+  .roster-card li { grid-template-columns: 36px minmax(0, 1fr) 7.4rem; }
+  .roster-card .tier { display: none; }
+  .pill { font-size: 0.7rem; padding: 0.2rem 0.5rem; }
+}

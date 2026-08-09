@@ -1,3 +1,13 @@
+/* One knob for the content width, widened on large displays so a 4K screen is
+   not a narrow column, and used by the bars so they stay in step with it. */
+:root {
+  --content-max: 1440px;
+  /* Measured at runtime; the primary bar wraps on narrow screens. */
+  --topbar-h: 52px;
+}
+@media (min-width: 1800px) { :root { --content-max: 1680px; } }
+@media (min-width: 2400px) { :root { --content-max: 2040px; } }
+
 /* Full-bleed bars; only their contents are constrained. */
 .topbar {
   background: var(--widget);
@@ -9,13 +19,15 @@
   background: var(--surface);
   border-bottom: 1px solid var(--line);
   box-shadow: inset 0 -2px 0 rgb(232 97 95 / 20%);
-  position: sticky; top: 52px; z-index: 29;
+  position: sticky; top: var(--topbar-h); z-index: 29;
 }
 
 .bar-inner {
-  max-width: 1440px; margin: 0 auto;
+  max-width: var(--content-max); margin: 0 auto;
   padding: 0 1.25rem;
   display: flex; align-items: center; gap: 1.5rem;
+  /* Wraps rather than overflowing once the tail no longer fits beside the nav. */
+  flex-wrap: wrap; row-gap: 0;
 }
 
 /* Wordmark runs blue -> purple -> red, the site's three colours in order. */
@@ -44,7 +56,8 @@
 }
 .season-picker select:hover { border-color: var(--accent); }
 
-.main-nav { display: flex; gap: 0.25rem; }
+.main-nav { display: flex; gap: 0.25rem; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.main-nav::-webkit-scrollbar { display: none; }
 .main-nav button {
   background: none; border: 0; border-bottom: 2px solid transparent;
   color: var(--muted); font: inherit; font-weight: 600;
@@ -54,11 +67,13 @@
 .main-nav button.is-active { color: var(--fg); border-bottom-color: var(--nav-blue); }
 
 .shell {
-  /* Wide enough for the matchup widgets to pack two-up: the overview (516) and
-     Draft Summary (731) need 1263 on one row, and the type chart needs 933. */
-  max-width: 1440px;
+  max-width: var(--content-max);
   margin: 0 auto;
   padding: 1.5rem 1.25rem 4rem;
+}
+@media (max-width: 640px) {
+  .shell { padding: 1rem 0.75rem 3rem; }
+  .bar-inner { padding: 0 0.75rem; gap: 0.75rem; }
 }
 
 /* ---- dex ---- */
@@ -107,6 +122,16 @@
   background-repeat: no-repeat;
 }
 .filter-wide input { min-width: 8rem; }
+@media (max-width: 700px) {
+  .filters { padding: 0.75rem; gap: 0.5rem; }
+  .filter { flex: 1 1 8rem; }
+  .filter-wide { flex-basis: 100%; }
+  .filter-wide input, .filter select, .filter-narrow input, .filter-type select { width: 100%; min-width: 0; }
+  .filter-stat { flex-basis: 100%; }
+  .stat-row { flex-wrap: nowrap; }
+  .stat-row select:first-child { flex: 1 1 auto; width: auto; }
+  .filter-actions { margin-left: 0; }
+}
 .filter select { min-width: 6rem; }
 /* Both type dropdowns fixed to one width so they read as a matched pair. */
 .filter-type select { width: 8.5rem; min-width: 0; }
@@ -200,7 +225,17 @@
 /* End of the bar, left to right: last-updated, Refresh, season. */
 .nav-tail {
   display: flex; align-items: center; gap: 0.75rem;
-  margin-left: auto; flex: none;
+  margin-left: auto; flex: none; min-width: 0;
+}
+@media (max-width: 900px) {
+  /* The tail drops to its own line once it stops fitting beside the nav. */
+  .nav-tail { margin-left: 0; width: 100%; justify-content: flex-end; padding-bottom: 0.5rem; }
+  .refresh-stamp { max-width: 9rem; }
+}
+@media (max-width: 480px) {
+  .refresh-label { display: none; }
+  .refresh-btn { padding: 0.35rem 0.5rem; }
+  .season-picker select { font-size: 1.15rem; }
 }
 .refresh-stamp {
   font-size: 0.7rem; color: var(--muted); text-align: right;

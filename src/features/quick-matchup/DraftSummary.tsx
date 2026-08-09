@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { spriteUrl, toId } from '../../data/load'
 import type { AbilityDex, StatKey } from '../../data/types'
-import { BST_ORDER, STAT_LABELS, bulk, summarize } from '../../lib/stats'
+import { BST_ORDER, STAT_LABELS, summarize } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
 import type { Team } from './TeamEditor'
 import { PokemonLink } from '../../components/PokemonLink'
@@ -32,8 +32,6 @@ export function DraftSummaryBody(
     const cols: Record<string, number[]> = {}
     for (const k of BST_ORDER) cols[k] = rows.map((r) => r.pokemon.baseStats[k])
     cols.bst = rows.map((r) => r.pokemon.bst)
-    cols.pbulk = rows.map((r) => bulk(r.pokemon.baseStats).physical)
-    cols.sbulk = rows.map((r) => bulk(r.pokemon.baseStats).special)
     return Object.fromEntries(Object.entries(cols).map(([k, v]) => [k, summarize(v)]))
   }, [rows])
 
@@ -47,13 +45,10 @@ export function DraftSummaryBody(
               <th className="col-abil">Abilities</th>
               {BST_ORDER.map((k) => <th key={k}>{STAT_LABELS[k]}</th>)}
               <th>BST</th>
-              <th title="HP x Def / 100">P.Bulk</th>
-              <th title="HP x SpD / 100">S.Bulk</th>
             </tr>
           </thead>
           <tbody>
             {rows.map(({ id, pokemon }) => {
-              const b = bulk(pokemon.baseStats)
               return (
                 <tr key={id}>
                   <th scope="row" className="col-name">
@@ -81,8 +76,6 @@ export function DraftSummaryBody(
                     </td>
                   ))}
                   <td style={{ background: heat(pokemon.bst / 6, neutral) }}>{pokemon.bst}</td>
-                  <td style={{ background: heat(b.physical, neutral) }}>{b.physical}</td>
-                  <td style={{ background: heat(b.special, neutral) }}>{b.special}</td>
                 </tr>
               )
             })}
@@ -95,8 +88,6 @@ export function DraftSummaryBody(
                   <td key={k} style={{ background: heat(totals[k][agg], neutral) }}>{totals[k][agg]}</td>
                 ))}
                 <td style={{ background: heat(totals.bst[agg] / 6, neutral) }}>{totals.bst[agg]}</td>
-                <td style={{ background: heat(totals.pbulk[agg], neutral) }}>{totals.pbulk[agg]}</td>
-                <td style={{ background: heat(totals.sbulk[agg], neutral) }}>{totals.sbulk[agg]}</td>
               </tr>
             ))}
           </tfoot>

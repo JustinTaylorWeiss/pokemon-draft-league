@@ -69,7 +69,8 @@
 /* ---- tables ---- */
 .table-scroll { overflow-x: auto; }
 /* Sized by its content instead of scrolling inside a fixed-width widget. */
-.summary-table { width: auto; }
+.summary-table { width: auto; min-width: 100%; }
+.widget-body { overflow-x: auto; }
 .summary-table .col-abil { white-space: normal; max-width: 8rem; font-size: 0.7rem; }
 .summary-table th, .summary-table td { padding: 0.25rem 0.3rem; }
 .stat-table, .type-table { border-collapse: collapse; width: 100%; font-size: 0.82rem; }
@@ -276,6 +277,7 @@ button.type-chip { cursor: pointer; }
 .matchup-container {
   display: flex; flex-wrap: wrap; gap: 16px;
   justify-content: center; align-items: start;
+  min-width: 0;
 }
 
 .widget {
@@ -298,7 +300,10 @@ button.type-chip { cursor: pointer; }
 
 /* ---- overview: the two rosters, second one mirrored ---- */
 .overview { padding: 12px; }
-.overview-wrapper { display: grid; grid-template-columns: 190px 190px; gap: 8px; }
+/* Two columns while they fit, one below that. */
+.overview-wrapper {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px;
+}
 .team-container { min-width: 0; }
 .team-name-title {
   font-weight: 700; font-size: 0.92rem; text-align: center; line-height: 1.25;
@@ -347,7 +352,14 @@ button.type-chip { cursor: pointer; }
 
 /* Keeps Moves/Coverage directly beneath the summary card instead of letting
    flex-wrap place it on whatever row has room. */
-.matchup-column { display: flex; flex-direction: column; gap: 16px; }
+/* Prefers the 933px the type chart was designed at, but grows into spare room
+   and shrinks on narrow screens. Without an explicit basis it expanded to its
+   tables' max-content and stopped pairing with the teams card. */
+.matchup-column {
+  display: flex; flex-direction: column; gap: 16px;
+  flex: 1 1 933px; min-width: 0; max-width: 100%;
+}
+.matchup-column .widget { width: 100% !important; }
 
 /* Sits between the search box and the tag pills rather than up in the header. */
 .moves-count { flex: 0 0 auto; white-space: nowrap; font-size: 0.78rem; }
@@ -462,4 +474,75 @@ button.type-chip { cursor: pointer; }
 .neutral-control input[type="range"]::-moz-range-thumb {
   width: 12px; height: 12px; border-radius: 50%;
   background: var(--team-accent, var(--accent)); border: 0;
+}
+
+/* ---- widget header toggles ----
+   Matches the neutral slider: a drawn control at a known size rather than the
+   browser default, which sits a couple of pixels off its label. */
+/* Was lost with the old results-shell block, same as .neutral-control. */
+.toggle {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.82rem; color: var(--muted); cursor: pointer; line-height: 1;
+}
+.toggle > span { line-height: 1; white-space: nowrap; }
+
+.toggle input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none;
+  margin: 0; flex: none; display: block;
+  width: 0.95rem; height: 0.95rem; border-radius: 4px;
+  border: 1px solid var(--line); background: var(--bg);
+  cursor: pointer; position: relative;
+}
+.toggle input[type="checkbox"]:hover { border-color: var(--team-accent, var(--accent)); }
+.toggle input[type="checkbox"]:checked {
+  background: var(--team-accent, var(--accent));
+  border-color: var(--team-accent, var(--accent));
+}
+/* Drawn rather than a glyph, so it stays crisp and centred at any size. */
+.toggle input[type="checkbox"]:checked::after {
+  content: ''; position: absolute;
+  left: 30%; top: 12%; width: 26%; height: 55%;
+  border: solid var(--accent-ink); border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+.toggle input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--team-accent, var(--accent)); outline-offset: 2px;
+}
+
+
+/* Below the width where the teams card and the stacked column can sit side by
+   side (420 + 16 + 933 of content), everything goes full width rather than
+   leaving the teams card alone on a row with dead space beside it. */
+@media (max-width: 1408px) {
+  .matchup-container > .widget,
+  .matchup-container > .matchup-column { width: 100% !important; flex-basis: 100%; }
+}
+
+/* ---- narrow screens ---- */
+@media (max-width: 900px) {
+  .matchup-container { gap: 12px; }
+  .matchup-title, .bar-inner.matchup-bar { gap: 0.6rem; }
+  .matchup-bar h2 { font-size: 1.05rem; }
+  .perspective { margin-left: 0; width: 100%; }
+  .segmented { flex: 1 1 auto; min-width: 0; }
+  .segmented button { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .coverage-mon { flex-basis: 100%; }
+  .coverage-result { flex-basis: 100%; }
+  .move-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+  .moves-controls { flex-wrap: wrap; }
+  .moves-controls input { flex-basis: 100%; }
+  .tag-row { flex-basis: 100%; }
+}
+
+@media (max-width: 620px) {
+  .widget { padding: 10px; border-radius: 12px; }
+  .widget-header, .widget-toolbar { padding-left: 10px; padding-right: 10px; }
+  .widget-note { margin-left: 10px; margin-right: 10px; }
+  .move-grid { padding: 0 10px; }
+  .moves-controls { padding: 0 10px 0.7rem; }
+  .widget-tabs button { font-size: 0.82rem; padding: 0.15rem 0.3rem 0.35rem; }
+  .builder-columns { gap: 0.75rem; }
+  .custom-teams { grid-template-columns: 1fr; }
+  .speed-layout { gap: 0.4rem; }
+  .speed-bases { flex-basis: 4rem; }
 }

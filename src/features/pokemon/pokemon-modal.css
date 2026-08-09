@@ -168,7 +168,21 @@
   white-space: normal; color: var(--muted); font-size: 0.72rem; min-width: 16rem; line-height: 1.35;
 }
 
+@media (max-width: 900px) {
+  .modal-grid { grid-template-columns: 1fr; }
+  .move-controls { flex-wrap: wrap; }
+  .move-controls input { flex-basis: 100%; }
+}
+
 @media (max-width: 640px) {
   .modal-backdrop { padding: 1rem 0.5rem; }
-  .modal { padding: 0.85rem; }
+  .modal { padding: 0.85rem; border-radius: 12px; }
+  .modal-head { gap: 0.75rem; }
+  .modal-art { width: 96px; height: 96px; }
+  .modal-title h2 { font-size: 1.25rem; }
+  .modal-facts { gap: 0.35rem 0.9rem; }
+  .damage-grid { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); }
+  /* The table is wider than a phone; let it scroll rather than squeeze. */
+  .move-table { min-width: 40rem; }
+  .move-table .effect { min-width: 12rem; }
 }

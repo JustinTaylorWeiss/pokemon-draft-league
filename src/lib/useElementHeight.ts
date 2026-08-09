@@ -19,7 +19,11 @@ export function useElementHeight<T extends HTMLElement>(): [(el: T | null) => vo
   useEffect(() => {
     if (!node || typeof ResizeObserver === 'undefined') return
     const observer = new ResizeObserver(([entry]) => {
-      setHeight(Math.round(entry.contentRect.height))
+      // Border box, not contentRect: a bar with a bottom border is a pixel
+      // taller than its content, and anything sticking below it must clear
+      // the whole box.
+      const border = entry.borderBoxSize?.[0]?.blockSize
+      setHeight(Math.round(border ?? entry.target.getBoundingClientRect().height))
     })
     observer.observe(node)
     return () => observer.disconnect()
