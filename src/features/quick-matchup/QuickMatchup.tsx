@@ -203,28 +203,31 @@ export function QuickMatchup() {
 
   return (
     <div className="results">
-      <div className="matchup-title">
-        <button type="button" className="btn ghost sm edit-teams" onClick={() => setStep('team1')}>Edit</button>
-        <h2>Quick Matchup</h2>
-        <dl className="matchup-meta">
-          <div><dt>Ruleset</dt><dd>{league?.meta.regulation ? `Gen 9 Reg ${league.meta.regulation.replace(/\s*\(.*$/, '')}` : 'Gen 9'}</dd></div>
-          <div><dt>Format</dt><dd>{league?.meta.format?.replace(/\s*\(.*$/, '') ?? 'Singles'}</dd></div>
-        </dl>
-        <div className="perspective">
-          <span>Analyzing</span>
-          <div className="segmented">
-            <button
-              type="button" className={perspective === 'one' ? 'is-active' : ''}
-              onClick={() => setPerspective('one')}
-            >
-              {teamOne.name || 'Team 1'}
-            </button>
-            <button
-              type="button" className={perspective === 'two' ? 'is-active' : ''}
-              onClick={() => setPerspective('two')}
-            >
-              {teamTwo.name || 'Team 2'}
-            </button>
+      {/* Its own bar under the main nav, matching the League Sheet's. */}
+      <div className="subbar subbar-bleed">
+        <div className="bar-inner matchup-bar">
+          <button type="button" className="btn ghost sm" onClick={() => setStep('team1')}>Edit</button>
+          <h2>Quick Matchup</h2>
+          <dl className="matchup-meta">
+            <div><dt>Ruleset</dt><dd>{league?.meta.regulation ? `Gen 9 Reg ${league.meta.regulation.replace(/\s*\(.*$/, '')}` : 'Gen 9'}</dd></div>
+            <div><dt>Format</dt><dd>{league?.meta.format?.replace(/\s*\(.*$/, '') ?? 'Singles'}</dd></div>
+          </dl>
+          <div className="perspective">
+            <span>Analyzing</span>
+            <div className="segmented">
+              <button
+                type="button" className={perspective === 'one' ? 'is-active' : ''}
+                onClick={() => setPerspective('one')}
+              >
+                {teamOne.name || 'Team 1'}
+              </button>
+              <button
+                type="button" className={perspective === 'two' ? 'is-active' : ''}
+                onClick={() => setPerspective('two')}
+              >
+                {teamTwo.name || 'Team 2'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

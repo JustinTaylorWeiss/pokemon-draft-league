@@ -210,12 +210,14 @@ button.type-chip { cursor: pointer; }
 /* ---- results shell: DraftZone's centered flex-wrap widget grid ---- */
 .results { display: flex; flex-direction: column; gap: 1rem; }
 
-.matchup-title {
-  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
-  padding: 0 0.5rem;
+/* Spans the viewport even though it sits inside the centred shell, so it
+   reads as a continuation of the nav rather than page content. */
+.subbar-bleed {
+  width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw);
+  margin-top: -1.5rem; margin-bottom: 0.25rem;
 }
-.matchup-title h2 { margin: 0; font-size: 1.5rem; letter-spacing: -0.02em; }
-.edit-teams { order: -1; }
+.matchup-bar { gap: 1rem; flex-wrap: wrap; padding-top: 0.5rem; padding-bottom: 0.5rem; }
+.matchup-bar h2 { margin: 0; font-size: 1.15rem; letter-spacing: -0.02em; white-space: nowrap; }
 
 .matchup-meta { display: flex; gap: 1.25rem; margin: 0; }
 .matchup-meta div { display: flex; flex-direction: column; }
@@ -228,7 +230,7 @@ button.type-chip { cursor: pointer; }
 .perspective > span { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
 .segmented { display: flex; border: 1px solid var(--line); border-radius: 999px; overflow: hidden; }
 .segmented button {
-  background: none; border: 0; color: var(--muted); font: inherit;
+  background: none; border: 0; color: var(--muted); font: inherit; font-size: 0.85rem;
   padding: 0.35rem 0.9rem; cursor: pointer; white-space: nowrap;
 }
 .segmented button.is-active { background: var(--accent); color: #06232e; font-weight: 600; }
@@ -260,7 +262,7 @@ button.type-chip { cursor: pointer; }
 .overview-wrapper { display: grid; grid-template-columns: 150px 150px; gap: 8px; }
 .team-container { min-width: 0; }
 .team-name-title {
-  font-weight: 700; font-size: 0.95rem; text-align: center;
+  font-weight: 700; font-size: 0.85rem; text-align: center; line-height: 1.25;
   padding-bottom: 0.4rem; margin-bottom: 0.3rem;
   border-bottom: 2px solid var(--team, var(--accent)); color: var(--team, var(--accent));
 }
@@ -310,3 +312,6 @@ button.type-chip { cursor: pointer; }
 
 /* Sits between the search box and the tag pills rather than up in the header. */
 .moves-count { flex: 0 0 auto; white-space: nowrap; font-size: 0.78rem; }
+
+/* One partner per line, with the "+" trailing the line above. */
+.team-name-part { display: block; }

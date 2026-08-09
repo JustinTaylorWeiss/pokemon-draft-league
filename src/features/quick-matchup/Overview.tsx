@@ -1,5 +1,6 @@
 import { spriteUrl } from '../../data/load'
 import { statAt100 } from '../../lib/stats'
+import { TeamName } from '../../components/TeamName'
 import type { Team } from './TeamEditor'
 
 /**
@@ -23,7 +24,9 @@ function TeamColumn({ team, side, alternate }: { team: Team; side: 'one' | 'two'
 
   return (
     <div className={`team-container accent-${side}${alternate ? ' alternate' : ''}`}>
-      <div className="team-name-title">{team.name || (side === 'one' ? 'Team 1' : 'Team 2')}</div>
+      <div className="team-name-title">
+        <TeamName name={team.name || (side === 'one' ? 'Team 1' : 'Team 2')} />
+      </div>
       <div className="team-body">
         <div className="overview-row header">
           <span className="sprite-cell" />
