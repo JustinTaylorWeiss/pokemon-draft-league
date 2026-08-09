@@ -1,0 +1,141 @@
+.app {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+.masthead h1 {
+  margin: 0;
+  font-size: 1.9rem;
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.gen-note {
+  margin-left: 0.6rem;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.75rem;
+}
+
+.controls {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  margin: 1.5rem 0 1rem;
+  flex-wrap: wrap;
+}
+
+.controls input,
+.controls select {
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+}
+
+.controls input { flex: 1 1 16rem; }
+.count { color: var(--muted); font-size: 0.85rem; }
+
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 0.75rem;
+}
+
+.card {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.card img {
+  flex: none;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.card-body { min-width: 0; flex: 1; }
+
+.card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  justify-content: space-between;
+}
+
+.name { font-weight: 600; }
+
+.tier {
+  flex: none;
+  font-size: 0.7rem;
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px;
+  background: var(--chip);
+  color: var(--muted);
+}
+
+.types { display: flex; gap: 0.25rem; margin: 0.3rem 0; }
+
+.type {
+  font-size: 0.68rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.stat em { font-style: normal; opacity: 0.65; margin-right: 0.2rem; }
+.stat.bst { color: var(--fg); font-weight: 600; }
+
+.loading, .error, .truncated {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.error { color: #d33; }
+.truncated { margin-top: 1rem; text-align: center; }
+
+.type-normal   { background: #9fa19f; }
+.type-fire     { background: #e8722c; }
+.type-water    { background: #3692dc; }
+.type-electric { background: #d9a600; }
+.type-grass    { background: #48a53c; }
+.type-ice      { background: #4fc3d0; }
+.type-fighting { background: #c22e28; }
+.type-poison   { background: #9459a3; }
+.type-ground   { background: #a3822d; }
+.type-flying   { background: #7f9fdc; }
+.type-psychic  { background: #e0447f; }
+.type-bug      { background: #8fa32c; }
+.type-rock     { background: #b6a136; }
+.type-ghost    { background: #6b4d92; }
+.type-dragon   { background: #6c4ad0; }
+.type-dark     { background: #5c5366; }
+.type-steel    { background: #6b8a95; }
+.type-fairy    { background: #d685ad; }
+.type-stellar  { background: #4d8f8b; }
