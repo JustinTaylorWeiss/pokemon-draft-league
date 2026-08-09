@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import type { Pokemon, PokemonDex } from '../../data/types'
 import { spriteUrl } from '../../data/load'
+import { playerLabel, type League } from '../../data/league'
 
 export interface TeamEntry {
   id: string
@@ -17,14 +18,34 @@ interface Props {
   team: Team
   onChange: (team: Team) => void
   accent: 'one' | 'two'
+  /** Absent until the league sheet loads; the editor works without it. */
+  league: League | null
 }
 
 const MAX_SUGGESTIONS = 8
 
-export function TeamEditor({ dex, team, onChange, accent }: Props) {
+export function TeamEditor({ dex, team, onChange, accent, league }: Props) {
   const [query, setQuery] = useState('')
   const [highlight, setHighlight] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  /**
+   * Loading a drafted roster is the common path — most matchups are between two
+   * league teams, not hand-built ones. Replaces the roster outright rather than
+   * appending, since picking a player means "analyze that player's team".
+   */
+  const loadRoster = (playerId: string) => {
+    if (!league || !playerId) return
+    const player = league.players.find((p) => p.id === playerId)
+    const picks = league.rosters[playerId]
+    if (!player || !picks) return
+    onChange({
+      name: player.team ?? player.name,
+      members: picks
+        .filter((pick) => dex[pick.pokemon])
+        .map((pick) => ({ id: pick.pokemon, pokemon: dex[pick.pokemon] })),
+    })
+  }
 
   const suggestions = useMemo(() => {
     const q = query.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
@@ -88,8 +109,25 @@ export function TeamEditor({ dex, team, onChange, accent }: Props) {
   const [importOpen, setImportOpen] = useState(false)
   const [importText, setImportText] = useState('')
 
+  const drafted = useMemo(
+    () => league?.players.filter((p) => league.rosters[p.id]?.length) ?? [],
+    [league],
+  )
+
   return (
     <div className={`team-editor accent-${accent}`}>
+      {drafted.length > 0 && (
+        <label className="field roster-picker">
+          <span>Load a drafted roster</span>
+          <select value="" onChange={(e) => loadRoster(e.target.value)}>
+            <option value="">Choose a player…</option>
+            {drafted.map((p) => (
+              <option key={p.id} value={p.id}>{playerLabel(p)}</option>
+            ))}
+          </select>
+        </label>
+      )}
+
       <div className="team-editor-row">
         <label className="field">
           <span>Team Name</span>
@@ -100,7 +138,7 @@ export function TeamEditor({ dex, team, onChange, accent }: Props) {
           />
         </label>
         <button type="button" className="btn ghost" onClick={() => setImportOpen((v) => !v)}>
-          Import
+          Paste list
         </button>
       </div>
 

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { loadCore, loadLearnsets, spriteUrl } from '../../data/load'
 import type { AbilityDex, LearnsetDex, MoveDex, PokemonDex, TypeChart } from '../../data/types'
+import { byId, loadLeague, type League } from '../../data/league'
 import { statAt100 } from '../../lib/stats'
-import { TeamEditor, type Team } from './TeamEditor'
+import { TeamEditor, type Team, type TeamEntry } from './TeamEditor'
 import { DraftSummary } from './DraftSummary'
 import { SpeedTiers } from './SpeedTiers'
 import { DefensiveChart } from './DefensiveChart'
@@ -50,6 +51,7 @@ function restoreTeams(dex: PokemonDex): { one: Team; two: Team } | null {
 export function QuickMatchup() {
   const [core, setCore] = useState<Core | null>(null)
   const [learnsets, setLearnsets] = useState<LearnsetDex | null>(null)
+  const [league, setLeague] = useState<League | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [step, setStep] = useState<Step>('team1')
   const [teamOne, setTeamOne] = useState<Team>(() => emptyTeam('Team 1'))
@@ -68,6 +70,10 @@ export function QuickMatchup() {
   // blocking the team builder that does not need them.
   useEffect(() => { loadLearnsets().then(setLearnsets, () => {}) }, [])
 
+  // The league sheet is optional: the tool still works as a scratch pad if the
+  // import has not been run.
+  useEffect(() => { loadLeague().then(setLeague, () => {}) }, [])
+
   useEffect(() => { if (core) saveTeams(teamOne, teamTwo) }, [core, teamOne, teamTwo])
 
   const canSubmit = teamOne.members.length > 0 && teamTwo.members.length > 0
@@ -80,9 +86,60 @@ export function QuickMatchup() {
   if (error) return <p className="error">Could not load data: {error}</p>
   if (!core) return <p className="loading">Loading dex…</p>
 
+  /**
+   * A scheduled match is 2v2 partners, so each side is two players' rosters
+   * pooled into one 14-Pokémon team — that is the pool the pair can actually
+   * bring, and it is what the panels should analyze.
+   */
+  const loadScheduledMatch = (key: string) => {
+    if (!league || !core || !key) return
+    const [week, idx] = key.split(':').map(Number)
+    const m = league.schedule.filter((x) => x.week === week)[idx]
+    if (!m) return
+    const people = byId(league.players)
+    const side = (ids: string[]): Team => {
+      const seen = new Set<string>()
+      const members: TeamEntry[] = []
+      for (const pid of ids) {
+        for (const pick of league.rosters[pid] ?? []) {
+          if (seen.has(pick.pokemon) || !core.pokemon[pick.pokemon]) continue
+          seen.add(pick.pokemon)
+          members.push({ id: pick.pokemon, pokemon: core.pokemon[pick.pokemon] })
+        }
+      }
+      return { name: ids.map((p) => people[p]?.name ?? p).join(' + '), members }
+    }
+    setTeamOne(side(m.a))
+    setTeamTwo(side(m.b))
+    setStep('results')
+  }
+
   if (step !== 'results') {
     return (
       <div className="wizard">
+        {league && league.schedule.length > 0 && (
+          <label className="field schedule-picker">
+            <span>Load a scheduled match</span>
+            <select value="" onChange={(e) => loadScheduledMatch(e.target.value)}>
+              <option value="">Choose a week and match…</option>
+              {Array.from(new Set(league.schedule.map((m) => m.week))).sort((a, b) => a - b).map((week) => (
+                <optgroup key={week} label={`Week ${week}`}>
+                  {league.schedule.filter((m) => m.week === week).map((m, i) => {
+                    const people = byId(league.players)
+                    const label = (ids: string[]) => ids.map((p) => people[p]?.name ?? p).join(' + ')
+                    return (
+                      <option key={i} value={`${week}:${i}`}>
+                        {label(m.a)} vs {label(m.b)}
+                        {m.scoreA !== null ? `  (${m.scoreA}–${m.scoreB})` : ''}
+                      </option>
+                    )
+                  })}
+                </optgroup>
+              ))}
+            </select>
+          </label>
+        )}
+
         <ol className="steps">
           <li className={step === 'team1' ? 'is-current' : 'is-done'}>
             <button type="button" onClick={() => setStep('team1')}>1. {teamOne.name || 'Team 1'}</button>
@@ -95,9 +152,9 @@ export function QuickMatchup() {
         </ol>
 
         {step === 'team1' ? (
-          <TeamEditor dex={core.pokemon} team={teamOne} onChange={setTeamOne} accent="one" />
+          <TeamEditor dex={core.pokemon} team={teamOne} onChange={setTeamOne} accent="one" league={league} />
         ) : (
-          <TeamEditor dex={core.pokemon} team={teamTwo} onChange={setTeamTwo} accent="two" />
+          <TeamEditor dex={core.pokemon} team={teamTwo} onChange={setTeamTwo} accent="two" league={league} />
         )}
 
         <div className="wizard-actions">

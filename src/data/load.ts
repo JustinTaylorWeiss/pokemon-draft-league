@@ -47,7 +47,13 @@ export function effectiveness(
   return defending.reduce((mult, def) => mult * (chart.chart[attacking]?.[def] ?? 1), 1)
 }
 
-const toId = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '')
+/**
+ * Folds accents before stripping, so "Flabébé" lands on "flabebe" whichever
+ * Unicode normalization the source used. Composed é would otherwise vanish
+ * entirely and leave "flabb".
+ */
+export const toId = (s: string) =>
+  s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '')
 
 /**
  * Showdown's sprite filenames strip spaces inside a name but keep the hyphen

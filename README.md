@@ -15,9 +15,61 @@ npm install
 npm run dev
 ```
 
+## The league sheet
+
+The season is run from a master spreadsheet; this site is a read-only front end
+for it. Re-import whenever the sheet changes:
+
+```bash
+npm run import:league -- "~/Downloads/Copy of Doubles Draft League Season Reg F.xlsx"
+```
+
+It also takes a URL, which is how this will work once the sheet is shared
+read-only — take the Google Sheets link and swap the trailing `/edit...` for
+`/export?format=xlsx`:
+
+```bash
+npm run import:league -- "https://docs.google.com/spreadsheets/d/<id>/export?format=xlsx"
+```
+
+That writes `public/data/league.json` (~80 KB) from six of the thirteen tabs:
+
+| Sheet | Pulled out |
+| --- | --- |
+| Setup | League name, format, week count, picks per player, per-tier draft limits, the 20 players and team names |
+| Pokémon List | The 762-Pokémon draft board — tier, note, who drafted it |
+| Draft | All 140 picks in order |
+| Rosters | Each player's 7 Pokémon with draft tiers |
+| Schedule | 40 matches over 8 weeks, with scores |
+| Standings | W/L, games, Pokémon differential, points |
+
+The `Pokédex`, `Pokémon Stats`, and `Data` tabs are skipped — the Showdown
+dataset already covers that ground more accurately.
+
+Every Pokémon name in the sheet is resolved to a dex id at import, so the
+matchup tools can join against stats and learnsets. All 762 currently resolve.
+Anything that stops resolving is reported by name at the end of the run instead
+of silently vanishing.
+
+**The importer never writes back to the sheet.** Read-only access is all it needs.
+
+### League view
+
+Four tabs: **Standings** (re-ranked, since the sheet's RANK column repeats
+values), **Rosters** for all 20 teams, **Schedule** with results, and the
+**Draft Board** filterable by tier and by whether a Pokémon is still available.
+
 ## Quick Matchup
 
-Build two teams, then analyze the matchup. Modelled on
+Teams come from three places, in rough order of how often they get used:
+
+1. **A scheduled match** — pick a week and matchup and both sides load at once.
+   This is a 2v2 partner league, so each side pools its two players' rosters
+   into one 14-Pokémon team, which is what that pair can actually bring.
+2. **A drafted roster** — pick any player to load their 7 picks.
+3. **By hand** — autocomplete one at a time, or paste a list.
+
+Then analyze. Modelled on
 [Pokémon DraftZone's](https://pokemondraftzone.com/tools/quick-matchup) tool of
 the same name, with five panels:
 
