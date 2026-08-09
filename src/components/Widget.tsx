@@ -18,10 +18,8 @@ interface Props {
   width?: number
   children: ReactNode
   footnote?: ReactNode
-  /** Extra classes, e.g. to let a card stretch to the row's full height. */
+  /** Extra classes, e.g. to tint a card that belongs to neither team. */
   className?: string
-  /** Caps the card so a long body scrolls instead of outgrowing its neighbour. */
-  maxHeight?: number | null
 }
 
 /**
@@ -30,14 +28,14 @@ interface Props {
  * why the results page reads as an uneven two-up grid rather than a stack.
  */
 export function Widget({
-  title, tabs, active, onTab, actions, width, children, footnote, className, maxHeight,
+  title, tabs, active, onTab, actions, width, children, footnote, className,
 }: Props) {
   return (
     <section
       className={`widget${className ? ` ${className}` : ''}`}
       // width is an intrinsic target, not a fixed size: below it the widget
       // shrinks to the container instead of forcing the page wide.
-      style={{ ...(width && { width, maxWidth: '100%' }), ...(maxHeight && { maxHeight }) }}
+      style={width ? { width, maxWidth: '100%' } : undefined}
     >
       {tabs ? (
         <>

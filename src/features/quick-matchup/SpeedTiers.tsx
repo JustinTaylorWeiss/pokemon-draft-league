@@ -6,20 +6,22 @@ import type { Team, TeamEntry } from './TeamEditor'
 interface Props {
   teamOne: Team
   teamTwo: Team
-  showZero: boolean
+  /** Enabled filter rows per side, so each team can be viewed under its own. */
+  filterOne: Set<string>
+  filterTwo: Set<string>
   selected: string | null
   onSelect: (id: string | null) => void
 }
 
 /**
  * Both teams' speeds interleaved in one ranked list, which is the only way to
- * see who actually outruns whom. Each Pokémon appears once per investment
- * spread it could plausibly run.
+ * see who actually outruns whom. Each Pokémon appears once per spread and
+ * multiplier combination its side has switched on.
  *
- * Selection and the Uninvested toggle live in the parent so the shared card
- * header can own them while this renders only the body.
+ * Selection and the filter live in the parent so the shared card header can own
+ * them while this renders only the body.
  */
-export function SpeedTiersBody({ teamOne, teamTwo, showZero, selected, onSelect }: Props) {
+export function SpeedTiersBody({ teamOne, teamTwo, filterOne, filterTwo, selected, onSelect }: Props) {
 
   const side = useMemo(() => {
     const map = new Map<string, 'one' | 'two'>()
@@ -28,10 +30,10 @@ export function SpeedTiersBody({ teamOne, teamTwo, showZero, selected, onSelect 
     return map
   }, [teamOne.members, teamTwo.members])
 
-  const all = useMemo(() => {
-    const entries = [...teamOne.members, ...teamTwo.members]
-    return speedTiers(entries).filter((t) => showZero || t.investment !== '0')
-  }, [teamOne.members, teamTwo.members, showZero])
+  const all = useMemo(() => speedTiers([
+    ...teamOne.members.map((m) => ({ ...m, enabled: filterOne })),
+    ...teamTwo.members.map((m) => ({ ...m, enabled: filterTwo })),
+  ]), [teamOne.members, teamTwo.members, filterOne, filterTwo])
 
   const bases = useMemo(() => {
     const seen = new Map<string, TeamEntry>()
@@ -65,11 +67,14 @@ export function SpeedTiersBody({ teamOne, teamTwo, showZero, selected, onSelect 
           <h3>Tiers <span>Lv 100</span></h3>
           <ul>
             {all.map((t, i) => (
-              <li key={`${t.id}-${t.investment}-${t.ability ?? ''}-${i}`} className={rowClass(t.id)}>
+              <li key={`${t.id}-${t.investment}-${t.stage ?? ''}-${t.modifiers.join()}-${i}`} className={rowClass(t.id)}>
                 <button type="button" onClick={() => toggle(t.id)} title={t.pokemon.name}>
                   <img src={spriteUrl(t.pokemon)} alt={t.pokemon.name} width={32} height={26} />
                   <span className="badge">{t.investment}</span>
-                  {t.ability && <span className="badge badge-ability">{t.ability}</span>}
+                  {t.stage && <span className="badge badge-stage">{t.stage}</span>}
+                  {t.modifiers.map((m) => (
+                    <span key={m} className="badge badge-ability">{m}</span>
+                  ))}
                   <strong>{t.speed}</strong>
                 </button>
               </li>

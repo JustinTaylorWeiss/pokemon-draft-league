@@ -5,6 +5,7 @@ import { BST_ORDER, STAT_LABELS, summarize } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
 import type { Team } from './TeamEditor'
 import { PokemonLink } from '../../components/PokemonLink'
+import { useFitToBox } from '../../lib/useFitToBox'
 
 /**
  * Colors a stat relative to the neutral value: below is red, above is green.
@@ -35,9 +36,14 @@ export function DraftSummaryBody(
     return Object.fromEntries(Object.entries(cols).map(([k, v]) => [k, summarize(v)]))
   }, [rows])
 
+  // Every row matters at a glance, so the table shrinks to fit a short window
+  // rather than hiding its tail behind a scrollbar.
+  const [fitRef] = useFitToBox<HTMLDivElement>()
+
   if (!rows.length) return null
 
   return (
+    <div className="fit-box" ref={fitRef}>
     <table className="stat-table summary-table">
           <thead>
             <tr>
@@ -92,5 +98,6 @@ export function DraftSummaryBody(
             ))}
           </tfoot>
     </table>
+    </div>
   )
 }

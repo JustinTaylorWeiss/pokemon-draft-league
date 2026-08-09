@@ -1,15 +1,16 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import {
   artworkUrl, loadAbilities, loadLearnsets, loadMoves, loadPokemon, loadSets,
   loadTypeChart, spriteUrl, toId,
 } from '../../data/load'
 import type {
-  AbilityDex, LearnsetDex, MoveDex, PokemonDex, SetDex, TypeChart, TypeName,
+  AbilityDex, LearnsetDex, Move, MoveDex, PokemonDex, SetDex, TypeChart, TypeName,
 } from '../../data/types'
 import { loadLeague, mergeDex, tierClass, type League, type LeaguePokemon } from '../../data/league'
 import { BATTLE_TYPES, defensiveMultiplier } from '../../lib/matchup'
 import { BST_ORDER, STAT_LABELS, statAt100 } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
+import { useProgressiveList } from '../../lib/useProgressiveList'
 import { usePokemonModal } from './PokemonModalContext'
 import './pokemon-modal.css'
 
@@ -115,6 +116,9 @@ export function PokemonModal() {
         || mv.shortDesc.toLowerCase().includes(q)
     })
   }, [allMoves, enabled, moveQuery, moves])
+
+  // A full movepool is too many rows to mount in one frame; they stream in.
+  const rowLimit = useProgressiveList(visibleMoves.length, openId)
 
   if (!openId) return null
 
@@ -301,30 +305,9 @@ export function PokemonModal() {
                           </tr>
                         </thead>
                         <tbody>
-                          {visibleMoves.map((row) => {
-                            const mv = moves?.[row.move]
-                            if (!mv) return null
-                            return (
-                              <tr key={row.move}>
-                                <th scope="row" className="col-left">{mv.name}</th>
-                                <td><TypeChip type={mv.type} /></td>
-                                <td className="cat">{mv.category.slice(0, 4)}</td>
-                                <td>{mv.basePower || '—'}</td>
-                                <td>{mv.accuracy === true ? '—' : `${mv.accuracy}%`}</td>
-                                <td>{mv.pp}</td>
-                                <td className="col-left learned">
-                                  {row.groups.map((g) => (
-                                    <span key={g} className="learn-tag">
-                                      {g === 'level' && row.level !== null
-                                        ? `Lv ${row.level}`
-                                        : MOVE_GROUPS.find((x) => x.key === g)?.label}
-                                    </span>
-                                  ))}
-                                </td>
-                                <td className="col-left effect">{mv.shortDesc}</td>
-                              </tr>
-                            )
-                          })}
+                          {visibleMoves.slice(0, rowLimit).map((row) => moves?.[row.move] && (
+                            <MoveRow key={row.move} row={row} move={moves[row.move]} />
+                          ))}
                         </tbody>
                       </table>
                     </div>
@@ -343,6 +326,36 @@ export function PokemonModal() {
     </div>
   )
 }
+
+/**
+ * Memoised for the same reason the learned-moves grid is: the table mounts in
+ * chunks, and without this each chunk re-renders every row already on screen,
+ * so the last frames of a 234-move list stall.
+ */
+const MoveRow = memo(function MoveRow(
+  { row, move }: { row: { move: string; groups: string[]; level: number | null }; move: Move },
+) {
+  return (
+    <tr>
+      <th scope="row" className="col-left">{move.name}</th>
+      <td><TypeChip type={move.type} /></td>
+      <td className="cat">{move.category.slice(0, 4)}</td>
+      <td>{move.basePower || '—'}</td>
+      <td>{move.accuracy === true ? '—' : `${move.accuracy}%`}</td>
+      <td>{move.pp}</td>
+      <td className="col-left learned">
+        {row.groups.map((g) => (
+          <span key={g} className="learn-tag">
+            {g === 'level' && row.level !== null
+              ? `Lv ${row.level}`
+              : MOVE_GROUPS.find((x) => x.key === g)?.label}
+          </span>
+        ))}
+      </td>
+      <td className="col-left effect">{move.shortDesc}</td>
+    </tr>
+  )
+})
 
 function EvoStep({ id, mon, current }: { id: string; mon: LeaguePokemon; current?: boolean }) {
   const { open } = usePokemonModal()

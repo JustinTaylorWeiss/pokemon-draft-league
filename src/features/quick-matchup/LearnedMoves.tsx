@@ -1,18 +1,20 @@
-import { useMemo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { spriteUrl } from '../../data/load'
-import type { LearnsetDex, MoveDex, TypeName } from '../../data/types'
+import type { LearnsetDex, MoveDex, Pokemon, TypeName } from '../../data/types'
 import { MOVE_TAGS, tagsFor, type MoveTag } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
 import type { Team } from './TeamEditor'
 import { PokemonLink } from '../../components/PokemonLink'
+import { useProgressiveList } from '../../lib/useProgressiveList'
 
 interface Props {
   team: Team
-  moves: MoveDex
-  learnsets: LearnsetDex
+  /** Built by the parent, which survives tab switches — see buildMoveRows. */
+  rows: Row[]
+  byId: Record<string, Pokemon>
 }
 
-interface Row {
+export interface Row {
   id: string
   name: string
   type: TypeName
@@ -26,35 +28,37 @@ interface Row {
  * Every move anyone on the team can learn, with the Pokémon that learn it.
  * Filtering by tag is how you answer "who has hazard control?" at a glance.
  */
-export function LearnedMovesBody({ team, moves, learnsets }: Props) {
+/**
+ * Every move anyone on the team can learn, joined to the Pokémon that learn it.
+ *
+ * Kept out of the component because this walks the whole team's learnsets, and
+ * the component unmounts every time the card's tab changes — recomputing it on
+ * each toggle is what made switching back to Learned Moves stall.
+ */
+export function buildMoveRows(team: Team, moves: MoveDex, learnsets: LearnsetDex): Row[] {
+  const learners = new Map<string, string[]>()
+  for (const m of team.members) {
+    for (const moveId of Object.keys(learnsets[m.id] ?? {})) {
+      if (!moves[moveId]) continue
+      const list = learners.get(moveId)
+      if (list) list.push(m.id)
+      else learners.set(moveId, [m.id])
+    }
+  }
+  return [...learners.entries()]
+    .map(([id, who]) => {
+      const mv = moves[id]
+      return {
+        id, name: mv.name, type: mv.type, category: mv.category,
+        basePower: mv.basePower, tags: tagsFor(mv), learners: who,
+      }
+    })
+    .sort((a, b) => a.name.localeCompare(b.name))
+}
+
+export function LearnedMovesBody({ team, rows, byId }: Props) {
   const [query, setQuery] = useState('')
   const [activeTags, setActiveTags] = useState<Set<MoveTag>>(new Set())
-
-  const rows = useMemo<Row[]>(() => {
-    const learners = new Map<string, string[]>()
-    for (const m of team.members) {
-      for (const moveId of Object.keys(learnsets[m.id] ?? {})) {
-        if (!moves[moveId]) continue
-        const list = learners.get(moveId)
-        if (list) list.push(m.id)
-        else learners.set(moveId, [m.id])
-      }
-    }
-    return [...learners.entries()]
-      .map(([id, who]) => {
-        const mv = moves[id]
-        return {
-          id, name: mv.name, type: mv.type, category: mv.category,
-          basePower: mv.basePower, tags: tagsFor(mv), learners: who,
-        }
-      })
-      .sort((a, b) => a.name.localeCompare(b.name))
-  }, [team.members, moves, learnsets])
-
-  const byId = useMemo(
-    () => Object.fromEntries(team.members.map((m) => [m.id, m.pokemon])),
-    [team.members],
-  )
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -65,6 +69,9 @@ export function LearnedMovesBody({ team, moves, learnsets }: Props) {
         || r.category.toLowerCase() === q
     })
   }, [rows, query, activeTags])
+
+  // 300+ cards holding 800 sprites, so they mount over several frames.
+  const limit = useProgressiveList(visible.length, team.name)
 
   const toggleTag = (t: MoveTag) =>
     setActiveTags((prev) => {
@@ -101,30 +108,40 @@ export function LearnedMovesBody({ team, moves, learnsets }: Props) {
       </div>
 
       <ul className="move-grid">
-        {visible.map((r) => (
-          <li key={r.id} className="move-card">
-            <div className="move-head">
-              <span className="move-name">{r.name}</span>
-              <TypeChip type={r.type} />
-            </div>
-            <div className="move-meta">
-              <span>{r.category}</span>
-              {r.basePower > 0 && <span>{r.basePower} BP</span>}
-            </div>
-            {r.tags.length > 0 && (
-              <div className="move-tags">{r.tags.map((t) => <span key={t}>{t}</span>)}</div>
-            )}
-            <div className="move-learners">
-              {r.learners.map((id) => (
-                <PokemonLink key={id} id={id} title={byId[id]?.name}>
-                  <img src={spriteUrl(byId[id])} alt="" width={34} height={28} />
-                </PokemonLink>
-              ))}
-            </div>
-          </li>
-        ))}
+        {visible.slice(0, limit).map((r) => <MoveCard key={r.id} row={r} byId={byId} />)}
       </ul>
       {!visible.length && <p className="widget-note">No moves match those filters.</p>}
     </>
   )
 }
+
+/**
+ * Memoised because the grid mounts in chunks: without this, every chunk
+ * re-renders each card already on screen, so the cost of finishing a 300-card
+ * list grows with the square of its length and the final frames stall.
+ * `row` and `byId` are both built in memos upstream, so the comparison holds.
+ */
+const MoveCard = memo(function MoveCard({ row, byId }: { row: Row; byId: Record<string, Pokemon> }) {
+  return (
+    <li className="move-card">
+      <div className="move-head">
+        <span className="move-name">{row.name}</span>
+        <TypeChip type={row.type} />
+      </div>
+      <div className="move-meta">
+        <span>{row.category}</span>
+        {row.basePower > 0 && <span>{row.basePower} BP</span>}
+      </div>
+      {row.tags.length > 0 && (
+        <div className="move-tags">{row.tags.map((t) => <span key={t}>{t}</span>)}</div>
+      )}
+      <div className="move-learners">
+        {row.learners.map((id) => (
+          <PokemonLink key={id} id={id} title={byId[id]?.name}>
+            <img src={spriteUrl(byId[id])} alt="" width={34} height={28} />
+          </PokemonLink>
+        ))}
+      </div>
+    </li>
+  )
+})

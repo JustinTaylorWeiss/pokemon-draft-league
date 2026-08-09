@@ -4,10 +4,8 @@ import type { AbilityDex, LearnsetDex, MoveDex, PokemonDex, TypeChart } from '..
 import { loadLeague, mergeDex, subscribeLeague, type League } from '../../data/league'
 import type { Team } from './TeamEditor'
 import { MatchupBuilder } from './MatchupBuilder'
-import { useElementHeight } from '../../lib/useElementHeight'
 import { TeamsAndSpeed } from './TeamsAndSpeed'
-import { SummaryAndTypes } from './SummaryAndTypes'
-import { MovesAndCoverage } from './MovesAndCoverage'
+import { AnalysisCard } from './AnalysisCard'
 import './quick-matchup.css'
 
 type Step = 'team1' | 'team2' | 'results'
@@ -56,7 +54,6 @@ export function QuickMatchup() {
   const [teamOne, setTeamOne] = useState<Team>(() => emptyTeam('Team 1'))
   const [teamTwo, setTeamTwo] = useState<Team>(() => emptyTeam('Team 2'))
   const [perspective, setPerspective] = useState<'one' | 'two'>('one')
-  const [columnRef, columnHeight] = useElementHeight<HTMLDivElement>()
 
   useEffect(() => {
     loadCore().then((c) => {
@@ -161,21 +158,12 @@ export function QuickMatchup() {
       {/* Widgets carry their own intrinsic width and this container packs them,
           so the page reads as an uneven two-up grid the way DraftZone's does. */}
       <div className="matchup-container">
-        <TeamsAndSpeed teamOne={teamOne} teamTwo={teamTwo} maxHeight={columnHeight} />
+        <TeamsAndSpeed teamOne={teamOne} teamTwo={teamTwo} />
 
-        {/* Stacked so Moves/Coverage sits directly under the summary card
-            rather than being packed onto the next available row. */}
-        <div className="matchup-column" ref={columnRef}>
-          <SummaryAndTypes team={analyzed} chart={core.typechart} />
-          {learnsets ? (
-            <MovesAndCoverage
-              analyzed={analyzed} other={other}
-              chart={core.typechart} moves={core.moves} learnsets={learnsets}
-            />
-          ) : (
-            <p className="loading">Loading learnsets…</p>
-          )}
-        </div>
+        <AnalysisCard
+          analyzed={analyzed} other={other}
+          chart={core.typechart} moves={core.moves} learnsets={learnsets}
+        />
       </div>
     </div>
   )

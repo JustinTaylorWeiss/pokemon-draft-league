@@ -5,6 +5,7 @@ import { BATTLE_TYPES, defensiveChart } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
 import type { Team } from './TeamEditor'
 import { PokemonLink } from '../../components/PokemonLink'
+import { useFitToBox } from '../../lib/useFitToBox'
 
 interface Props {
   team: Team
@@ -32,10 +33,12 @@ export function DefensiveChartBody({ team, chart, useAbilities }: Props) {
     [chart, team.members, useAbilities],
   )
 
+  const [fitRef] = useFitToBox<HTMLDivElement>()
+
   if (!rows.length) return null
 
   return (
-    <div className="table-scroll">
+    <div className="table-scroll fit-box" ref={fitRef}>
         <table className="type-table">
           <thead>
             <tr>
