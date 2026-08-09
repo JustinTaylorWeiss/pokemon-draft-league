@@ -186,11 +186,14 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                       )}
                       <span className="stats-name">
                         <PokemonLink id={t.pokemon}>{mon?.name ?? t.pokemon}</PokemonLink>
-                        {mon && (
-                          <span className="row-types">
-                            {mon.types.map((ty) => <TypeChip key={ty} type={ty} />)}
-                          </span>
-                        )}
+                      </span>
+                      {/* Each type gets its own track so the chips line up down
+                          the table instead of trailing each name. */}
+                      <span className="stats-type">
+                        {mon?.types[0] && <TypeChip type={mon.types[0]} />}
+                      </span>
+                      <span className="stats-type">
+                        {mon?.types[1] && <TypeChip type={mon.types[1]} />}
                       </span>
                     </th>
                     <td>{t.gamesPlayed}</td>
