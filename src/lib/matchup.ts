@@ -127,14 +127,20 @@ export function attackingTypes(
   learnset: Learnset | undefined,
   moves: MoveDex,
   minPower = 60,
+  /** When given, only these moves count — a real set rather than the whole pool. */
+  only?: string[],
 ): { physical: Set<TypeName>; special: Set<TypeName> } {
   const physical = new Set<TypeName>()
   const special = new Set<TypeName>()
-  if (!learnset) return { physical, special }
+  const source = only ?? (learnset && Object.keys(learnset))
+  if (!source) return { physical, special }
 
-  for (const moveId of Object.keys(learnset)) {
+  for (const moveId of source) {
     const move = moves[moveId]
-    if (!move || move.basePower < minPower) continue
+    if (!move) continue
+    // A chosen set is taken as-is; only the open pool needs a power floor.
+    if (!only && move.basePower < minPower) continue
+    if (only && move.basePower <= 0) continue
     if (move.category === 'Physical') physical.add(move.type)
     else if (move.category === 'Special') special.add(move.type)
   }
@@ -168,9 +174,11 @@ export function coverage(
   useAbilities = true,
   selectedTypes?: Record<string, Set<TypeName>>,
   minPower = 60,
+  /** When given, each Pokémon is limited to its most-used set. */
+  sets?: Record<string, { moves: string[] }>,
 ): CoverageResult[] {
   return attackers.map(({ id, pokemon }) => {
-    const { physical, special } = attackingTypes(learnsets[id], moves, minPower)
+    const { physical, special } = attackingTypes(learnsets[id], moves, minPower, sets?.[id]?.moves)
     const pool = selectedTypes?.[id] ?? new Set([...physical, ...special])
 
     const hits: string[] = []

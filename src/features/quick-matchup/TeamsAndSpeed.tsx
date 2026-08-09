@@ -34,7 +34,7 @@ export function TeamsAndSpeed({ teamOne, teamTwo, maxHeight }: Props) {
       onTab={setTab}
       width={420}
       // Only the speed list runs long enough to need capping.
-      className={onSpeed ? 'stretch-tall' : undefined}
+      className={`both-teams${onSpeed ? ' stretch-tall' : ''}`}
       maxHeight={onSpeed ? maxHeight : null}
       actions={onSpeed ? (
         <label className="toggle">

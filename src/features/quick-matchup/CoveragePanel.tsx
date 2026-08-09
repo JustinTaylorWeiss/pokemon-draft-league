@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { spriteUrl } from '../../data/load'
-import type { LearnsetDex, MoveDex, TypeChart, TypeName } from '../../data/types'
+import type { LearnsetDex, MoveDex, SetDex, TypeChart, TypeName } from '../../data/types'
 import { attackingTypes, coverage } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
 import type { Team } from './TeamEditor'
@@ -13,6 +13,8 @@ interface Props {
   learnsets: LearnsetDex
   useAbilities: boolean
   minPower: number
+  /** Most-used sets; null while loading or when showing the full pool. */
+  sets: SetDex | null
   /** Bumping this clears every per-Pokémon type exclusion. */
   resetKey: number
 }
@@ -24,16 +26,18 @@ interface Props {
  * against the narrowed set.
  */
 export function CoverageBody({
-  attackers, defenders, chart, moves, learnsets, useAbilities, minPower, resetKey,
+  attackers, defenders, chart, moves, learnsets, useAbilities, minPower, resetKey, sets,
 }: Props) {
   const [deselected, setDeselected] = useState<Record<string, Set<TypeName>>>({})
   useEffect(() => { setDeselected({}) }, [resetKey])
 
   const available = useMemo(() => {
     const out: Record<string, { physical: Set<TypeName>; special: Set<TypeName> }> = {}
-    for (const m of attackers.members) out[m.id] = attackingTypes(learnsets[m.id], moves, minPower)
+    for (const m of attackers.members) {
+      out[m.id] = attackingTypes(learnsets[m.id], moves, minPower, sets?.[m.id]?.moves)
+    }
     return out
-  }, [attackers.members, learnsets, moves, minPower])
+  }, [attackers.members, learnsets, moves, minPower, sets])
 
   const selected = useMemo(() => {
     const out: Record<string, Set<TypeName>> = {}
@@ -46,8 +50,8 @@ export function CoverageBody({
   }, [attackers.members, available, deselected])
 
   const results = useMemo(
-    () => coverage(chart, attackers.members, defenders.members, learnsets, moves, useAbilities, selected, minPower),
-    [chart, attackers.members, defenders.members, learnsets, moves, useAbilities, selected, minPower],
+    () => coverage(chart, attackers.members, defenders.members, learnsets, moves, useAbilities, selected, minPower, sets ?? undefined),
+    [chart, attackers.members, defenders.members, learnsets, moves, useAbilities, selected, minPower, sets],
   )
 
   const byId = useMemo(
@@ -82,7 +86,10 @@ export function CoverageBody({
             <li key={r.id} className="coverage-row">
               <div className="coverage-mon">
                 <img src={spriteUrl(r.pokemon)} alt={r.pokemon.name} width={64} height={52} />
-                <span>{r.pokemon.name}</span>
+                <span>
+                  {r.pokemon.name}
+                  {sets && !sets[r.id] && <em className="no-set" title="No common set on record — showing its full movepool">full pool</em>}
+                </span>
               </div>
 
               <div className="coverage-types">

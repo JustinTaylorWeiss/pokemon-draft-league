@@ -6,6 +6,11 @@
   --line: #282b33;
   --chip: #22252c;
   --accent: #4ec3f7;
+  /* Team 1 is blue, Team 2 red; panels tint to whichever is being analyzed. */
+  --team-one: #4aa8ff;
+  --team-two: #e8615f;
+  /* The teams/speed card belongs to neither side, so it gets its own colour. */
+  --team-both: #a78bfa;
   /* Widget panels sit slightly above the page, matching DraftZone's #141414. */
   --widget: #141414;
 

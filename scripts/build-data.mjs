@@ -25,6 +25,11 @@ const GEN_RANGES = [
 
 const originGen = (num) => GEN_RANGES.findIndex(([lo, hi]) => num >= lo && num <= hi) + 1
 
+/** Same normalization the dex is keyed by, accents folded. */
+const toId = (s) =>
+  String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]/g, '')
+
 /** Showdown ships some tables as JSON and others as `exports.X = {...}` scripts. */
 async function fetchJson(name) {
   const res = await fetch(`${SRC}/${name}.json`)
@@ -182,6 +187,49 @@ async function main() {
   }
   stats.abilities = { kept: Object.keys(abilitiesOut).length }
 
+  // ---- Common sets ----------------------------------------------------------
+  // What people actually run, so coverage can default to a real moveset instead
+  // of every move a Pokémon could technically learn. Showdown ships two things
+  // per format: `stats` is the single most-used set, `dex` is Smogon's curated
+  // analysis sets. The usage set wins; curated sets fill the gaps.
+  const setsRaw = await fetchJson('sets/gen9')
+  // A doubles league cares about doubles first, then singles as a stand-in.
+  const FORMAT_ORDER = [
+    'gen9doublesou', 'gen9vgc2024', 'gen9ou', 'gen9ubers', 'gen9uu', 'gen9ru',
+    'gen9nu', 'gen9pu', 'gen9zu', 'gen9lc', 'gen9nationaldex', 'gen9monotype',
+    'gen9anythinggoes', 'gen91v1', 'gen9almostanyability', 'gen9balancedhackmons',
+  ]
+
+  const sets = {}
+  for (const format of FORMAT_ORDER) {
+    const block = setsRaw[format]
+    if (!block) continue
+    for (const [source, table] of [['usage', block.stats], ['smogon', block.dex]]) {
+      for (const [name, entries] of Object.entries(table ?? {})) {
+        const id = toId(name)
+        if (!pokemon[id] || sets[id]) continue
+        // Union across that Pokémon's sets in this format: a mon with a physical
+        // and a special set can run either, and both are "common".
+        const moveIds = new Set()
+        for (const set of Object.values(entries ?? {})) {
+          for (const move of set.moves ?? []) {
+            // Slash-separated alternatives appear as "Knock Off / U-turn".
+            for (const option of String(move).split('/')) {
+              const mid = toId(option)
+              if (movesOut[mid]) moveIds.add(mid)
+            }
+          }
+        }
+        if (moveIds.size) sets[id] = { moves: [...moveIds], source, format }
+      }
+    }
+  }
+  stats.sets = {
+    covered: Object.keys(sets).length,
+    fromUsage: Object.values(sets).filter((s) => s.source === 'usage').length,
+    ofTotal: Object.keys(pokemon).length,
+  }
+
   // ---- Write ---------------------------------------------------------------
   await mkdir(OUT, { recursive: true })
   const files = {
@@ -190,6 +238,7 @@ async function main() {
     learnsets: learnOut,
     typechart: { types: TYPES, chart },
     abilities: abilitiesOut,
+    sets,
   }
 
   console.log(`\n${'file'.padEnd(16)}${'raw'.padStart(12)}${'gzipped'.padStart(12)}`)

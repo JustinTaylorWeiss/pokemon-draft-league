@@ -42,7 +42,7 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
     <div className="league">
       <section className="panel league-meta">
         <h2>{meta.name ?? 'Draft League'}</h2>
-        <p className="panel-note">
+        <p className="panel-note league-meta-line">
           {[meta.format, meta.regulation && `Reg ${meta.regulation}`, meta.seriesLength,
             meta.weeks && `${meta.weeks} weeks`, meta.picksPerPlayer && `${meta.picksPerPlayer} picks each`]
             .filter(Boolean).join(' · ')}
@@ -297,6 +297,7 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
             </button>
           ))}
         </div>
+        <span className="pill-divider" aria-hidden="true" />
         <div className="pill-group" role="group" aria-label="Filter by availability">
           {(['available', 'drafted'] as const).map((a) => (
             <button

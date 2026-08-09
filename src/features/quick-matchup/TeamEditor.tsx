@@ -20,11 +20,13 @@ interface Props {
   accent: 'one' | 'two'
   /** Absent until the league sheet loads; the editor works without it. */
   league: League | null
+  /** Off when a sibling column already handles loading drafted rosters. */
+  showRosterPicker?: boolean
 }
 
 const MAX_SUGGESTIONS = 8
 
-export function TeamEditor({ dex, team, onChange, accent, league }: Props) {
+export function TeamEditor({ dex, team, onChange, accent, league, showRosterPicker = true }: Props) {
   const [query, setQuery] = useState('')
   const [highlight, setHighlight] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -116,7 +118,7 @@ export function TeamEditor({ dex, team, onChange, accent, league }: Props) {
 
   return (
     <div className={`team-editor accent-${accent}`}>
-      {drafted.length > 0 && (
+      {showRosterPicker && drafted.length > 0 && (
         <label className="field roster-picker">
           <span>Load a drafted roster</span>
           <select value="" onChange={(e) => loadRoster(e.target.value)}>

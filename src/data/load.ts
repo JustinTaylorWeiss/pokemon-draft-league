@@ -1,5 +1,5 @@
 import type {
-  AbilityDex, LearnsetDex, MoveDex, Pokemon, PokemonDex, TypeChart, TypeName,
+  AbilityDex, LearnsetDex, MoveDex, Pokemon, PokemonDex, SetDex, TypeChart, TypeName,
 } from './types'
 
 /**
@@ -28,6 +28,7 @@ export const loadMoves = () => load<MoveDex>('moves')
 export const loadAbilities = () => load<AbilityDex>('abilities')
 export const loadTypeChart = () => load<TypeChart>('typechart')
 export const loadLearnsets = () => load<LearnsetDex>('learnsets')
+export const loadSets = () => load<SetDex>('sets')
 
 /** Everything except learnsets — enough to render the dex and matchup grids. */
 export function loadCore() {

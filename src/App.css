@@ -80,9 +80,8 @@
 .filter select { min-width: 7rem; }
 /* Both type dropdowns fixed to one width so they read as a matched pair. */
 .filter-type select { width: 8.5rem; min-width: 0; }
-/* Extra conditions stack under the first, so the label owns the whole group. */
-.filter-stat { gap: 0.3rem; }
-.filter-stat > span { display: flex; align-items: center; gap: 0.3rem; }
+/* Extra conditions stack under the first, each able to close itself. */
+.filter-stat { gap: 0.3rem; align-items: flex-start; }
 .stat-step {
   width: 1.15rem; height: 1.15rem; padding: 0; line-height: 1;
   border: 1px solid var(--line); border-radius: 4px; background: none;
@@ -91,6 +90,12 @@
 }
 .stat-step:hover:not(:disabled) { color: var(--fg); border-color: var(--accent); }
 .stat-step:disabled { opacity: 0.35; cursor: not-allowed; }
+/* Sits below the rows rather than beside the label. */
+.stat-add {
+  width: auto; height: 1.6rem; padding: 0 0.5rem; align-self: flex-start;
+  font-size: 0.7rem; gap: 0.2rem;
+}
+.stat-row .stat-step { align-self: center; height: 2.2rem; }
 
 .stat-row { display: flex; gap: 0.3rem; }
 .stat-row select { min-width: 0; }

@@ -211,29 +211,22 @@ export function Dex() {
         </label>
 
         <div className="filter filter-stat">
-          <span>
-            Stat
-            <button
-              type="button" className="stat-step"
-              onClick={() => setStatFilters((f) => [...f, newStatFilter()])}
-              aria-label="Add another stat condition" title="Add a stat condition"
-            >
-              +
-            </button>
-            <button
-              type="button" className="stat-step"
-              onClick={() => setStatFilters((f) => (f.length > 1 ? f.slice(0, -1) : f))}
-              disabled={statFilters.length < 2}
-              aria-label="Remove the last stat condition" title="Remove a stat condition"
-            >
-              −
-            </button>
-          </span>
+          <span>Stat</span>
           {statFilters.map((f, i) => {
             const update = (patch: Partial<StatFilter>) =>
               setStatFilters((prev) => prev.map((x, j) => (j === i ? { ...x, ...patch } : x)))
             return (
               <div className="stat-row" key={i}>
+                {/* Every row past the first can close itself. */}
+                {i > 0 && (
+                  <button
+                    type="button" className="stat-step"
+                    onClick={() => setStatFilters((prev) => prev.filter((_, j) => j !== i))}
+                    aria-label={`Remove stat condition ${i + 1}`} title="Remove this condition"
+                  >
+                    −
+                  </button>
+                )}
                 <select
                   value={f.field} onChange={(e) => update({ field: e.target.value as StatField })}
                   aria-label={`Stat ${i + 1}`}
@@ -254,6 +247,13 @@ export function Dex() {
               </div>
             )
           })}
+          <button
+            type="button" className="stat-step stat-add"
+            onClick={() => setStatFilters((f) => [...f, newStatFilter()])}
+            aria-label="Add another stat condition" title="Add a stat condition"
+          >
+            + Add stat
+          </button>
         </div>
 
         <label className="filter">

@@ -88,6 +88,15 @@ export interface TypeChart {
  */
 export type Learnset = Record<string, string[]>
 
+/** The most-used moveset for a Pokémon, per Showdown usage or Smogon analyses. */
+export interface CommonSet {
+  moves: string[]
+  source: 'usage' | 'smogon'
+  format: string
+}
+
+export type SetDex = Record<string, CommonSet>
+
 export type PokemonDex = Record<string, Pokemon>
 export type MoveDex = Record<string, Move>
 export type AbilityDex = Record<string, Ability>

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { loadCore, loadLearnsets } from '../../data/load'
 import type { AbilityDex, LearnsetDex, MoveDex, PokemonDex, TypeChart } from '../../data/types'
-import { byId, loadLeague, mergeDex, type League } from '../../data/league'
-import { TeamEditor, type Team, type TeamEntry } from './TeamEditor'
+import { loadLeague, mergeDex, type League } from '../../data/league'
+import type { Team } from './TeamEditor'
+import { MatchupBuilder } from './MatchupBuilder'
 import { useElementHeight } from '../../lib/useElementHeight'
 import { TeamsAndSpeed } from './TeamsAndSpeed'
 import { SummaryAndTypes } from './SummaryAndTypes'
@@ -101,8 +102,6 @@ export function QuickMatchup() {
     setTeamTwo(rehydrate)
   }, [dex])
 
-  const canSubmit = teamOne.members.length > 0 && teamTwo.members.length > 0
-
   const [analyzed, other] = useMemo(
     () => (perspective === 'one' ? [teamOne, teamTwo] : [teamTwo, teamOne]),
     [perspective, teamOne, teamTwo],
@@ -111,100 +110,22 @@ export function QuickMatchup() {
   if (error) return <p className="error">Could not load data: {error}</p>
   if (!core || !dex) return <p className="loading">Loading dex…</p>
 
-  /**
-   * A scheduled match is 2v2 partners, so each side is two players' rosters
-   * pooled into one 14-Pokémon team — that is the pool the pair can actually
-   * bring, and it is what the panels should analyze.
-   */
-  const loadScheduledMatch = (key: string) => {
-    if (!league || !dex || !key) return
-    const [week, idx] = key.split(':').map(Number)
-    const m = league.schedule.filter((x) => x.week === week)[idx]
-    if (!m) return
-    const people = byId(league.players)
-    const side = (ids: string[]): Team => {
-      const seen = new Set<string>()
-      const members: TeamEntry[] = []
-      for (const pid of ids) {
-        for (const pick of league.rosters[pid] ?? []) {
-          if (seen.has(pick.pokemon) || !dex[pick.pokemon]) continue
-          seen.add(pick.pokemon)
-          members.push({ id: pick.pokemon, pokemon: dex[pick.pokemon] })
-        }
-      }
-      return { name: ids.map((p) => people[p]?.name ?? p).join(' + '), members }
-    }
-    setTeamOne(side(m.a))
-    setTeamTwo(side(m.b))
-    setStep('results')
-  }
-
   if (step !== 'results') {
     return (
-      <div className="wizard">
-        {league && league.schedule.length > 0 && (
-          <label className="field schedule-picker">
-            <span>Load a scheduled match</span>
-            <select value="" onChange={(e) => loadScheduledMatch(e.target.value)}>
-              <option value="">Choose a week and match…</option>
-              {Array.from(new Set(league.schedule.map((m) => m.week))).sort((a, b) => a - b).map((week) => (
-                <optgroup key={week} label={`Week ${week}`}>
-                  {league.schedule.filter((m) => m.week === week).map((m, i) => {
-                    const people = byId(league.players)
-                    const label = (ids: string[]) => ids.map((p) => people[p]?.name ?? p).join(' + ')
-                    return (
-                      <option key={i} value={`${week}:${i}`}>
-                        {label(m.a)} vs {label(m.b)}
-                        {m.scoreA !== null ? `  (${m.scoreA}–${m.scoreB})` : ''}
-                      </option>
-                    )
-                  })}
-                </optgroup>
-              ))}
-            </select>
-          </label>
-        )}
-
-        <ol className="steps">
-          <li className={step === 'team1' ? 'is-current' : 'is-done'}>
-            <button type="button" onClick={() => setStep('team1')}>1. {teamOne.name || 'Team 1'}</button>
-          </li>
-          <li className={step === 'team2' ? 'is-current' : ''}>
-            <button type="button" onClick={() => setStep('team2')} disabled={!teamOne.members.length}>
-              2. {teamTwo.name || 'Team 2'}
-            </button>
-          </li>
-        </ol>
-
-        {step === 'team1' ? (
-          <TeamEditor dex={dex} team={teamOne} onChange={setTeamOne} accent="one" league={league} />
-        ) : (
-          <TeamEditor dex={dex} team={teamTwo} onChange={setTeamTwo} accent="two" league={league} />
-        )}
-
-        <div className="wizard-actions">
-          {step === 'team2' && (
-            <button type="button" className="btn ghost" onClick={() => setStep('team1')}>Back</button>
-          )}
-          {step === 'team1' ? (
-            <button
-              type="button" className="btn" disabled={!teamOne.members.length}
-              onClick={() => setStep('team2')}
-            >
-              Next
-            </button>
-          ) : (
-            <button type="button" className="btn" disabled={!canSubmit} onClick={() => setStep('results')}>
-              Analyze matchup
-            </button>
-          )}
-        </div>
-      </div>
+      <MatchupBuilder
+        dex={dex}
+        league={league}
+        teamOne={teamOne}
+        teamTwo={teamTwo}
+        setTeamOne={setTeamOne}
+        setTeamTwo={setTeamTwo}
+        onDone={() => setStep('results')}
+      />
     )
   }
 
   return (
-    <div className="results">
+    <div className={`results${perspective === 'two' ? ' viewing-two' : ''}`}>
       {/* Its own bar under the main nav, matching the League Sheet's. */}
       <div className="subbar subbar-bleed">
         <div className="bar-inner matchup-bar">

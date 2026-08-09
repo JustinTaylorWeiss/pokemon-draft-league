@@ -1,4 +1,6 @@
-.wizard, .results { display: flex; flex-direction: column; gap: 1rem; }
+.wizard, /* Every card tints to the team being analyzed. */
+.results { display: flex; flex-direction: column; gap: 1rem; --team-accent: var(--team-one); }
+.results.viewing-two { --team-accent: var(--team-two); }
 
 /* ---- wizard ---- */
 .steps { display: flex; gap: 0.5rem; list-style: none; margin: 0; padding: 0; }
@@ -61,8 +63,8 @@
 .icon-btn { background: none; border: 0; color: var(--muted); cursor: pointer; font-size: 0.9rem; padding: 0.2rem; }
 .icon-btn:hover { color: #e05563; }
 
-.accent-one { --team: #4aa8ff; }
-.accent-two { --team: #ff9440; }
+.accent-one { --team: var(--team-one); }
+.accent-two { --team: var(--team-two); }
 
 /* ---- tables ---- */
 .table-scroll { overflow-x: auto; }
@@ -105,7 +107,7 @@
 .speed-layout { display: flex; gap: 0.6rem; }
 .speed-bases { flex: 0 0 4.6rem; }
 .speed-groups { flex: 1 1 auto; min-width: 0; }
-.speed-layout h3 { margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em; }
+.speed-layout h3 { margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase; color: var(--team-both); letter-spacing: 0.05em; }
 .speed-layout h3 span { float: right; text-transform: none; font-size: 0.68rem; }
 .speed-layout ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
 
@@ -113,12 +115,24 @@
    beside it, so their bottoms line up and the lists scroll inside. The cap is
    measured rather than a CSS stretch, because align-self can only grow an item
    that is shorter than the row — this list is far taller. */
+/* Shows both rosters at once, so it belongs to neither side: purple chrome,
+   with the per-side blue/red inside carrying the team meaning. */
+.widget.both-teams { --team-accent: var(--team-both); }
 .widget.stretch-tall { overflow: hidden; }
 .widget.stretch-tall .widget-body { flex: 1 1 auto; min-height: 0; display: flex; }
 .widget.stretch-tall .speed-layout { flex: 1 1 auto; min-height: 0; }
 .widget.stretch-tall .speed-bases,
 .widget.stretch-tall .speed-groups { display: flex; flex-direction: column; min-height: 0; }
-.widget.stretch-tall .speed-layout ul { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+/* Reserve the scrollbar's column so it never sits on top of the speed numbers. */
+.widget.stretch-tall .speed-layout ul {
+  flex: 1 1 auto; min-height: 0; overflow-y: auto;
+  scrollbar-gutter: stable; padding-right: 0.35rem;
+}
+.widget.stretch-tall .speed-layout ul::-webkit-scrollbar { width: 8px; }
+.widget.stretch-tall .speed-layout ul::-webkit-scrollbar-thumb {
+  background: var(--line); border-radius: 4px;
+}
+.widget.stretch-tall .speed-layout ul::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 .speed-layout li {
   border: 1px solid var(--line); border-radius: 6px; font-size: 0.76rem;
   transition: opacity 0.12s, border-color 0.12s;
@@ -128,15 +142,15 @@
   padding: 0.1rem 0.35rem; background: none; border: 0; color: inherit;
   font: inherit; font-size: inherit; cursor: pointer; text-align: left;
 }
-.speed-layout li.side-one { border-left: 3px solid #4aa8ff; }
-.speed-layout li.side-two { border-left: 3px solid #ff9440; }
-.speed-layout li.is-selected { border-color: var(--accent); background: rgb(78 195 247 / 12%); }
+.speed-layout li.side-one { border-left: 3px solid var(--team-one); }
+.speed-layout li.side-two { border-left: 3px solid var(--team-two); }
+.speed-layout li.is-selected { border-color: var(--team-both); background: rgb(167 139 250 / 16%); }
 .speed-layout li.is-dimmed { opacity: 0.28; }
 .speed-layout strong { margin-left: auto; font-variant-numeric: tabular-nums; }
 .speed-bases li button { justify-content: space-between; }
 .speed-layout img { image-rendering: pixelated; object-fit: contain; }
 .badge { font-size: 0.68rem; padding: 0.05rem 0.35rem; border-radius: 4px; background: var(--chip); color: var(--muted); }
-.badge-ability { color: var(--accent); }
+.badge-ability { color: var(--team-both); }
 
 /* ---- type chips ---- */
 .type-chip {
@@ -222,7 +236,9 @@ button.type-chip { cursor: pointer; }
 }
 
 /* ---- results shell: DraftZone's centered flex-wrap widget grid ---- */
-.results { display: flex; flex-direction: column; gap: 1rem; }
+/* Every card tints to the team being analyzed. */
+.results { display: flex; flex-direction: column; gap: 1rem; --team-accent: var(--team-one); }
+.results.viewing-two { --team-accent: var(--team-two); }
 
 /* Spans the viewport even though it sits inside the centred shell, so it
    reads as a continuation of the nav rather than page content. */
@@ -247,7 +263,7 @@ button.type-chip { cursor: pointer; }
   background: none; border: 0; color: var(--muted); font: inherit; font-size: 0.85rem;
   padding: 0.35rem 0.9rem; cursor: pointer; white-space: nowrap;
 }
-.segmented button.is-active { background: var(--accent); color: #06232e; font-weight: 600; }
+.segmented button.is-active { background: var(--team-accent, var(--accent)); color: #10131a; font-weight: 600; }
 
 /* Widgets size to their content; this packs them into rows and centers the
    leftovers, which is what produces the uneven two-up look. */
@@ -260,6 +276,7 @@ button.type-chip { cursor: pointer; }
   /* Shared ceiling for tabbed panel bodies. */
   --tab-max-h: 42rem;
   background: var(--widget); border-radius: 16px; padding: 12px;
+  border-top: 2px solid var(--team-accent, transparent);
   display: flex; flex-direction: column;
   max-width: 100%; min-width: 0;
 }
@@ -315,7 +332,7 @@ button.type-chip { cursor: pointer; }
   white-space: nowrap; text-align: center;
 }
 .widget-tabs button:hover { color: var(--fg); }
-.widget-tabs button.is-active { color: var(--fg); border-bottom-color: var(--accent); }
+.widget-tabs button.is-active { color: var(--fg); border-bottom-color: var(--team-accent, var(--accent)); }
 
 .widget-toolbar {
   display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem;
@@ -331,3 +348,70 @@ button.type-chip { cursor: pointer; }
 
 /* One partner per line, with the "+" trailing the line above. */
 .team-name-part { display: block; }
+
+/* ---- matchup builder: three ways in, side by side ---- */
+.builder { display: flex; flex-direction: column; gap: 1rem; }
+.builder-columns {
+  display: grid; gap: 1rem; align-items: start;
+  /* Sources stack in one column; hand-building takes the wider right half. */
+  grid-template-columns: minmax(280px, 0.8fr) minmax(520px, 1.4fr);
+}
+
+.builder-col {
+  display: flex; flex-direction: column; gap: 0.6rem;
+  background: var(--widget); border-radius: 16px; padding: 16px;
+}
+/* The custom column supplies its own Widget chrome. */
+/* The two ways of loading a saved team share the left column. */
+.builder-sources { display: flex; flex-direction: column; gap: 1rem; }
+
+.builder-col-custom { background: none; padding: 0; }
+/* Both sides side by side instead of behind tabs. */
+.custom-teams { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; padding: 0 4px; }
+.custom-team { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+.custom-team h4 {
+  margin: 0; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--team, var(--muted)); padding-bottom: 0.3rem;
+  border-bottom: 2px solid var(--team, var(--line));
+}
+.custom-team .team-editor { gap: 0.5rem; }
+.custom-team .field, .custom-team .autocomplete, .custom-team .roster { max-width: none; }
+
+.builder-col h3 { margin: 0; font-size: 1rem; letter-spacing: -0.01em; }
+.builder-hint, .builder-empty { margin: -0.3rem 0 0; color: var(--muted); font-size: 0.78rem; }
+
+.builder-col select {
+  height: 2.2rem; padding: 0 0.6rem; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--bg); color: inherit; font: inherit; font-size: 0.85rem; width: 100%;
+}
+
+.builder-side { display: flex; flex-direction: column; gap: 0.4rem; }
+.builder-side-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--team, var(--muted));
+}
+.link-btn {
+  background: none; border: 0; color: var(--muted); font: inherit; font-size: 0.7rem;
+  text-decoration: underline; cursor: pointer; padding: 0;
+}
+.link-btn:hover { color: #e05563; }
+
+.source-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.source-chips li {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  font-size: 0.74rem; padding: 0.15rem 0.35rem 0.15rem 0.55rem;
+  border: 1px solid var(--team, var(--line)); border-radius: 999px;
+}
+.source-chips button {
+  background: none; border: 0; color: var(--muted); cursor: pointer;
+  font-size: 0.7rem; padding: 0; line-height: 1;
+}
+.source-chips button:hover { color: #e05563; }
+
+.builder-actions { display: flex; align-items: center; justify-content: flex-end; gap: 1rem; }
+.builder-counts { color: var(--muted); font-size: 0.82rem; }
+
+@media (max-width: 1100px) {
+  .builder-columns { grid-template-columns: 1fr; }
+}
