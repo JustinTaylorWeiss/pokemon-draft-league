@@ -31,7 +31,9 @@ export function PokemonModal() {
   const [learnsets, setLearnsets] = useState<LearnsetDex | null>(null)
   const [chart, setChart] = useState<TypeChart | null>(null)
   const [sets, setSets] = useState<SetDex | null>(null)
-  const [tab, setTab] = useState('level')
+  // Groups are independent toggles, all on by default, so search covers the
+  // whole movepool unless something is switched off.
+  const [enabled, setEnabled] = useState<Set<string>>(new Set(MOVE_GROUPS.map((g) => g.key)))
   const [moveQuery, setMoveQuery] = useState('')
   const dialogRef = useRef<HTMLDivElement>(null)
 
@@ -62,43 +64,49 @@ export function PokemonModal() {
     }
   }, [openId, close])
 
-  useEffect(() => { setTab('level'); setMoveQuery('') }, [openId])
+  useEffect(() => { setEnabled(new Set(MOVE_GROUPS.map((g) => g.key))); setMoveQuery('') }, [openId])
 
   const merged = useMemo(() => (dex ? mergeDex(dex, league) : null), [dex, league])
   const mon: LeaguePokemon | undefined = openId && merged ? merged[openId] : undefined
 
   const learnset = openId && learnsets ? learnsets[openId] : undefined
 
-  /** Moves split by how they are learned, each sorted for scanning. */
-  const grouped = useMemo(() => {
+  /**
+   * One row per move, tagged with every way it can be learned, so a move that
+   * is both a TM and a level-up appears once rather than twice.
+   */
+  const allMoves = useMemo(() => {
     if (!learnset || !moves) return null
-    const out: Record<string, { move: string; name: string; detail: string }[]> = {}
+    const rows: { move: string; name: string; groups: string[]; level: number | null }[] = []
     for (const [moveId, sources] of Object.entries(learnset)) {
       const move = moves[moveId]
       if (!move) continue
+      const groups: string[] = []
+      let level: number | null = null
       for (const group of MOVE_GROUPS) {
         const hit = sources.find(group.match)
         if (!hit) continue
-        ;(out[group.key] ??= []).push({
-          move: moveId,
-          name: move.name,
-          detail: group.key === 'level' ? (hit.slice(1) || '—') : '',
-        })
+        groups.push(group.key)
+        if (group.key === 'level') level = Number(hit.slice(1)) || 0
       }
+      if (groups.length) rows.push({ move: moveId, name: move.name, groups, level })
     }
-    for (const [key, list] of Object.entries(out)) {
-      if (key === 'level') list.sort((a, b) => Number(a.detail) - Number(b.detail) || a.name.localeCompare(b.name))
-      else list.sort((a, b) => a.name.localeCompare(b.name))
-    }
-    return out
+    return rows.sort((a, b) => a.name.localeCompare(b.name))
   }, [learnset, moves])
 
-  /** The active group, narrowed by the search box. */
+  /** How many moves each group holds, for the toggle counts. */
+  const groupCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const row of allMoves ?? []) for (const g of row.groups) counts[g] = (counts[g] ?? 0) + 1
+    return counts
+  }, [allMoves])
+
+  /** Enabled groups first, then the search across whatever remains. */
   const visibleMoves = useMemo(() => {
-    const list = grouped?.[tab] ?? []
     const q = moveQuery.trim().toLowerCase()
-    if (!q) return list
-    return list.filter((row) => {
+    return (allMoves ?? []).filter((row) => {
+      if (!row.groups.some((g) => enabled.has(g))) return false
+      if (!q) return true
       const mv = moves?.[row.move]
       if (!mv) return false
       return mv.name.toLowerCase().includes(q)
@@ -106,7 +114,7 @@ export function PokemonModal() {
         || mv.category.toLowerCase() === q
         || mv.shortDesc.toLowerCase().includes(q)
     })
-  }, [grouped, tab, moveQuery, moves])
+  }, [allMoves, enabled, moveQuery, moves])
 
   if (!openId) return null
 
@@ -255,33 +263,40 @@ export function PokemonModal() {
 
               <section className="modal-card modal-wide">
                 <h3>Moves</h3>
-                {!grouped ? <p className="loading">Loading moves…</p> : (
+                {!allMoves ? <p className="loading">Loading moves…</p> : (
                   <>
                     <div className="move-controls">
                       <input
                         type="search" value={moveQuery}
                         onChange={(e) => setMoveQuery(e.target.value)}
-                        placeholder="Search moves…" aria-label="Search this Pokémon's moves"
+                        placeholder="Search all moves…" aria-label="Search this Pokémon's moves"
                       />
                       <div className="move-tabs">
-                        {MOVE_GROUPS.filter((g) => grouped[g.key]?.length).map((g) => (
+                        {MOVE_GROUPS.filter((g) => groupCounts[g.key]).map((g) => (
                           <button
                             key={g.key} type="button"
-                            className={tab === g.key ? 'is-active' : ''}
-                            onClick={() => setTab(g.key)}
+                            className={enabled.has(g.key) ? 'is-active' : ''}
+                            aria-pressed={enabled.has(g.key)}
+                            onClick={() => setEnabled((prev) => {
+                              const next = new Set(prev)
+                              if (next.has(g.key)) next.delete(g.key)
+                              else next.add(g.key)
+                              return next
+                            })}
                           >
-                            {g.label} <em>{grouped[g.key].length}</em>
+                            {g.label} <em>{groupCounts[g.key]}</em>
                           </button>
                         ))}
                       </div>
+                      <span className="move-count">{visibleMoves.length} shown</span>
                     </div>
                     <div className="move-table-scroll">
                       <table className="move-table">
                         <thead>
                           <tr>
-                            {tab === 'level' && <th>Lv</th>}
                             <th className="col-left">Move</th><th>Type</th><th>Cat</th>
                             <th>Pwr</th><th>Acc</th><th>PP</th>
+                            <th className="col-left">Learned</th>
                             <th className="col-left">Effect</th>
                           </tr>
                         </thead>
@@ -291,13 +306,21 @@ export function PokemonModal() {
                             if (!mv) return null
                             return (
                               <tr key={row.move}>
-                                {tab === 'level' && <td>{row.detail}</td>}
                                 <th scope="row" className="col-left">{mv.name}</th>
                                 <td><TypeChip type={mv.type} /></td>
                                 <td className="cat">{mv.category.slice(0, 4)}</td>
                                 <td>{mv.basePower || '—'}</td>
                                 <td>{mv.accuracy === true ? '—' : `${mv.accuracy}%`}</td>
                                 <td>{mv.pp}</td>
+                                <td className="col-left learned">
+                                  {row.groups.map((g) => (
+                                    <span key={g} className="learn-tag">
+                                      {g === 'level' && row.level !== null
+                                        ? `Lv ${row.level}`
+                                        : MOVE_GROUPS.find((x) => x.key === g)?.label}
+                                    </span>
+                                  ))}
+                                </td>
                                 <td className="col-left effect">{mv.shortDesc}</td>
                               </tr>
                             )
@@ -306,7 +329,9 @@ export function PokemonModal() {
                       </table>
                     </div>
                     {!visibleMoves.length && (
-                      <p className="modal-hint">No moves in this group match “{moveQuery}”.</p>
+                      <p className="modal-hint">
+                        {enabled.size ? `Nothing matches “${moveQuery}”.` : 'Turn a group back on to see moves.'}
+                      </p>
                     )}
                   </>
                 )}

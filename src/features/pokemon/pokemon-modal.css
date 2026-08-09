@@ -138,6 +138,15 @@
 }
 .move-tabs button em { font-style: normal; opacity: 0.7; }
 .move-tabs button.is-active { border-color: var(--accent); color: var(--accent); }
+/* Groups are toggles now, so an off one reads as switched off, not unselected. */
+.move-tabs button:not(.is-active) { opacity: 0.45; text-decoration: line-through; }
+.move-count { font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+
+.move-table .learned { white-space: nowrap; }
+.learn-tag {
+  display: inline-block; font-size: 0.64rem; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 4px; padding: 0 0.25rem; margin-right: 0.2rem;
+}
 
 /* No inner vertical scroll: the modal grows and the backdrop scrolls, so a
    long TM list reads as one table instead of a window into one. */

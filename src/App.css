@@ -42,7 +42,7 @@
 .season-picker select {
   background: var(--surface); border: 1px solid var(--line); color: var(--accent);
   border-radius: 10px; padding: 0.3rem 0.6rem; font: inherit;
-  font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em; max-width: 100%;
+  font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; max-width: 100%;
 }
 .season-picker select:hover { border-color: var(--accent); }
 

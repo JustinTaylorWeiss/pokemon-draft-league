@@ -17,6 +17,10 @@ import './App.css'
 const LEAGUE_SHEET_URL =
   'https://docs.google.com/spreadsheets/d/1xnKp-XtR9o-zJy1BNS78PxXy891zv_n4rawKto6rlyE/export?format=xlsx'
 
+/** "Draft League Season 4 VGC Reg F" -> "Season 4". */
+const seasonLabel = (name: string | null) =>
+  name?.match(/Season\s*\d+/i)?.[0] ?? name ?? 'Season'
+
 type View = 'league' | 'matchup' | 'dex'
 
 const VIEWS: { key: View; label: string }[] = [
@@ -80,7 +84,7 @@ export default function App() {
           {league && (
             <label className="season-picker">
               <select value="current" onChange={() => {}} aria-label="League and season">
-                <option value="current">{league.meta.name ?? 'Draft League'}</option>
+                <option value="current">{seasonLabel(league.meta.name)}</option>
               </select>
             </label>
           )}
