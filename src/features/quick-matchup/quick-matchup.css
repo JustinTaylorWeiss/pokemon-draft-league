@@ -153,11 +153,13 @@ button.type-chip { cursor: pointer; }
 .coverage-targets .miss { opacity: 0.3; filter: grayscale(1); }
 
 /* ---- learned moves ---- */
-.moves-controls { display: flex; flex-direction: column; gap: 0.5rem; padding: 0 16px; }
-.moves-controls input { width: 100%; max-width: none; }
-/* Pills share the row evenly rather than bunching at the left. */
-.tag-row { display: flex; flex-wrap: wrap; gap: 0.25rem; justify-content: space-between; }
-.tag-row .tag-btn { flex: 1 1 auto; justify-content: center; text-align: center; }
+/* Search takes the left half; the tag pills wrap into stacked rows on the right. */
+.moves-controls {
+  display: flex; gap: 0.75rem; padding: 0 16px; align-items: flex-start;
+}
+.moves-controls input { flex: 1 1 0; min-width: 0; align-self: stretch; }
+/* The right half, wrapping into as many rows as the pills need. */
+.tag-row { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; gap: 0.25rem; align-content: flex-start; }
 .tag-btn {
   display: inline-flex; align-items: center;
   font-size: 0.66rem; letter-spacing: 0.03em; padding: 0.2rem 0.5rem; border-radius: 999px;
@@ -168,16 +170,19 @@ button.type-chip { cursor: pointer; }
 
 .move-grid {
   list-style: none; margin: 0; padding: 0 16px; display: grid; gap: 0.4rem;
-  /* DraftZone packs move cards three-up at 152px; matching that keeps the
-     widget the same shape as theirs. */
-  grid-template-columns: repeat(3, 152px);
-  max-height: 46rem; overflow-y: auto;
+  /* Cards stretch to fill whatever width the card has rather than sitting in
+     three fixed columns with the rest of the row empty. */
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  max-height: 42rem; overflow-y: auto;
 }
-.move-card { border: 1px solid var(--line); border-radius: 8px; padding: 0.4rem 0.5rem; display: flex; flex-direction: column; gap: 0.25rem; }
-.move-head { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; }
-.move-name { font-size: 0.82rem; font-weight: 600; }
-.move-meta { display: flex; gap: 0.5rem; font-size: 0.7rem; color: var(--muted); }
-.move-tags { display: flex; flex-wrap: wrap; gap: 0.2rem; }
+.move-card {
+  border: 1px solid var(--line); border-radius: 8px; padding: 0.4rem 0.5rem;
+  display: flex; flex-direction: column; gap: 0.2rem;
+}
+.move-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.4rem; }
+.move-name { font-size: 0.8rem; font-weight: 600; line-height: 1.25; }
+.move-meta { display: flex; flex-wrap: wrap; gap: 0.3rem; font-size: 0.68rem; color: var(--muted); }
+.move-tags { display: flex; flex-wrap: wrap; gap: 0.15rem; }
 .move-tags span { font-size: 0.58rem; letter-spacing: 0.04em; color: var(--accent); border: 1px solid var(--line); border-radius: 3px; padding: 0.05rem 0.25rem; }
 .move-learners { display: flex; flex-wrap: wrap; gap: 0.1rem; margin-top: auto; }
 .move-learners img { image-rendering: pixelated; object-fit: contain; }
