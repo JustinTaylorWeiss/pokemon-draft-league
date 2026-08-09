@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { loadPokemon, spriteUrl } from '../../data/load'
 import type { PokemonDex } from '../../data/types'
 import {
-  byId, byTier, loadLeague, mergeDex, tierClass, type League, type LeaguePokemon,
+  byId, byTier, loadLeague, mergeDex, tierClass, totalsFromMatches,
+  type League, type LeaguePokemon,
 } from '../../data/league'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
@@ -43,7 +44,176 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
       {tab === 'rosters' && <Rosters league={league} dex={dex} />}
       {tab === 'schedule' && <Schedule league={league} />}
       {tab === 'board' && <Board league={league} dex={dex} />}
+      {tab === 'stats' && <Stats league={league} dex={dex} />}
       {tab === 'rules' && <Rules league={league} />}
+    </div>
+  )
+}
+
+type StatSort = 'kills' | 'deaths' | 'diff' | 'gamesPlayed' | 'name'
+
+function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
+  const [sort, setSort] = useState<StatSort>('kills')
+  const [week, setWeek] = useState<number | 'all'>('all')
+  const [query, setQuery] = useState('')
+
+  const matches = useMemo(() => league.matchStats ?? [], [league.matchStats])
+
+  /** Recomputed per week filter, so the board reflects whatever is selected. */
+  const totals = useMemo(() => {
+    const scoped = week === 'all' ? matches : matches.filter((m) => m.week === week)
+    return Object.values(totalsFromMatches(scoped))
+  }, [matches, week])
+
+  const rows = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    return totals
+      .filter((t) => !q || dex[t.pokemon]?.name.toLowerCase().includes(q))
+      .sort((a, b) => {
+        if (sort === 'name') return (dex[a.pokemon]?.name ?? '').localeCompare(dex[b.pokemon]?.name ?? '')
+        return b[sort] - a[sort] || b.kills - a.kills
+      })
+  }, [totals, sort, query, dex])
+
+  const weeks = useMemo(() => [...new Set(matches.map((m) => m.week))].sort((a, b) => a - b), [matches])
+  const played = matches.filter((m) => m.a.lines.length || m.b.lines.length)
+
+  if (!matches.length) {
+    return <p className="panel-note">No match stats in the sheet yet. Re-run the import once they are filled in.</p>
+  }
+
+  const conflicts = Object.entries(league.pokemonStats ?? {}).filter(([id, s]) => {
+    const t = totals.find((x) => x.pokemon === id)
+    return t && (s.kills || s.deaths) && (s.kills !== t.kills || s.deaths !== t.deaths)
+  }).length
+
+  return (
+    <div className="stats-view">
+      <div className="controls">
+        <input
+          type="search" value={query} onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search Pokémon…" aria-label="Search stats"
+        />
+        <div className="pill-group" role="group" aria-label="Filter by week">
+          <button
+            type="button" className={`pill${week === 'all' ? ' is-active' : ''}`}
+            onClick={() => setWeek('all')}
+          >
+            All weeks<em>{played.length}</em>
+          </button>
+          {weeks.map((w) => {
+            const n = matches.filter((m) => m.week === w && (m.a.lines.length || m.b.lines.length)).length
+            return (
+              <button
+                key={w} type="button" className={`pill${week === w ? ' is-active' : ''}`}
+                onClick={() => setWeek(w)} disabled={!n}
+              >
+                W{w}<em>{n}</em>
+              </button>
+            )
+          })}
+        </div>
+        <span className="count">{rows.length} Pokémon</span>
+      </div>
+
+      <section className="panel">
+        <div className="table-scroll">
+          <table className="stat-table stats-table">
+            <thead>
+              <tr>
+                {([['name', 'Pokémon'], ['gamesPlayed', 'Games'], ['kills', 'Kills'],
+                   ['deaths', 'Deaths'], ['diff', '+/-']] as [StatSort, string][]).map(([key, label]) => (
+                  <th
+                    key={key}
+                    className={`sortable${key === 'name' ? ' col-name' : ''}${sort === key ? ' is-sorted' : ''}`}
+                  >
+                    <button type="button" onClick={() => setSort(key)}>
+                      {label}<span className="sort-arrow">{sort === key ? '▼' : ''}</span>
+                    </button>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((t) => {
+                const mon = dex[t.pokemon]
+                return (
+                  <tr key={t.pokemon}>
+                    <th scope="row" className="col-name">
+                      {mon && (
+                        <PokemonLink id={t.pokemon} title={mon.name}>
+                          <img src={spriteUrl(mon)} alt="" width={40} height={32} loading="lazy" />
+                        </PokemonLink>
+                      )}
+                      <span>
+                        <PokemonLink id={t.pokemon}>{mon?.name ?? t.pokemon}</PokemonLink>
+                        {mon && (
+                          <span className="row-types">
+                            {mon.types.map((ty) => <TypeChip key={ty} type={ty} />)}
+                          </span>
+                        )}
+                      </span>
+                    </th>
+                    <td>{t.gamesPlayed}</td>
+                    <td>{t.kills}</td>
+                    <td>{t.deaths}</td>
+                    <td className={t.diff > 0 ? 'pos' : t.diff < 0 ? 'neg' : ''}>
+                      {t.diff > 0 ? `+${t.diff}` : t.diff}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="panel-note">
+          Totalled from the match log, which is the complete record.
+          {conflicts > 0 && ` The sheet's Pokémon Stats tab disagrees on ${conflicts} of these — it is still being filled in.`}
+        </p>
+      </section>
+
+      <div className="match-log">
+        {weeks.filter((w) => week === 'all' || w === week).map((w) => (
+          <section key={w} className="panel">
+            <h3>Week {w}</h3>
+            <div className="match-cards">
+              {matches.filter((m) => m.week === w && (m.a.lines.length || m.b.lines.length)).map((m, i) => (
+                <article key={i} className="match-card">
+                  <header>
+                    <span className={m.a.result === 'W' ? 'won' : m.a.result === 'L' ? 'lost' : ''}>{m.a.team}</span>
+                    <strong>{m.a.score ?? '–'} – {m.b.score ?? '–'}</strong>
+                    <span className={m.b.result === 'W' ? 'won' : m.b.result === 'L' ? 'lost' : ''}>{m.b.team}</span>
+                  </header>
+                  <div className="match-sides">
+                    {[m.a, m.b].map((side, si) => (
+                      <ul key={si}>
+                        {side.lines.map((l, li) => {
+                          const mon = dex[l.pokemon]
+                          return (
+                            <li key={li}>
+                              {mon && (
+                                <PokemonLink id={l.pokemon} title={mon.name}>
+                                  <img src={spriteUrl(mon)} alt="" width={32} height={26} loading="lazy" />
+                                </PokemonLink>
+                              )}
+                              <span className="ml-name">
+                                <PokemonLink id={l.pokemon}>{mon?.name ?? l.pokemon}</PokemonLink>
+                              </span>
+                              <span className="ml-kd" title={`${l.kills} kills, ${l.deaths} deaths`}>
+                                <em className="k">{l.kills}</em>/<em className="d">{l.deaths}</em>
+                              </span>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
     </div>
   )
 }

@@ -86,6 +86,44 @@ export interface Rulebook {
   sections: RuleSection[]
 }
 
+/** One Pokémon's line in a match: what it brought down and what it lost. */
+export interface MatchLine {
+  pokemon: string
+  kills: number
+  deaths: number
+}
+
+export interface MatchSide {
+  /** Raw pair label from the sheet, e.g. "Pr3dixtion / Kaleb Clark". */
+  team: string
+  result: string | null
+  score: number | null
+  lines: MatchLine[]
+}
+
+export interface MatchStat {
+  week: number
+  a: MatchSide
+  b: MatchSide
+}
+
+/** The sheet's own per-Pokémon totals, which are still being filled in. */
+export interface PokemonStat {
+  player: string
+  gamesPlayed: number
+  kills: number
+  deaths: number
+}
+
+/** Totals derived from the match log, which is the complete record. */
+export interface PokemonTotals {
+  pokemon: string
+  gamesPlayed: number
+  kills: number
+  deaths: number
+  diff: number
+}
+
 export interface League {
   meta: LeagueMeta
   players: Player[]
@@ -95,6 +133,8 @@ export interface League {
   schedule: Match[]
   standings: Standing[]
   rules?: Rulebook
+  matchStats?: MatchStat[]
+  pokemonStats?: Record<string, PokemonStat>
 }
 
 let pending: Promise<League> | null = null
@@ -152,6 +192,29 @@ export function mergeDex(dex: PokemonDex, league: League | null): Record<string,
       note: entry?.note ?? null,
       draftedBy: entry?.draftedBy ?? null,
       onBoard: Boolean(entry),
+    }
+  }
+  return out
+}
+
+/**
+ * Per-Pokémon totals from the match log rather than the sheet's Pokémon Stats
+ * tab: that tab is still being filled in, so most of its rows read zero even
+ * where the games were recorded.
+ */
+export function totalsFromMatches(matches: MatchStat[]): Record<string, PokemonTotals> {
+  const out: Record<string, PokemonTotals> = {}
+  for (const match of matches) {
+    for (const side of [match.a, match.b]) {
+      for (const line of side.lines) {
+        const t = (out[line.pokemon] ??= {
+          pokemon: line.pokemon, gamesPlayed: 0, kills: 0, deaths: 0, diff: 0,
+        })
+        t.gamesPlayed++
+        t.kills += line.kills || 0
+        t.deaths += line.deaths || 0
+        t.diff = t.kills - t.deaths
+      }
     }
   }
   return out

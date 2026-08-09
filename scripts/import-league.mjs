@@ -59,14 +59,37 @@ function main(source) {
     }
 
     const warnings = []
+
+    /**
+     * The stats tabs name formes the way the games print them — "Hisuian
+     * Typhlosion", "Landorus-Incarnate" — while the dex keys them the way
+     * Showdown does, "typhlosionhisui" and plain "landorus". These rewrites
+     * bridge the two; each is tried in turn until one lands.
+     */
+    const REGIONS = { alolan: 'alola', galarian: 'galar', hisuian: 'hisui', paldean: 'paldea' }
+
+    const candidates = (raw) => {
+      const name = String(raw ?? '').trim()
+      const out = [toId(name)]
+
+      // "Incarnate" is the base forme, so it is simply dropped.
+      out.push(toId(name.replace(/[-\s]?incarnate$/i, '')))
+
+      // "Alolan Ninetales" -> ninetalesalola, "Paldean Tauros Aqua" -> taurospaldeaaqua
+      const regional = name.match(/^(\w+)\s+(.+)$/)
+      if (regional && REGIONS[regional[1].toLowerCase()]) {
+        const suffix = REGIONS[regional[1].toLowerCase()]
+        const rest = regional[2].split(/\s+/)
+        out.push(toId(rest[0]) + suffix + toId(rest.slice(1).join('')))
+      }
+      return [...new Set(out.filter(Boolean))]
+    }
+
     /** Resolves a sheet name to a dex id, recording anything that misses. */
     const resolve = (name, where) => {
-      const id = toId(name)
-      if (!dex[id]) {
-        warnings.push(`${where}: "${clean(name)}" has no dex entry (tried "${id}")`)
-        return null
-      }
-      return id
+      for (const id of candidates(name)) if (dex[id]) return id
+      warnings.push(`${where}: "${clean(name)}" has no dex entry (tried ${candidates(name).map((c) => `"${c}"`).join(', ')})`)
+      return null
     }
 
     // ---- Setup: league settings, tier limits, players --------------------
@@ -184,6 +207,81 @@ function main(source) {
       })
     }
 
+    // ---- Match Stats -------------------------------------------------------
+    // Weeks run across the sheet in 11-column blocks. Inside each block a match
+    // header row (result + score on both sides) is followed by one row per
+    // Pokémon brought, with kills and deaths for either side.
+    const msGrid = grid('Match Stats')
+    const weekCols = []
+    msGrid[2]?.forEach((c, i) => {
+      const m = typeof c === 'string' && c.trim().match(/^Week\s*#?(\d+)/i)
+      if (m) weekCols.push({ week: Number(m[1]), col: i })
+    })
+
+    const matchStats = []
+    for (const { week, col: b } of weekCols) {
+      let current = null
+      for (let r = 3; r < msGrid.length; r++) {
+        const row = msGrid[r] ?? []
+        const left = clean(row[b + 1])
+        const result = clean(row[b + 2])
+        const right = clean(row[b + 7])
+
+        // Header rows carry the "vs." separator; Pokémon rows leave it blank.
+        // Result is absent on matches that have not been played yet, so it
+        // cannot be the discriminator.
+        if (clean(row[b + 4]) === 'vs.' && !isBlank(left) && !isBlank(right)) {
+          current = {
+            week,
+            a: { team: left, result, score: typeof row[b + 3] === 'number' ? row[b + 3] : null, lines: [] },
+            b: { team: right, result: clean(row[b + 6]), score: typeof row[b + 5] === 'number' ? row[b + 5] : null, lines: [] },
+          }
+          matchStats.push(current)
+          continue
+        }
+        if (!current) continue
+
+        const aMon = clean(row[b + 1])
+        const bMon = clean(row[b + 7])
+        if (isBlank(aMon) && isBlank(bMon)) continue
+        if (!isBlank(aMon)) {
+          const id = resolve(aMon, `Match Stats/W${week}`)
+          if (id) current.a.lines.push({ pokemon: id, kills: row[b + 2] ?? 0, deaths: row[b + 3] ?? 0 })
+        }
+        if (!isBlank(bMon)) {
+          const id = resolve(bMon, `Match Stats/W${week}`)
+          if (id) current.b.lines.push({ pokemon: id, kills: row[b + 6] ?? 0, deaths: row[b + 5] ?? 0 })
+        }
+      }
+    }
+
+    // ---- Pokémon Stats -----------------------------------------------------
+    // Coach blocks stride 8 columns; each band of rows is Pick #1-12 then
+    // Drop #1-10 then Total.
+    const psGrid = grid('Pokémon Stats')
+    const pokemonStats = {}
+    for (let base = 0; base < psGrid.length; base++) {
+      if (clean(psGrid[base]?.[0]) !== 'Coach:') continue
+      for (let c = 3; c < (psGrid[base].length ?? 0); c += 8) {
+        const coach = clean(psGrid[base][c])
+        if (isBlank(coach)) continue
+        for (let r = base + 1; r <= base + 22 && r < psGrid.length; r++) {
+          const name = clean(psGrid[r]?.[c + 1])
+          if (isBlank(name)) continue
+          const id = resolve(name, `Pokémon Stats/${coach}`)
+          if (!id) continue
+          const [gp, k, d] = [psGrid[r][c + 2], psGrid[r][c + 3], psGrid[r][c + 4]]
+          if (typeof gp !== 'number' && typeof k !== 'number') continue
+          pokemonStats[id] = {
+            player: playerId(coach),
+            gamesPlayed: gp || 0,
+            kills: k || 0,
+            deaths: d || 0,
+          }
+        }
+      }
+    }
+
     // ---- Rules -------------------------------------------------------------
     // Column B is either a numbered section heading, a rule's label, or a
     // standalone callout; column C holds the rule text when there is one.
@@ -242,7 +340,7 @@ function main(source) {
       b.points - a.points || b.monDiff - a.monDiff || b.gamesWon - a.gamesWon)
     standings.forEach((s, i) => { s.rank = i + 1 })
 
-    const league = { meta, players, board, rosters, draft, schedule, standings, rules }
+    const league = { meta, players, board, rosters, draft, schedule, standings, rules, matchStats, pokemonStats }
     await writeFile(OUT, JSON.stringify(league))
 
     const json = JSON.stringify(league)
@@ -256,6 +354,31 @@ function main(source) {
     const ruleCount = ruleSections.reduce((a, s) => a + s.items.length, 0)
     const noteCount = ruleSections.reduce((a, s) => a + s.notes.length, 0)
     console.log(`  rules      ${ruleSections.length} sections, ${ruleCount} rules, ${noteCount} notes`)
+
+    const lineCount = matchStats.reduce((a, m) => a + m.a.lines.length + m.b.lines.length, 0)
+    const recordedWeeks = new Set(matchStats.map((m) => m.week)).size
+    console.log(`  matchStats ${matchStats.length} matches over ${recordedWeeks} weeks, ${lineCount} Pokémon lines`)
+
+    // The Pokémon Stats tab is derived and still being filled in, so compare it
+    // against the raw match record rather than trusting it silently.
+    const fromMatches = {}
+    for (const m of matchStats) {
+      for (const side of [m.a, m.b]) {
+        for (const l of side.lines) {
+          const t = (fromMatches[l.pokemon] ??= { gp: 0, k: 0, d: 0 })
+          t.gp++; t.k += l.kills || 0; t.d += l.deaths || 0
+        }
+      }
+    }
+    let agree = 0, blank = 0, conflict = 0
+    for (const [id, t] of Object.entries(pokemonStats)) {
+      const f = fromMatches[id]
+      if (!f) continue
+      if (t.kills === f.k && t.deaths === f.d) agree++
+      else if (!t.kills && !t.deaths) blank++
+      else conflict++
+    }
+    console.log(`  pokeStats  ${Object.keys(pokemonStats).length} entries — ${agree} match the game record, ${blank} still blank, ${conflict} conflict`)
 
     console.log(`  ${statOverrides} board entries have stats differing from the Showdown dex (sheet wins)`)
 

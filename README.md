@@ -43,6 +43,8 @@ That writes `public/data/league.json` (~80 KB) from six of the thirteen tabs:
 | Schedule | 40 matches over 8 weeks, with scores |
 | Standings | W/L, games, Pokémon differential, points |
 | Rules | The rulebook — sections, each rule's label and text, and any callouts |
+| Match Stats | Every recorded game: both pairs, the score, and each Pokémon's kills and deaths |
+| Pokémon Stats | The sheet's own per-Pokémon totals (still being filled in) |
 
 The `Pokédex`, `Pokémon Stats`, and `Data` tabs are skipped — the Showdown
 dataset already covers that ground more accurately.
@@ -64,7 +66,15 @@ Four tabs in a secondary nav under the main one:
 - **Schedule** — winners outlined green, losers red.
 - **Draft Board** — every column sortable, with tier and availability pill
   filters beside the search. Taken names are red, available ones green.
+- **Stats** — a per-Pokémon leaderboard (games, kills, deaths, differential),
+  filterable by week, over a card per recorded match.
 - **Rules** — the sheet's rulebook, one card per numbered section.
+
+The leaderboard is totalled from the **Match Stats** log rather than the sheet's
+own `Pokémon Stats` tab. That tab is mid-construction: of its 140 entries, 4
+agree with the game record, 110 are still blank where games were played, and 13
+conflict. The import reports that split on every run, and the Stats tab says how
+many disagree, so the gap stays visible instead of being silently papered over.
 
 ### Sheet precedence
 
