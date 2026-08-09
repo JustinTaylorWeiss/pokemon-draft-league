@@ -8,6 +8,7 @@ import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
 import type { LeagueTab } from './tabs'
 import './league.css'
+import { PokemonLink } from '../../components/PokemonLink'
 
 export function LeagueView({ tab }: { tab: LeagueTab }) {
   const [league, setLeague] = useState<League | null>(null)
@@ -175,8 +176,12 @@ function Rosters({ league, dex }: { league: League; dex: Record<string, LeaguePo
                   if (!mon) return null
                   return (
                     <li key={pick.pokemon}>
-                      <img src={spriteUrl(mon)} alt="" width={44} height={36} loading="lazy" />
-                      <span className="pick-name">{mon.name}</span>
+                      <PokemonLink id={pick.pokemon} title={mon.name}>
+                        <img src={spriteUrl(mon)} alt="" width={44} height={36} loading="lazy" />
+                      </PokemonLink>
+                      <span className="pick-name">
+                        <PokemonLink id={pick.pokemon}>{mon.name}</PokemonLink>
+                      </span>
                       <span className="pick-types">
                         {mon.types.map((t) => <TypeChip key={t} type={t} />)}
                       </span>
@@ -381,9 +386,15 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
               {rows.slice(0, 300).map(({ id, entry, mon }) => (
                 <tr key={id}>
                   <th scope="row" className="col-name">
-                    {mon && <img src={spriteUrl(mon)} alt="" width={40} height={32} loading="lazy" />}
+                    {mon && (
+                      <PokemonLink id={id} title={entry.name}>
+                        <img src={spriteUrl(mon)} alt="" width={40} height={32} loading="lazy" />
+                      </PokemonLink>
+                    )}
                     <span>
-                      <span className={entry.draftedBy ? 'name-taken' : 'name-open'}>{entry.name}</span>
+                      <PokemonLink id={id} className={entry.draftedBy ? 'name-taken' : 'name-open'}>
+                        {entry.name}
+                      </PokemonLink>
                       {mon && (
                         <span className="row-types">
                           {mon.types.map((t) => <TypeChip key={t} type={t} />)}

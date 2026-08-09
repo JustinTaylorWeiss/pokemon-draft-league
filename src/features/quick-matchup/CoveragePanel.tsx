@@ -4,6 +4,7 @@ import type { LearnsetDex, MoveDex, SetDex, TypeChart, TypeName } from '../../da
 import { attackingTypes, coverage } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
 import type { Team } from './TeamEditor'
+import { PokemonLink } from '../../components/PokemonLink'
 
 interface Props {
   attackers: Team
@@ -138,9 +139,11 @@ export function CoverageBody({
           return (
             <li key={r.id} className="coverage-row">
               <div className="coverage-mon">
-                <img src={spriteUrl(r.pokemon)} alt={r.pokemon.name} width={64} height={52} />
+                <PokemonLink id={r.id} title={r.pokemon.name}>
+                  <img src={spriteUrl(r.pokemon)} alt={r.pokemon.name} width={64} height={52} />
+                </PokemonLink>
                 <span>
-                  {r.pokemon.name}
+                  <PokemonLink id={r.id}>{r.pokemon.name}</PokemonLink>
                   {sets && !sets[r.id] && <em className="no-set" title="No common set on record — showing its full movepool">full pool</em>}
                 </span>
               </div>
@@ -168,10 +171,14 @@ export function CoverageBody({
                 </span>
                 <div className="coverage-targets">
                   {r.hits.map((id) => (
-                    <img key={id} className="hit" src={spriteUrl(byId[id])} alt={byId[id]?.name} title={`Hits ${byId[id]?.name}`} width={38} height={32} />
+                    <PokemonLink key={id} id={id} title={`Hits ${byId[id]?.name}`}>
+                      <img className="hit" src={spriteUrl(byId[id])} alt={byId[id]?.name} width={38} height={32} />
+                    </PokemonLink>
                   ))}
                   {r.misses.map((id) => (
-                    <img key={id} className="miss" src={spriteUrl(byId[id])} alt={byId[id]?.name} title={`No super-effective hit on ${byId[id]?.name}`} width={38} height={32} />
+                    <PokemonLink key={id} id={id} title={`No super-effective hit on ${byId[id]?.name}`}>
+                      <img className="miss" src={spriteUrl(byId[id])} alt={byId[id]?.name} width={38} height={32} />
+                    </PokemonLink>
                   ))}
                 </div>
               </div>

@@ -4,6 +4,7 @@ import type { AbilityDex, StatKey } from '../../data/types'
 import { BST_ORDER, STAT_LABELS, bulk, summarize } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
 import type { Team } from './TeamEditor'
+import { PokemonLink } from '../../components/PokemonLink'
 
 /**
  * Colors a stat relative to the neutral value: below is red, above is green.
@@ -56,9 +57,11 @@ export function DraftSummaryBody(
               return (
                 <tr key={id}>
                   <th scope="row" className="col-name">
-                    <img src={spriteUrl(pokemon)} alt="" width={44} height={36} />
+                    <PokemonLink id={id} title={pokemon.name}>
+                      <img src={spriteUrl(pokemon)} alt="" width={44} height={36} />
+                    </PokemonLink>
                     <span>
-                      {pokemon.name}
+                      <PokemonLink id={id}>{pokemon.name}</PokemonLink>
                       <span className="row-types">
                         {pokemon.types.map((t) => <TypeChip key={t} type={t} />)}
                       </span>

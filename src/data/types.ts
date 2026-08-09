@@ -25,6 +25,10 @@ export interface Pokemon {
   abilities: Record<string, string>
   heightm: number
   weightkg: number
+  /** Chance of each gender, e.g. { M: 0.5, F: 0.5 }. Absent means an even split. */
+  genderRatio?: { M: number; F: number }
+  /** "N" genderless, "M" male-only, "F" female-only. */
+  gender?: string
   /** Generation the species debuted in, not the games it is legal in. */
   gen: number
   /** Smogon singles tier: OU, UU, Uber, ZU, LC, NFE... Null if untiered. */

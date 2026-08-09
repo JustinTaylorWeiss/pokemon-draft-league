@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import type { Pokemon, PokemonDex } from '../../data/types'
 import { spriteUrl } from '../../data/load'
 import { playerLabel, type League } from '../../data/league'
+import { PokemonLink } from '../../components/PokemonLink'
 
 export interface TeamEntry {
   id: string
@@ -203,8 +204,12 @@ export function TeamEditor({ dex, team, onChange, accent, league, showRosterPick
       <ul className="roster">
         {team.members.map((m) => (
           <li key={m.id}>
-            <img src={spriteUrl(m.pokemon)} alt="" width={48} height={40} />
-            <span className="roster-name">{m.pokemon.name}</span>
+            <PokemonLink id={m.id} title={m.pokemon.name}>
+              <img src={spriteUrl(m.pokemon)} alt="" width={48} height={40} />
+            </PokemonLink>
+            <span className="roster-name">
+              <PokemonLink id={m.id}>{m.pokemon.name}</PokemonLink>
+            </span>
             <span className="roster-bst">{m.pokemon.bst}</span>
             <button type="button" className="icon-btn" onClick={() => remove(m.id)} aria-label={`Remove ${m.pokemon.name}`}>
               ✕

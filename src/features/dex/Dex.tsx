@@ -5,6 +5,7 @@ import { loadLeague, mergeDex, tierClass, type League, type LeaguePokemon } from
 import { STAT_LABELS, BST_ORDER } from '../../lib/stats'
 import { BATTLE_TYPES } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
+import { PokemonLink } from '../../components/PokemonLink'
 
 const PAGE = 200
 
@@ -298,7 +299,7 @@ export function Dex() {
       )}
 
       <ul className="dex-grid">
-        {results.slice(0, PAGE).map(({ id, mon }) => <Card key={id} mon={mon} />)}
+        {results.slice(0, PAGE).map(({ id, mon }) => <Card key={id} id={id} mon={mon} />)}
       </ul>
       {!results.length && <p className="panel-note">Nothing matches these filters.</p>}
       {results.length > PAGE && (
@@ -308,14 +309,16 @@ export function Dex() {
   )
 }
 
-function Card({ mon }: { mon: LeaguePokemon }) {
+function Card({ id, mon }: { id: string; mon: LeaguePokemon }) {
   const badge = mon.draftTier ?? mon.tier
   return (
     <li className="dex-card">
-      <img src={spriteUrl(mon)} alt="" loading="lazy" width={68} height={56} />
+      <PokemonLink id={id} title={mon.name}>
+        <img src={spriteUrl(mon)} alt="" loading="lazy" width={68} height={56} />
+      </PokemonLink>
       <div>
         <div className="dex-card-head">
-          <span className="name">{mon.name}</span>
+          <span className="name"><PokemonLink id={id}>{mon.name}</PokemonLink></span>
           {badge && <span className={mon.draftTier ? tierClass(mon.draftTier) : 'tier'}>{badge}</span>}
         </div>
         <div className="dex-types">{mon.types.map((t: TypeName) => <TypeChip key={t} type={t} />)}</div>

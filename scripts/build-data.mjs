@@ -84,6 +84,9 @@ async function main() {
       abilities: p.abilities,
       heightm: p.heightm,
       weightkg: p.weightkg,
+      // Showdown gives either a ratio or a single-gender/genderless marker.
+      ...(p.genderRatio && { genderRatio: p.genderRatio }),
+      ...(p.gender && { gender: p.gender }),
       gen: originGen(p.num),
       tier: formats[id]?.tier ?? p.tier ?? null,
       doublesTier: formats[id]?.doublesTier ?? p.doublesTier ?? null,

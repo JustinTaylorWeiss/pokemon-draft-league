@@ -4,6 +4,7 @@ import type { LearnsetDex, MoveDex, TypeName } from '../../data/types'
 import { MOVE_TAGS, tagsFor, type MoveTag } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
 import type { Team } from './TeamEditor'
+import { PokemonLink } from '../../components/PokemonLink'
 
 interface Props {
   team: Team
@@ -115,7 +116,9 @@ export function LearnedMovesBody({ team, moves, learnsets }: Props) {
             )}
             <div className="move-learners">
               {r.learners.map((id) => (
-                <img key={id} src={spriteUrl(byId[id])} alt="" title={byId[id]?.name} width={34} height={28} />
+                <PokemonLink key={id} id={id} title={byId[id]?.name}>
+                  <img src={spriteUrl(byId[id])} alt="" width={34} height={28} />
+                </PokemonLink>
               ))}
             </div>
           </li>

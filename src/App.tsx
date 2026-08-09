@@ -4,6 +4,8 @@ import { LeagueView } from './features/league/LeagueView'
 import { LEAGUE_TABS, type LeagueTab } from './features/league/tabs'
 import { loadLeague, type League } from './data/league'
 import { Dex } from './features/dex/Dex'
+import { PokemonModalProvider } from './features/pokemon/PokemonModalContext'
+import { PokemonModal } from './features/pokemon/PokemonModal'
 import './App.css'
 
 type View = 'league' | 'matchup' | 'dex'
@@ -24,7 +26,7 @@ export default function App() {
   useEffect(() => { loadLeague().then(setLeague, () => {}) }, [])
 
   return (
-    <>
+    <PokemonModalProvider>
       <header className="topbar">
         <div className="bar-inner">
           <span className="brand">Draft League</span>
@@ -39,6 +41,22 @@ export default function App() {
               </button>
             ))}
           </nav>
+
+          {/* One season for now; this is where other seasons or leagues will be
+              chosen once there is more than one to import. */}
+          {league && (
+            <label className="season-picker">
+              <select value="current" onChange={() => {}} aria-label="League and season">
+                <option value="current">{league.meta.name ?? 'Draft League'}</option>
+              </select>
+              <span className="season-detail">
+                {[league.meta.format, league.meta.regulation && `Reg ${league.meta.regulation}`,
+                  league.meta.seriesLength, league.meta.weeks && `${league.meta.weeks} weeks`,
+                  league.meta.picksPerPlayer && `${league.meta.picksPerPlayer} picks each`]
+                  .filter(Boolean).join(' · ')}
+              </span>
+            </label>
+          )}
         </div>
       </header>
 
@@ -56,17 +74,6 @@ export default function App() {
                 </button>
               ))}
             </nav>
-            {league && (
-              <div className="league-badge">
-                <strong>{league.meta.name ?? 'Draft League'}</strong>
-                <span>
-                  {[league.meta.format, league.meta.regulation && `Reg ${league.meta.regulation}`,
-                    league.meta.seriesLength, league.meta.weeks && `${league.meta.weeks} weeks`,
-                    league.meta.picksPerPlayer && `${league.meta.picksPerPlayer} picks each`]
-                    .filter(Boolean).join(' · ')}
-                </span>
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -76,6 +83,8 @@ export default function App() {
         {view === 'matchup' && <QuickMatchup />}
         {view === 'dex' && <Dex />}
       </main>
-    </>
+
+      <PokemonModal />
+    </PokemonModalProvider>
   )
 }

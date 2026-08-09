@@ -4,6 +4,7 @@ import type { TypeChart } from '../../data/types'
 import { BATTLE_TYPES, defensiveChart } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
 import type { Team } from './TeamEditor'
+import { PokemonLink } from '../../components/PokemonLink'
 
 interface Props {
   team: Team
@@ -48,7 +49,9 @@ export function DefensiveChartBody({ team, chart, useAbilities }: Props) {
             {rows.map((row) => (
               <tr key={row.id}>
                 <th scope="row" className="mon-cell">
-                  <img src={spriteUrl(row.pokemon)} alt={row.pokemon.name} title={row.pokemon.name} width={40} height={32} />
+                  <PokemonLink id={row.id} title={row.pokemon.name}>
+                    <img src={spriteUrl(row.pokemon)} alt={row.pokemon.name} width={40} height={32} />
+                  </PokemonLink>
                 </th>
                 {BATTLE_TYPES.map((t) => (
                   <td key={t} className={cellClass(row.multipliers[t])}>{label(row.multipliers[t])}</td>
