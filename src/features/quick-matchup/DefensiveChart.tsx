@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { spriteUrl } from '../../data/load'
 import type { TypeChart } from '../../data/types'
 import { BATTLE_TYPES, defensiveChart } from '../../lib/matchup'
+import { TypeChip } from '../../components/TypeChip'
 import type { Team } from './TeamEditor'
 
 interface Props {
@@ -39,7 +40,7 @@ export function DefensiveChartBody({ team, chart, useAbilities }: Props) {
             <tr>
               <th className="corner" />
               {BATTLE_TYPES.map((t) => (
-                <th key={t} className={`type-head type-${t.toLowerCase()}`}>{t.slice(0, 3)}</th>
+                <th key={t} className="type-head"><TypeChip type={t} /></th>
               ))}
             </tr>
           </thead>

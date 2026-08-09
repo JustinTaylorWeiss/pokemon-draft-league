@@ -84,7 +84,12 @@
 .agg-label { text-align: right !important; text-transform: capitalize; color: var(--muted); font-weight: 500; }
 .stat-table tfoot td { color: var(--muted); }
 
-.type-head { writing-mode: vertical-rl; transform: rotate(180deg); padding: 0.35rem 0.2rem !important; color: #fff !important; }
+/* Same chips as everywhere else, stood on end so 18 of them fit the header. */
+.type-head { padding: 0.3rem 0.15rem !important; vertical-align: bottom; }
+.type-head .type-chip {
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  padding: 0.4rem 0.12rem; border-radius: 5px; letter-spacing: 0.04em;
+}
 .mon-cell { padding: 0.15rem !important; }
 .mon-cell img { image-rendering: pixelated; display: block; }
 .type-table tfoot th { text-align: right !important; color: var(--muted); font-size: 0.72rem; }
@@ -153,11 +158,15 @@ button.type-chip { cursor: pointer; }
 .coverage-targets .miss { opacity: 0.3; filter: grayscale(1); }
 
 /* ---- learned moves ---- */
-/* Search takes the left half; the tag pills wrap into stacked rows on the right. */
+/* Search takes the left half; the tag pills wrap into stacked rows on the right.
+   The input keeps its own height and centres against the stack. */
 .moves-controls {
-  display: flex; gap: 0.75rem; padding: 0 16px; align-items: flex-start;
+  display: flex; gap: 0.75rem; padding: 0 16px 0.9rem; align-items: center;
 }
-.moves-controls input { flex: 1 1 0; min-width: 0; align-self: stretch; }
+.moves-controls input {
+  flex: 1 1 0; min-width: 0; align-self: center;
+  height: 2rem; padding: 0 0.7rem; font-size: 0.85rem;
+}
 /* The right half, wrapping into as many rows as the pills need. */
 .tag-row { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; gap: 0.25rem; align-content: flex-start; }
 .tag-btn {
