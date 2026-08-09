@@ -30,6 +30,15 @@ const COMPARATORS: { key: Comparator; label: string }[] = [
 const statValue = (mon: LeaguePokemon, field: StatField) =>
   field === 'bst' ? mon.bst : mon.baseStats[field]
 
+interface StatFilter {
+  field: StatField
+  comparator: Comparator
+  value: string
+}
+
+/** HP ≥ 0 matches everything, so a fresh row never changes the results. */
+const newStatFilter = (): StatFilter => ({ field: 'hp', comparator: 'gte', value: '0' })
+
 export function Dex() {
   const [rawDex, setRawDex] = useState<PokemonDex | null>(null)
   const [league, setLeague] = useState<League | null>(null)
@@ -42,9 +51,7 @@ export function Dex() {
   const [type1, setType1] = useState<string>(ANY)
   const [type2, setType2] = useState<string>(ANY)
   const [tier, setTier] = useState<string>(ANY)
-  const [statField, setStatField] = useState<StatField>('hp')
-  const [comparator, setComparator] = useState<Comparator>('gte')
-  const [statValueInput, setStatValueInput] = useState('0')
+  const [statFilters, setStatFilters] = useState<StatFilter[]>([newStatFilter()])
   const [ability, setAbility] = useState('')
   const [move, setMove] = useState('')
 
@@ -93,9 +100,16 @@ export function Dex() {
     return [...new Set(Object.values(dex).map((p) => p.draftTier ?? p.tier).filter(Boolean) as string[])]
   }, [dex])
 
-  const threshold = Number(statValueInput)
-  const statActive = statValueInput.trim() !== '' && Number.isFinite(threshold)
-    && !(statField === 'hp' && comparator === 'gte' && threshold === 0)
+  // Only conditions that actually narrow anything count; the default HP >= 0
+  // row is a placeholder, not a filter.
+  const activeStats = useMemo(
+    () => statFilters.filter((f) => {
+      const n = Number(f.value)
+      if (f.value.trim() === '' || !Number.isFinite(n)) return false
+      return !(f.field === 'hp' && f.comparator === 'gte' && n === 0)
+    }),
+    [statFilters],
+  )
 
   const results = useMemo(() => {
     if (!dex) return []
@@ -121,11 +135,13 @@ export function Dex() {
 
         if (tier !== ANY && (mon.draftTier ?? mon.tier) !== tier) return false
 
-        if (statActive) {
-          const v = statValue(mon, statField)
-          if (comparator === 'gte' && v < threshold) return false
-          if (comparator === 'lte' && v > threshold) return false
-          if (comparator === 'eq' && v !== threshold) return false
+        // Every condition has to hold, so stacking rows narrows the list.
+        for (const f of activeStats) {
+          const v = statValue(mon, f.field)
+          const n = Number(f.value)
+          if (f.comparator === 'gte' && v < n) return false
+          if (f.comparator === 'lte' && v > n) return false
+          if (f.comparator === 'eq' && v !== n) return false
         }
 
         if (abilityQuery
@@ -141,16 +157,16 @@ export function Dex() {
       })
       .map(([id, mon]) => ({ id, mon }))
       .sort((a, b) => b.mon.bst - a.mon.bst)
-  }, [dex, name, type1, type2, tier, statField, comparator, threshold, statActive, ability, moveIds, learnsets])
+  }, [dex, name, type1, type2, tier, activeStats, ability, moveIds, learnsets])
 
   const reset = () => {
     setName(''); setType1(ANY); setType2(ANY); setTier(ANY)
-    setStatField('hp'); setComparator('gte'); setStatValueInput('0')
+    setStatFilters([newStatFilter()])
     setAbility(''); setMove('')
   }
 
   const anyFilterActive = Boolean(
-    name.trim() || type1 !== ANY || type2 !== ANY || tier !== ANY || statActive || ability.trim() || move.trim(),
+    name.trim() || type1 !== ANY || type2 !== ANY || tier !== ANY || activeStats.length || ability.trim() || move.trim(),
   )
 
   if (error) return <p className="error">Could not load data: {error}</p>
@@ -169,7 +185,7 @@ export function Dex() {
           />
         </label>
 
-        <label className="filter">
+        <label className="filter filter-type">
           <span>Type 1</span>
           <select value={type1} onChange={(e) => setType1(e.target.value)}>
             <option value={ANY}>Any</option>
@@ -177,11 +193,11 @@ export function Dex() {
           </select>
         </label>
 
-        <label className="filter">
+        <label className="filter filter-type">
           <span>Type 2</span>
           <select value={type2} onChange={(e) => setType2(e.target.value)}>
             <option value={ANY}>Any</option>
-            <option value={NONE}>None (mono-type)</option>
+            <option value={NONE}>None</option>
             {BATTLE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </label>
@@ -195,26 +211,49 @@ export function Dex() {
         </label>
 
         <div className="filter filter-stat">
-          <span>Stat</span>
-          <div className="stat-row">
-            <select
-              value={statField} onChange={(e) => setStatField(e.target.value as StatField)}
-              aria-label="Stat to filter on"
+          <span>
+            Stat
+            <button
+              type="button" className="stat-step"
+              onClick={() => setStatFilters((f) => [...f, newStatFilter()])}
+              aria-label="Add another stat condition" title="Add a stat condition"
             >
-              {STAT_FIELDS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
-            </select>
-            <select
-              value={comparator} onChange={(e) => setComparator(e.target.value as Comparator)}
-              aria-label="Comparison"
+              +
+            </button>
+            <button
+              type="button" className="stat-step"
+              onClick={() => setStatFilters((f) => (f.length > 1 ? f.slice(0, -1) : f))}
+              disabled={statFilters.length < 2}
+              aria-label="Remove the last stat condition" title="Remove a stat condition"
             >
-              {COMPARATORS.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
-            </select>
-            <input
-              type="number" value={statValueInput} min={0}
-              onChange={(e) => setStatValueInput(e.target.value)}
-              aria-label="Stat value"
-            />
-          </div>
+              −
+            </button>
+          </span>
+          {statFilters.map((f, i) => {
+            const update = (patch: Partial<StatFilter>) =>
+              setStatFilters((prev) => prev.map((x, j) => (j === i ? { ...x, ...patch } : x)))
+            return (
+              <div className="stat-row" key={i}>
+                <select
+                  value={f.field} onChange={(e) => update({ field: e.target.value as StatField })}
+                  aria-label={`Stat ${i + 1}`}
+                >
+                  {STAT_FIELDS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+                </select>
+                <select
+                  value={f.comparator} onChange={(e) => update({ comparator: e.target.value as Comparator })}
+                  aria-label={`Comparison ${i + 1}`}
+                >
+                  {COMPARATORS.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
+                </select>
+                <input
+                  type="number" value={f.value} min={0}
+                  onChange={(e) => update({ value: e.target.value })}
+                  aria-label={`Stat value ${i + 1}`}
+                />
+              </div>
+            )
+          })}
         </div>
 
         <label className="filter">
@@ -240,10 +279,15 @@ export function Dex() {
         </label>
 
         <div className="filter filter-actions">
-          <span className="count">{results.length} of {Object.keys(dex).length}</span>
-          {anyFilterActive && (
-            <button type="button" className="btn ghost sm" onClick={reset}>Reset</button>
-          )}
+          {/* Empty label row so the count lands on the controls' baseline
+              rather than the labels above them. */}
+          <span className="label-spacer" aria-hidden="true" />
+          <div className="actions-row">
+            <span className="count">{results.length} of {Object.keys(dex).length}</span>
+            {anyFilterActive && (
+              <button type="button" className="btn ghost sm" onClick={reset}>Reset</button>
+            )}
+          </div>
         </div>
       </div>
 

@@ -76,14 +76,34 @@
   background-size: 0.35rem 0.35rem, 0.35rem 0.35rem;
   background-repeat: no-repeat;
 }
-.filter-wide input { min-width: 14rem; }
-.filter select { min-width: 8rem; }
+.filter-wide input { min-width: 10.5rem; }
+.filter select { min-width: 7rem; }
+/* Both type dropdowns fixed to one width so they read as a matched pair. */
+.filter-type select { width: 8.5rem; min-width: 0; }
+/* Extra conditions stack under the first, so the label owns the whole group. */
+.filter-stat { gap: 0.3rem; }
+.filter-stat > span { display: flex; align-items: center; gap: 0.3rem; }
+.stat-step {
+  width: 1.15rem; height: 1.15rem; padding: 0; line-height: 1;
+  border: 1px solid var(--line); border-radius: 4px; background: none;
+  color: var(--muted); font: inherit; font-size: 0.8rem; cursor: pointer;
+  display: grid; place-items: center;
+}
+.stat-step:hover:not(:disabled) { color: var(--fg); border-color: var(--accent); }
+.stat-step:disabled { opacity: 0.35; cursor: not-allowed; }
+
 .stat-row { display: flex; gap: 0.3rem; }
 .stat-row select { min-width: 0; }
 .stat-row select:first-child { width: 5.5rem; }
 .stat-row select:nth-child(2) { width: 3.5rem; }
 .stat-row input { width: 5.5rem; }
-.filter-actions { flex-direction: row; align-items: center; gap: 0.6rem; margin-left: auto; }
+/* Sits on the same line as the filters; auto margin only pushes it right
+   once there is room left over. */
+.filter-actions { margin-left: auto; }
+/* Matches the label line so the row below starts level with the inputs. */
+.label-spacer { height: 0.99rem; }
+.actions-row { display: flex; align-items: center; gap: 0.6rem; height: 2.2rem; white-space: nowrap; }
+.filter-actions .count { white-space: nowrap; }
 
 .dex-abilities { margin-top: 0.25rem; font-size: 0.68rem; color: var(--muted); }
 

@@ -120,6 +120,19 @@ Two deliberately differ:
   formula, this shows physical and special bulk — HP × the matching defense —
   which BST hides because HP multiplies with defenses instead of adding to them.
 
+## Dex
+
+Filters are separate controls rather than one overloaded search box:
+
+| Filter | Default | Notes |
+| --- | --- | --- |
+| Name | Any | Substring match |
+| Type 1 / Type 2 | Any | The pair is order-independent, so Fire + Flying finds Charizard. Type 2 offers **None** for mono-types |
+| Tier | Any | Draft tier when the Pokémon is on the board, Smogon tier otherwise |
+| Stat | HP ≥ 0 | A no-op by default. `+` and `-` beside the label stack more conditions, and they AND together |
+| Ability | Any | Substring match, with a datalist of all 310 |
+| Move | Any | An exact name wins; otherwise every partial match counts |
+
 ## The dataset
 
 `npm run build:data` regenerates `public/data/` from
