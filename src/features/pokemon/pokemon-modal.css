@@ -124,6 +124,13 @@
 .set-moves em { margin-left: auto; font-style: normal; font-size: 0.72rem; color: var(--muted); }
 
 /* ---- move tables ---- */
+/* Search on the left, group filters to its right. */
+.move-controls { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+.move-controls input {
+  flex: 1 1 12rem; min-width: 0; height: 2rem; padding: 0 0.6rem;
+  border: 1px solid var(--line); border-radius: 8px;
+  background: var(--bg); color: inherit; font: inherit; font-size: 0.82rem;
+}
 .move-tabs { display: flex; flex-wrap: wrap; gap: 0.25rem; }
 .move-tabs button {
   background: none; border: 1px solid var(--line); border-radius: 999px;
@@ -132,13 +139,16 @@
 .move-tabs button em { font-style: normal; opacity: 0.7; }
 .move-tabs button.is-active { border-color: var(--accent); color: var(--accent); }
 
-.move-table-scroll { overflow-x: auto; max-height: 26rem; overflow-y: auto; }
+/* No inner vertical scroll: the modal grows and the backdrop scrolls, so a
+   long TM list reads as one table instead of a window into one. */
+.move-table-scroll { overflow-x: auto; }
 .move-table { border-collapse: collapse; width: 100%; font-size: 0.78rem; }
 .move-table th, .move-table td {
   border-bottom: 1px solid var(--line); padding: 0.3rem 0.4rem; text-align: center;
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 .move-table thead th {
+  /* Sticks against the backdrop's scroll now that the table does not scroll. */
   position: sticky; top: 0; background: var(--widget); z-index: 1;
   color: var(--muted); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em;
 }

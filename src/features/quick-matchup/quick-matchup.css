@@ -153,11 +153,17 @@
 .badge-ability { color: var(--team-both); }
 
 /* ---- type chips ---- */
+/* One width for every type: 6.6em clears the longest name (ELECTRIC) at any
+   font size, so short names like ICE do not get a stubby box. */
 .type-chip {
   font-size: 0.66rem; padding: 0.1rem 0.4rem; border-radius: 4px; color: #fff;
   text-transform: uppercase; letter-spacing: 0.03em; border: 0; font-family: inherit;
   line-height: 1.5; white-space: nowrap;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 6.6em; text-align: center;
 }
+/* Stood on end in the chart header, so the run is vertical. */
+.type-head .type-chip { min-width: 0; min-height: 6.6em; }
 button.type-chip { cursor: pointer; }
 .type-chip.is-muted { opacity: 0.28; }
 

@@ -32,6 +32,7 @@ export function PokemonModal() {
   const [chart, setChart] = useState<TypeChart | null>(null)
   const [sets, setSets] = useState<SetDex | null>(null)
   const [tab, setTab] = useState('level')
+  const [moveQuery, setMoveQuery] = useState('')
   const dialogRef = useRef<HTMLDivElement>(null)
 
   // Everything here is already cached by the loaders, so opening the modal
@@ -61,7 +62,7 @@ export function PokemonModal() {
     }
   }, [openId, close])
 
-  useEffect(() => { setTab('level') }, [openId])
+  useEffect(() => { setTab('level'); setMoveQuery('') }, [openId])
 
   const merged = useMemo(() => (dex ? mergeDex(dex, league) : null), [dex, league])
   const mon: LeaguePokemon | undefined = openId && merged ? merged[openId] : undefined
@@ -91,6 +92,21 @@ export function PokemonModal() {
     }
     return out
   }, [learnset, moves])
+
+  /** The active group, narrowed by the search box. */
+  const visibleMoves = useMemo(() => {
+    const list = grouped?.[tab] ?? []
+    const q = moveQuery.trim().toLowerCase()
+    if (!q) return list
+    return list.filter((row) => {
+      const mv = moves?.[row.move]
+      if (!mv) return false
+      return mv.name.toLowerCase().includes(q)
+        || mv.type.toLowerCase() === q
+        || mv.category.toLowerCase() === q
+        || mv.shortDesc.toLowerCase().includes(q)
+    })
+  }, [grouped, tab, moveQuery, moves])
 
   if (!openId) return null
 
@@ -241,16 +257,23 @@ export function PokemonModal() {
                 <h3>Moves</h3>
                 {!grouped ? <p className="loading">Loading moves…</p> : (
                   <>
-                    <div className="move-tabs">
-                      {MOVE_GROUPS.filter((g) => grouped[g.key]?.length).map((g) => (
-                        <button
-                          key={g.key} type="button"
-                          className={tab === g.key ? 'is-active' : ''}
-                          onClick={() => setTab(g.key)}
-                        >
-                          {g.label} <em>{grouped[g.key].length}</em>
-                        </button>
-                      ))}
+                    <div className="move-controls">
+                      <input
+                        type="search" value={moveQuery}
+                        onChange={(e) => setMoveQuery(e.target.value)}
+                        placeholder="Search moves…" aria-label="Search this Pokémon's moves"
+                      />
+                      <div className="move-tabs">
+                        {MOVE_GROUPS.filter((g) => grouped[g.key]?.length).map((g) => (
+                          <button
+                            key={g.key} type="button"
+                            className={tab === g.key ? 'is-active' : ''}
+                            onClick={() => setTab(g.key)}
+                          >
+                            {g.label} <em>{grouped[g.key].length}</em>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                     <div className="move-table-scroll">
                       <table className="move-table">
@@ -263,7 +286,7 @@ export function PokemonModal() {
                           </tr>
                         </thead>
                         <tbody>
-                          {(grouped[tab] ?? []).map((row) => {
+                          {visibleMoves.map((row) => {
                             const mv = moves?.[row.move]
                             if (!mv) return null
                             return (
@@ -282,6 +305,9 @@ export function PokemonModal() {
                         </tbody>
                       </table>
                     </div>
+                    {!visibleMoves.length && (
+                      <p className="modal-hint">No moves in this group match “{moveQuery}”.</p>
+                    )}
                   </>
                 )}
               </section>
