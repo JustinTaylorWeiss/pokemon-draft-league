@@ -3,6 +3,7 @@ import { loadCore, loadLearnsets } from '../../data/load'
 import type { AbilityDex, LearnsetDex, MoveDex, PokemonDex, TypeChart } from '../../data/types'
 import { byId, loadLeague, mergeDex, type League } from '../../data/league'
 import { TeamEditor, type Team, type TeamEntry } from './TeamEditor'
+import { useElementHeight } from '../../lib/useElementHeight'
 import { TeamsAndSpeed } from './TeamsAndSpeed'
 import { SummaryAndTypes } from './SummaryAndTypes'
 import { MovesAndCoverage } from './MovesAndCoverage'
@@ -54,6 +55,7 @@ export function QuickMatchup() {
   const [teamOne, setTeamOne] = useState<Team>(() => emptyTeam('Team 1'))
   const [teamTwo, setTeamTwo] = useState<Team>(() => emptyTeam('Team 2'))
   const [perspective, setPerspective] = useState<'one' | 'two'>('one')
+  const [columnRef, columnHeight] = useElementHeight<HTMLDivElement>()
 
   useEffect(() => {
     loadCore().then((c) => {
@@ -235,11 +237,11 @@ export function QuickMatchup() {
       {/* Widgets carry their own intrinsic width and this container packs them,
           so the page reads as an uneven two-up grid the way DraftZone's does. */}
       <div className="matchup-container">
-        <TeamsAndSpeed teamOne={teamOne} teamTwo={teamTwo} />
+        <TeamsAndSpeed teamOne={teamOne} teamTwo={teamTwo} maxHeight={columnHeight} />
 
         {/* Stacked so Moves/Coverage sits directly under the summary card
             rather than being packed onto the next available row. */}
-        <div className="matchup-column">
+        <div className="matchup-column" ref={columnRef}>
           <SummaryAndTypes team={analyzed} chart={core.typechart} />
           {learnsets ? (
             <MovesAndCoverage

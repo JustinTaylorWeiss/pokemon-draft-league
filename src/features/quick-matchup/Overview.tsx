@@ -36,7 +36,7 @@ function TeamColumn({ team, side, alternate }: { team: Team; side: 'one' | 'two'
         {rows.map((m) => (
           <div key={m.id} className="overview-row">
             <span className="sprite-cell">
-              <img src={spriteUrl(m.pokemon)} alt="" width={32} height={28} />
+              <img src={spriteUrl(m.pokemon)} alt="" width={46} height={40} />
             </span>
             <span className="name-cell" title={m.pokemon.name}>{m.pokemon.name}</span>
             <span className="speed-cell" title="Speed at Lv 100, 252 EVs, neutral nature">

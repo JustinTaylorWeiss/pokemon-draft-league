@@ -18,6 +18,10 @@ interface Props {
   width?: number
   children: ReactNode
   footnote?: ReactNode
+  /** Extra classes, e.g. to let a card stretch to the row's full height. */
+  className?: string
+  /** Caps the card so a long body scrolls instead of outgrowing its neighbour. */
+  maxHeight?: number | null
 }
 
 /**
@@ -25,9 +29,14 @@ interface Props {
  * fixed intrinsic width and lets a centered flex-wrap row pack them, which is
  * why the results page reads as an uneven two-up grid rather than a stack.
  */
-export function Widget({ title, tabs, active, onTab, actions, width, children, footnote }: Props) {
+export function Widget({
+  title, tabs, active, onTab, actions, width, children, footnote, className, maxHeight,
+}: Props) {
   return (
-    <section className="widget" style={width ? { width } : undefined}>
+    <section
+      className={`widget${className ? ` ${className}` : ''}`}
+      style={{ ...(width && { width }), ...(maxHeight && { maxHeight }) }}
+    >
       {tabs ? (
         <>
           {/* Tabs split the title bar evenly, each underlining its own half. */}

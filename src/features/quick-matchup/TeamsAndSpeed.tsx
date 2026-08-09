@@ -13,7 +13,14 @@ const TABS = [
  * Both views describe the same two rosters, so they share a card and swap by
  * tab rather than taking up two slots in the grid.
  */
-export function TeamsAndSpeed({ teamOne, teamTwo }: { teamOne: Team; teamTwo: Team }) {
+interface Props {
+  teamOne: Team
+  teamTwo: Team
+  /** Height of the column beside this card; the speed list scrolls within it. */
+  maxHeight: number | null
+}
+
+export function TeamsAndSpeed({ teamOne, teamTwo, maxHeight }: Props) {
   const [tab, setTab] = useState('teams')
   const [showZero, setShowZero] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
@@ -25,7 +32,10 @@ export function TeamsAndSpeed({ teamOne, teamTwo }: { teamOne: Team; teamTwo: Te
       tabs={TABS}
       active={tab}
       onTab={setTab}
-      width={344}
+      width={420}
+      // Only the speed list runs long enough to need capping.
+      className={onSpeed ? 'stretch-tall' : undefined}
+      maxHeight={onSpeed ? maxHeight : null}
       actions={onSpeed ? (
         <label className="toggle">
           <input type="checkbox" checked={showZero} onChange={(e) => setShowZero(e.target.checked)} />

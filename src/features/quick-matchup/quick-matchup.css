@@ -107,8 +107,18 @@
 .speed-groups { flex: 1 1 auto; min-width: 0; }
 .speed-layout h3 { margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em; }
 .speed-layout h3 span { float: right; text-transform: none; font-size: 0.68rem; }
-/* No inner scroll: the widget grows so the Uninvested toggle visibly adds rows. */
 .speed-layout ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+
+/* On the speed tab the card is capped to the height of the stacked column
+   beside it, so their bottoms line up and the lists scroll inside. The cap is
+   measured rather than a CSS stretch, because align-self can only grow an item
+   that is shorter than the row — this list is far taller. */
+.widget.stretch-tall { overflow: hidden; }
+.widget.stretch-tall .widget-body { flex: 1 1 auto; min-height: 0; display: flex; }
+.widget.stretch-tall .speed-layout { flex: 1 1 auto; min-height: 0; }
+.widget.stretch-tall .speed-bases,
+.widget.stretch-tall .speed-groups { display: flex; flex-direction: column; min-height: 0; }
+.widget.stretch-tall .speed-layout ul { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
 .speed-layout li {
   border: 1px solid var(--line); border-radius: 6px; font-size: 0.76rem;
   transition: opacity 0.12s, border-color 0.12s;
@@ -220,8 +230,8 @@ button.type-chip { cursor: pointer; }
   width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw);
   margin-top: -1.5rem; margin-bottom: 0.25rem;
 }
-.matchup-bar { gap: 1rem; flex-wrap: wrap; padding-top: 0.5rem; padding-bottom: 0.5rem; }
-.matchup-bar h2 { margin: 0; font-size: 1.15rem; letter-spacing: -0.02em; white-space: nowrap; }
+.bar-inner.matchup-bar { gap: 1rem; flex-wrap: wrap; padding: 0.85rem 1.25rem; }
+.matchup-bar h2 { margin: 0; font-size: 1.3rem; letter-spacing: -0.02em; white-space: nowrap; }
 
 .matchup-meta { display: flex; gap: 1.25rem; margin: 0; }
 .matchup-meta div { display: flex; flex-direction: column; }
@@ -265,20 +275,20 @@ button.type-chip { cursor: pointer; }
 
 /* ---- overview: the two rosters, second one mirrored ---- */
 .overview { padding: 12px; }
-.overview-wrapper { display: grid; grid-template-columns: 150px 150px; gap: 8px; }
+.overview-wrapper { display: grid; grid-template-columns: 190px 190px; gap: 8px; }
 .team-container { min-width: 0; }
 .team-name-title {
-  font-weight: 700; font-size: 0.85rem; text-align: center; line-height: 1.25;
+  font-weight: 700; font-size: 0.92rem; text-align: center; line-height: 1.25;
   padding-bottom: 0.4rem; margin-bottom: 0.3rem;
   border-bottom: 2px solid var(--team, var(--accent)); color: var(--team, var(--accent));
 }
 .team-body { display: flex; flex-direction: column; }
 .overview-row {
-  display: grid; grid-template-columns: 32px 1fr 2rem;
-  align-items: center; gap: 0.2rem; padding: 0.05rem 0.1rem;
+  display: grid; grid-template-columns: 46px 1fr 2.2rem;
+  align-items: center; gap: 0.3rem; padding: 0.22rem 0.2rem;
 }
 .team-container.alternate .overview-row {
-  grid-template-columns: 2rem 1fr 32px;
+  grid-template-columns: 2.2rem 1fr 46px;
   direction: rtl;
 }
 .team-container.alternate .overview-row > * { direction: ltr; }
@@ -287,9 +297,9 @@ button.type-chip { cursor: pointer; }
   color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 0.2rem;
 }
 .overview-row .name-cell {
-  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.72rem;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.82rem;
 }
-.overview-row .speed-cell { text-align: right; font-variant-numeric: tabular-nums; font-size: 0.72rem; }
+.overview-row .speed-cell { text-align: right; font-variant-numeric: tabular-nums; font-size: 0.82rem; }
 .team-container.alternate .overview-row .speed-cell { text-align: left; }
 .overview-row .sprite-cell { display: flex; }
 .overview-row img { image-rendering: pixelated; object-fit: contain; }

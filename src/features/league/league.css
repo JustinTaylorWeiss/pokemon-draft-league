@@ -6,8 +6,8 @@
 .sub-nav { display: flex; gap: 0.25rem; }
 .sub-nav button {
   background: none; border: 0; border-bottom: 2px solid transparent;
-  color: var(--muted); font: inherit; font-size: 0.88rem;
-  padding: 0.6rem 0.75rem; cursor: pointer; white-space: nowrap;
+  color: var(--muted); font: inherit; font-size: 0.92rem;
+  padding: 0.95rem 0.85rem; cursor: pointer; white-space: nowrap;
 }
 .sub-nav button:hover { color: var(--fg); }
 .sub-nav button.is-active { color: var(--accent); border-bottom-color: var(--accent); }
