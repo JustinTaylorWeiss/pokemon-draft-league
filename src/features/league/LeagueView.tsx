@@ -50,6 +50,9 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
   )
 }
 
+/** A full week is every player paired off: 20 players, 4 per match. */
+const WEEK_MATCHES = 5
+
 type StatSort = 'kills' | 'deaths' | 'diff' | 'gamesPlayed' | 'killsPerGame' | 'name'
 
 function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
@@ -117,12 +120,17 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           </button>
           {weeks.map((w) => {
             const n = matches.filter((m) => m.week === w && (m.a.lines.length || m.b.lines.length)).length
+            // Five matches is a full week; anything short is still being played
+            // or recorded, and the colour says which at a glance.
+            const state = n >= WEEK_MATCHES ? 'is-complete' : 'is-partial'
             return (
               <button
-                key={w} type="button" className={`pill${week === w ? ' is-active' : ''}`}
+                key={w} type="button"
+                className={`pill week-pill ${state}${week === w ? ' is-active' : ''}`}
                 onClick={() => setWeek(w)} disabled={!n}
+                title={`${n} of ${WEEK_MATCHES} matches recorded`}
               >
-                W{w}<em>{n}</em>
+                Week {w}
               </button>
             )
           })}

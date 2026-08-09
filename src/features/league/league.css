@@ -251,3 +251,10 @@
 .ml-kd { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 0.72rem; }
 .ml-kd .k { font-style: normal; color: #4fb573; }
 .ml-kd .d { font-style: normal; color: var(--nav-red); }
+
+/* Week filters: green when the week's five matches are all recorded, orange
+   while it is still incomplete. */
+.week-pill.is-complete { color: #4fb573; }
+.week-pill.is-partial { color: #e79445; }
+.week-pill.is-complete.is-active { background: #4fb573; border-color: #4fb573; color: #06231a; }
+.week-pill.is-partial.is-active { background: #e79445; border-color: #e79445; color: #2a1704; }
