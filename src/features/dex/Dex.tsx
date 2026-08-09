@@ -177,6 +177,9 @@ export function Dex() {
   return (
     <div className="dex">
       <div className="filters">
+        {anyFilterActive && (
+          <button type="button" className="btn ghost sm filters-reset" onClick={reset}>Reset</button>
+        )}
         <label className="filter filter-wide">
           <span>Name</span>
           <input
@@ -210,52 +213,6 @@ export function Dex() {
           </select>
         </label>
 
-        <div className="filter filter-stat">
-          <span>Stat</span>
-          {statFilters.map((f, i) => {
-            const update = (patch: Partial<StatFilter>) =>
-              setStatFilters((prev) => prev.map((x, j) => (j === i ? { ...x, ...patch } : x)))
-            return (
-              <div className="stat-row" key={i}>
-                {/* Every row past the first can close itself. */}
-                {i > 0 && (
-                  <button
-                    type="button" className="stat-step"
-                    onClick={() => setStatFilters((prev) => prev.filter((_, j) => j !== i))}
-                    aria-label={`Remove stat condition ${i + 1}`} title="Remove this condition"
-                  >
-                    −
-                  </button>
-                )}
-                <select
-                  value={f.field} onChange={(e) => update({ field: e.target.value as StatField })}
-                  aria-label={`Stat ${i + 1}`}
-                >
-                  {STAT_FIELDS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
-                </select>
-                <select
-                  value={f.comparator} onChange={(e) => update({ comparator: e.target.value as Comparator })}
-                  aria-label={`Comparison ${i + 1}`}
-                >
-                  {COMPARATORS.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
-                </select>
-                <input
-                  type="number" value={f.value} min={0}
-                  onChange={(e) => update({ value: e.target.value })}
-                  aria-label={`Stat value ${i + 1}`}
-                />
-              </div>
-            )
-          })}
-          <button
-            type="button" className="stat-step stat-add"
-            onClick={() => setStatFilters((f) => [...f, newStatFilter()])}
-            aria-label="Add another stat condition" title="Add a stat condition"
-          >
-            + Add stat
-          </button>
-        </div>
-
         <label className="filter">
           <span>Ability</span>
           <input
@@ -278,15 +235,59 @@ export function Dex() {
           </datalist>
         </label>
 
+        <div className="filter filter-stat">
+          <span>Stat</span>
+          {statFilters.map((f, i) => {
+            const update = (patch: Partial<StatFilter>) =>
+              setStatFilters((prev) => prev.map((x, j) => (j === i ? { ...x, ...patch } : x)))
+            return (
+              <div className="stat-row" key={i}>
+                <select
+                  value={f.field} onChange={(e) => update({ field: e.target.value as StatField })}
+                  aria-label={`Stat ${i + 1}`}
+                >
+                  {STAT_FIELDS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+                </select>
+                <select
+                  value={f.comparator} onChange={(e) => update({ comparator: e.target.value as Comparator })}
+                  aria-label={`Comparison ${i + 1}`}
+                >
+                  {COMPARATORS.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
+                </select>
+                <input
+                  type="number" value={f.value} min={0}
+                  onChange={(e) => update({ value: e.target.value })}
+                  aria-label={`Stat value ${i + 1}`}
+                />
+                {/* The first row adds; every row after it closes itself. */}
+                {i === 0 ? (
+                  <button
+                    type="button" className="stat-step"
+                    onClick={() => setStatFilters((f) => [...f, newStatFilter()])}
+                    aria-label="Add another stat condition" title="Add a stat condition"
+                  >
+                    +
+                  </button>
+                ) : (
+                  <button
+                    type="button" className="stat-step"
+                    onClick={() => setStatFilters((prev) => prev.filter((_, j) => j !== i))}
+                    aria-label={`Remove stat condition ${i + 1}`} title="Remove this condition"
+                  >
+                    −
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
         <div className="filter filter-actions">
           {/* Empty label row so the count lands on the controls' baseline
               rather than the labels above them. */}
           <span className="label-spacer" aria-hidden="true" />
           <div className="actions-row">
             <span className="count">{results.length} of {Object.keys(dex).length}</span>
-            {anyFilterActive && (
-              <button type="button" className="btn ghost sm" onClick={reset}>Reset</button>
-            )}
           </div>
         </div>
       </div>

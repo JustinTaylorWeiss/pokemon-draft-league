@@ -54,9 +54,15 @@
 
 /* Each filter is its own labelled control rather than one overloaded box. */
 .filters {
-  display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end;
-  padding: 0.85rem; border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
+  position: relative;
+  /* Top-aligned so extra stat rows grow downward instead of pushing every
+     other filter to the bottom of the panel. */
+  display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-start;
+  /* Room along the top for the corner reset. */
+  padding: 2.1rem 0.85rem 0.85rem;
+  border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
 }
+.filters-reset { position: absolute; top: 0.6rem; right: 0.85rem; }
 .filter { display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
 .filter > span:not(.count) {
   font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
@@ -90,12 +96,8 @@
 }
 .stat-step:hover:not(:disabled) { color: var(--fg); border-color: var(--accent); }
 .stat-step:disabled { opacity: 0.35; cursor: not-allowed; }
-/* Sits below the rows rather than beside the label. */
-.stat-add {
-  width: auto; height: 1.6rem; padding: 0 0.5rem; align-self: flex-start;
-  font-size: 0.7rem; gap: 0.2rem;
-}
-.stat-row .stat-step { align-self: center; height: 2.2rem; }
+/* Sits at the end of its row rather than below the group. */
+.stat-row .stat-step { align-self: center; height: 2.2rem; width: 1.5rem; }
 
 .stat-row { display: flex; gap: 0.3rem; }
 .stat-row select { min-width: 0; }
