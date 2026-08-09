@@ -42,6 +42,7 @@ That writes `public/data/league.json` (~80 KB) from six of the thirteen tabs:
 | Rosters | Each player's 7 Pokémon with draft tiers |
 | Schedule | 40 matches over 8 weeks, with scores |
 | Standings | W/L, games, Pokémon differential, points |
+| Rules | The rulebook — sections, each rule's label and text, and any callouts |
 
 The `Pokédex`, `Pokémon Stats`, and `Data` tabs are skipped — the Showdown
 dataset already covers that ground more accurately.
@@ -63,6 +64,7 @@ Four tabs in a secondary nav under the main one:
 - **Schedule** — winners outlined green, losers red.
 - **Draft Board** — every column sortable, with tier and availability pill
   filters beside the search. Taken names are red, available ones green.
+- **Rules** — the sheet's rulebook, one card per numbered section.
 
 ### Sheet precedence
 

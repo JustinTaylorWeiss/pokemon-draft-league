@@ -72,6 +72,20 @@ export interface Standing {
   points: number
 }
 
+export interface RuleSection {
+  heading: string
+  items: { label: string; text: string }[]
+  /** Callouts that belong to the section but have no label/value split. */
+  notes: string[]
+}
+
+export interface Rulebook {
+  title: string | null
+  subtitle: string | null
+  footer: string | null
+  sections: RuleSection[]
+}
+
 export interface League {
   meta: LeagueMeta
   players: Player[]
@@ -80,6 +94,7 @@ export interface League {
   draft: DraftPick[]
   schedule: Match[]
   standings: Standing[]
+  rules?: Rulebook
 }
 
 let pending: Promise<League> | null = null

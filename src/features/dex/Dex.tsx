@@ -177,9 +177,6 @@ export function Dex() {
   return (
     <div className="dex">
       <div className="filters">
-        {anyFilterActive && (
-          <button type="button" className="btn ghost sm filters-reset" onClick={reset}>Reset</button>
-        )}
         <label className="filter filter-wide">
           <span>Name</span>
           <input
@@ -288,6 +285,9 @@ export function Dex() {
           <span className="label-spacer" aria-hidden="true" />
           <div className="actions-row">
             <span className="count">{results.length} of {Object.keys(dex).length}</span>
+            {anyFilterActive && (
+              <button type="button" className="btn ghost sm" onClick={reset}>Reset</button>
+            )}
           </div>
         </div>
       </div>

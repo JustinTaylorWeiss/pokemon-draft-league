@@ -184,6 +184,46 @@ function main(source) {
       })
     }
 
+    // ---- Rules -------------------------------------------------------------
+    // Column B is either a numbered section heading, a rule's label, or a
+    // standalone callout; column C holds the rule text when there is one.
+    const rulesGrid = grid('Rules')
+    const ruleSections = []
+    let ruleTitle = null
+    let ruleSubtitle = null
+    let ruleFooter = null
+
+    for (const r of rulesGrid) {
+      const banner = clean(r[0])
+      const label = clean(r[1])
+      const text = clean(r[2])
+
+      if (!isBlank(banner)) {
+        if (ruleTitle === null) ruleTitle = banner
+        else if (ruleSubtitle === null) ruleSubtitle = banner
+        else ruleFooter = banner
+        continue
+      }
+      if (isBlank(label)) continue
+
+      if (isBlank(text)) {
+        // "1. FORMAT & OVERVIEW" starts a section; anything else is a callout
+        // belonging to the section already open.
+        if (/^\d+\.\s/.test(label)) ruleSections.push({ heading: label, items: [], notes: [] })
+        else if (ruleSections.length) ruleSections.at(-1).notes.push(label)
+        continue
+      }
+      if (!ruleSections.length) ruleSections.push({ heading: 'General', items: [], notes: [] })
+      ruleSections.at(-1).items.push({ label, text })
+    }
+
+    const rules = {
+      title: ruleTitle,
+      subtitle: ruleSubtitle,
+      footer: ruleFooter,
+      sections: ruleSections,
+    }
+
     // ---- Standings --------------------------------------------------------
     const standings = []
     for (const r of grid('Standings')) {
@@ -202,7 +242,7 @@ function main(source) {
       b.points - a.points || b.monDiff - a.monDiff || b.gamesWon - a.gamesWon)
     standings.forEach((s, i) => { s.rank = i + 1 })
 
-    const league = { meta, players, board, rosters, draft, schedule, standings }
+    const league = { meta, players, board, rosters, draft, schedule, standings, rules }
     await writeFile(OUT, JSON.stringify(league))
 
     const json = JSON.stringify(league)
@@ -213,6 +253,9 @@ function main(source) {
     console.log(`  draft      ${draft.length} picks`)
     console.log(`  schedule   ${schedule.length} matches over ${new Set(schedule.map((m) => m.week)).size} weeks`)
     console.log(`  standings  ${standings.length} rows`)
+    const ruleCount = ruleSections.reduce((a, s) => a + s.items.length, 0)
+    const noteCount = ruleSections.reduce((a, s) => a + s.notes.length, 0)
+    console.log(`  rules      ${ruleSections.length} sections, ${ruleCount} rules, ${noteCount} notes`)
 
     console.log(`  ${statOverrides} board entries have stats differing from the Showdown dex (sheet wins)`)
 

@@ -159,3 +159,29 @@
 .name-open  { color: #4fb573; font-weight: 600; }
 .board-table td.col-abil { white-space: normal; max-width: 18rem; }
 
+
+/* ---- rulebook ---- */
+.rulebook { display: flex; flex-direction: column; gap: 1rem; }
+.rulebook-head { gap: 0.2rem; }
+.rulebook-head h2 { margin: 0; font-size: 1.15rem; }
+
+.rulebook-grid {
+  display: grid; gap: 1rem; align-items: start;
+  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+}
+.rule-section { gap: 0.6rem; }
+.rule-section h3 {
+  margin: 0; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--accent); padding-bottom: 0.4rem; border-bottom: 1px solid var(--line);
+}
+.rule-section dl { margin: 0; display: flex; flex-direction: column; gap: 0.55rem; }
+.rule-section dt { font-weight: 600; font-size: 0.85rem; }
+.rule-section dd { margin: 0.1rem 0 0; color: var(--muted); font-size: 0.82rem; line-height: 1.45; }
+
+/* Sheet callouts that have no label/value split. */
+.rule-callout {
+  margin: 0; padding: 0.5rem 0.7rem; font-size: 0.82rem; line-height: 1.45;
+  border: 1px solid #e79445; border-left-width: 3px; border-radius: 8px;
+  background: rgb(231 148 69 / 10%);
+}
+.rulebook-footer { text-align: center; }

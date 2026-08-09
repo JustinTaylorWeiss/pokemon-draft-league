@@ -42,6 +42,46 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
       {tab === 'rosters' && <Rosters league={league} dex={dex} />}
       {tab === 'schedule' && <Schedule league={league} />}
       {tab === 'board' && <Board league={league} dex={dex} />}
+      {tab === 'rules' && <Rules league={league} />}
+    </div>
+  )
+}
+
+function Rules({ league }: { league: League }) {
+  const rules = league.rules
+  if (!rules?.sections.length) {
+    return <p className="panel-note">No rules found in the sheet. Re-run the import to pick them up.</p>
+  }
+
+  return (
+    <div className="rulebook">
+      {(rules.title || rules.subtitle) && (
+        <section className="panel rulebook-head">
+          {rules.title && <h2>{rules.title}</h2>}
+          {rules.subtitle && <p className="panel-note">{rules.subtitle}</p>}
+        </section>
+      )}
+
+      <div className="rulebook-grid">
+        {rules.sections.map((section) => (
+          <section key={section.heading} className="panel rule-section">
+            <h3>{section.heading}</h3>
+            {section.notes.map((note) => (
+              <p key={note} className="rule-callout">{note}</p>
+            ))}
+            <dl>
+              {section.items.map((item) => (
+                <div key={item.label}>
+                  <dt>{item.label}</dt>
+                  <dd>{item.text}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        ))}
+      </div>
+
+      {rules.footer && <p className="panel-note rulebook-footer">{rules.footer}</p>}
     </div>
   )
 }
