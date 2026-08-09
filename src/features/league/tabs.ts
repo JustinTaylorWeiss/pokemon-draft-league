@@ -3,9 +3,9 @@ export type LeagueTab = 'standings' | 'rosters' | 'schedule' | 'stats' | 'board'
 
 export const LEAGUE_TABS: { key: LeagueTab; label: string }[] = [
   { key: 'standings', label: 'Standings' },
+  { key: 'stats', label: 'Pokémon Stats' },
   { key: 'schedule', label: 'Schedule' },
   { key: 'rosters', label: 'Rosters' },
-  { key: 'stats', label: 'Stats' },
   { key: 'board', label: 'Draft Board' },
   { key: 'rules', label: 'Rules' },
 ]

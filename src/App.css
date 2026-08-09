@@ -37,16 +37,14 @@
 /* Season picker: currently one option, but it is where other seasons or
    leagues will be selected. */
 .season-picker {
-  margin-left: auto; display: flex; flex-direction: column; align-items: flex-end;
-  gap: 0.1rem; min-width: 0; padding: 0.4rem 0;
+  margin-left: auto; display: flex; align-items: center; min-width: 0; padding: 0.4rem 0;
 }
 .season-picker select {
-  background: var(--surface); border: 1px solid var(--line); color: var(--fg);
-  border-radius: 8px; padding: 0.25rem 0.5rem; font: inherit; font-size: 0.85rem;
-  font-weight: 700; letter-spacing: -0.01em; max-width: 100%;
+  background: var(--surface); border: 1px solid var(--line); color: var(--accent);
+  border-radius: 10px; padding: 0.3rem 0.6rem; font: inherit;
+  font-size: 1.05rem; font-weight: 800; letter-spacing: -0.02em; max-width: 100%;
 }
-.season-picker select:hover { border-color: var(--nav-blue); }
-.season-detail { font-size: 0.68rem; color: var(--muted); text-align: right; }
+.season-picker select:hover { border-color: var(--accent); }
 
 .main-nav { display: flex; gap: 0.25rem; }
 .main-nav button {
@@ -201,9 +199,20 @@
 .match-why strong { color: var(--accent); font-weight: 600; }
 
 /* Re-reads the master sheet in place. Read-only — a GET, never a write. */
+/* Button and its timestamp stack together at the end of the bar. */
+.refresh-wrap {
+  display: flex; flex-direction: column; align-items: stretch;
+  gap: 0.15rem; margin-left: 0.75rem; flex: none;
+}
+.refresh-stamp {
+  font-size: 0.66rem; color: var(--muted); text-align: center;
+  max-width: 12rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.refresh-stamp.is-error { color: var(--nav-red); }
+
 .refresh-btn {
-  display: inline-flex; align-items: center; gap: 0.35rem; flex: none;
-  margin-left: 0.75rem; padding: 0.35rem 0.7rem;
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; flex: none;
+  padding: 0.35rem 0.7rem;
   background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
   color: var(--fg); font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer;
 }

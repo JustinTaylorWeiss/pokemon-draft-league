@@ -142,10 +142,25 @@ export interface League {
 let pending: Promise<League> | null = null
 const listeners = new Set<(l: League) => void>()
 
+/**
+ * When the data in hand was produced. Taken from league.json's Last-Modified
+ * rather than stamped into the file itself — a timestamp inside the JSON would
+ * change on every import, and the sync workflow only commits when the data
+ * actually differs.
+ */
+let dataTimestamp: Date | null = null
+
+export const leagueTimestamp = () => dataTimestamp
+
 export function loadLeague(): Promise<League> {
   if (!pending) {
     pending = fetch(`${import.meta.env.BASE_URL}data/league.json`).then((res) => {
       if (!res.ok) throw new Error(`Failed to load league.json: HTTP ${res.status}`)
+      const modified = res.headers.get('last-modified')
+      if (modified) {
+        const when = new Date(modified)
+        if (!Number.isNaN(when.getTime())) dataTimestamp = when
+      }
       return res.json() as Promise<League>
     })
     pending.catch(() => { pending = null })
@@ -162,6 +177,7 @@ export function subscribeLeague(fn: (l: League) => void): () => void {
 /** Replaces the cached league after an in-page refresh from the sheet. */
 export function publishLeague(next: League) {
   pending = Promise.resolve(next)
+  dataTimestamp = new Date()
   for (const fn of listeners) fn(next)
 }
 

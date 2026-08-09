@@ -52,6 +52,13 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
   )
 }
 
+/** Podium markers for the top three, keyed by rank. */
+const MEDALS: Record<number, { icon: string; label: string }> = {
+  1: { icon: '🥇', label: '1st' },
+  2: { icon: '🥈', label: '2nd' },
+  3: { icon: '🥉', label: '3rd' },
+}
+
 /** A full week is every player paired off: 20 players, 4 per match. */
 const WEEK_MATCHES = 5
 
@@ -186,10 +193,14 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
             <tbody>
               {rows.map((t, i) => {
                 const mon = dex[t.pokemon]
+                // Same podium treatment as the standings table.
+                const medal = MEDALS[i + 1]
                 return (
-                  <tr key={t.pokemon}>
+                  <tr key={t.pokemon} className={medal ? `medal-row medal-${i + 1}` : ''}>
                     {/* Position under the current sort — the power ranking. */}
-                    <td className="rank-col">{i + 1}</td>
+                    <td className="rank-col">
+                      {medal ? <span className="medal" title={medal.label}>{medal.icon}</span> : i + 1}
+                    </td>
                     <th scope="row" className="col-name">
                       {mon && (
                         <PokemonLink id={t.pokemon} title={mon.name}>
@@ -310,13 +321,6 @@ function Rules({ league }: { league: League }) {
       {rules.footer && <p className="panel-note rulebook-footer">{rules.footer}</p>}
     </div>
   )
-}
-
-/** Podium markers for the top three, keyed by rank. */
-const MEDALS: Record<number, { icon: string; label: string }> = {
-  1: { icon: '🥇', label: '1st' },
-  2: { icon: '🥈', label: '2nd' },
-  3: { icon: '🥉', label: '3rd' },
 }
 
 function Standings({ league }: { league: League }) {

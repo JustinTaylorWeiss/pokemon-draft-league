@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { QuickMatchup } from './features/quick-matchup/QuickMatchup'
 import { LeagueView } from './features/league/LeagueView'
 import { LEAGUE_TABS, type LeagueTab } from './features/league/tabs'
-import { loadLeague, refreshLeagueFromSheet, subscribeLeague, type League } from './data/league'
+import { leagueTimestamp, loadLeague, refreshLeagueFromSheet, subscribeLeague, type League } from './data/league'
 import { Dex } from './features/dex/Dex'
 import { PokemonModalProvider } from './features/pokemon/PokemonModalContext'
 import { PokemonModal } from './features/pokemon/PokemonModal'
@@ -34,12 +34,12 @@ export default function App() {
   const [league, setLeague] = useState<League | null>(null)
   const [refreshing, setRefreshing] = useState(false)
   const [refreshError, setRefreshError] = useState<string | null>(null)
-  const [refreshedAt, setRefreshedAt] = useState<Date | null>(null)
+  const [dataAt, setDataAt] = useState<Date | null>(null)
 
   useEffect(() => {
-    loadLeague().then(setLeague, () => {})
+    loadLeague().then((l) => { setLeague(l); setDataAt(leagueTimestamp()) }, () => {})
     // A refresh republishes the league, and every view listens for it.
-    return subscribeLeague(setLeague)
+    return subscribeLeague((l) => { setLeague(l); setDataAt(leagueTimestamp()) })
   }, [])
 
   /** Re-reads the sheet in the browser. Read-only: a GET, nothing more. */
@@ -48,7 +48,6 @@ export default function App() {
     setRefreshError(null)
     try {
       await refreshLeagueFromSheet(LEAGUE_SHEET_URL)
-      setRefreshedAt(new Date())
     } catch (err) {
       setRefreshError(err instanceof Error ? err.message : 'Refresh failed')
     } finally {
@@ -83,27 +82,18 @@ export default function App() {
               <select value="current" onChange={() => {}} aria-label="League and season">
                 <option value="current">{league.meta.name ?? 'Draft League'}</option>
               </select>
-              <span className="season-detail">
-                {[league.meta.format, league.meta.regulation && `Reg ${league.meta.regulation}`,
-                  league.meta.seriesLength, league.meta.weeks && `${league.meta.weeks} weeks`,
-                  league.meta.picksPerPlayer && `${league.meta.picksPerPlayer} picks each`]
-                  .filter(Boolean).join(' · ')}
-              </span>
             </label>
           )}
 
           {/* Re-reads the master sheet. This only ever GETs — the sheet is
               read-only, see CLAUDE.md. */}
+          <div className="refresh-wrap">
           <button
             type="button"
             className={`refresh-btn${refreshing ? ' is-busy' : ''}`}
             onClick={refresh}
             disabled={refreshing}
-            title={refreshError
-              ? refreshError
-              : refreshedAt
-                ? `Updated at ${refreshedAt.toLocaleTimeString()}`
-                : 'Fetch the latest data from the league sheet'}
+            title={refreshError ?? 'Fetch the latest data from the league sheet'}
             aria-label="Refresh league data from the sheet"
           >
             <span className="refresh-icon" aria-hidden="true">⟳</span>
@@ -111,6 +101,17 @@ export default function App() {
               {refreshing ? 'Refreshing…' : refreshError ? 'Retry' : 'Refresh'}
             </span>
           </button>
+
+          <span className={`refresh-stamp${refreshError ? ' is-error' : ''}`}>
+            {refreshError
+              ? refreshError
+              : dataAt
+                ? `Updated ${dataAt.toLocaleString(undefined, {
+                    month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+                  })}`
+                : ''}
+          </span>
+          </div>
         </div>
       </header>
 
