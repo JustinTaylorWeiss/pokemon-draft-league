@@ -4,6 +4,7 @@ import type { AbilityDex, LearnsetDex, MoveDex, PokemonDex, TypeChart } from '..
 import { loadLeague, mergeDex, subscribeLeague, type League } from '../../data/league'
 import type { Team } from './TeamEditor'
 import { MatchupBuilder } from './MatchupBuilder'
+import { useMediaQuery } from '../../lib/useMediaQuery'
 import { TeamsAndSpeed } from './TeamsAndSpeed'
 import { AnalysisCard } from './AnalysisCard'
 import './quick-matchup.css'
@@ -54,6 +55,10 @@ export function QuickMatchup() {
   const [teamOne, setTeamOne] = useState<Team>(() => emptyTeam('Team 1'))
   const [teamTwo, setTeamTwo] = useState<Team>(() => emptyTeam('Team 2'))
   const [perspective, setPerspective] = useState<'one' | 'two'>('one')
+  // Matches the breakpoint the stylesheet stacks the cards at. Below it there
+  // is only one column, so the speed tiers move into the analysis card and the
+  // teams card — roster list and all — is dropped rather than stacked.
+  const singleColumn = useMediaQuery('(max-width: 1175px)')
 
   useEffect(() => {
     loadCore().then((c) => {
@@ -158,11 +163,12 @@ export function QuickMatchup() {
       {/* Widgets carry their own intrinsic width and this container packs them,
           so the page reads as an uneven two-up grid the way DraftZone's does. */}
       <div className="matchup-container">
-        <TeamsAndSpeed teamOne={teamOne} teamTwo={teamTwo} />
+        {!singleColumn && <TeamsAndSpeed teamOne={teamOne} teamTwo={teamTwo} />}
 
         <AnalysisCard
           analyzed={analyzed} other={other}
           chart={core.typechart} moves={core.moves} learnsets={learnsets}
+          teamOne={teamOne} teamTwo={teamTwo} hostSpeedTiers={singleColumn}
         />
       </div>
     </div>

@@ -6,6 +6,7 @@ import { DraftSummaryBody } from './DraftSummary'
 import { DefensiveChartBody } from './DefensiveChart'
 import { buildMoveRows, LearnedMovesBody } from './LearnedMoves'
 import { CoverageBody } from './CoveragePanel'
+import { useSpeedTiersPanel } from './useSpeedTiersPanel'
 import type { Team } from './TeamEditor'
 
 const TABS = [
@@ -14,6 +15,11 @@ const TABS = [
   { key: 'moves', label: 'Learned Moves' },
   { key: 'coverage', label: 'Coverage' },
 ]
+
+/** Where the speed tiers sit once there is only one column to put them in:
+    third, after the two team-wide readings and before the move lists. */
+const SPEED_TAB = { key: 'speed', label: 'Speed Tiers' }
+const SPEED_TAB_INDEX = 2
 
 /** Chip pool floor. Below this, universal TMs hand out most of the type chart. */
 const MIN_POWER = 60
@@ -25,6 +31,10 @@ interface Props {
   moves: MoveDex
   /** Null until the largest data file finishes loading in the background. */
   learnsets: LearnsetDex | null
+  /** Both rosters, for the speed tiers this card hosts in one-column layouts. */
+  teamOne: Team
+  teamTwo: Team
+  hostSpeedTiers: boolean
 }
 
 /**
@@ -37,12 +47,25 @@ interface Props {
  * folding them into one switch would silently move numbers on the tab you are
  * not looking at.
  */
-export function AnalysisCard({ analyzed, other, chart, moves, learnsets }: Props) {
+export function AnalysisCard({
+  analyzed, other, chart, moves, learnsets, teamOne, teamTwo, hostSpeedTiers,
+}: Props) {
   const [tab, setTab] = useState('summary')
   const [neutral, setNeutral] = useState(80)
   const [defenseAbilities, setDefenseAbilities] = useState(true)
   const [coverageAbilities, setCoverageAbilities] = useState(true)
   const [resetKey, setResetKey] = useState(0)
+
+  // Always built, shown only when this card is hosting it. The body is what
+  // does the work, and that is only rendered on its own tab.
+  const speed = useSpeedTiersPanel(teamOne, teamTwo)
+  const tabs = hostSpeedTiers
+    ? [...TABS.slice(0, SPEED_TAB_INDEX), SPEED_TAB, ...TABS.slice(SPEED_TAB_INDEX)]
+    : TABS
+  // A layout change can pull the tab out from under the reader.
+  useEffect(() => {
+    if (!hostSpeedTiers && tab === SPEED_TAB.key) setTab(TABS[0].key)
+  }, [hostSpeedTiers, tab])
 
   // Descriptions for the ability pills' tooltips.
   const [abilityDex, setAbilityDex] = useState<AbilityDex | null>(null)
@@ -94,16 +117,18 @@ export function AnalysisCard({ analyzed, other, chart, moves, learnsets }: Props
         <button type="button" className="btn ghost sm" onClick={() => setResetKey((k) => k + 1)}>Reset</button>
       </>
     ),
+    speed: speed.actions,
   }[tab]
 
   const footnote = {
     types: 'Delta is resists minus weaknesses. Negative columns are types this team struggles to switch into.',
     coverage: 'Lit types are the Pokémon’s most-used set; the dim ones are everything else it can learn. Click any to toggle.',
+    speed: speed.footnote,
   }[tab]
 
   return (
     <Widget
-      tabs={TABS} active={tab} onTab={setTab} width={700}
+      tabs={tabs} active={tab} onTab={setTab} width={700}
       className="analysis-card" actions={actions} footnote={footnote}
     >
       {tab === 'summary' && (
@@ -121,6 +146,7 @@ export function AnalysisCard({ analyzed, other, chart, moves, learnsets }: Props
       {tab === 'moves' && (learnsets
         ? <LearnedMovesBody team={analyzed} rows={moveRows} byId={byId} />
         : <p className="loading">Loading learnsets…</p>)}
+      {tab === 'speed' && speed.body}
       {tab === 'coverage' && (learnsets
         ? (
           <CoverageBody
