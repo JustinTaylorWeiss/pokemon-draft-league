@@ -139,18 +139,34 @@
    icon is the same information in one row of cells. The name is still there on
    hover, and on the icon's own aria-label. */
 .type-head { padding: 0.15rem 0.1rem !important; vertical-align: bottom; }
-.type-icon-chip {
+/* One size for every tile in the chart's frame — the type chips across the top,
+   the row sprites down the left, and the three summary rows under them. They
+   all read as one set, so the size lives in a single variable. */
+.type-table { --tile: 3.3rem; }
+.type-icon-chip, .summary-chip {
   /* Two rows: the glyph gets whatever height is left and centres in it, the
      name sits on the bottom edge. Centring both as one block instead left the
      glyph riding high and the labels off the baseline. */
   display: grid; grid-template-rows: 1fr auto; justify-items: center; align-items: center;
   padding: 0.25rem 0.3rem; border-radius: 6px; color: #fff; margin: 0 auto;
-  /* One size for all eighteen, square, wide enough for ELECTRIC and FIGHTING
-     at 3.3rem. Sized to content they ranged 27.6px to 51.7px, which made the
-     header read as a ragged row rather than a set. */
-  width: 3.3rem; height: 3.3rem; box-sizing: border-box;
+  /* Square, and wide enough for ELECTRIC and FIGHTING. Sized to content these
+     ranged 27.6px to 51.7px, which made the header read as a ragged row. */
+  width: var(--tile, 3.3rem); height: var(--tile, 3.3rem); box-sizing: border-box;
 }
-.type-icon-chip svg { display: block; }
+.type-icon-chip svg, .summary-chip svg { display: block; }
+/* Muted rather than a type colour: these total the columns, they are not one. */
+.summary-chip { color: var(--muted); background: var(--chip); }
+.summary-chip.tone-weak { color: #e8615f; }
+.summary-chip.tone-resist { color: #4fb573; }
+.summary-chip.tone-delta { color: var(--team-both); }
+.summary-chip-label {
+  text-align: center; align-self: end;
+  font-size: 0.5rem; font-weight: 700; line-height: 1.1;
+  letter-spacing: 0.01em; text-transform: uppercase; white-space: nowrap;
+}
+/* No padding: this shares the sprite column, and 1.6px each side was enough to
+   push that column wider than the tiles it holds. */
+.summary-cell { padding: 0 !important; line-height: 0; }
 /* Small, uppercase and tight, because eighteen of these set the table's width.
    White on the type colour rather than on the card, so chip and label read as
    one block per column. */
@@ -164,22 +180,23 @@
    `contain` fits the sprite inside without stretching it. The corner and the
    footer labels share this column, so they are pinned to the same width —
    "Resist" was setting it 6px wider than the sprite and squaring nothing. */
-.type-table .corner, .mon-cell { width: var(--mon-cell, 40px); }
-.mon-cell { height: var(--mon-cell, 40px); padding: 0 !important; }
+.type-table .corner, .mon-cell, .summary-cell { width: var(--tile, 3.3rem); }
+.mon-cell {
+  height: var(--tile, 3.3rem); padding: 0 !important;
+  /* line-height 0: the sprite's link is inline-level, so its line box was
+     otherwise adding a descender under every row and the cell stopped being
+     square. */
+  line-height: 0;
+}
+.mon-cell .mon-link { display: block; }
 .mon-cell img {
   image-rendering: pixelated; display: block; margin: 0 auto;
-  /* Sized by useFillHeight so the chart fills its box vertically as well as
-     horizontally, with a little inset so sprites do not touch the borders. */
-  width: calc(var(--mon-cell, 40px) - 6px); height: calc(var(--mon-cell, 40px) - 6px);
+  /* A hairline of inset only: the tile is what sets the column width, so
+     filling it costs no space. */
+  width: calc(var(--tile, 3.3rem) - 2px); height: calc(var(--tile, 3.3rem) - 2px);
   object-fit: contain;
 }
-.type-table tfoot th {
-  text-align: right !important; color: var(--muted);
-  /* These share the sprite column, so they can grow with it. Capped where
-     "Resist" would start crowding the column's width. */
-  font-size: clamp(0.6rem, calc(var(--mon-cell, 40px) * 0.22), 0.78rem);
-  padding-left: 0.1rem !important; padding-right: 0.15rem !important;
-}
+
 .type-table th, .type-table td { padding-top: 0.05rem; padding-bottom: 0.05rem; }
 
 /* Scaled by useFitToBox when the roster is taller than the window allows, so

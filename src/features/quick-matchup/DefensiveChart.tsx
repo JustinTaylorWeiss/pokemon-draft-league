@@ -6,13 +6,33 @@ import { TypeIconChip } from '../../components/TypeIcon'
 import type { Team } from './TeamEditor'
 import { PokemonLink } from '../../components/PokemonLink'
 import { useFitToBox } from '../../lib/useFitToBox'
-import { useFillHeight } from '../../lib/useFillHeight'
 
 interface Props {
   team: Team
   chart: TypeChart
   useAbilities: boolean
 }
+
+/**
+ * The three summary rows, drawn to the same square as the type chips and the
+ * row sprites so the chart's left column and top row read as one set of tiles.
+ * A cracked shield for what gets through, a whole one for what does not, and
+ * the delta that literally is the difference between them.
+ */
+const SUMMARY_ROWS = [
+  {
+    key: 'weaks', label: 'Weak', tone: 'weak',
+    path: 'M12 2l8.4 3.1v6.6c0 4.9-3.4 8.7-8.4 10.3-5-1.6-8.4-5.4-8.4-10.3V5.1L12 2zm-.6 3.6L6 7.6v4.1c0 3.2 2 5.9 5.4 7.3l-1.7-5 2.6-1.4-2.4-2.3 1.5-1.6-2.1-1.7 2.1-1.4zm1.2 0l1.9 2.4-2.2 1.5 2.4 2.2-2.7 1.5 1.9 5.4c3.4-1.4 5.5-4.1 5.5-7.4V7.6l-6.8-2z',
+  },
+  {
+    key: 'resists', label: 'Resist', tone: 'resist',
+    path: 'M12 2l8.4 3.1v6.6c0 4.9-3.4 8.7-8.4 10.3-5-1.6-8.4-5.4-8.4-10.3V5.1L12 2zm-1 13.6l5.9-5.9-1.7-1.7-4.2 4.2-2-2-1.7 1.7 3.7 3.7z',
+  },
+  {
+    key: 'delta', label: 'Delta', tone: 'delta',
+    path: 'M12 3.2L21.4 20.8H2.6L12 3.2zm0 4.9l-5.2 9.8h10.4L12 8.1z',
+  },
+] as const
 
 /** Blank for neutral so the eye only catches the cells that matter. */
 function cellClass(mult: number): string {
@@ -34,26 +54,23 @@ export function DefensiveChartBody({ team, chart, useAbilities }: Props) {
     [chart, team.members, useAbilities],
   )
 
-  const fitRef = useFitToBox<HTMLDivElement>()
-  // Eighteen columns make this chart width-bound, so scaling it to fit leaves
-  // height on the table. The row sprites grow to take it.
-  const [fillRef, cellSize] = useFillHeight<HTMLDivElement>(rows.length)
+  // Width only: all eighteen type columns stay on screen whatever the roster,
+  // and a roster too tall for the card scrolls rather than shrinking the chart
+  // until it cannot be read.
+  const fitRef = useFitToBox<HTMLDivElement>('width')
 
   if (!rows.length) return null
 
   return (
-    <div
-      className="fit-box" ref={fitRef}
-      style={{ ['--mon-cell' as string]: `${cellSize}px` }}
-    >
-        <table className="type-table" ref={fillRef}>
+    <div className="fit-box" ref={fitRef}>
+        <table className="type-table">
           <thead>
             <tr>
               <th className="corner" />
               {/* Icons, not rotated words: eighteen columns of vertical text
                   cost 73px of header and still had to be read sideways. */}
               {BATTLE_TYPES.map((t) => (
-                <th key={t} className="type-head"><TypeIconChip type={t} size={18} /></th>
+                <th key={t} className="type-head"><TypeIconChip type={t} size={28} /></th>
               ))}
             </tr>
           </thead>
@@ -72,29 +89,26 @@ export function DefensiveChartBody({ team, chart, useAbilities }: Props) {
             ))}
           </tbody>
           <tfoot>
-            <tr>
-              <th scope="row">Weak</th>
-              {BATTLE_TYPES.map((t) => (
-                <td key={t} className={summary.weaks[t] ? 'mx-weak' : ''}>{summary.weaks[t]}</td>
-              ))}
-            </tr>
-            <tr>
-              <th scope="row">Resist</th>
-              {BATTLE_TYPES.map((t) => (
-                <td key={t} className={summary.resists[t] ? 'mx-resist' : ''}>{summary.resists[t]}</td>
-              ))}
-            </tr>
-            <tr>
-              <th scope="row">Delta</th>
-              {BATTLE_TYPES.map((t) => (
-                <td
-                  key={t}
-                  className={summary.delta[t] > 0 ? 'mx-resist' : summary.delta[t] < 0 ? 'mx-weak' : ''}
-                >
-                  {summary.delta[t]}
-                </td>
-              ))}
-            </tr>
+            {SUMMARY_ROWS.map((row) => (
+              <tr key={row.key}>
+                <th scope="row" className="summary-cell">
+                  <span className={`summary-chip tone-${row.tone}`} title={row.label}>
+                    <svg viewBox="0 0 24 24" width="28" height="28" role="img" aria-label={row.label} focusable="false">
+                      <title>{row.label}</title>
+                      <path d={row.path} fill="currentColor" />
+                    </svg>
+                    <span className="summary-chip-label">{row.label}</span>
+                  </span>
+                </th>
+                {BATTLE_TYPES.map((t) => {
+                  const value = summary[row.key][t]
+                  const tone = row.key === 'delta'
+                    ? (value > 0 ? 'mx-resist' : value < 0 ? 'mx-weak' : '')
+                    : value ? (row.key === 'weaks' ? 'mx-weak' : 'mx-resist') : ''
+                  return <td key={t} className={tone}>{value}</td>
+                })}
+              </tr>
+            ))}
           </tfoot>
       </table>
     </div>

@@ -30,12 +30,13 @@ const CUSHION = 4
  */
 export function useFitToBox<T extends HTMLElement>(
   /**
-   * The card's zoom slider, relative to the fitted size: 1 means "as large as
-   * fits". The fitted size is the baseline the reader sees as 100%, because the
-   * raw scale it works out to is an implementation detail — a panel reading
-   * 114% because that is what filled the card is a number nobody asked for.
+   * `both` keeps the panel inside the box in both directions, so it never
+   * scrolls. `width` fits the width only and lets the container scroll
+   * vertically — right for a table whose columns are fixed but whose rows grow
+   * with the roster, since shrinking to fit twenty rows would leave the first
+   * two unreadable.
    */
-  multiplier = 1,
+  axis: 'both' | 'width' = 'both',
 ): (el: T | null) => void {
   const [node, setNode] = useState<T | null>(null)
 
@@ -52,25 +53,16 @@ export function useFitToBox<T extends HTMLElement>(
     const naturalH = Math.max(rect.height, node.scrollHeight)
     const naturalW = Math.max(rect.width, node.scrollWidth)
 
-    // Fit means fit, in both directions and in both senses: a panel with room
-    // to spare grows into it rather than stopping at 100%. Zoom scales width
-    // too, so a table that would run past the card's edge is what caps it.
+    // A panel with room to spare grows into it rather than stopping at 100%.
     // Scaling rounds sizes up, so aim a few pixels under the space available.
+    const byWidth = (box.clientWidth - CUSHION) / naturalW
+    const byHeight = (box.clientHeight - CUSHION) / naturalH
     const fitted = naturalH > 0 && naturalW > 0
-      ? Math.min(
-        MAX_SCALE,
-        Math.max(MIN_SCALE, Math.min(
-          (box.clientHeight - CUSHION) / naturalH,
-          (box.clientWidth - CUSHION) / naturalW,
-        )),
-      )
+      ? Math.min(MAX_SCALE, Math.max(MIN_SCALE, axis === 'width' ? byWidth : Math.min(byWidth, byHeight)))
       : 1
 
-    // Anything above 1 on the slider scales past the fitted size and lets the
-    // panel scroll, which is the point of being able to zoom in.
-    const applied = fitted * multiplier
-    node.style.zoom = applied === 1 ? '' : String(applied)
-  }, [node, multiplier])
+    node.style.zoom = fitted === 1 ? '' : String(fitted)
+  }, [node, axis])
 
   useEffect(() => {
     const box = node?.parentElement
