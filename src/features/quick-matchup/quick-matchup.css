@@ -90,6 +90,11 @@
 .summary-table { --summary-row: 3.6rem; }
 .summary-table th:nth-child(n+3) { width: var(--summary-row); }
 .summary-table tbody tr { height: var(--summary-row); }
+/* The aggregates are their own section, so they get room to breathe and a
+   heavier rule between them and the roster — the same treatment the defensive
+   chart's totals get. */
+.summary-table tfoot tr { height: 2.1rem; }
+.summary-table tfoot tr:first-child > * { border-top: 3px solid var(--muted); }
 .summary-table th, .summary-table td, .type-table th, .type-table td {
   padding: 0.1rem 0.3rem;
 }
