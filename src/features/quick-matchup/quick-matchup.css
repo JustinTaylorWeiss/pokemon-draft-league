@@ -104,7 +104,7 @@
      types under the name made the table narrow and tall, and the fit scales
      uniformly — so without somewhere for the width to go the card ends up half
      empty. A wider column also means fewer abilities behind a "+N more". */
-  white-space: normal; font-size: 0.8rem; line-height: 1.3;
+  white-space: normal; font-size: 0.95rem; line-height: 1.3;
 }
 /* Exactly two lines: clamped so a long pair cannot spill to a third, and held
    open to that height so every row is the same regardless of how many

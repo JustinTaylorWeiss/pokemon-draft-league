@@ -42,9 +42,11 @@ export function DraftSummaryBody(
   // Any part of a row opens that Pokemon, not just its name and sprite.
   const { open } = usePokemonModal()
 
-  // Every row matters at a glance, so the table shrinks to fit a short window
-  // rather than hiding its tail behind a scrollbar.
-  const fitRef = useFitToBox<HTMLDivElement>()
+  // Width only, like the defensive chart. Fitting the height too meant a taller
+  // row was immediately cancelled by a smaller scale — the rows kept their
+  // rendered size and everything else shrank instead. Rows are the size they
+  // are now, and a roster too tall for the card scrolls.
+  const fitRef = useFitToBox<HTMLDivElement>('width')
 
   if (!rows.length) return null
 
