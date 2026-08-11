@@ -152,14 +152,56 @@ let dataTimestamp: Date | null = null
 
 export const leagueTimestamp = () => dataTimestamp
 
+/**
+ * Where an in-page refresh is kept so it survives a reload.
+ *
+ * Refreshing used to only replace the copy in memory, so the next page load
+ * went back to the file the site was built with and the refresh looked like it
+ * had been undone.
+ */
+const REFRESH_KEY = 'league:refreshed'
+
+interface CachedLeague { at: number; league: League }
+
+function readRefreshed(): CachedLeague | null {
+  try {
+    const raw = localStorage.getItem(REFRESH_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as CachedLeague
+    return parsed?.league && typeof parsed.at === 'number' ? parsed : null
+  } catch {
+    return null
+  }
+}
+
+function writeRefreshed(league: League) {
+  try {
+    localStorage.setItem(REFRESH_KEY, JSON.stringify({ at: Date.now(), league }))
+  } catch {
+    // Private browsing, or the 5MB quota. The refresh still applies to this
+    // page; it just will not outlive it.
+  }
+}
+
 export function loadLeague(): Promise<League> {
   if (!pending) {
-    pending = fetch(`${import.meta.env.BASE_URL}data/league.json`).then((res) => {
+    pending = fetch(`${import.meta.env.BASE_URL}data/league.json`).then(async (res) => {
       if (!res.ok) throw new Error(`Failed to load league.json: HTTP ${res.status}`)
       const modified = res.headers.get('last-modified')
-      if (modified) {
-        const when = new Date(modified)
-        if (!Number.isNaN(when.getTime())) dataTimestamp = when
+      const builtAt = modified ? new Date(modified) : null
+      if (builtAt && !Number.isNaN(builtAt.getTime())) dataTimestamp = builtAt
+
+      // A saved refresh wins only while it is newer than the deployed file.
+      // The hourly sync commits straight into the build, so once that lands
+      // the shipped copy is the better one and the saved refresh is dropped.
+      const saved = readRefreshed()
+      if (saved) {
+        const shipped = builtAt && !Number.isNaN(builtAt.getTime()) ? builtAt.getTime() : 0
+        if (saved.at > shipped) {
+          dataTimestamp = new Date(saved.at)
+          return saved.league
+        }
+        try { localStorage.removeItem(REFRESH_KEY) } catch { /* nothing to clean up */ }
       }
       return res.json() as Promise<League>
     })
@@ -178,6 +220,7 @@ export function subscribeLeague(fn: (l: League) => void): () => void {
 export function publishLeague(next: League) {
   pending = Promise.resolve(next)
   dataTimestamp = new Date()
+  writeRefreshed(next)
   for (const fn of listeners) fn(next)
 }
 
@@ -207,6 +250,33 @@ export async function refreshLeagueFromSheet(sheetUrl: string): Promise<League> 
   const { league } = parseLeagueSheet(wb, await dexRes.json())
   publishLeague(league as League)
   return league as League
+}
+
+let revalidateStarted = false
+
+/**
+ * Reads the sheet once per page load, in the background.
+ *
+ * The sheet is the league's source of truth and it is read live, so it is by
+ * definition the freshest thing available — fresher than the JSON the site was
+ * built with and fresher than any refresh saved from an earlier visit. Everyone
+ * therefore sees an edit on their next visit without anyone pressing anything.
+ *
+ * Deferred to idle because it pulls in the spreadsheet parser, which is the
+ * largest chunk in the bundle and has no business delaying first paint. If the
+ * sheet cannot be reached the page keeps whatever it already had, which is why
+ * the failure is swallowed rather than surfaced — only the button reports
+ * errors, because only the button was asked for.
+ */
+export function revalidateLeague(sheetUrl: string) {
+  if (revalidateStarted || typeof window === 'undefined') return
+  revalidateStarted = true
+  const run = () => { refreshLeagueFromSheet(sheetUrl).catch(() => {}) }
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(run, { timeout: 3000 })
+  } else {
+    setTimeout(run, 1200)
+  }
 }
 
 export const playerLabel = (p: Player) => (p.team ? `${p.name} — ${p.team}` : p.name)

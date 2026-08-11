@@ -3,7 +3,10 @@ import { useElementHeight } from './lib/useElementHeight'
 import { QuickMatchup } from './features/quick-matchup/QuickMatchup'
 import { LeagueView } from './features/league/LeagueView'
 import { LEAGUE_TABS, type LeagueTab } from './features/league/tabs'
-import { leagueTimestamp, loadLeague, refreshLeagueFromSheet, subscribeLeague, type League } from './data/league'
+import {
+  leagueTimestamp, loadLeague, refreshLeagueFromSheet, revalidateLeague, subscribeLeague,
+  type League,
+} from './data/league'
 import { Dex } from './features/dex/Dex'
 import { PokemonModalProvider } from './features/pokemon/PokemonModalContext'
 import { PokemonModal } from './features/pokemon/PokemonModal'
@@ -50,6 +53,8 @@ export default function App() {
 
   useEffect(() => {
     loadLeague().then((l) => { setLeague(l); setDataAt(leagueTimestamp()) }, () => {})
+    // Then read the sheet itself, which is always the newest source there is.
+    revalidateLeague(LEAGUE_SHEET_URL)
     // A refresh republishes the league, and every view listens for it.
     return subscribeLeague((l) => { setLeague(l); setDataAt(leagueTimestamp()) })
   }, [])
