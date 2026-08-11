@@ -49,12 +49,11 @@ export function DraftSummaryBody(
   if (!rows.length) return null
 
   return (
-    <div className="fit-box" ref={fitRef}>
+    <div className="fit-box fit-wide" ref={fitRef}>
     <table className="stat-table summary-table">
           <thead>
             <tr>
               <th className="col-name">Name</th>
-              <th className="col-types">Types</th>
               <th className="col-abil">Abilities</th>
               {BST_ORDER.map((k) => <th key={k}>{STAT_LABELS[k]}</th>)}
               <th>BST</th>
@@ -78,12 +77,14 @@ export function DraftSummaryBody(
                       <PokemonLink id={id} title={pokemon.name}>
                         <img src={spriteUrl(pokemon)} alt="" width={44} height={36} />
                       </PokemonLink>
-                      <PokemonLink id={id}>{pokemon.name}</PokemonLink>
+                      <span className="name-stack">
+                        <PokemonLink id={id}>{pokemon.name}</PokemonLink>
+                        <span className="row-types">
+                          {pokemon.types.map((t) => <TypeChip key={t} type={t} />)}
+                        </span>
+                      </span>
                     </span>
                   </th>
-                  <td className="col-types">
-                    {pokemon.types.map((t) => <TypeChip key={t} type={t} />)}
-                  </td>
                   <td className="col-abil">
                     {/* Plain text: the description still shows on hover. */}
                     <span className="ability-lines">
@@ -108,7 +109,7 @@ export function DraftSummaryBody(
           <tfoot>
             {(['average', 'median', 'max'] as const).map((agg) => (
               <tr key={agg}>
-                <th scope="row" colSpan={3} className="agg-label">{agg}</th>
+                <th scope="row" colSpan={2} className="agg-label">{agg}</th>
                 {BST_ORDER.map((k) => (
                   <td key={k} style={{ background: heat(totals[k][agg], neutral) }}>{totals[k][agg]}</td>
                 ))}

@@ -82,12 +82,21 @@
    matchups — read at a glance inside a card, so cell padding and sprite size
    decide how much of it they eat. They size to their content and centre rather
    than stretching, which was inflating three-digit stat columns to 77px. */
-.summary-table, .type-table { width: auto; margin: 0 auto; font-size: 0.78rem; }
+.type-table { width: auto; margin: 0 auto; font-size: 0.78rem; }
+.summary-table { width: 100%; font-size: 0.78rem; }
+/* Stats are pinned so the slack lands on Name and Abilities rather than being
+   shared out into three-digit columns wide enough for six. */
+.summary-table th:nth-child(n+3) { width: 3.1rem; }
 .summary-table th, .summary-table td, .type-table th, .type-table td {
   padding: 0.1rem 0.3rem;
 }
+.summary-table .col-abil, .summary-table .col-name { width: auto; }
 .summary-table .col-abil {
-  white-space: normal; max-width: 8rem; font-size: 0.66rem; line-height: 1.25;
+  /* Wide, because this is the only column that can absorb slack. Stacking the
+     types under the name made the table narrow and tall, and the fit scales
+     uniformly — so without somewhere for the width to go the card ends up half
+     empty. A wider column also means fewer abilities behind a "+N more". */
+  white-space: normal; font-size: 0.66rem; line-height: 1.25;
 }
 /* Exactly two lines: clamped so a long pair cannot spill to a third, and held
    open to that height so every row is the same regardless of how many
@@ -103,14 +112,16 @@
 .col-name span { display: inline-flex; flex-direction: column; gap: 0.15rem; vertical-align: middle; align-items: flex-start; }
 .col-name img { vertical-align: middle; margin-right: 0.4rem; image-rendering: pixelated; }
 .summary-table .col-name img {
-  margin-right: 0.4rem; width: 34px; height: 34px; object-fit: contain;
+  margin-right: 0.45rem; width: 46px; height: 46px; object-fit: contain;
 }
 /* Still one width for every type, just a smaller one than the standalone chips. */
 .summary-table .type-chip {
   /* Fixed, not min: sized to content these ran 39.7px to 50.7px and the column
-     looked ragged. 3.2rem clears ELECTRIC and FIGHTING at this size. */
+     looked ragged. 3.2rem clears ELECTRIC and FIGHTING at this size. Short,
+     because they sit under the name rather than beside it and every pixel of
+     their height is a pixel of row height. */
   width: 3.2rem; min-width: 0; box-sizing: border-box;
-  font-size: 0.54rem; padding: 0.12rem 0.2rem; line-height: 1.6;
+  font-size: 0.52rem; padding: 0 0.2rem; line-height: 1.3;
 }
 .summary-table .col-name { font-size: 0.74rem; line-height: 1.2; vertical-align: middle; }
 /* The sprite is 34px and the name a single line. Aligned inline the name lands
@@ -121,13 +132,11 @@
      tables, and this span would inherit it and stack the sprite over the name. */
   display: flex; flex-direction: row; align-items: center; gap: 0.1rem;
 }
-/* Types in their own column, so the name column is just the name and the
-   chips line up down the table instead of ending wherever each name does.
-   Deliberately not `display: flex`: that takes the cell out of the table's
-   layout, so it stops filling the row and reads as a short band nested inside
-   it. It stays a table cell and the chips sit inline. */
-.summary-table .col-types { text-align: left !important; white-space: nowrap; }
-.summary-table .col-types .type-chip + .type-chip { margin-left: 0.2rem; }
+/* Types under the name, the two together beside the sprite. */
+.summary-table .name-stack {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.1rem; min-width: 0;
+}
+.summary-table .name-stack .row-types { gap: 0.2rem; }
 .summary-table th, .summary-table td { padding-top: 0.04rem; padding-bottom: 0.04rem; }
 .col-abil { text-align: left !important; color: var(--muted); font-size: 0.75rem; white-space: nowrap; }
 .row-types { display: flex !important; flex-direction: row !important; gap: 0.2rem; }
@@ -205,6 +214,10 @@
 /* Scaled by useFitToBox when the roster is taller than the window allows, so
    `zoom` has something to sit on that is exactly the table's size. */
 .fit-box { width: fit-content; max-width: 100%; margin: 0 auto; }
+/* The summary fills the card's width instead of being sized by its content.
+   Stacking the types under the name leaves it narrow and tall, and since zoom
+   scales uniformly there is otherwise nowhere for the spare width to go. */
+.fit-box.fit-wide { width: 100%; }
 
 .mx-immune { background: rgb(60 60 70 / 85%); color: var(--muted); }
 .mx-strong-resist { background: rgb(30 130 100 / 55%); }
@@ -684,6 +697,23 @@ button.type-chip { cursor: pointer; }
      stay put while the content moves under them. */
   .shell:has(.results) .matchup-container > .widget > .widget-body {
     flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-gutter: stable;
+  }
+  /* Drawing the scrollbar is what makes it take up space. Left alone, this
+     platform gives an overlay bar that reports zero width, so nothing reserves
+     room for it — `scrollbar-gutter` included — and it sits on top of the last
+     column. Styling it also makes the fit measurements correct, since the width
+     the panel is scaled into now excludes the bar. */
+  .shell:has(.results) .matchup-container > .widget > .widget-body::-webkit-scrollbar {
+    width: 10px; height: 10px;
+  }
+  .shell:has(.results) .matchup-container > .widget > .widget-body::-webkit-scrollbar-thumb {
+    background: var(--line); border-radius: 5px;
+  }
+  .shell:has(.results) .matchup-container > .widget > .widget-body::-webkit-scrollbar-thumb:hover {
+    background: var(--muted);
+  }
+  .shell:has(.results) .matchup-container > .widget > .widget-body::-webkit-scrollbar-track {
+    background: transparent;
   }
   /* The moves search would otherwise scroll away from the list it filters.
      It needs its own edge: the card behind it is the same colour, so without a
