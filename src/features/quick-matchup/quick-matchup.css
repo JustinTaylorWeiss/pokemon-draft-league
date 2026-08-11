@@ -89,20 +89,45 @@
 .summary-table .col-abil {
   white-space: normal; max-width: 8rem; font-size: 0.66rem; line-height: 1.25;
 }
+/* Exactly two lines: clamped so a long pair cannot spill to a third, and held
+   open to that height so every row is the same regardless of how many
+   abilities it has. */
+.summary-table .col-abil .ability-lines {
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+  overflow: hidden;
+  min-height: 2.5em;
+}
+.ability-more { font-style: normal; color: var(--team-both); white-space: nowrap; }
 .stat-table thead th, .type-table thead th { color: var(--muted); font-weight: 600; font-size: 0.72rem; }
 .col-name { text-align: left !important; white-space: nowrap; }
 .col-name span { display: inline-flex; flex-direction: column; gap: 0.15rem; vertical-align: middle; align-items: flex-start; }
 .col-name img { vertical-align: middle; margin-right: 0.4rem; image-rendering: pixelated; }
-.summary-table .col-name img { margin-right: 0.3rem; width: 26px; height: 21px; }
-/* Still one width for every type, just a smaller one than the standalone chips. */
-.summary-table .type-chip { min-width: 4.6em; font-size: 0.54rem; padding: 0 0.2rem; line-height: 1.35; }
-.summary-table .col-name { font-size: 0.74rem; line-height: 1.2; }
-/* Types in their own column, so the name column is just the name and the
-   chips line up down the table instead of ending wherever each name does. */
-.summary-table .col-types {
-  text-align: left !important; white-space: nowrap;
-  display: flex; gap: 0.2rem; align-items: center;
+.summary-table .col-name img {
+  margin-right: 0.4rem; width: 34px; height: 34px; object-fit: contain;
 }
+/* Still one width for every type, just a smaller one than the standalone chips. */
+.summary-table .type-chip {
+  /* Fixed, not min: sized to content these ran 39.7px to 50.7px and the column
+     looked ragged. 3.2rem clears ELECTRIC and FIGHTING at this size. */
+  width: 3.2rem; min-width: 0; box-sizing: border-box;
+  font-size: 0.54rem; padding: 0.12rem 0.2rem; line-height: 1.6;
+}
+.summary-table .col-name { font-size: 0.74rem; line-height: 1.2; vertical-align: middle; }
+/* The sprite is 34px and the name a single line. Aligned inline the name lands
+   ~12px low, because `vertical-align: middle` aligns to the baseline rather
+   than to the centre of the line box; a flex row centres both properly. */
+.summary-table .name-cell {
+  /* Direction stated outright: `.col-name span` sets column for the league
+     tables, and this span would inherit it and stack the sprite over the name. */
+  display: flex; flex-direction: row; align-items: center; gap: 0.1rem;
+}
+/* Types in their own column, so the name column is just the name and the
+   chips line up down the table instead of ending wherever each name does.
+   Deliberately not `display: flex`: that takes the cell out of the table's
+   layout, so it stops filling the row and reads as a short band nested inside
+   it. It stays a table cell and the chips sit inline. */
+.summary-table .col-types { text-align: left !important; white-space: nowrap; }
+.summary-table .col-types .type-chip + .type-chip { margin-left: 0.2rem; }
 .summary-table th, .summary-table td { padding-top: 0.04rem; padding-bottom: 0.04rem; }
 .col-abil { text-align: left !important; color: var(--muted); font-size: 0.75rem; white-space: nowrap; }
 .row-types { display: flex !important; flex-direction: row !important; gap: 0.2rem; }
@@ -115,21 +140,46 @@
    hover, and on the icon's own aria-label. */
 .type-head { padding: 0.15rem 0.1rem !important; vertical-align: bottom; }
 .type-icon-chip {
-  display: flex; flex-direction: column; align-items: center; gap: 0.05rem;
+  /* Two rows: the glyph gets whatever height is left and centres in it, the
+     name sits on the bottom edge. Centring both as one block instead left the
+     glyph riding high and the labels off the baseline. */
+  display: grid; grid-template-rows: 1fr auto; justify-items: center; align-items: center;
   padding: 0.25rem 0.3rem; border-radius: 6px; color: #fff; margin: 0 auto;
-  width: fit-content;
+  /* One size for all eighteen, square, wide enough for ELECTRIC and FIGHTING
+     at 3.3rem. Sized to content they ranged 27.6px to 51.7px, which made the
+     header read as a ragged row rather than a set. */
+  width: 3.3rem; height: 3.3rem; box-sizing: border-box;
 }
 .type-icon-chip svg { display: block; }
 /* Small, uppercase and tight, because eighteen of these set the table's width.
    White on the type colour rather than on the card, so chip and label read as
    one block per column. */
 .type-icon-label {
+  text-align: center; align-self: end;
   font-size: 0.5rem; font-weight: 700; line-height: 1.1;
   letter-spacing: 0.01em; text-transform: uppercase; white-space: nowrap;
 }
 .mon-cell { padding: 0.1rem !important; }
-.mon-cell img { image-rendering: pixelated; display: block; width: 26px; height: 21px; }
-.type-table tfoot th { text-align: right !important; color: var(--muted); font-size: 0.72rem; }
+/* Square cell, square sprite, matching the type chips across the top.
+   `contain` fits the sprite inside without stretching it. The corner and the
+   footer labels share this column, so they are pinned to the same width —
+   "Resist" was setting it 6px wider than the sprite and squaring nothing. */
+.type-table .corner, .mon-cell { width: var(--mon-cell, 40px); }
+.mon-cell { height: var(--mon-cell, 40px); padding: 0 !important; }
+.mon-cell img {
+  image-rendering: pixelated; display: block; margin: 0 auto;
+  /* Sized by useFillHeight so the chart fills its box vertically as well as
+     horizontally, with a little inset so sprites do not touch the borders. */
+  width: calc(var(--mon-cell, 40px) - 6px); height: calc(var(--mon-cell, 40px) - 6px);
+  object-fit: contain;
+}
+.type-table tfoot th {
+  text-align: right !important; color: var(--muted);
+  /* These share the sprite column, so they can grow with it. Capped where
+     "Resist" would start crowding the column's width. */
+  font-size: clamp(0.6rem, calc(var(--mon-cell, 40px) * 0.22), 0.78rem);
+  padding-left: 0.1rem !important; padding-right: 0.15rem !important;
+}
 .type-table th, .type-table td { padding-top: 0.05rem; padding-bottom: 0.05rem; }
 
 /* Scaled by useFitToBox when the roster is taller than the window allows, so
@@ -423,13 +473,9 @@ button.type-chip { cursor: pointer; }
 .widget-toolbar {
   display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem;
   padding: 0 16px 8px;
-  /* The summary tab carries two sliders; they stack rather than squeeze. */
   flex-wrap: wrap; row-gap: 0.4rem;
 }
-/* Narrower than the neutral slider: it shares the bar with one. */
-.zoom-control input[type="range"] { width: 5rem; }
-.zoom-control output { width: 2.8rem; }
-.zoom-control .link-btn { font-size: 0.72rem; }
+
 
 /* Asks for the 700px the tightened type chart needs, but grows into spare room
    and shrinks on narrow screens. Without an explicit basis it would expand to
@@ -519,7 +565,11 @@ button.type-chip { cursor: pointer; }
 }
 
 /* Abilities are plain text; hovering one still shows its description. */
-.summary-table .col-abil span { cursor: help; }
+/* The whole row opens the Pokemon, so everything in it points. Abilities used
+   to show a help cursor for their tooltip, which read as "not clickable". */
+.summary-table .row-link { cursor: pointer; }
+.summary-table .row-link:hover td,
+.summary-table .row-link:hover th { background-image: linear-gradient(rgb(255 255 255 / 6%), rgb(255 255 255 / 6%)); }
 
 /* ---- Draft Summary neutral slider ----
    The range input's intrinsic box does not centre against the text beside it,
@@ -626,8 +676,17 @@ button.type-chip { cursor: pointer; }
     /* All of the space below the controls is padding, never margin: the
        background stops at the margin edge, so a margin here would be a strip
        of moving cards between the header and the grid. */
-    padding-bottom: 0.7rem; margin-bottom: 0;
+    padding-top: 0.45rem; padding-bottom: 0.7rem; margin-bottom: 0;
     border-bottom: 1px solid var(--line);
+  }
+  /* Cards emerge from under the header mid-row, so the first thing below the
+     rule is usually a card's bottom edge — loose sprites with no border above
+     them, which reads as a gap in the grid. This fades them in over the first
+     few pixels instead of slicing them. */
+  .shell:has(.results) .moves-controls::after {
+    content: ''; position: absolute; left: 0; right: 0; top: 100%;
+    height: 0.75rem; pointer-events: none;
+    background: linear-gradient(var(--widget), rgb(20 20 20 / 0%));
   }
   /* Breathing room under the rule at rest. It belongs to the grid, so it
      scrolls away with the cards instead of holding a gap open. */

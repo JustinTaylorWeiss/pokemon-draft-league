@@ -6,7 +6,6 @@ import { DraftSummaryBody } from './DraftSummary'
 import { DefensiveChartBody } from './DefensiveChart'
 import { buildMoveRows, LearnedMovesBody } from './LearnedMoves'
 import { CoverageBody } from './CoveragePanel'
-import { ZoomControl } from './ZoomControl'
 import type { Team } from './TeamEditor'
 
 const TABS = [
@@ -44,10 +43,6 @@ export function AnalysisCard({ analyzed, other, chart, moves, learnsets }: Props
   const [defenseAbilities, setDefenseAbilities] = useState(true)
   const [coverageAbilities, setCoverageAbilities] = useState(true)
   const [resetKey, setResetKey] = useState(0)
-  // Per panel, because the two are different shapes and want different zooms.
-  // 1 means "as large as fits the card", which is where both start.
-  const [summaryZoom, setSummaryZoom] = useState(1)
-  const [typesZoom, setTypesZoom] = useState(1)
 
   // Descriptions for the ability pills' tooltips.
   const [abilityDex, setAbilityDex] = useState<AbilityDex | null>(null)
@@ -69,29 +64,23 @@ export function AnalysisCard({ analyzed, other, chart, moves, learnsets }: Props
 
   const actions = {
     summary: (
-      <>
-        <label className="neutral-control">
-          <span>Neutral</span>
-          <input
-            type="range" min={40} max={140} value={neutral}
-            onChange={(e) => setNeutral(Number(e.target.value))}
-          />
-          <output>{neutral}</output>
-        </label>
-        <ZoomControl value={summaryZoom} onChange={setSummaryZoom} />
-      </>
+      <label className="neutral-control">
+        <span>Neutral</span>
+        <input
+          type="range" min={40} max={140} value={neutral}
+          onChange={(e) => setNeutral(Number(e.target.value))}
+        />
+        <output>{neutral}</output>
+      </label>
     ),
     types: (
-      <>
-        <label className="toggle">
-          <input
-            type="checkbox" checked={defenseAbilities}
-            onChange={(e) => setDefenseAbilities(e.target.checked)}
-          />
-          <span>Abilities</span>
-        </label>
-        <ZoomControl value={typesZoom} onChange={setTypesZoom} />
-      </>
+      <label className="toggle">
+        <input
+          type="checkbox" checked={defenseAbilities}
+          onChange={(e) => setDefenseAbilities(e.target.checked)}
+        />
+        <span>Abilities</span>
+      </label>
     ),
     coverage: (
       <>
@@ -120,13 +109,11 @@ export function AnalysisCard({ analyzed, other, chart, moves, learnsets }: Props
       {tab === 'summary' && (
         <DraftSummaryBody
           team={analyzed} neutral={neutral} abilities={abilityDex}
-          zoom={summaryZoom}
         />
       )}
       {tab === 'types' && (
         <DefensiveChartBody
           team={analyzed} chart={chart} useAbilities={defenseAbilities}
-          zoom={typesZoom}
         />
       )}
       {/* Only these two need the learnsets, so the other tabs stay usable while

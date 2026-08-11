@@ -116,6 +116,15 @@ export interface CommonSet {
 
 export type SetDex = Record<string, CommonSet>
 
+export interface Item {
+  name: string
+  /** Index into Showdown's item sprite sheet, 16 icons per row at 24px. */
+  spritenum: number
+  desc: string
+}
+
+export type ItemDex = Record<string, Item>
+
 export type PokemonDex = Record<string, Pokemon>
 export type MoveDex = Record<string, Move>
 export type AbilityDex = Record<string, Ability>

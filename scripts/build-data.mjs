@@ -249,6 +249,27 @@ async function main() {
       }
     }
   }
+  // ---- items ----------------------------------------------------------------
+  // Only the ones our sets actually reference. Showdown draws item icons from a
+  // single sprite sheet rather than per-item files — the individual PNGs 404
+  // for anything recent — so what gets stored is the sheet offset.
+  const itemsRaw = await fetchScript('items')
+  const usedItems = new Set()
+  for (const set of Object.values(sets)) {
+    for (const spread of set.spreads) if (spread.item) usedItems.add(toId(spread.item))
+  }
+  const items = {}
+  for (const id of usedItems) {
+    const it = itemsRaw[id]
+    if (!it || typeof it.spritenum !== 'number') continue
+    items[id] = {
+      name: it.name,
+      spritenum: it.spritenum,
+      desc: it.shortDesc ?? it.desc ?? '',
+    }
+  }
+  stats.items = { kept: Object.keys(items).length, referenced: usedItems.size }
+
   stats.sets = {
     covered: Object.keys(sets).length,
     fromUsage: Object.values(sets).filter((s) => s.source === 'usage').length,
@@ -264,6 +285,7 @@ async function main() {
     typechart: { types: TYPES, chart },
     abilities: abilitiesOut,
     sets,
+    items,
   }
 
   console.log(`\n${'file'.padEnd(16)}${'raw'.padStart(12)}${'gzipped'.padStart(12)}`)

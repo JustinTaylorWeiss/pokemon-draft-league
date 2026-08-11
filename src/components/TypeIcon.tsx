@@ -23,20 +23,24 @@ const PATHS: Record<string, string> = {
   Grass: 'M20 3c-8.4-.7-14 2.6-14 8.6 0 2.3.9 4.2 2.3 5.5L5 20.4 6.6 22l3.2-3.2A7.6 7.6 0 0013 19.6C17.7 19.6 20.6 14 20 3zm-2.6 3.1c-.2 6.9-2.1 11-5.2 11.4a5.6 5.6 0 01-2.2-.4l7-7.7-1.4-1.3-7 7.7A5.7 5.7 0 018 12.2c0-3.6 3.2-6 9.4-6.1z',
   // Six even spokes, built by rotating one bar, so it is symmetric by construction rather than by eye.
   Ice: 'M10.85 3.0 L13.15 3.0 L13.15 21.0 L10.85 21.0ZM19.22 6.5 L20.37 8.5 L4.78 17.5 L3.63 15.5ZM20.37 15.5 L19.22 17.5 L3.63 8.5 L4.78 6.5ZM12 9.4a2.6 2.6 0 110 5.2 2.6 2.6 0 010-5.2Z',
-  // A front-on fist: four knuckles over a squared hand, thumb at the side.
-  Fighting: 'M5.4 11.5a1.8 1.8 0 013.6 0h-3.6zM9 11.5a1.8 1.8 0 013.6 0H9zM12.6 11.5a1.8 1.8 0 013.6 0h-3.6zM16.2 11.5a1.8 1.8 0 013.6 0h-3.6zM5.4 11.5h14.4v4.6a5.4 5.4 0 01-5.4 5.4h-3.6a5.4 5.4 0 01-5.4-5.4v-4.6zM5.4 13.4H4a1.9 1.9 0 000 3.8h1.4v-3.8z',
+  // A boxing glove: one rounded mass, a thumb lobe and a cuff. A bare fist
+  // turns to mush at 16px; this keeps a silhouette.
+  Fighting: 'M9.4 3h4.2a6.4 6.4 0 016.4 6.4v3.1a4.6 4.6 0 01-4.6 4.6H8.9a4.6 4.6 0 01-4.6-4.6v-.7H3.6a2.3 2.3 0 010-4.6h.8A6.4 6.4 0 019.4 3zM6.6 18.1h11v1.7A2.2 2.2 0 0115.4 22H8.8a2.2 2.2 0 01-2.2-2.2v-1.7z',
   // Droplet over two bubbles.
   Poison: 'M12 2.2c2.8 3.4 5.3 6.3 5.3 9.1a5.3 5.3 0 01-10.6 0c0-2.8 2.5-5.7 5.3-9.1zM7.6 17.6a2.2 2.2 0 110 4.4 2.2 2.2 0 010-4.4zm8.8.6a1.8 1.8 0 110 3.6 1.8 1.8 0 010-3.6z',
   // Three centred bands widening downward: strata seen edge-on.
   Ground: 'M7 5.2h10v3.4H7zM4.4 10.6h15.2V14H4.4zM1.8 16h20.4v3.4H1.8z',
-  // Single feathered wing.
-  Flying: 'M2 9.5c4.5-1.2 8.6-.6 12.3 1.8 2 1.3 3.9 2 5.7 2 .8 0 1.6-.1 2.4-.4-1.3 3.5-4 5.3-8 5.3-2.9 0-5.4-1-7.4-2.9C5 13.4 3.3 11.6 2 9.5zm5.6 2.1c1.6 1.9 3.3 3.3 5.1 4.2-1.6-2.1-3.3-3.5-5.1-4.2z',
+  // A whole bird from above: body, two swept wings, forked tail. Nothing
+  // else in the set is a creature, so unlike a wing or a feather it cannot
+  // be mistaken for Grass's leaf however small it gets.
+  Flying: 'M12 3.4c.85 0 1.5.8 1.5 1.8v4.3c3.5-1.7 7.2-2.2 11-1.4-2.4 3.2-6.1 5.2-11 6.2v2.4l1.9 3-3.4 1.9-3.4-1.9 1.9-3v-2.4C5.6 13.3 1.9 11.3-.5 8.1c3.8-.8 7.5-.3 11 1.4V5.2c0-1 .65-1.8 1.5-1.8z',
   // Spiral.
   Psychic: 'M12 2a10 10 0 100 20 10 10 0 000-20zm0 2.4a7.6 7.6 0 015.2 13.1c-1 .9-2.2 1.4-3.5 1.4-2.4 0-4.3-1.9-4.3-4.3 0-1.9 1.5-3.4 3.4-3.4 1.4 0 2.6 1.2 2.6 2.6a2 2 0 01-2 2c-.3 0-.6-.1-.8-.3.6 1 1.6 1 2.4.3.9-.8 1.4-2 1.4-3.2a4.5 4.5 0 00-4.5-4.5 5.5 5.5 0 00-5.5 5.5c0 1.4.4 2.7 1.2 3.8A7.6 7.6 0 0112 4.4z',
   // Beetle with antennae.
   Bug: 'M8.4 2.6l2.2 2.6a5.4 5.4 0 012.8 0l2.2-2.6 1.5 1.3-2 2.4c.6.5 1.1 1.2 1.4 2H20v2h-3.1c0 .3.1.7.1 1v.6h3.4v2H17v.6c0 .4 0 .8-.1 1.1H20v2h-3.5c-.9 1.8-2.6 3-4.5 3s-3.6-1.2-4.5-3H4v-2h3.1a6 6 0 01-.1-1.1V14H3.6v-2H7v-.6c0-.3 0-.7.1-1H4v-2h3.5c.3-.8.8-1.5 1.4-2l-2-2.4 1.5-1.3z',
-  // Two stacked stones, a slab under a boulder.
-  Rock: 'M3.2 20.2l2.8-5.6h12l2.8 5.6H3.2zM7.6 13.2L11.6 5.8l4.8 7.4H7.6z',
+  // Two chunky angular stones, both sitting on the ground line. Loose stones
+  // drawn above a slope read as a sun and moon over a mountain instead.
+  Rock: 'M2.4 20.6l2.6-8.4 5.4-2.8 3.4 4.6-1.2 6.6H2.4zM14.6 20.6l1.6-5.8 4.2-2 1.2 7.8h-7z',
   // Ghost with a wavy hem.
   Ghost: 'M12 2a7 7 0 00-7 7v11l2.3-2 2.3 2 2.4-2 2.4 2 2.3-2 2.3 2V9a7 7 0 00-7-7zM9.5 8.2a1.5 1.5 0 110 3 1.5 1.5 0 010-3zm5 0a1.5 1.5 0 110 3 1.5 1.5 0 010-3z',
   // Three claw rakes. A wing would collide with Flying and a flame with

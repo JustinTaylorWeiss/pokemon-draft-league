@@ -1,5 +1,5 @@
 import type {
-  AbilityDex, LearnsetDex, MoveDex, Pokemon, PokemonDex, SetDex, TypeChart, TypeName,
+  AbilityDex, LearnsetDex, MoveDex, Pokemon, PokemonDex, SetDex, ItemDex, TypeChart, TypeName,
 } from './types'
 
 /**
@@ -29,6 +29,19 @@ export const loadAbilities = () => load<AbilityDex>('abilities')
 export const loadTypeChart = () => load<TypeChart>('typechart')
 export const loadLearnsets = () => load<LearnsetDex>('learnsets')
 export const loadSets = () => load<SetDex>('sets')
+export const loadItems = () => load<ItemDex>('items')
+
+/**
+ * Showdown draws item icons from one sheet rather than per-item files — the
+ * individual PNGs 404 for anything from Gen 8 on — so this returns the offset
+ * into that sheet. 16 icons per row, 24px each.
+ */
+export function itemIconStyle(spritenum: number) {
+  return {
+    backgroundImage: 'url(https://play.pokemonshowdown.com/sprites/itemicons-sheet.png)',
+    backgroundPosition: `${-(spritenum % 16) * 24}px ${-Math.floor(spritenum / 16) * 24}px`,
+  }
+}
 
 /** Everything except learnsets — enough to render the dex and matchup grids. */
 export function loadCore() {

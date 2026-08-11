@@ -44,11 +44,13 @@ export function useFitToBox<T extends HTMLElement>(
     if (!node || !box) return
 
     // Read the natural size with zoom off, so the measurement never depends on
-    // the scale already applied.
+    // the scale already applied. scrollWidth/Height are the floor: this element
+    // is width-constrained and can scroll, so its own box stops growing at the
+    // container's edge while the content inside carries on.
     node.style.zoom = '1'
     const rect = node.getBoundingClientRect()
-    const naturalH = rect.height
-    const naturalW = rect.width
+    const naturalH = Math.max(rect.height, node.scrollHeight)
+    const naturalW = Math.max(rect.width, node.scrollWidth)
 
     // Fit means fit, in both directions and in both senses: a panel with room
     // to spare grows into it rather than stopping at 100%. Zoom scales width
@@ -74,10 +76,14 @@ export function useFitToBox<T extends HTMLElement>(
     const box = node?.parentElement
     if (!box || typeof ResizeObserver === 'undefined') return
     measure()
-    // Only the container is observed. Watching the content itself would see the
-    // zoom this hook applies and feed back into another measurement.
     const observer = new ResizeObserver(measure)
     observer.observe(box)
+    // The content is watched too, via the child rather than the zoomed element
+    // itself: `zoom` does not change a descendant's own layout box, so this
+    // sees real content changes without seeing the scale applied above it.
+    // Without this, anything that resizes the panel through CSS alone leaves
+    // the old scale in place and the panel silently overflows.
+    if (node.firstElementChild) observer.observe(node.firstElementChild)
     return () => observer.disconnect()
   }, [node, measure])
 

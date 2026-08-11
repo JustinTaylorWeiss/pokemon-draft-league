@@ -5,6 +5,7 @@ import { BST_ORDER, STAT_LABELS, summarize } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
 import type { Team } from './TeamEditor'
 import { PokemonLink } from '../../components/PokemonLink'
+import { usePokemonModal } from '../pokemon/PokemonModalContext'
 import { useFitToBox } from '../../lib/useFitToBox'
 
 /**
@@ -21,8 +22,8 @@ function heat(value: number, neutral: number): string {
 
 /** `neutral` is owned by the parent card so the slider can live in its header. */
 export function DraftSummaryBody(
-  { team, neutral, abilities, zoom }: {
-    team: Team; neutral: number; abilities: AbilityDex | null; zoom: number
+  { team, neutral, abilities }: {
+    team: Team; neutral: number; abilities: AbilityDex | null
   },
 ) {
 
@@ -38,9 +39,12 @@ export function DraftSummaryBody(
     return Object.fromEntries(Object.entries(cols).map(([k, v]) => [k, summarize(v)]))
   }, [rows])
 
+  // Any part of a row opens that Pokemon, not just its name and sprite.
+  const { open } = usePokemonModal()
+
   // Every row matters at a glance, so the table shrinks to fit a short window
   // rather than hiding its tail behind a scrollbar.
-  const fitRef = useFitToBox<HTMLDivElement>(zoom)
+  const fitRef = useFitToBox<HTMLDivElement>()
 
   if (!rows.length) return null
 
@@ -58,13 +62,22 @@ export function DraftSummaryBody(
           </thead>
           <tbody>
             {rows.map(({ id, pokemon }) => {
+              // Two at most: the cell is two lines tall and a third name would
+              // push past it. The rest are counted rather than truncated, so it
+              // is clear something was left out.
+              const abilityNames = Object.values(pokemon.abilities)
+              const shown = abilityNames.slice(0, 2)
+              const extra = abilityNames.length - shown.length
               return (
-                <tr key={id}>
+                <tr key={id} className="row-link" onClick={() => open(id)}>
                   <th scope="row" className="col-name">
-                    <PokemonLink id={id} title={pokemon.name}>
-                      <img src={spriteUrl(pokemon)} alt="" width={44} height={36} />
-                    </PokemonLink>
-                    <span>
+                    {/* An inner flex row, not a flex cell: making the `th`
+                        itself a flex container drops it out of the table's
+                        layout and it stops filling the row. */}
+                    <span className="name-cell">
+                      <PokemonLink id={id} title={pokemon.name}>
+                        <img src={spriteUrl(pokemon)} alt="" width={44} height={36} />
+                      </PokemonLink>
                       <PokemonLink id={id}>{pokemon.name}</PokemonLink>
                     </span>
                   </th>
@@ -73,11 +86,14 @@ export function DraftSummaryBody(
                   </td>
                   <td className="col-abil">
                     {/* Plain text: the description still shows on hover. */}
-                    {Object.values(pokemon.abilities).map((name, i) => (
-                      <span key={name} title={abilities?.[toId(name)]?.shortDesc || name}>
-                        {i > 0 && ', '}{name}
-                      </span>
-                    ))}
+                    <span className="ability-lines">
+                      {shown.map((name, i) => (
+                        <span key={name} title={abilities?.[toId(name)]?.shortDesc || name}>
+                          {i > 0 && ', '}{name}
+                        </span>
+                      ))}
+                      {extra > 0 && <em className="ability-more">, +{extra} more</em>}
+                    </span>
                   </td>
                   {BST_ORDER.map((k: StatKey) => (
                     <td key={k} style={{ background: heat(pokemon.baseStats[k], neutral) }}>

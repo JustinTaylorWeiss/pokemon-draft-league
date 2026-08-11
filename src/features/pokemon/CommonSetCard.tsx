@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import type { CommonSet, MoveDex, Pokemon, StatKey, TypeName } from '../../data/types'
+import type { CommonSet, ItemDex, MoveDex, Pokemon, StatKey, TypeName } from '../../data/types'
 import { BST_ORDER, NATURES, STAT_LABELS, natureMultiplier, statAtLevel } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
+import { itemIconStyle } from '../../data/load'
 
 /** Doubles formats read as "Gen 9 Doubles OU" rather than "gen9doublesou". */
 function formatLabel(format: string): string {
@@ -28,6 +29,7 @@ interface Props {
   mon: Pokemon
   set: CommonSet
   moves: MoveDex | null
+  items: ItemDex | null
 }
 
 /**
@@ -39,7 +41,7 @@ interface Props {
  * one they are offered as pills rather than merged, because they are genuine
  * alternatives with different items and spreads, not one set.
  */
-export function CommonSetCard({ mon, set, moves }: Props) {
+export function CommonSetCard({ mon, set, moves, items }: Props) {
   const [index, setIndex] = useState(0)
   useEffect(() => { setIndex(0) }, [mon.name])
 
@@ -91,7 +93,20 @@ export function CommonSetCard({ mon, set, moves }: Props) {
       </ul>
 
       <dl className="set-facts">
-        {spread.item && <div><dt>Item</dt><dd>{spread.item}</dd></div>}
+        {spread.item && (
+          <div>
+            <dt>Item</dt>
+            <dd className="set-item">
+              {(() => {
+                const item = items?.[spread.item.toLowerCase().replace(/[^a-z0-9]/g, '')]
+                return item ? (
+                  <span className="item-icon" style={itemIconStyle(item.spritenum)} title={item.desc} />
+                ) : null
+              })()}
+              {spread.item}
+            </dd>
+          </div>
+        )}
         {spread.ability && <div><dt>Ability</dt><dd>{spread.ability}</dd></div>}
         {spread.nature && (
           <div>

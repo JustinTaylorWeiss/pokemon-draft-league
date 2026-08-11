@@ -64,7 +64,9 @@
    auto-fill, so the set lands on the first row at every modal width. */
 .modal-row-3 {
   grid-column: 1 / -1;
-  display: grid; gap: 0.75rem; align-items: start;
+  /* stretch, not start: the three read as one band across the top, so they
+     share a height rather than each stopping wherever its content does. */
+  display: grid; gap: 0.75rem; align-items: stretch;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 @media (max-width: 1000px) { .modal-row-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
@@ -108,9 +110,11 @@
 .ability-desc { display: block; font-size: 0.78rem; color: var(--muted); line-height: 1.4; }
 
 /* ---- damage taken ---- */
+/* Nine across, so the eighteen types land as two even rows rather than
+   whatever auto-fill happens to produce at the current width. */
 .damage-grid {
   list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem;
-  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  grid-template-columns: repeat(9, minmax(0, 1fr));
 }
 .dmg {
   display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
@@ -125,21 +129,33 @@
 .dmg-4 { background: rgb(200 50 60 / 55%); }
 
 /* ---- evolution ---- */
-/* Sits at the end of the header row, beside the name and types. */
-.modal-evo { margin-left: auto; display: flex; flex-direction: column; gap: 0.3rem; flex: none; }
-.modal-evo h3 {
-  margin: 0; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--muted); font-weight: 700;
-}
-.modal-evo .evo-step { font-size: 0.66rem; padding: 0.2rem 0.35rem; }
-.modal-evo .evo-step img { width: 40px; height: 34px; }
+/* Name and types are one group; the family sits to the right of it. */
+.modal-ident-row { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; margin: 0.1rem 0 0.7rem; }
+.modal-ident { display: flex; flex-direction: column; gap: 0.35rem; }
+.modal-ident h2 { margin: 0; }
+.modal-ident .modal-types { margin: 0; }
+/* Stages left to right; a branching family stacks within its stage, so Eevee's
+   eight evolutions are one column rather than eight steps in a line. */
+.modal-evo { display: flex; align-items: center; gap: 0.5rem; flex: none; flex-wrap: wrap; }
+.evo-stage { display: flex; flex-direction: column; gap: 0.25rem; max-height: 8.5rem; flex-wrap: wrap; }
 .evo-line { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+/* Built like the type chips on the defensive chart: a square, the sprite
+   centred in whatever height is left, the name on the bottom edge. */
 .evo-step {
-  display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
+  display: grid; grid-template-rows: 1fr auto; justify-items: center; align-items: center;
+  width: 4.4rem; height: 4.4rem; box-sizing: border-box; padding: 0.25rem 0.2rem;
   background: none; border: 1px solid var(--line); border-radius: 10px;
-  padding: 0.35rem 0.5rem; color: inherit; font: inherit; font-size: 0.75rem; cursor: pointer;
+  color: inherit; font: inherit; font-size: 0.5rem; cursor: pointer;
 }
-.evo-step img { image-rendering: pixelated; object-fit: contain; }
+.evo-step img {
+  image-rendering: pixelated; object-fit: contain; width: 40px; height: 40px;
+}
+/* Long names ellipsis rather than widening the square or wrapping out of it. */
+.evo-step span {
+  align-self: end; width: 100%; text-align: center;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-weight: 600; letter-spacing: 0.01em;
+}
 .evo-step:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
 .evo-step.is-current { border-color: var(--accent); cursor: default; }
 
@@ -172,6 +188,9 @@
   font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
 }
 .set-facts dd { margin: 0; font-size: 0.8rem; font-weight: 600; }
+.set-item { display: flex; align-items: center; gap: 0.3rem; }
+/* A 24x24 window onto Showdown's item sheet; the offset comes from the data. */
+.item-icon { flex: none; width: 24px; height: 24px; background-repeat: no-repeat; }
 .nature-effect { font-style: normal; font-weight: 500; font-size: 0.68rem; color: var(--muted); }
 
 .set-spread { display: flex; gap: 0.5rem; align-items: baseline; font-size: 0.76rem; }
@@ -247,7 +266,8 @@
   .modal-art { width: 96px; height: 96px; }
   .modal-title h2 { font-size: 1.25rem; }
   .modal-facts { gap: 0.35rem 0.9rem; }
-  .damage-grid { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); }
+  /* Nine columns will not fit a phone; three rows of six is the next even split. */
+  .damage-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   /* The table is wider than a phone; let it scroll rather than squeeze. */
   .move-table { min-width: 40rem; }
   .move-table .effect { min-width: 12rem; }

@@ -6,12 +6,12 @@ import { TypeIconChip } from '../../components/TypeIcon'
 import type { Team } from './TeamEditor'
 import { PokemonLink } from '../../components/PokemonLink'
 import { useFitToBox } from '../../lib/useFitToBox'
+import { useFillHeight } from '../../lib/useFillHeight'
 
 interface Props {
   team: Team
   chart: TypeChart
   useAbilities: boolean
-  zoom: number
 }
 
 /** Blank for neutral so the eye only catches the cells that matter. */
@@ -27,20 +27,26 @@ function cellClass(mult: number): string {
 const label = (m: number) => (m === 1 ? '' : m === 0 ? '0' : String(m))
 
 /** The Abilities toggle is owned by the parent card's header. */
-export function DefensiveChartBody({ team, chart, useAbilities, zoom }: Props) {
+export function DefensiveChartBody({ team, chart, useAbilities }: Props) {
 
   const { rows, summary } = useMemo(
     () => defensiveChart(chart, team.members, useAbilities),
     [chart, team.members, useAbilities],
   )
 
-  const fitRef = useFitToBox<HTMLDivElement>(zoom)
+  const fitRef = useFitToBox<HTMLDivElement>()
+  // Eighteen columns make this chart width-bound, so scaling it to fit leaves
+  // height on the table. The row sprites grow to take it.
+  const [fillRef, cellSize] = useFillHeight<HTMLDivElement>(rows.length)
 
   if (!rows.length) return null
 
   return (
-    <div className="table-scroll fit-box" ref={fitRef}>
-        <table className="type-table">
+    <div
+      className="fit-box" ref={fitRef}
+      style={{ ['--mon-cell' as string]: `${cellSize}px` }}
+    >
+        <table className="type-table" ref={fillRef}>
           <thead>
             <tr>
               <th className="corner" />

@@ -1,10 +1,10 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  artworkUrl, loadAbilities, loadLearnsets, loadMoves, loadPokemon, loadSets,
+  artworkUrl, loadAbilities, loadItems, loadLearnsets, loadMoves, loadPokemon, loadSets,
   loadTypeChart, spriteUrl, toId,
 } from '../../data/load'
 import type {
-  AbilityDex, LearnsetDex, Move, MoveDex, PokemonDex, SetDex, TypeChart, TypeName,
+  AbilityDex, ItemDex, LearnsetDex, Move, MoveDex, PokemonDex, SetDex, TypeChart, TypeName,
 } from '../../data/types'
 import { loadLeague, mergeDex, tierClass, type League, type LeaguePokemon } from '../../data/league'
 import { BATTLE_TYPES, defensiveMultiplier } from '../../lib/matchup'
@@ -33,6 +33,7 @@ export function PokemonModal() {
   const [learnsets, setLearnsets] = useState<LearnsetDex | null>(null)
   const [chart, setChart] = useState<TypeChart | null>(null)
   const [sets, setSets] = useState<SetDex | null>(null)
+  const [items, setItems] = useState<ItemDex | null>(null)
   // Groups are independent toggles, all on by default, so search covers the
   // whole movepool unless something is switched off.
   const [enabled, setEnabled] = useState<Set<string>>(new Set(MOVE_GROUPS.map((g) => g.key)))
@@ -49,6 +50,7 @@ export function PokemonModal() {
     loadMoves().then(setMoves, () => {})
     loadTypeChart().then(setChart, () => {})
     loadSets().then(setSets, () => {})
+    loadItems().then(setItems, () => {})
     loadLearnsets().then(setLearnsets, () => {})
   }, [openId])
 
@@ -88,6 +90,44 @@ export function PokemonModal() {
     return totals.length % 2 ? totals[mid] : Math.round((totals[mid - 1] + totals[mid]) / 2)
   }, [merged])
   const mon: LeaguePokemon | undefined = openId && merged ? merged[openId] : undefined
+
+  /**
+   * The whole evolution family, as stages: walk up to the root, then out
+   * through every branch. `prevo`/`evos` hold display names rather than the ids
+   * the dex is keyed by, so each hop goes through toId.
+   *
+   * Stages rather than a flat list because families branch — Eevee's eight
+   * evolutions are all one stage, not eight steps in a line.
+   */
+  const family = useMemo(() => {
+    if (!openId || !merged?.[openId]) return []
+
+    let rootId: string = openId
+    // Bounded: a malformed prevo cycle would otherwise spin here.
+    for (let i = 0; i < 5; i++) {
+      const prevo: string | undefined = merged[rootId]?.prevo
+      const prevoId = prevo ? toId(prevo) : null
+      if (!prevoId || !merged[prevoId]) break
+      rootId = prevoId
+    }
+
+    const stages: string[][] = []
+    const seen = new Set<string>()
+    let level = [rootId]
+    while (level.length && stages.length < 5) {
+      stages.push(level)
+      for (const id of level) seen.add(id)
+      const next: string[] = []
+      for (const id of level) {
+        for (const evo of merged[id]?.evos ?? []) {
+          const evoId = toId(evo)
+          if (merged[evoId] && !seen.has(evoId)) next.push(evoId)
+        }
+      }
+      level = next
+    }
+    return stages
+  }, [openId, merged])
 
   const learnset = openId && learnsets ? learnsets[openId] : undefined
 
@@ -165,9 +205,26 @@ export function PokemonModal() {
                 onError={(e) => { (e.currentTarget as HTMLImageElement).src = spriteUrl(mon) }} />
               <div className="modal-title">
                 <span className="modal-num">#{String(mon.num).padStart(4, '0')}</span>
-                <h2>{mon.name}</h2>
-                <div className="modal-types">
-                  {mon.types.map((t) => <TypeChip key={t} type={t} />)}
+                <div className="modal-ident-row">
+                  {/* Name and types are one thing — what this Pokemon is. The
+                      family sits beside that group, not inside it. */}
+                  <div className="modal-ident">
+                    <h2>{mon.name}</h2>
+                    <div className="modal-types">
+                      {mon.types.map((t) => <TypeChip key={t} type={t} />)}
+                    </div>
+                  </div>
+                  {family.length > 1 && (
+                    <div className="modal-evo">
+                      {family.map((stage, i) => (
+                        <div className="evo-stage" key={i}>
+                          {stage.map((eid) => (
+                            <EvoStep key={eid} id={eid} mon={merged![eid]} current={eid === openId} />
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <dl className="modal-facts">
                   <div><dt>Height</dt><dd>{mon.heightm} m</dd></div>
@@ -194,23 +251,6 @@ export function PokemonModal() {
                 {mon.note && <p className="modal-note">{mon.note}</p>}
               </div>
 
-              {/* Beside the name rather than down in the grid: it is part of
-                  identifying the Pokemon, not part of analysing it. */}
-              {(mon.prevo || mon.evos?.length) && (
-                <div className="modal-evo">
-                  <h3>Evolution</h3>
-                  <div className="evo-line">
-                    {/* prevo/evos are display names, not the ids the dex is keyed by. */}
-                    {mon.prevo && merged?.[toId(mon.prevo)] && (
-                      <EvoStep id={toId(mon.prevo)} mon={merged[toId(mon.prevo)]} />
-                    )}
-                    <EvoStep id={openId} mon={mon} current />
-                    {mon.evos?.map((e) => merged?.[toId(e)] && (
-                      <EvoStep key={e} id={toId(e)} mon={merged[toId(e)]} />
-                    ))}
-                  </div>
-                </div>
-              )}
             </header>
 
             <div className="modal-grid">
@@ -268,7 +308,7 @@ export function PokemonModal() {
                 </ul>
               </section>
 
-              {commonSet && <CommonSetCard mon={mon} set={commonSet} moves={moves} />}
+              {commonSet && <CommonSetCard mon={mon} set={commonSet} moves={moves} items={items} />}
               </div>
 
               <section className="modal-card modal-wide">
