@@ -741,39 +741,11 @@ button.type-chip { cursor: pointer; }
   .shell:has(.results) .matchup-container > .widget > .widget-body::-webkit-scrollbar-track {
     background: transparent;
   }
-  /* The moves search would otherwise scroll away from the list it filters.
-     It needs its own edge: the card behind it is the same colour, so without a
-     rule the cards sliding under simply lose their tops and the strip reads as
-     a gap in the grid rather than as content passing beneath a header. The
-     background has to run to that edge with no margin below it, or the cards
-     show through the space between. */
-  .shell:has(.results) .moves-controls {
-    position: sticky; top: 0; z-index: 2; background: var(--widget);
-    /* All of the space below the controls is padding, never margin: the
-       background stops at the margin edge, so a margin here would be a strip
-       of moving cards between the header and the grid. */
-    padding-top: 0.45rem; padding-bottom: 0.7rem; margin-bottom: 0;
-    border-bottom: 1px solid var(--line);
-    /* Its own compositing layer. Hit testing says this covers the strip above
-       the grid at every width and scroll position, yet cards were still visible
-       through it while scrolling — that is the scroller repainting under a
-       header it shares a layer with, not a layout gap. Promoting it means the
-       header is composited over the moving content rather than redrawn with
-       it. */
-    will-change: transform;
-  }
-  /* Cards emerge from under the header mid-row, so the first thing below the
-     rule is usually a card's bottom edge — loose sprites with no border above
-     them, which reads as a gap in the grid. This fades them in over the first
-     few pixels instead of slicing them. */
-  .shell:has(.results) .moves-controls::after {
-    content: ''; position: absolute; left: 0; right: 0; top: 100%;
-    height: 0.75rem; pointer-events: none;
-    background: linear-gradient(var(--widget), rgb(20 20 20 / 0%));
-  }
-  /* Breathing room under the rule at rest. It belongs to the grid, so it
-     scrolls away with the cards instead of holding a gap open. */
-  .shell:has(.results) .move-grid { padding-top: 0.6rem; }
+  /* The search and tags scroll away with the list rather than sticking. Pinned,
+     they left a strip at the top of the panel that cards were visible through
+     while scrolling — not reproducible by hit testing at any width or scroll
+     position, so not a layout gap, and layer promotion did not settle it
+     either. Not sticking is worth more than the header staying in view. */
 }
 
 /* Below the width where the teams card and the stacked column can sit side by
