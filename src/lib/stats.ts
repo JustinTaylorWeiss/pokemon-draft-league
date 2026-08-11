@@ -130,6 +130,8 @@ export interface SpeedTier {
  */
 export function speedTiers(
   entries: { id: string; pokemon: Pokemon; enabled: Set<string> }[],
+  /** VGC is played at 50; singles ladders at 100. */
+  level = 50,
 ): SpeedTier[] {
   const tiers: SpeedTier[] = []
 
@@ -145,7 +147,7 @@ export function speedTiers(
 
     for (const spread of SPEED_SPREADS) {
       if (!enabled.has(spread.key)) continue
-      const raw = statAt100(base, spread.ev, spread.nature, false, spread.iv)
+      const raw = statAtLevel(base, spread.ev, spread.nature, false, spread.iv, level)
 
       for (const stage of stages) {
         const staged = stage ? Math.floor((raw * stage.num) / stage.den) : raw

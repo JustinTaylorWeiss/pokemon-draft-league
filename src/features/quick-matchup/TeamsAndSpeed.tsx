@@ -23,6 +23,9 @@ interface Props {
 export function TeamsAndSpeed({ teamOne, teamTwo }: Props) {
   const [tab, setTab] = useState('teams')
   const [selected, setSelected] = useState<string | null>(null)
+  // This league plays doubles at 50, which is what the numbers should mean by
+  // default; 100 is there for anyone reading singles tiers across.
+  const [level, setLevel] = useState(50)
 
   // Both the row list and the defaults come off the combined roster, so the two
   // columns start symmetric the way DraftZone's do.
@@ -69,13 +72,22 @@ export function TeamsAndSpeed({ teamOne, teamTwo }: Props) {
       width={420}
       className="both-teams"
       actions={onSpeed ? (
-        <SpeedFilter
-          rows={rows}
-          oneName={teamOne.name || 'Team 1'}
-          twoName={teamTwo.name || 'Team 2'}
-          filterOne={filterOne} filterTwo={filterTwo}
-          onChange={setFilter} onReset={reset}
-        />
+        <>
+          <SpeedFilter
+            rows={rows}
+            oneName={teamOne.name || 'Team 1'}
+            twoName={teamTwo.name || 'Team 2'}
+            filterOne={filterOne} filterTwo={filterTwo}
+            onChange={setFilter} onReset={reset}
+          />
+          <label className="level-picker">
+            <span>Lv</span>
+            <select value={level} onChange={(e) => setLevel(Number(e.target.value))}>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </label>
+        </>
       ) : undefined}
       footnote={onSpeed
         ? (selected ? 'Click again to clear the selection.' : 'Click a Pokémon to trace it through the tiers.')
@@ -84,7 +96,7 @@ export function TeamsAndSpeed({ teamOne, teamTwo }: Props) {
       {onSpeed ? (
         <SpeedTiersBody
           teamOne={teamOne} teamTwo={teamTwo}
-          filterOne={filterOne} filterTwo={filterTwo}
+          filterOne={filterOne} filterTwo={filterTwo} level={level}
           selected={selected} onSelect={setSelected}
         />
       ) : (

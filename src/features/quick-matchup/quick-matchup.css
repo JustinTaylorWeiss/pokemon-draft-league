@@ -240,7 +240,7 @@
 
 /* ---- speed tiers ---- */
 .speed-layout { display: flex; gap: 0.6rem; }
-.speed-bases { flex: 0 0 4.6rem; }
+.speed-bases { flex: 0 0 6.2rem; }
 .speed-groups { flex: 1 1 auto; min-width: 0; }
 .speed-layout h3 { margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase; color: var(--team-both); letter-spacing: 0.05em; }
 .speed-layout h3 span { float: right; text-transform: none; font-size: 0.68rem; }
@@ -250,14 +250,17 @@
    with the per-side blue/red inside carrying the team meaning. */
 .widget.both-teams { --team-accent: var(--team-both); }
 .speed-layout li {
-  border: 1px solid var(--line); border-radius: 6px; font-size: 0.76rem;
+  border: 1px solid var(--line); border-radius: 6px; font-size: 0.8rem;
   transition: opacity 0.12s, border-color 0.12s;
 }
 .speed-layout li button {
-  display: flex; align-items: center; gap: 0.3rem; width: 100%;
-  padding: 0.1rem 0.35rem; background: none; border: 0; color: inherit;
+  display: flex; align-items: center; gap: 0.35rem; width: 100%;
+  padding: 0.28rem 0.4rem; background: none; border: 0; color: inherit;
   font: inherit; font-size: inherit; cursor: pointer; text-align: left;
 }
+/* Bigger than the tier rows' sprites, since the base column has the room. */
+.speed-bases img { width: 42px; height: 42px; object-fit: contain; }
+.speed-groups img { width: 38px; height: 34px; object-fit: contain; }
 .speed-layout li.side-one { border-left: 3px solid var(--team-one); }
 .speed-layout li.side-two { border-left: 3px solid var(--team-two); }
 .speed-layout li.is-selected { border-color: var(--team-both); background: rgb(167 139 250 / 16%); }
@@ -272,6 +275,17 @@
 /* A checkbox on each side of the label, so the two teams filter independently:
    left box is team one, right box is team two, coloured to match. */
 .speed-filter { position: relative; }
+.level-picker {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  font-size: 0.78rem; color: var(--muted);
+}
+.level-picker select {
+  background: var(--surface); border: 1px solid var(--line); color: var(--fg);
+  border-radius: 999px; padding: 0.18rem 0.4rem; font: inherit; font-size: 0.78rem;
+  cursor: pointer;
+}
+.level-picker select:hover { border-color: var(--team-both); }
+
 .filter-btn {
   display: inline-flex; align-items: center; gap: 0.35rem;
   background: none; border: 1px solid var(--line); border-radius: 999px;
@@ -740,6 +754,13 @@ button.type-chip { cursor: pointer; }
        of moving cards between the header and the grid. */
     padding-top: 0.45rem; padding-bottom: 0.7rem; margin-bottom: 0;
     border-bottom: 1px solid var(--line);
+    /* Its own compositing layer. Hit testing says this covers the strip above
+       the grid at every width and scroll position, yet cards were still visible
+       through it while scrolling — that is the scroller repainting under a
+       header it shares a layer with, not a layout gap. Promoting it means the
+       header is composited over the moving content rather than redrawn with
+       it. */
+    will-change: transform;
   }
   /* Cards emerge from under the header mid-row, so the first thing below the
      rule is usually a card's bottom edge — loose sprites with no border above
@@ -783,7 +804,7 @@ button.type-chip { cursor: pointer; }
   .widget-header, .widget-toolbar { padding-left: 10px; padding-right: 10px; }
   .widget-note { margin-left: 10px; margin-right: 10px; }
   .move-grid { padding: 0 10px; }
-  .moves-controls { padding: 0 10px 0.7rem; }
+  .moves-controls { padding: 0.45rem 10px 0.7rem; }
   .widget-tabs button { font-size: 0.82rem; padding: 0.15rem 0.3rem 0.35rem; }
   .builder-columns { gap: 0.75rem; }
   .custom-teams { grid-template-columns: 1fr; }

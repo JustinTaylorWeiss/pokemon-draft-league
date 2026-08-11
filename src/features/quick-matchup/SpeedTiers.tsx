@@ -9,6 +9,8 @@ interface Props {
   /** Enabled filter rows per side, so each team can be viewed under its own. */
   filterOne: Set<string>
   filterTwo: Set<string>
+  /** 50 for VGC, 100 for singles ladders. */
+  level: number
   selected: string | null
   onSelect: (id: string | null) => void
 }
@@ -21,7 +23,7 @@ interface Props {
  * Selection and the filter live in the parent so the shared card header can own
  * them while this renders only the body.
  */
-export function SpeedTiersBody({ teamOne, teamTwo, filterOne, filterTwo, selected, onSelect }: Props) {
+export function SpeedTiersBody({ teamOne, teamTwo, filterOne, filterTwo, level, selected, onSelect }: Props) {
 
   const side = useMemo(() => {
     const map = new Map<string, 'one' | 'two'>()
@@ -33,7 +35,7 @@ export function SpeedTiersBody({ teamOne, teamTwo, filterOne, filterTwo, selecte
   const all = useMemo(() => speedTiers([
     ...teamOne.members.map((m) => ({ ...m, enabled: filterOne })),
     ...teamTwo.members.map((m) => ({ ...m, enabled: filterTwo })),
-  ]), [teamOne.members, teamTwo.members, filterOne, filterTwo])
+  ], level), [teamOne.members, teamTwo.members, filterOne, filterTwo, level])
 
   const bases = useMemo(() => {
     const seen = new Map<string, TeamEntry>()
@@ -64,7 +66,7 @@ export function SpeedTiersBody({ teamOne, teamTwo, filterOne, filterTwo, selecte
         </div>
 
         <div className="speed-groups">
-          <h3>Tiers <span>Lv 100</span></h3>
+          <h3>Tiers <span>Lv {level}</span></h3>
           <ul>
             {all.map((t, i) => (
               <li key={`${t.id}-${t.investment}-${t.stage ?? ''}-${t.modifiers.join()}-${i}`} className={rowClass(t.id)}>
