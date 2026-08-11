@@ -97,10 +97,12 @@
 /* Still one width for every type, just a smaller one than the standalone chips. */
 .summary-table .type-chip { min-width: 4.6em; font-size: 0.54rem; padding: 0 0.2rem; line-height: 1.35; }
 .summary-table .col-name { font-size: 0.74rem; line-height: 1.2; }
-/* Types beside the name rather than under it. That trades height for width,
-   which suits this card: it was running out of rows long before it ran out of
-   room across. */
-.summary-table .col-name span { flex-direction: row; align-items: center; gap: 0.35rem; }
+/* Types in their own column, so the name column is just the name and the
+   chips line up down the table instead of ending wherever each name does. */
+.summary-table .col-types {
+  text-align: left !important; white-space: nowrap;
+  display: flex; gap: 0.2rem; align-items: center;
+}
 .summary-table th, .summary-table td { padding-top: 0.04rem; padding-bottom: 0.04rem; }
 .col-abil { text-align: left !important; color: var(--muted); font-size: 0.75rem; white-space: nowrap; }
 .row-types { display: flex !important; flex-direction: row !important; gap: 0.2rem; }
@@ -111,12 +113,20 @@
    text ate 73px of header height and still had to be read sideways; a square
    icon is the same information in one row of cells. The name is still there on
    hover, and on the icon's own aria-label. */
-.type-head { padding: 0.15rem 0.1rem !important; vertical-align: middle; }
+.type-head { padding: 0.15rem 0.1rem !important; vertical-align: bottom; }
 .type-icon-chip {
-  display: grid; place-items: center; width: 1.7rem; height: 1.7rem;
-  border-radius: 6px; color: #fff; margin: 0 auto;
+  display: flex; flex-direction: column; align-items: center; gap: 0.05rem;
+  padding: 0.25rem 0.3rem; border-radius: 6px; color: #fff; margin: 0 auto;
+  width: fit-content;
 }
 .type-icon-chip svg { display: block; }
+/* Small, uppercase and tight, because eighteen of these set the table's width.
+   White on the type colour rather than on the card, so chip and label read as
+   one block per column. */
+.type-icon-label {
+  font-size: 0.5rem; font-weight: 700; line-height: 1.1;
+  letter-spacing: 0.01em; text-transform: uppercase; white-space: nowrap;
+}
 .mon-cell { padding: 0.1rem !important; }
 .mon-cell img { image-rendering: pixelated; display: block; width: 26px; height: 21px; }
 .type-table tfoot th { text-align: right !important; color: var(--muted); font-size: 0.72rem; }
