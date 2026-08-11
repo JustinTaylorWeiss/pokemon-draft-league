@@ -106,7 +106,7 @@
   overflow: hidden;
   min-height: 2.5em;
 }
-.ability-more { font-style: normal; color: var(--team-both); white-space: nowrap; }
+
 .stat-table thead th, .type-table thead th { color: var(--muted); font-weight: 600; font-size: 0.72rem; }
 .col-name { text-align: left !important; white-space: nowrap; }
 .col-name span { display: inline-flex; flex-direction: column; gap: 0.15rem; vertical-align: middle; align-items: flex-start; }
@@ -121,9 +121,9 @@
      because they sit under the name rather than beside it and every pixel of
      their height is a pixel of row height. */
   width: 3.2rem; min-width: 0; box-sizing: border-box;
-  font-size: 0.52rem; padding: 0 0.2rem; line-height: 1.3;
+  font-size: 0.55rem; padding: 0.16rem 0.2rem; line-height: 1.45;
 }
-.summary-table .col-name { font-size: 0.74rem; line-height: 1.2; vertical-align: middle; }
+.summary-table .col-name { font-size: 0.95rem; line-height: 1.2; vertical-align: middle; }
 /* The sprite is 34px and the name a single line. Aligned inline the name lands
    ~12px low, because `vertical-align: middle` aligns to the baseline rather
    than to the centre of the line box; a flex row centres both properly. */

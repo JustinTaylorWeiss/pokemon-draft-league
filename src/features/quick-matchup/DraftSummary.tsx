@@ -61,12 +61,10 @@ export function DraftSummaryBody(
           </thead>
           <tbody>
             {rows.map(({ id, pokemon }) => {
-              // Two at most: the cell is two lines tall and a third name would
-              // push past it. The rest are counted rather than truncated, so it
-              // is clear something was left out.
+              // All of them: the column is wide enough now that three names fit
+              // the two lines it is held open to, so nothing has to be counted
+              // off behind a "+N more".
               const abilityNames = Object.values(pokemon.abilities)
-              const shown = abilityNames.slice(0, 2)
-              const extra = abilityNames.length - shown.length
               return (
                 <tr key={id} className="row-link" onClick={() => open(id)}>
                   <th scope="row" className="col-name">
@@ -88,12 +86,11 @@ export function DraftSummaryBody(
                   <td className="col-abil">
                     {/* Plain text: the description still shows on hover. */}
                     <span className="ability-lines">
-                      {shown.map((name, i) => (
+                      {abilityNames.map((name, i) => (
                         <span key={name} title={abilities?.[toId(name)]?.shortDesc || name}>
                           {i > 0 && ', '}{name}
                         </span>
                       ))}
-                      {extra > 0 && <em className="ability-more">, +{extra} more</em>}
                     </span>
                   </td>
                   {BST_ORDER.map((k: StatKey) => (
