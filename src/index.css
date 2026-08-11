@@ -36,6 +36,9 @@ body {
 .loading, .error { color: var(--muted); font-size: 0.9rem; }
 .error { color: #e05563; }
 
+/* Fills the chip so the word centres in it whatever the chip's width. */
+.type-chip-text { flex: 1 1 auto; text-align: center; min-width: 0; }
+
 /* Type colors are global so chips render the same in every panel. */
 .type-normal   { background: #9fa19f; }
 .type-grass    { background: #48a53c; }

@@ -182,7 +182,12 @@
 /* Keeps a move the dex does not know aligned with the rest of the column. */
 .type-chip.is-blank { background: var(--chip); }
 
-.set-facts { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; margin: 0; }
+/* Two to a row: item and ability, then tera and nature. A wrapping flex row
+   packed them by width, which put nature wherever it happened to fit. */
+.set-facts {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem 1rem; margin: 0;
+}
 .set-facts div { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
 .set-facts dt {
   font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);

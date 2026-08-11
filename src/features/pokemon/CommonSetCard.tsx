@@ -108,6 +108,12 @@ export function CommonSetCard({ mon, set, moves, items }: Props) {
           </div>
         )}
         {spread.ability && <div><dt>Ability</dt><dd>{spread.ability}</dd></div>}
+        {spread.teraType && (
+          <div>
+            <dt>Tera</dt>
+            <dd><TypeChip type={spread.teraType as TypeName} /></dd>
+          </div>
+        )}
         {spread.nature && (
           <div>
             <dt>Nature</dt>
@@ -119,12 +125,6 @@ export function CommonSetCard({ mon, set, moves, items }: Props) {
                 </em>
               )}
             </dd>
-          </div>
-        )}
-        {spread.teraType && (
-          <div>
-            <dt>Tera</dt>
-            <dd><TypeChip type={spread.teraType as TypeName} /></dd>
           </div>
         )}
         {level !== 100 && <div><dt>Level</dt><dd>{level}</dd></div>}
