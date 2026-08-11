@@ -210,6 +210,29 @@ export function loadLeague(): Promise<League> {
   return pending
 }
 
+/**
+ * Whether a read of the sheet is in flight, from whatever started it.
+ *
+ * The button is not the only thing that reads the sheet any more — every page
+ * load does — so the busy state belongs here rather than in the button's own
+ * component, which would otherwise sit idle through the fetch it triggered.
+ */
+let sheetBusy = false
+const busyListeners = new Set<(busy: boolean) => void>()
+
+export const isSheetBusy = () => sheetBusy
+
+export function subscribeSheetBusy(fn: (busy: boolean) => void): () => void {
+  busyListeners.add(fn)
+  return () => { busyListeners.delete(fn) }
+}
+
+function setSheetBusy(busy: boolean) {
+  if (sheetBusy === busy) return
+  sheetBusy = busy
+  for (const fn of busyListeners) fn(busy)
+}
+
 /** Notified when a refresh replaces the data, so views re-render in place. */
 export function subscribeLeague(fn: (l: League) => void): () => void {
   listeners.add(fn)
@@ -232,6 +255,15 @@ export function publishLeague(next: League) {
  * the parser load on demand so the initial bundle does not carry them.
  */
 export async function refreshLeagueFromSheet(sheetUrl: string): Promise<League> {
+  setSheetBusy(true)
+  try {
+    return await readSheet(sheetUrl)
+  } finally {
+    setSheetBusy(false)
+  }
+}
+
+async function readSheet(sheetUrl: string): Promise<League> {
   const [{ read }, { parseLeagueSheet }, dexRes, sheetRes] = await Promise.all([
     import('xlsx'),
     import('../lib/parseLeagueSheet.js'),

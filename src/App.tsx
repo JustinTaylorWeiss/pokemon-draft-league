@@ -4,8 +4,8 @@ import { QuickMatchup } from './features/quick-matchup/QuickMatchup'
 import { LeagueView } from './features/league/LeagueView'
 import { LEAGUE_TABS, type LeagueTab } from './features/league/tabs'
 import {
-  leagueTimestamp, loadLeague, refreshLeagueFromSheet, revalidateLeague, subscribeLeague,
-  type League,
+  isSheetBusy, leagueTimestamp, loadLeague, refreshLeagueFromSheet, revalidateLeague,
+  subscribeLeague, subscribeSheetBusy, type League,
 } from './data/league'
 import { Dex } from './features/dex/Dex'
 import { PokemonModalProvider } from './features/pokemon/PokemonModalContext'
@@ -40,7 +40,9 @@ export default function App() {
   // Loaded here too so the secondary nav can name the season; the loader caches,
   // so this shares one fetch with the views below.
   const [league, setLeague] = useState<League | null>(null)
-  const [refreshing, setRefreshing] = useState(false)
+  // Driven by the data layer, so the button also animates through the read the
+  // page starts on load — not only the one the button starts itself.
+  const [refreshing, setRefreshing] = useState(isSheetBusy)
   const [refreshError, setRefreshError] = useState<string | null>(null)
   const [dataAt, setDataAt] = useState<Date | null>(null)
 
@@ -55,20 +57,21 @@ export default function App() {
     loadLeague().then((l) => { setLeague(l); setDataAt(leagueTimestamp()) }, () => {})
     // Then read the sheet itself, which is always the newest source there is.
     revalidateLeague(LEAGUE_SHEET_URL)
+    const stopBusy = subscribeSheetBusy(setRefreshing)
     // A refresh republishes the league, and every view listens for it.
-    return subscribeLeague((l) => { setLeague(l); setDataAt(leagueTimestamp()) })
+    const stopLeague = subscribeLeague((l) => { setLeague(l); setDataAt(leagueTimestamp()) })
+    return () => { stopBusy(); stopLeague() }
   }, [])
 
   /** Re-reads the sheet in the browser. Read-only: a GET, nothing more. */
   const refresh = async () => {
-    setRefreshing(true)
+    // The busy state comes from the data layer, which the read below sets, so
+    // there is nothing to toggle here beyond clearing the last error.
     setRefreshError(null)
     try {
       await refreshLeagueFromSheet(LEAGUE_SHEET_URL)
     } catch (err) {
       setRefreshError(err instanceof Error ? err.message : 'Refresh failed')
-    } finally {
-      setRefreshing(false)
     }
   }
 
@@ -113,7 +116,13 @@ export default function App() {
             title={refreshError ?? 'Fetch the latest data from the league sheet'}
             aria-label="Refresh league data from the sheet"
           >
-            <span className="refresh-icon" aria-hidden="true">⟳</span>
+            {refreshing ? (
+              <span className="wave" aria-hidden="true">
+                <i /><i /><i /><i /><i />
+              </span>
+            ) : (
+              <span className="refresh-icon" aria-hidden="true">⟳</span>
+            )}
               <span className="refresh-label">
                 {refreshing ? 'Refreshing…' : refreshError ? 'Retry' : 'Refresh'}
               </span>
