@@ -56,6 +56,17 @@ const PATHS: Record<string, string> = {
   Stellar: 'M12 2l1.8 6.4L20 6l-2.4 6L22 13.8l-6.4 1.8L18 22l-6-2.4L6 22l2.4-6.4L2 13.8 8.4 12 6 6l6.2 2.4L12 2z',
 }
 
+/**
+ * Per-glyph correction for shapes that do not use much of the 24x24 grid and so
+ * read small next to the rest. Each entry scales about the path's own bounding
+ * box and re-centres it, rather than about the viewBox centre — Rock sits low
+ * in its box, and scaling in place would only push it further down.
+ */
+const FIT: Record<string, { scale: number; cx: number; cy: number }> = {
+  Rock: { scale: 1.2, cx: 11.9, cy: 15.05 },
+  Fire: { scale: 1.22, cx: 12, cy: 11 },
+}
+
 interface Props {
   type: TypeName
   /** Pixel size of the square glyph. */
@@ -72,7 +83,17 @@ export function TypeIcon({ type, size = 16 }: Props) {
       role="img" aria-label={type} focusable="false"
     >
       <title>{type}</title>
-      <path d={path} fill="currentColor" />
+      <path
+        d={path} fill="currentColor"
+        transform={(() => {
+          const fit = FIT[type]
+          if (!fit) return undefined
+          // Scale about the origin, then shift so the old bbox centre lands
+          // back on the middle of the grid.
+          const { scale, cx, cy } = fit
+          return `translate(${(12 - cx * scale).toFixed(2)} ${(12 - cy * scale).toFixed(2)}) scale(${scale})`
+        })()}
+      />
     </svg>
   )
 }

@@ -167,6 +167,9 @@
 /* No padding: this shares the sprite column, and 1.6px each side was enough to
    push that column wider than the tiles it holds. */
 .summary-cell { padding: 0 !important; line-height: 0; }
+/* The totals are a different kind of row from the Pokemon above them, so the
+   join between the two reads as heavier than the grid's own lines. */
+.type-table tfoot tr:first-child > * { border-top: 3px solid var(--muted); }
 /* Small, uppercase and tight, because eighteen of these set the table's width.
    White on the type colour rather than on the card, so chip and label read as
    one block per column. */
