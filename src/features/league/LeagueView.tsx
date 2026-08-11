@@ -487,7 +487,9 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
   const [tiers, setTiers] = useState<Set<string>>(new Set())
   const [avail, setAvail] = useState<Set<'available' | 'drafted'>>(new Set())
   // dir 0 means unsorted, so a column cycles through both directions and off.
-  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 | 0 }>({ key: 'bst', dir: -1 })
+  // Tier ascending is the default because TIER_RANK runs best-to-worst, so it
+  // puts Top at the head of the board the way the sheet's own sections do.
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 | 0 }>({ key: 'tier', dir: 1 })
 
   const toggleIn = <T,>(setter: (fn: (prev: Set<T>) => Set<T>) => void, value: T) =>
     setter((prev) => {
@@ -521,7 +523,12 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
     const { key, dir } = sort
     if (!dir) return list
     return list.sort((a, b) => {
-      if (key === 'tier') return byTier(a.entry.tier, b.entry.tier) * dir
+      // Within a tier the strongest first, and that tiebreak keeps its own
+      // direction — flipping the tier order should not also flip BST.
+      if (key === 'tier') {
+        return byTier(a.entry.tier, b.entry.tier) * dir
+          || (b.mon?.bst ?? 0) - (a.mon?.bst ?? 0)
+      }
       if (key === 'bst') return ((a.mon?.bst ?? 0) - (b.mon?.bst ?? 0)) * dir
       if (key === 'name') return a.entry.name.localeCompare(b.entry.name) * dir
       if (key === 'draftedBy' || key === 'note') {

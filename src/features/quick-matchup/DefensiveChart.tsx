@@ -1,8 +1,8 @@
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { spriteUrl } from '../../data/load'
 import type { TypeChart } from '../../data/types'
 import { BATTLE_TYPES, defensiveChart } from '../../lib/matchup'
-import { TypeChip } from '../../components/TypeChip'
+import { TypeIconChip } from '../../components/TypeIcon'
 import type { Team } from './TeamEditor'
 import { PokemonLink } from '../../components/PokemonLink'
 import { useFitToBox } from '../../lib/useFitToBox'
@@ -11,8 +11,7 @@ interface Props {
   team: Team
   chart: TypeChart
   useAbilities: boolean
-  zoom: number | null
-  onFitted: (scale: number) => void
+  zoom: number
 }
 
 /** Blank for neutral so the eye only catches the cells that matter. */
@@ -28,15 +27,14 @@ function cellClass(mult: number): string {
 const label = (m: number) => (m === 1 ? '' : m === 0 ? '0' : String(m))
 
 /** The Abilities toggle is owned by the parent card's header. */
-export function DefensiveChartBody({ team, chart, useAbilities, zoom, onFitted }: Props) {
+export function DefensiveChartBody({ team, chart, useAbilities, zoom }: Props) {
 
   const { rows, summary } = useMemo(
     () => defensiveChart(chart, team.members, useAbilities),
     [chart, team.members, useAbilities],
   )
 
-  const [fitRef, fitted] = useFitToBox<HTMLDivElement>(zoom)
-  useEffect(() => { onFitted(fitted) }, [fitted, onFitted])
+  const fitRef = useFitToBox<HTMLDivElement>(zoom)
 
   if (!rows.length) return null
 
@@ -46,8 +44,10 @@ export function DefensiveChartBody({ team, chart, useAbilities, zoom, onFitted }
           <thead>
             <tr>
               <th className="corner" />
+              {/* Icons, not rotated words: eighteen columns of vertical text
+                  cost 73px of header and still had to be read sideways. */}
               {BATTLE_TYPES.map((t) => (
-                <th key={t} className="type-head"><TypeChip type={t} /></th>
+                <th key={t} className="type-head"><TypeIconChip type={t} size={18} /></th>
               ))}
             </tr>
           </thead>

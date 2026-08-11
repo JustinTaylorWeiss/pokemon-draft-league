@@ -97,21 +97,26 @@
 /* Still one width for every type, just a smaller one than the standalone chips. */
 .summary-table .type-chip { min-width: 4.6em; font-size: 0.54rem; padding: 0 0.2rem; line-height: 1.35; }
 .summary-table .col-name { font-size: 0.74rem; line-height: 1.2; }
+/* Types beside the name rather than under it. That trades height for width,
+   which suits this card: it was running out of rows long before it ran out of
+   room across. */
+.summary-table .col-name span { flex-direction: row; align-items: center; gap: 0.35rem; }
 .summary-table th, .summary-table td { padding-top: 0.04rem; padding-bottom: 0.04rem; }
 .col-abil { text-align: left !important; color: var(--muted); font-size: 0.75rem; white-space: nowrap; }
 .row-types { display: flex !important; flex-direction: row !important; gap: 0.2rem; }
 .agg-label { text-align: right !important; text-transform: capitalize; color: var(--muted); font-weight: 500; }
 .stat-table tfoot td { color: var(--muted); }
 
-/* Same chips as everywhere else, stood on end so 18 of them fit the header.
-   Shorter and smaller here than the inline chips: ELECTRIC still clears 4.8em
-   at this size, and the header was 85px of an 785px card. */
-.type-head { padding: 0.2rem 0.1rem !important; vertical-align: bottom; }
-.type-head .type-chip {
-  writing-mode: vertical-rl; transform: rotate(180deg);
-  font-size: 0.55rem; min-width: 0; min-height: 4.2em;
-  padding: 0.2rem 0.1rem; border-radius: 5px; letter-spacing: 0.01em;
+/* A glyph per column instead of a rotated word. Eighteen columns of vertical
+   text ate 73px of header height and still had to be read sideways; a square
+   icon is the same information in one row of cells. The name is still there on
+   hover, and on the icon's own aria-label. */
+.type-head { padding: 0.15rem 0.1rem !important; vertical-align: middle; }
+.type-icon-chip {
+  display: grid; place-items: center; width: 1.7rem; height: 1.7rem;
+  border-radius: 6px; color: #fff; margin: 0 auto;
 }
+.type-icon-chip svg { display: block; }
 .mon-cell { padding: 0.1rem !important; }
 .mon-cell img { image-rendering: pixelated; display: block; width: 26px; height: 21px; }
 .type-table tfoot th { text-align: right !important; color: var(--muted); font-size: 0.72rem; }

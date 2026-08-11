@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { spriteUrl, toId } from '../../data/load'
 import type { AbilityDex, StatKey } from '../../data/types'
 import { BST_ORDER, STAT_LABELS, summarize } from '../../lib/stats'
@@ -21,9 +21,8 @@ function heat(value: number, neutral: number): string {
 
 /** `neutral` is owned by the parent card so the slider can live in its header. */
 export function DraftSummaryBody(
-  { team, neutral, abilities, zoom, onFitted }: {
-    team: Team; neutral: number; abilities: AbilityDex | null
-    zoom: number | null; onFitted: (scale: number) => void
+  { team, neutral, abilities, zoom }: {
+    team: Team; neutral: number; abilities: AbilityDex | null; zoom: number
   },
 ) {
 
@@ -41,8 +40,7 @@ export function DraftSummaryBody(
 
   // Every row matters at a glance, so the table shrinks to fit a short window
   // rather than hiding its tail behind a scrollbar.
-  const [fitRef, fitted] = useFitToBox<HTMLDivElement>(zoom)
-  useEffect(() => { onFitted(fitted) }, [fitted, onFitted])
+  const fitRef = useFitToBox<HTMLDivElement>(zoom)
 
   if (!rows.length) return null
 

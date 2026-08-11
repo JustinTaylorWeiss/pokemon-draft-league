@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 /**
  * Never shrink past this. Below it the text stops being readable, at which
@@ -6,8 +6,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  */
 const MIN_SCALE = 0.6
 
-/** Matches the top of the card's zoom slider, so auto-fit and manual agree. */
-const MAX_SCALE = 1.5
+/**
+ * A sanity ceiling only. The slider reads relative to whatever this works out
+ * to, so capping low would just mean "100%" quietly failing to fill the card.
+ */
+const MAX_SCALE = 2.4
 
 /** Pixels of slack left below the fitted content, to absorb that rounding. */
 const CUSHION = 4
@@ -26,13 +29,15 @@ const CUSHION = 4
  * reserving the unscaled height and carry on scrolling.
  */
 export function useFitToBox<T extends HTMLElement>(
-  /** Manual zoom from the card's slider. Null leaves the panel on auto-fit. */
-  override: number | null = null,
-): [(el: T | null) => void, number] {
+  /**
+   * The card's zoom slider, relative to the fitted size: 1 means "as large as
+   * fits". The fitted size is the baseline the reader sees as 100%, because the
+   * raw scale it works out to is an implementation detail — a panel reading
+   * 114% because that is what filled the card is a number nobody asked for.
+   */
+  multiplier = 1,
+): (el: T | null) => void {
   const [node, setNode] = useState<T | null>(null)
-  const [scale, setScale] = useState(1)
-  // Held in a ref as well so measure() can read it without being re-created.
-  const scaleRef = useRef(1)
 
   const measure = useCallback(() => {
     const box = node?.parentElement
@@ -59,16 +64,11 @@ export function useFitToBox<T extends HTMLElement>(
       )
       : 1
 
-    // A slider value wins outright, including zooming past the point where the
-    // panel has to scroll — that is the point of being able to zoom in.
-    const applied = override ?? fitted
-
+    // Anything above 1 on the slider scales past the fitted size and lets the
+    // panel scroll, which is the point of being able to zoom in.
+    const applied = fitted * multiplier
     node.style.zoom = applied === 1 ? '' : String(applied)
-    if (Math.abs(fitted - scaleRef.current) > 0.005) {
-      scaleRef.current = fitted
-      setScale(fitted)
-    }
-  }, [node, override])
+  }, [node, multiplier])
 
   useEffect(() => {
     const box = node?.parentElement
@@ -85,7 +85,5 @@ export function useFitToBox<T extends HTMLElement>(
   // roster, or the type chart's Abilities toggle adding a row of zeroes.
   useEffect(measure)
 
-  // The auto-fit scale, which the card shows as the slider's value until the
-  // reader moves it.
-  return [setNode, scale]
+  return setNode
 }

@@ -45,11 +45,9 @@ export function AnalysisCard({ analyzed, other, chart, moves, learnsets }: Props
   const [coverageAbilities, setCoverageAbilities] = useState(true)
   const [resetKey, setResetKey] = useState(0)
   // Per panel, because the two are different shapes and want different zooms.
-  // Null means "follow the panel's own fit", which is where both start.
-  const [summaryZoom, setSummaryZoom] = useState<number | null>(null)
-  const [typesZoom, setTypesZoom] = useState<number | null>(null)
-  const [summaryFit, setSummaryFit] = useState(1)
-  const [typesFit, setTypesFit] = useState(1)
+  // 1 means "as large as fits the card", which is where both start.
+  const [summaryZoom, setSummaryZoom] = useState(1)
+  const [typesZoom, setTypesZoom] = useState(1)
 
   // Descriptions for the ability pills' tooltips.
   const [abilityDex, setAbilityDex] = useState<AbilityDex | null>(null)
@@ -80,7 +78,7 @@ export function AnalysisCard({ analyzed, other, chart, moves, learnsets }: Props
           />
           <output>{neutral}</output>
         </label>
-        <ZoomControl value={summaryZoom} fitted={summaryFit} onChange={setSummaryZoom} />
+        <ZoomControl value={summaryZoom} onChange={setSummaryZoom} />
       </>
     ),
     types: (
@@ -92,7 +90,7 @@ export function AnalysisCard({ analyzed, other, chart, moves, learnsets }: Props
           />
           <span>Abilities</span>
         </label>
-        <ZoomControl value={typesZoom} fitted={typesFit} onChange={setTypesZoom} />
+        <ZoomControl value={typesZoom} onChange={setTypesZoom} />
       </>
     ),
     coverage: (
@@ -122,13 +120,13 @@ export function AnalysisCard({ analyzed, other, chart, moves, learnsets }: Props
       {tab === 'summary' && (
         <DraftSummaryBody
           team={analyzed} neutral={neutral} abilities={abilityDex}
-          zoom={summaryZoom} onFitted={setSummaryFit}
+          zoom={summaryZoom}
         />
       )}
       {tab === 'types' && (
         <DefensiveChartBody
           team={analyzed} chart={chart} useAbilities={defenseAbilities}
-          zoom={typesZoom} onFitted={setTypesFit}
+          zoom={typesZoom}
         />
       )}
       {/* Only these two need the learnsets, so the other tabs stay usable while
