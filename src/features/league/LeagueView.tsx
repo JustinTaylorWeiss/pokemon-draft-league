@@ -585,10 +585,10 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
             Clear
           </button>
         )}
-        {/* Explains the name colouring in the table below. */}
+        {/* Explains the row colouring in the table below. */}
         <dl className="board-key">
-          <div><dt className="name-open">Green</dt><dd>available</dd></div>
-          <div><dt className="name-taken">Red</dt><dd>taken</dd></div>
+          <div><dt className="swatch-open" /><dd>available</dd></div>
+          <div><dt className="swatch-taken" /><dd>taken</dd></div>
         </dl>
         <span className="count">{rows.length} shown</span>
       </div>
@@ -617,7 +617,7 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
             </thead>
             <tbody>
               {rows.slice(0, 300).map(({ id, entry, mon }) => (
-                <tr key={id}>
+                <tr key={id} className={entry.draftedBy ? 'row-taken' : 'row-open'}>
                   <th scope="row" className="col-name">
                     {mon && (
                       <PokemonLink id={id} title={entry.name}>
@@ -625,9 +625,7 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                       </PokemonLink>
                     )}
                     <span>
-                      <PokemonLink id={id} className={entry.draftedBy ? 'name-taken' : 'name-open'}>
-                        {entry.name}
-                      </PokemonLink>
+                      <PokemonLink id={id} className="pick-name">{entry.name}</PokemonLink>
                       {mon && (
                         <span className="row-types">
                           {mon.types.map((t) => <TypeChip key={t} type={t} />)}

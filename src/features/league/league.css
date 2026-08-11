@@ -163,10 +163,22 @@
 .board-table th.is-sorted button { color: var(--accent); }
 .sort-arrow { font-size: 0.55rem; min-width: 0.6em; }
 
-/* Raised above .mon-link's `color: inherit`, which otherwise wins on order. */
-.name-taken, .mon-link.name-taken { color: var(--nav-red); font-weight: 600; }
-.name-open, .mon-link.name-open { color: #4fb573; font-weight: 600; }
-.mon-link.name-taken:hover, .mon-link.name-open:hover { filter: brightness(1.25); }
+/* The whole row carries the drafted/available state, so the name stays plain
+   white and the colour reads as a property of the pick rather than of its
+   text. Tinted backgrounds rather than text colour, kept faint enough that the
+   tier pills and stat numbers on top of them stay legible. */
+.board-table tbody tr.row-taken td, .board-table tbody tr.row-taken th { background: rgb(200 60 70 / 14%); }
+.board-table tbody tr.row-open td, .board-table tbody tr.row-open th { background: rgb(46 160 120 / 14%); }
+.board-table tbody tr.row-taken:hover td, .board-table tbody tr.row-taken:hover th { background: rgb(200 60 70 / 24%); }
+.board-table tbody tr.row-open:hover td, .board-table tbody tr.row-open:hover th { background: rgb(46 160 120 / 24%); }
+.board-table .pick-name, .board-table .mon-link.pick-name { color: var(--fg); font-weight: 600; }
+
+/* Swatches in the key, matching the row tints at full strength. */
+.board-key dt.swatch-open, .board-key dt.swatch-taken {
+  width: 1.6rem; height: 0.7rem; border-radius: 3px; border: 1px solid var(--line);
+}
+.board-key dt.swatch-open { background: rgb(46 160 120 / 45%); }
+.board-key dt.swatch-taken { background: rgb(200 60 70 / 45%); }
 .board-table td.col-abil { white-space: normal; max-width: 18rem; }
 
 

@@ -93,10 +93,25 @@ export interface TypeChart {
 export type Learnset = Record<string, string[]>
 
 /** The most-used moveset for a Pokémon, per Showdown usage or Smogon analyses. */
+/** A full spread as a teambuilder would show it. Names are for display. */
+export interface SetSpread {
+  name: string
+  moves: string[]
+  item?: string
+  ability?: string
+  nature?: string
+  teraType?: string
+  level?: number
+  evs: Partial<Record<StatKey, number>>
+  ivs?: Partial<Record<StatKey, number>>
+}
+
 export interface CommonSet {
+  /** Union of every move across the spreads, as ids, for the coverage panel. */
   moves: string[]
   source: 'usage' | 'smogon'
   format: string
+  spreads: SetSpread[]
 }
 
 export type SetDex = Record<string, CommonSet>

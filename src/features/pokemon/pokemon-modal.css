@@ -60,6 +60,15 @@
   display: flex; flex-direction: column; gap: 0.6rem; min-width: 0;
 }
 .modal-wide { grid-column: 1 / -1; }
+/* Base stats, abilities and the set, side by side. Explicit rather than left to
+   auto-fill, so the set lands on the first row at every modal width. */
+.modal-row-3 {
+  grid-column: 1 / -1;
+  display: grid; gap: 0.75rem; align-items: start;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 1000px) { .modal-row-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 680px) { .modal-row-3 { grid-template-columns: 1fr; } }
 .modal-card h3 {
   margin: 0; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
   color: var(--accent);
@@ -72,6 +81,14 @@
 .stat-name { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; }
 .stat-num { font-size: 0.85rem; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
 .stat-track { height: 0.5rem; background: var(--chip); border-radius: 999px; overflow: hidden; }
+/* A tick at the halfway mark, so the median the BST bar is scaled to is
+   visible rather than something you have to be told about. */
+.stat-track.has-median { position: relative; }
+.stat-track.has-median::after {
+  content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 1px;
+  background: var(--muted); opacity: 0.6;
+}
+.stat-fill.stat-bst { background: linear-gradient(90deg, #7c6cf0, #a78bfa); }
 .stat-fill { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
 .stat-hp   { background: #e8615f; }
 .stat-atk  { background: #e79445; }
@@ -108,6 +125,14 @@
 .dmg-4 { background: rgb(200 50 60 / 55%); }
 
 /* ---- evolution ---- */
+/* Sits at the end of the header row, beside the name and types. */
+.modal-evo { margin-left: auto; display: flex; flex-direction: column; gap: 0.3rem; flex: none; }
+.modal-evo h3 {
+  margin: 0; font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--muted); font-weight: 700;
+}
+.modal-evo .evo-step { font-size: 0.66rem; padding: 0.2rem 0.35rem; }
+.modal-evo .evo-step img { width: 40px; height: 34px; }
 .evo-line { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
 .evo-step {
   display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
@@ -119,9 +144,50 @@
 .evo-step.is-current { border-color: var(--accent); cursor: default; }
 
 /* ---- most-used set ---- */
+.set-card { gap: 0.5rem; }
+.set-card h3 { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+.set-format {
+  font-size: 0.66rem; font-weight: 500; letter-spacing: 0; text-transform: none;
+  color: var(--muted); white-space: nowrap;
+}
+.set-pills { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.set-pills button {
+  background: none; border: 1px solid var(--line); border-radius: 999px;
+  color: var(--muted); font: inherit; font-size: 0.66rem;
+  padding: 0.1rem 0.5rem; cursor: pointer;
+}
+.set-pills button:hover { color: var(--fg); }
+.set-pills button.is-active { border-color: var(--accent); color: var(--accent); }
+
 .set-moves { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
 .set-moves li { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; }
-.set-moves em { margin-left: auto; font-style: normal; font-size: 0.72rem; color: var(--muted); }
+.set-move-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.set-moves em { margin-left: auto; font-style: normal; font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
+/* Keeps a move the dex does not know aligned with the rest of the column. */
+.type-chip.is-blank { background: var(--chip); }
+
+.set-facts { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; margin: 0; }
+.set-facts div { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+.set-facts dt {
+  font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+}
+.set-facts dd { margin: 0; font-size: 0.8rem; font-weight: 600; }
+.nature-effect { font-style: normal; font-weight: 500; font-size: 0.68rem; color: var(--muted); }
+
+.set-spread { display: flex; gap: 0.5rem; align-items: baseline; font-size: 0.76rem; }
+.set-spread-label {
+  font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+  flex: 0 0 2rem;
+}
+
+.set-stats { border-collapse: collapse; width: 100%; font-size: 0.74rem; }
+.set-stats th, .set-stats td {
+  border: 1px solid var(--line); padding: 0.1rem 0.2rem; text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.set-stats th { color: var(--muted); font-weight: 600; font-size: 0.62rem; }
+.set-stats .stat-up { color: #4fb573; }
+.set-stats .stat-down { color: #e8615f; }
 
 /* ---- move tables ---- */
 /* Search on the left, group filters to its right. */

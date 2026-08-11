@@ -223,7 +223,29 @@ async function main() {
             }
           }
         }
-        if (moveIds.size) sets[id] = { moves: [...moveIds], source, format }
+        if (!moveIds.size) continue
+        sets[id] = {
+          // The union, kept flat and id-keyed because the coverage panel reads
+          // it directly as "what this Pokemon plausibly runs".
+          moves: [...moveIds],
+          source,
+          format,
+          // The spreads behind that pool, so a Pokemon's page can show a set
+          // the way a teambuilder would rather than just a list of moves.
+          // Display names, not ids: these are rendered, not looked up, and
+          // slashed alternatives stay readable as "Knock Off / U-turn".
+          spreads: Object.entries(entries ?? {}).map(([setName, set]) => ({
+            name: setName,
+            moves: (set.moves ?? []).map(String),
+            ...(set.item && { item: set.item }),
+            ...(set.ability && { ability: set.ability }),
+            ...(set.nature && { nature: set.nature }),
+            ...(set.teraType && { teraType: set.teraType }),
+            ...(set.level && set.level !== 100 && { level: set.level }),
+            evs: set.evs ?? {},
+            ...(set.ivs && { ivs: set.ivs }),
+          })),
+        }
       }
     }
   }

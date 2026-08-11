@@ -11,6 +11,7 @@ import { BATTLE_TYPES, defensiveMultiplier } from '../../lib/matchup'
 import { BST_ORDER, STAT_LABELS, statAt100 } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
 import { useProgressiveList } from '../../lib/useProgressiveList'
+import { CommonSetCard } from './CommonSetCard'
 import { usePokemonModal } from './PokemonModalContext'
 import './pokemon-modal.css'
 
@@ -68,6 +69,24 @@ export function PokemonModal() {
   useEffect(() => { setEnabled(new Set(MOVE_GROUPS.map((g) => g.key))); setMoveQuery('') }, [openId])
 
   const merged = useMemo(() => (dex ? mergeDex(dex, league) : null), [dex, league])
+
+  /**
+   * Median BST across everything that does not evolve further — final stages
+   * and single-stage species alike. The individual stat bars are scaled against
+   * a fixed 200, but a total has no such natural ceiling, so this anchors it:
+   * the median sits at the halfway mark and a Pokemon reads as above or below
+   * the field at a glance.
+   */
+  const medianFinalBst = useMemo(() => {
+    if (!merged) return null
+    const totals = Object.values(merged)
+      .filter((m) => !m.evos?.length)
+      .map((m) => m.bst)
+      .sort((a, b) => a - b)
+    if (!totals.length) return null
+    const mid = Math.floor(totals.length / 2)
+    return totals.length % 2 ? totals[mid] : Math.round((totals[mid - 1] + totals[mid]) / 2)
+  }, [merged])
   const mon: LeaguePokemon | undefined = openId && merged ? merged[openId] : undefined
 
   const learnset = openId && learnsets ? learnsets[openId] : undefined
@@ -122,7 +141,7 @@ export function PokemonModal() {
 
   if (!openId) return null
 
-  const commonSetMoves = sets?.[openId]?.moves ?? []
+  const commonSet = sets?.[openId]?.spreads?.length ? sets[openId] : null
 
   return (
     <div
@@ -174,9 +193,30 @@ export function PokemonModal() {
                 </dl>
                 {mon.note && <p className="modal-note">{mon.note}</p>}
               </div>
+
+              {/* Beside the name rather than down in the grid: it is part of
+                  identifying the Pokemon, not part of analysing it. */}
+              {(mon.prevo || mon.evos?.length) && (
+                <div className="modal-evo">
+                  <h3>Evolution</h3>
+                  <div className="evo-line">
+                    {/* prevo/evos are display names, not the ids the dex is keyed by. */}
+                    {mon.prevo && merged?.[toId(mon.prevo)] && (
+                      <EvoStep id={toId(mon.prevo)} mon={merged[toId(mon.prevo)]} />
+                    )}
+                    <EvoStep id={openId} mon={mon} current />
+                    {mon.evos?.map((e) => merged?.[toId(e)] && (
+                      <EvoStep key={e} id={toId(e)} mon={merged[toId(e)]} />
+                    ))}
+                  </div>
+                </div>
+              )}
             </header>
 
             <div className="modal-grid">
+              {/* Three across, so the set sits beside the stats it modifies
+                  rather than below the fold. */}
+              <div className="modal-row-3">
               <section className="modal-card">
                 <h3>Base Stats</h3>
                 <ul className="stat-bars">
@@ -192,12 +232,25 @@ export function PokemonModal() {
                   <li className="stat-total">
                     <span className="stat-name">BST</span>
                     <span className="stat-num">{mon.bst}</span>
-                    <span className="stat-track" />
+                    <span className={`stat-track${medianFinalBst ? ' has-median' : ''}`}>
+                      {medianFinalBst && (
+                        <span
+                          className="stat-fill stat-bst"
+                          style={{ width: `${Math.min(100, (mon.bst / (2 * medianFinalBst)) * 100)}%` }}
+                        />
+                      )}
+                    </span>
                   </li>
                 </ul>
                 <p className="modal-hint">
                   Speed at Lv 100: {statAt100(mon.baseStats.spe)} neutral, {statAt100(mon.baseStats.spe, 252, 1.1)} boosted.
                 </p>
+                {medianFinalBst && (
+                  <p className="modal-hint">
+                    BST bar is scaled so the halfway mark is {medianFinalBst}, the median
+                    for fully-evolved Pokémon.
+                  </p>
+                )}
               </section>
 
               <section className="modal-card">
@@ -214,6 +267,9 @@ export function PokemonModal() {
                   ))}
                 </ul>
               </section>
+
+              {commonSet && <CommonSetCard mon={mon} set={commonSet} moves={moves} />}
+              </div>
 
               <section className="modal-card modal-wide">
                 <h3>Damage Taken</h3>
@@ -232,38 +288,6 @@ export function PokemonModal() {
                 ) : <p className="loading">Loading type chart…</p>}
                 <p className="modal-hint">Includes this Pokémon's abilities.</p>
               </section>
-
-              {(mon.prevo || mon.evos?.length) && (
-                <section className="modal-card">
-                  <h3>Evolution</h3>
-                  <div className="evo-line">
-                    {/* prevo/evos are display names, not the ids the dex is keyed by. */}
-                    {mon.prevo && merged?.[toId(mon.prevo)] && (
-                      <EvoStep id={toId(mon.prevo)} mon={merged[toId(mon.prevo)]} />
-                    )}
-                    <EvoStep id={openId} mon={mon} current />
-                    {mon.evos?.map((e) => merged?.[toId(e)] && (
-                      <EvoStep key={e} id={toId(e)} mon={merged[toId(e)]} />
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {commonSetMoves.length > 0 && moves && (
-                <section className="modal-card">
-                  <h3>Most-used Set</h3>
-                  <ul className="set-moves">
-                    {commonSetMoves.map((m) => moves[m] && (
-                      <li key={m}>
-                        <TypeChip type={moves[m].type} />
-                        <span>{moves[m].name}</span>
-                        <em>{moves[m].basePower > 0 ? `${moves[m].basePower} BP` : moves[m].category}</em>
-                      </li>
-                    ))}
-                  </ul>
-                  <p className="modal-hint">{sets?.[openId]?.format.replace(/^gen9/, 'Gen 9 ')}</p>
-                </section>
-              )}
 
               <section className="modal-card modal-wide">
                 <h3>Moves</h3>

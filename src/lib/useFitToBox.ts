@@ -6,6 +6,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
  */
 const MIN_SCALE = 0.6
 
+/** Matches the top of the card's zoom slider, so auto-fit and manual agree. */
+const MAX_SCALE = 1.5
+
 /** Pixels of slack left below the fitted content, to absorb that rounding. */
 const CUSHION = 4
 
@@ -35,16 +38,25 @@ export function useFitToBox<T extends HTMLElement>(
     const box = node?.parentElement
     if (!node || !box) return
 
-    // Read the natural height with zoom off, so the measurement never depends
-    // on the scale already applied.
+    // Read the natural size with zoom off, so the measurement never depends on
+    // the scale already applied.
     node.style.zoom = '1'
-    const natural = node.getBoundingClientRect().height
-    const available = box.clientHeight
+    const rect = node.getBoundingClientRect()
+    const naturalH = rect.height
+    const naturalW = rect.width
 
-    // Scaling rounds row heights up, so dividing by the exact space available
-    // lands a few pixels over it and the box scrolls anyway. Aim slightly under.
-    const fitted = natural > available && natural > 0
-      ? Math.max(MIN_SCALE, (available - CUSHION) / natural)
+    // Fit means fit, in both directions and in both senses: a panel with room
+    // to spare grows into it rather than stopping at 100%. Zoom scales width
+    // too, so a table that would run past the card's edge is what caps it.
+    // Scaling rounds sizes up, so aim a few pixels under the space available.
+    const fitted = naturalH > 0 && naturalW > 0
+      ? Math.min(
+        MAX_SCALE,
+        Math.max(MIN_SCALE, Math.min(
+          (box.clientHeight - CUSHION) / naturalH,
+          (box.clientWidth - CUSHION) / naturalW,
+        )),
+      )
       : 1
 
     // A slider value wins outright, including zooming past the point where the

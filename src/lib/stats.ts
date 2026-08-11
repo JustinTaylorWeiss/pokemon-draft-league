@@ -1,13 +1,23 @@
 import type { Pokemon, StatKey } from '../data/types'
 
 /**
- * Gen 3+ stat formula at level 100. Verified against DraftZone's speed tiers:
- * Dragapult 252+ -> 421, Iron Valiant 252+ with Quark Drive -> 546, and
- * Amoonguss on the 0 EV / 0 IV / negative-nature spread -> 58.
+ * Gen 3+ stat formula at any level. Reduces exactly to the level-100 form, so
+ * it stays verified against DraftZone's speed tiers: Dragapult 252+ -> 421,
+ * Iron Valiant 252+ with Quark Drive -> 546, and Amoonguss on the 0 EV / 0 IV /
+ * negative-nature spread -> 58.
  */
+export function statAtLevel(
+  base: number, ev = 252, nature = 1, isHp = false, iv = 31, level = 100,
+): number {
+  const common = Math.floor(((2 * base + iv + Math.floor(ev / 4)) * level) / 100)
+  // Shedinja is the one species whose HP is a flat 1 at every level.
+  if (isHp) return base === 1 ? 1 : common + level + 10
+  return Math.floor((common + 5) * nature)
+}
+
+/** The level-100 case, which is what the matchup tools work in. */
 export function statAt100(base: number, ev = 252, nature = 1, isHp = false, iv = 31): number {
-  if (isHp) return base === 1 ? 1 : 2 * base + iv + Math.floor(ev / 4) + 110
-  return Math.floor((2 * base + iv + Math.floor(ev / 4) + 5) * nature)
+  return statAtLevel(base, ev, nature, isHp, iv, 100)
 }
 
 /** Abilities that multiply Speed. Only listed as filter rows if a team has one. */
@@ -159,6 +169,43 @@ export function speedTiers(
   }
 
   return tiers.sort((a, b) => b.speed - a.speed)
+}
+
+/**
+ * What each nature does, so a set can show "Adamant (+Atk, -SpA)" and the
+ * stat line can apply the 1.1/0.9 it implies. The five missing names are the
+ * neutral ones, which is why this is a lookup that can legitimately miss.
+ */
+export const NATURES: Record<string, { plus: StatKey; minus: StatKey }> = {
+  Adamant: { plus: 'atk', minus: 'spa' },
+  Bold: { plus: 'def', minus: 'atk' },
+  Brave: { plus: 'atk', minus: 'spe' },
+  Calm: { plus: 'spd', minus: 'atk' },
+  Careful: { plus: 'spd', minus: 'spa' },
+  Gentle: { plus: 'spd', minus: 'def' },
+  Hasty: { plus: 'spe', minus: 'def' },
+  Impish: { plus: 'def', minus: 'spa' },
+  Jolly: { plus: 'spe', minus: 'spa' },
+  Lax: { plus: 'def', minus: 'spd' },
+  Lonely: { plus: 'atk', minus: 'def' },
+  Mild: { plus: 'spa', minus: 'def' },
+  Modest: { plus: 'spa', minus: 'atk' },
+  Naive: { plus: 'spe', minus: 'spd' },
+  Naughty: { plus: 'atk', minus: 'spd' },
+  Quiet: { plus: 'spa', minus: 'spe' },
+  Rash: { plus: 'spa', minus: 'spd' },
+  Relaxed: { plus: 'def', minus: 'spe' },
+  Sassy: { plus: 'spd', minus: 'spe' },
+  Timid: { plus: 'spe', minus: 'atk' },
+}
+
+/** The 1.1 / 0.9 / 1 multiplier a nature applies to one stat. */
+export function natureMultiplier(nature: string | undefined, stat: StatKey): number {
+  const effect = nature ? NATURES[nature] : undefined
+  if (!effect) return 1
+  if (effect.plus === stat) return 1.1
+  if (effect.minus === stat) return 0.9
+  return 1
 }
 
 export const BST_ORDER: StatKey[] = ['hp', 'atk', 'def', 'spa', 'spd', 'spe']

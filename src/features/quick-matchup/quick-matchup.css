@@ -600,11 +600,23 @@ button.type-chip { cursor: pointer; }
   .shell:has(.results) .matchup-container > .widget > .widget-body {
     flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-gutter: stable;
   }
-  /* The moves search would otherwise scroll away from the list it filters. */
+  /* The moves search would otherwise scroll away from the list it filters.
+     It needs its own edge: the card behind it is the same colour, so without a
+     rule the cards sliding under simply lose their tops and the strip reads as
+     a gap in the grid rather than as content passing beneath a header. The
+     background has to run to that edge with no margin below it, or the cards
+     show through the space between. */
   .shell:has(.results) .moves-controls {
     position: sticky; top: 0; z-index: 2; background: var(--widget);
-    padding-top: 0.25rem;
+    /* All of the space below the controls is padding, never margin: the
+       background stops at the margin edge, so a margin here would be a strip
+       of moving cards between the header and the grid. */
+    padding-bottom: 0.7rem; margin-bottom: 0;
+    border-bottom: 1px solid var(--line);
   }
+  /* Breathing room under the rule at rest. It belongs to the grid, so it
+     scrolls away with the cards instead of holding a gap open. */
+  .shell:has(.results) .move-grid { padding-top: 0.6rem; }
 }
 
 /* Below the width where the teams card and the stacked column can sit side by
