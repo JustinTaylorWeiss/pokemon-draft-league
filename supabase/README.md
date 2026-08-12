@@ -7,6 +7,31 @@ The design in one line: editing is open to everyone with no login, and what make
 that safe is not permissions but history — every change is recorded by a database
 trigger with its previous value and can be reverted.
 
+## The project
+
+`https://skborcymmwraaycgygga.supabase.co` — schema loaded, this season
+imported as test data.
+
+## Importing a season
+
+```bash
+node scripts/import-to-supabase.mjs                 # into an empty database
+node scripts/import-to-supabase.mjs --replace       # over an existing import
+```
+
+Re-runnable. Players, the board and rosters upsert on their natural keys;
+matches, picks and rules are keyed by generated ids and would duplicate, so
+importing over them needs `--replace`. Without it the script stops rather than
+quietly doubling a season.
+
+Matches take their sides and series score from `schedule` and their per-Pokemon
+lines from `matchStats`. Those two arrays describe the same matches in the same
+order and are joined by position — checked by week and by the players' names
+appearing in the stats tab's labels, 39 of 40 exactly, the fortieth being the
+sheet spelling the same two people differently in each tab. They are not
+interchangeable: `schedule` scores a series 2-0 where `matchStats` counts
+knockouts 5-0, and standings come from the former.
+
 ## Setting it up
 
 1. Create a free project at [supabase.com](https://supabase.com). Region closest
