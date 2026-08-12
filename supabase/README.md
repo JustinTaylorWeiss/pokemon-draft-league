@@ -71,7 +71,18 @@ Supabase project:
 ```bash
 docker run -d --name pdl-pgtest -e POSTGRES_PASSWORD=test -p 55432:5432 postgres:16-alpine
 docker exec pdl-pgtest psql -U postgres -c "create role anon nologin;"
-for f in supabase/migrations/000*.sql; do docker exec -i pdl-pgtest psql -U postgres -v ON_ERROR_STOP=1 < "$f"; done
+
+# Supabase keeps pgcrypto in an `extensions` schema rather than in public, and
+# that difference is load-bearing — a function pinned to public alone cannot see
+# crypt() or gen_salt(). Reproduce it here or the passphrase looks fine locally
+# and fails on the real project.
+docker exec pdl-pgtest psql -U postgres -c "create database supalike;"
+docker exec pdl-pgtest psql -U postgres -d supalike -c \
+  "create schema extensions; create extension pgcrypto with schema extensions;"
+
+for f in supabase/migrations/000*.sql; do
+  docker exec -i pdl-pgtest psql -U postgres -d supalike -v ON_ERROR_STOP=1 < "$f"
+done
 ```
 
 Confirmed there: triggers log every insert, update and delete with the actor;

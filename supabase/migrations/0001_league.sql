@@ -9,6 +9,9 @@
 -- destruction is not offered at all, because an operation that does not exist
 -- cannot be misused.
 
+-- Supabase already provides this in the `extensions` schema; on a bare
+-- Postgres it lands in public. Either is fine — the functions that need it
+-- carry both on their search_path.
 create extension if not exists pgcrypto;
 
 -- ---------------------------------------------------------------------------

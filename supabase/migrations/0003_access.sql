@@ -31,7 +31,11 @@ create or replace function set_passphrase(key text, passphrase text)
 returns void
 language sql
 security definer
-set search_path = public
+-- `extensions` is where Supabase installs pgcrypto; pinning search_path to
+-- public alone hides crypt() and gen_salt() from this function. A schema that
+-- does not exist is ignored, so this is also correct on a plain Postgres where
+-- pgcrypto lands in public.
+set search_path = public, extensions
 as $$
   insert into app_secrets (key, hash)
   values (key, crypt(passphrase, gen_salt('bf')))
@@ -44,7 +48,7 @@ create or replace function check_passphrase(key text, passphrase text)
 returns boolean
 language sql
 security definer
-set search_path = public
+set search_path = public, extensions
 as $$
   select exists (
     select 1 from app_secrets s
