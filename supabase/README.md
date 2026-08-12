@@ -21,6 +21,14 @@ trigger with its previous value and can be reverted.
    select set_passphrase('draft', 'whatever-you-choose');
    ```
 
+   It answers with a confirmation line. To double-check at any point:
+
+   ```sql
+   select check_passphrase('draft', 'whatever-you-choose');  -- t
+   ```
+
+   Running it again simply replaces the passphrase; there is nothing to reset.
+
 4. From **Project settings → API**, send over the **Project URL** and the
    **anon public** key.
 

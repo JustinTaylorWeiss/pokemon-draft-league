@@ -27,8 +27,11 @@ alter table app_secrets enable row level security;
 
 -- Set or change the passphrase. Run from the SQL editor, not from the site:
 --   select set_passphrase('draft', 'the-passphrase');
+--
+-- Returns a confirmation rather than void: a void function renders as an empty
+-- cell, which is indistinguishable from having failed.
 create or replace function set_passphrase(key text, passphrase text)
-returns void
+returns text
 language sql
 security definer
 -- `extensions` is where Supabase installs pgcrypto; pinning search_path to
@@ -39,7 +42,8 @@ set search_path = public, extensions
 as $$
   insert into app_secrets (key, hash)
   values (key, crypt(passphrase, gen_salt('bf')))
-  on conflict (key) do update set hash = excluded.hash;
+  on conflict (key) do update set hash = excluded.hash
+  returning format('Passphrase set for %s. Verify with: select check_passphrase(%L, ...)', key, key);
 $$;
 
 revoke execute on function set_passphrase(text, text) from anon, public;
