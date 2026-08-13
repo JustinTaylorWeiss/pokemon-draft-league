@@ -139,6 +139,40 @@ export interface League {
   pokemonStats?: Record<string, PokemonStat>
 }
 
+/**
+ * The seasons the site can show.
+ *
+ * `sheet` reads the JSON built from the spreadsheet, with a live read of the
+ * sheet on top. `database` reads Supabase, where editing happens on the site.
+ * Views never learn which they are looking at — switching republishes through
+ * the same channel a refresh uses, so everything re-renders as it already does.
+ */
+export interface Season {
+  id: string
+  label: string
+  source: 'sheet' | 'database'
+}
+
+export const SEASONS: Season[] = [
+  { id: 'season-4', label: 'Season 4', source: 'sheet' },
+  { id: 'test', label: 'Test Season', source: 'database' },
+]
+
+const SEASON_KEY = 'league:season'
+
+function storedSeason(): Season {
+  try {
+    const id = localStorage.getItem(SEASON_KEY)
+    return SEASONS.find((s) => s.id === id) ?? SEASONS[0]
+  } catch {
+    return SEASONS[0]
+  }
+}
+
+let season: Season = storedSeason()
+
+export const currentSeason = () => season
+
 let pending: Promise<League> | null = null
 const listeners = new Set<(l: League) => void>()
 
@@ -183,28 +217,32 @@ function writeRefreshed(league: League) {
   }
 }
 
+/** The JSON built from the spreadsheet, or a newer refresh saved over it. */
+async function loadShipped(): Promise<League> {
+  const res = await fetch(`${import.meta.env.BASE_URL}data/league.json`)
+  if (!res.ok) throw new Error(`Failed to load league.json: HTTP ${res.status}`)
+  const modified = res.headers.get('last-modified')
+  const builtAt = modified ? new Date(modified) : null
+  if (builtAt && !Number.isNaN(builtAt.getTime())) dataTimestamp = builtAt
+
+  // A saved refresh wins only while it is newer than the deployed file. The
+  // hourly sync commits straight into the build, so once that lands the shipped
+  // copy is the better one and the saved refresh is dropped.
+  const saved = readRefreshed()
+  if (saved) {
+    const shipped = builtAt && !Number.isNaN(builtAt.getTime()) ? builtAt.getTime() : 0
+    if (saved.at > shipped) {
+      dataTimestamp = new Date(saved.at)
+      return saved.league
+    }
+    try { localStorage.removeItem(REFRESH_KEY) } catch { /* nothing to clean up */ }
+  }
+  return res.json() as Promise<League>
+}
+
 export function loadLeague(): Promise<League> {
   if (!pending) {
-    pending = fetch(`${import.meta.env.BASE_URL}data/league.json`).then(async (res) => {
-      if (!res.ok) throw new Error(`Failed to load league.json: HTTP ${res.status}`)
-      const modified = res.headers.get('last-modified')
-      const builtAt = modified ? new Date(modified) : null
-      if (builtAt && !Number.isNaN(builtAt.getTime())) dataTimestamp = builtAt
-
-      // A saved refresh wins only while it is newer than the deployed file.
-      // The hourly sync commits straight into the build, so once that lands
-      // the shipped copy is the better one and the saved refresh is dropped.
-      const saved = readRefreshed()
-      if (saved) {
-        const shipped = builtAt && !Number.isNaN(builtAt.getTime()) ? builtAt.getTime() : 0
-        if (saved.at > shipped) {
-          dataTimestamp = new Date(saved.at)
-          return saved.league
-        }
-        try { localStorage.removeItem(REFRESH_KEY) } catch { /* nothing to clean up */ }
-      }
-      return res.json() as Promise<League>
-    })
+    pending = season.source === 'database' ? loadFromDatabase() : loadShipped()
     pending.catch(() => { pending = null })
   }
   return pending
@@ -231,6 +269,52 @@ function setSheetBusy(busy: boolean) {
   if (sheetBusy === busy) return
   sheetBusy = busy
   for (const fn of busyListeners) fn(busy)
+}
+
+async function loadFromDatabase(): Promise<League> {
+  const { loadLeagueFromSupabase } = await import('./leagueFromSupabase')
+  const league = await loadLeagueFromSupabase()
+  dataTimestamp = new Date()
+  return league
+}
+
+/**
+ * Switches season and republishes, so every view updates in place.
+ *
+ * A database season is read fresh each time rather than from the saved refresh
+ * or the shipped JSON, both of which belong to the spreadsheet season.
+ */
+export async function setSeason(id: string): Promise<void> {
+  const next = SEASONS.find((s) => s.id === id)
+  if (!next || next.id === season.id) return
+  season = next
+  try { localStorage.setItem(SEASON_KEY, next.id) } catch { /* private browsing */ }
+
+  pending = null
+  setSheetBusy(true)
+  try {
+    const league = next.source === 'database'
+      ? await loadFromDatabase()
+      : await loadShipped()
+    pending = Promise.resolve(league)
+    for (const fn of listeners) fn(league)
+  } finally {
+    setSheetBusy(false)
+  }
+}
+
+/** Re-reads the season already showing, for the refresh button. */
+export async function reloadSeason(id: string): Promise<void> {
+  const target = SEASONS.find((s) => s.id === id)
+  if (!target) return
+  setSheetBusy(true)
+  try {
+    const league = target.source === 'database' ? await loadFromDatabase() : await loadShipped()
+    pending = Promise.resolve(league)
+    for (const fn of listeners) fn(league)
+  } finally {
+    setSheetBusy(false)
+  }
 }
 
 /** Notified when a refresh replaces the data, so views re-render in place. */

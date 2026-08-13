@@ -4,8 +4,9 @@ import { QuickMatchup } from './features/quick-matchup/QuickMatchup'
 import { LeagueView } from './features/league/LeagueView'
 import { LEAGUE_TABS, type LeagueTab } from './features/league/tabs'
 import {
-  isSheetBusy, leagueTimestamp, loadLeague, refreshLeagueFromSheet, revalidateLeague,
-  subscribeLeague, subscribeSheetBusy, type League,
+  currentSeason, isSheetBusy, leagueTimestamp, loadLeague, refreshLeagueFromSheet,
+  reloadSeason, revalidateLeague, SEASONS, setSeason, subscribeLeague, subscribeSheetBusy,
+  type League,
 } from './data/league'
 import { Dex } from './features/dex/Dex'
 import { PokemonModalProvider } from './features/pokemon/PokemonModalContext'
@@ -22,9 +23,6 @@ const LEAGUE_SHEET_URL =
   'https://docs.google.com/spreadsheets/d/1xnKp-XtR9o-zJy1BNS78PxXy891zv_n4rawKto6rlyE/export?format=xlsx'
 
 /** "Draft League Season 4 VGC Reg F" -> "Season 4". */
-const seasonLabel = (name: string | null) =>
-  name?.match(/Season\s*\d+/i)?.[0] ?? name ?? 'Season'
-
 type View = 'league' | 'matchup' | 'dex'
 
 const VIEWS: { key: View; label: string }[] = [
@@ -45,6 +43,8 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(isSheetBusy)
   const [refreshError, setRefreshError] = useState<string | null>(null)
   const [dataAt, setDataAt] = useState<Date | null>(null)
+  const [season, setSeasonId] = useState(() => currentSeason().id)
+  const onDatabase = SEASONS.find((s) => s.id === season)?.source === 'database'
 
   // The primary bar wraps to two rows on narrow screens, so the secondary bar
   // cannot assume a fixed offset to stick below.
@@ -55,8 +55,10 @@ export default function App() {
 
   useEffect(() => {
     loadLeague().then((l) => { setLeague(l); setDataAt(leagueTimestamp()) }, () => {})
-    // Then read the sheet itself, which is always the newest source there is.
-    revalidateLeague(LEAGUE_SHEET_URL)
+    // Then read the sheet itself, which is always the newest source there is —
+    // but only for the season that comes from it. A database season is already
+    // reading its source directly.
+    if (currentSeason().source === 'sheet') revalidateLeague(LEAGUE_SHEET_URL)
     const stopBusy = subscribeSheetBusy(setRefreshing)
     // A refresh republishes the league, and every view listens for it.
     const stopLeague = subscribeLeague((l) => { setLeague(l); setDataAt(leagueTimestamp()) })
@@ -69,9 +71,22 @@ export default function App() {
     // there is nothing to toggle here beyond clearing the last error.
     setRefreshError(null)
     try {
-      await refreshLeagueFromSheet(LEAGUE_SHEET_URL)
+      // Refresh means "re-read this season's source", which is the database for
+      // a database season and the spreadsheet for the other.
+      if (onDatabase) await reloadSeason(season)
+      else await refreshLeagueFromSheet(LEAGUE_SHEET_URL)
     } catch (err) {
       setRefreshError(err instanceof Error ? err.message : 'Refresh failed')
+    }
+  }
+
+  const changeSeason = async (id: string) => {
+    setSeasonId(id)
+    setRefreshError(null)
+    try {
+      await setSeason(id)
+    } catch (err) {
+      setRefreshError(err instanceof Error ? err.message : 'Could not load that season')
     }
   }
 
@@ -132,8 +147,17 @@ export default function App() {
                 be chosen once there is more than one to import. */}
             {league && (
               <label className="season-picker">
-                <select value="current" onChange={() => {}} aria-label="League and season">
-                  <option value="current">{seasonLabel(league.meta.name)}</option>
+                <select
+                  value={season}
+                  onChange={(e) => changeSeason(e.target.value)}
+                  aria-label="League and season"
+                >
+                  {/* Labels come from the registry, not from the league in
+                      hand: sourcing them from the loaded data made every option
+                      take the name of whichever season was showing. */}
+                  {SEASONS.map((s) => (
+                    <option key={s.id} value={s.id}>{s.label}</option>
+                  ))}
                 </select>
               </label>
             )}

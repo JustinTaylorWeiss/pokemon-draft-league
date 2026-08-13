@@ -1,0 +1,176 @@
+import { db } from './supabase'
+import type { League, Match, MatchStat, Player, Standing } from './league'
+
+/**
+ * Assembles a League from the database.
+ *
+ * Deliberately returns the same shape the spreadsheet importer produces, so
+ * every view renders a database-backed season without knowing one exists. The
+ * seams are here and nowhere else.
+ */
+
+interface BoardRow {
+  pokemon_id: string
+  name: string
+  tier: string
+  note: string | null
+  drafted_by: string | null
+  base_stats: Record<string, number> | null
+  bst: number | null
+}
+
+interface MatchRow {
+  id: number
+  week: number
+  label: string | null
+  side_a: string[]
+  side_b: string[]
+  score_a: number | null
+  score_b: number | null
+}
+
+interface LineRow {
+  match_id: number
+  side: 'a' | 'b'
+  pokemon_id: string
+  kills: number
+  deaths: number
+}
+
+interface StandingRow {
+  player_id: string
+  name: string
+  team: string | null
+  wins: number
+  losses: number
+  games_won: number
+  games_lost: number
+  diff: number
+  points: number
+}
+
+/** Every table in one round trip each, in parallel. */
+export async function loadLeagueFromSupabase(): Promise<League> {
+  const [meta, players, board, rosters, matches, lines, standings, rules] = await Promise.all([
+    db.from('league_meta').select('*').maybeSingle(),
+    db.from('players').select('*').order('seed'),
+    db.from('board').select('*'),
+    db.from('rosters').select('*'),
+    db.from('matches').select('*').order('week').order('id'),
+    db.from('match_lines').select('*').order('id'),
+    db.from('standings').select('*'),
+    db.from('rules_sections').select('*').order('position'),
+  ])
+
+  const firstError = [meta, players, board, rosters, matches, lines, standings, rules]
+    .find((r) => r.error)?.error
+  if (firstError) throw firstError
+
+  const playerRows = (players.data ?? []) as Player[]
+  // The board and the stats tab name people; the database references them by id.
+  const nameById = new Map(playerRows.map((p) => [p.id, p.name]))
+
+  const boardRows = (board.data ?? []) as BoardRow[]
+  const matchRows = (matches.data ?? []) as MatchRow[]
+  const lineRows = (lines.data ?? []) as LineRow[]
+
+  const linesByMatch = new Map<number, LineRow[]>()
+  for (const l of lineRows) {
+    const list = linesByMatch.get(l.match_id)
+    if (list) list.push(l)
+    else linesByMatch.set(l.match_id, [l])
+  }
+
+  const sideLabel = (ids: string[]) =>
+    ids.map((id) => nameById.get(id) ?? id).join(' / ')
+
+  const schedule: Match[] = matchRows.map((m, i) => ({
+    week: m.week,
+    match: i + 1,
+    a: m.side_a,
+    b: m.side_b,
+    scoreA: m.score_a,
+    scoreB: m.score_b,
+  }))
+
+  // Rebuilt rather than stored: the per-Pokemon lines plus the sides they were
+  // played on is all the stats views need.
+  const matchStats: MatchStat[] = matchRows.map((m) => {
+    const forSide = (side: 'a' | 'b') => {
+      const own = (linesByMatch.get(m.id) ?? []).filter((l) => l.side === side)
+      const score = side === 'a' ? m.score_a : m.score_b
+      const other = side === 'a' ? m.score_b : m.score_a
+      return {
+        team: sideLabel(side === 'a' ? m.side_a : m.side_b),
+        result: score === null || other === null ? null : score > other ? 'W' : score < other ? 'L' : 'T',
+        score,
+        lines: own.map((l) => ({ pokemon: l.pokemon_id, kills: l.kills, deaths: l.deaths })),
+      }
+    }
+    return { week: m.week, a: forSide('a'), b: forSide('b') }
+  })
+
+  // The view has no opinion about order; ranking is a presentation decision.
+  // Points first, then fewer losses — which is what puts a 6-0 record above a
+  // 6-2 one, as the league's own table does — then differential.
+  const ranked = ([...(standings.data ?? [])] as StandingRow[]).sort(
+    (a, b) => b.points - a.points
+      || a.losses - b.losses
+      || b.diff - a.diff
+      || a.name.localeCompare(b.name),
+  )
+
+  return {
+    meta: {
+      name: meta.data?.name ?? null,
+      regulation: meta.data?.regulation ?? null,
+      format: meta.data?.format ?? null,
+      weeks: meta.data?.weeks ?? null,
+      picksPerPlayer: meta.data?.picks_per_player ?? null,
+      seriesLength: meta.data?.series_length ?? null,
+      tierLimits: meta.data?.tier_limits ?? {},
+    },
+    players: playerRows,
+    board: Object.fromEntries(boardRows.map((b) => [b.pokemon_id, {
+      name: b.name,
+      tier: b.tier as never,
+      note: b.note,
+      draftedBy: b.drafted_by ? nameById.get(b.drafted_by) ?? b.drafted_by : null,
+      ...(b.base_stats ? { baseStats: b.base_stats as never } : {}),
+      bst: b.bst,
+    }])) as League['board'],
+    rosters: (rosters.data ?? []).reduce<League['rosters']>((acc, r) => {
+      const row = r as { player_id: string; pokemon_id: string; tier: string }
+      ;(acc[row.player_id] ??= []).push({ pokemon: row.pokemon_id, tier: row.tier as never })
+      return acc
+    }, {}),
+    draft: [],
+    schedule,
+    standings: ranked.map((s, i): Standing => ({
+      rank: i + 1,
+      player: s.player_id,
+      name: s.name,
+      team: s.team,
+      wins: s.wins,
+      losses: s.losses,
+      gamesWon: s.games_won,
+      gamesLost: s.games_lost,
+      monDiff: s.diff,
+      points: s.points,
+    })),
+    rules: {
+      title: meta.data?.name ?? null,
+      subtitle: null,
+      footer: null,
+      sections: (rules.data ?? []).map((r) => {
+        const row = r as { heading: string; items: unknown; notes: string[] }
+        return {
+          heading: row.heading,
+          items: (row.items ?? []) as { label: string; text: string }[],
+          notes: row.notes ?? [],
+        }
+      }),
+    },
+    matchStats,
+  }
+}
