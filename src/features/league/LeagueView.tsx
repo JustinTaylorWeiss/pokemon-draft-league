@@ -615,7 +615,7 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
                             rel="noreferrer noopener"
                             title="Watch this game on Pokémon Showdown"
                           >
-                            Game {g.number}<span className="game-arrow" aria-hidden="true">↗</span>
+                            Game {g.number}
                           </a>
                         ) : (
                           <span className="game-pill is-plain">Game {g.number}</span>
