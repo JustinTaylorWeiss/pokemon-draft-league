@@ -615,15 +615,7 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
                             rel="noreferrer noopener"
                             title="Watch this game on Pokémon Showdown"
                           >
-                            Game {g.number}
-                            {/* Their own icon, from the host the sprites
-                                already come from, so the link says where it
-                                goes without spelling it out. */}
-                            <img
-                              className="game-ps"
-                              src="https://play.pokemonshowdown.com/favicon.ico"
-                              alt="" width={13} height={13} loading="lazy"
-                            />
+                            Game {g.number}<span className="game-arrow" aria-hidden="true">↗</span>
                           </a>
                         ) : (
                           <span className="game-pill is-plain">Game {g.number}</span>
