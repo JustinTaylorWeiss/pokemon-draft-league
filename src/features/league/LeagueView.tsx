@@ -178,9 +178,11 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
             <thead>
               <tr>
                 <th className="rank-col">#</th>
-                {([['name', 'Pokémon'], ['tier', 'Tier'], ['gamesPlayed', 'Games'], ['kills', 'KOs'],
-                   ['killsPerGame', 'KOs/Game'], ['deaths', 'Deaths'], ['kd', 'K/D'],
-                   ['diff', 'Diff']] as [StatSort, string][]).map(([key, label]) => (
+                {/* Left to right in the order the power ranking applies them:
+                    every column past the tier is one of its steps. */}
+                {([['name', 'Pokémon'], ['tier', 'Tier'], ['diff', 'Diff'], ['kd', 'K/D'],
+                   ['killsPerGame', 'KOs/Game'], ['kills', 'KOs'], ['gamesPlayed', 'Games'],
+                   ['deaths', 'Deaths']] as [StatSort, string][]).map(([key, label]) => (
                   <th
                     key={key}
                     className={`sortable${key === 'name' ? ' col-name' : ''}${sort.key === key && sort.dir ? ' is-sorted' : ''}`}
@@ -231,18 +233,18 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                         ? <span className={tierClass(mon.draftTier)}>{mon.draftTier}</span>
                         : <em className="none">—</em>}
                     </td>
-                    <td>{t.gamesPlayed}</td>
-                    <td>{t.kills}</td>
-                    <td>{t.killsPerGame.toFixed(2)}</td>
-                    <td>{t.deaths}</td>
+                    <td className={t.diff > 0 ? 'pos' : t.diff < 0 ? 'neg' : ''}>
+                      {t.diff > 0 ? `+${t.diff}` : t.diff}
+                    </td>
                     {/* A Pokémon that has never fainted has no ratio to give,
                         which is better said than rounded to a number. */}
                     <td title={t.deaths ? undefined : 'Never fainted'}>
                       {!t.kills && !t.deaths ? '—' : t.kd === Infinity ? '∞' : t.kd.toFixed(2)}
                     </td>
-                    <td className={t.diff > 0 ? 'pos' : t.diff < 0 ? 'neg' : ''}>
-                      {t.diff > 0 ? `+${t.diff}` : t.diff}
-                    </td>
+                    <td>{t.killsPerGame.toFixed(2)}</td>
+                    <td>{t.kills}</td>
+                    <td>{t.gamesPlayed}</td>
+                    <td>{t.deaths}</td>
                   </tr>
                 )
               })}
