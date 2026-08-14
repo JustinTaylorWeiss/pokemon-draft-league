@@ -343,20 +343,35 @@ function Rules({ league }: { league: League }) {
 /**
  * The league's tiebreak order, applied in full.
  *
- * Points, then the rate of series won, then the raw wins behind that rate,
- * then fewest losses, then Pokémon differential. Each step only decides the
- * rows the one before it left tied.
+ * Points are not among the steps because a point is a win, so ranking on both
+ * would be ranking on the same number twice.
+ *
+ * Head-to-head sits last and only separates two players level on everything
+ * else, so it is resolved from the schedule rather than stored: whoever won
+ * more of the series they played against each other.
  */
 function rankStandings(league: League): Standing[] {
+  const headToHead = (a: Standing, b: Standing) => {
+    let wins = 0
+    for (const m of league.schedule) {
+      if (m.scoreA === null || m.scoreB === null) continue
+      const aOnA = m.a.includes(a.player), bOnB = m.b.includes(b.player)
+      const aOnB = m.b.includes(a.player), bOnA = m.a.includes(b.player)
+      if (aOnA && bOnB) wins += m.scoreA > m.scoreB ? 1 : m.scoreA < m.scoreB ? -1 : 0
+      else if (aOnB && bOnA) wins += m.scoreB > m.scoreA ? 1 : m.scoreB < m.scoreA ? -1 : 0
+    }
+    return wins
+  }
+
   const rate = (won: number, total: number) => (total ? won / total : 0)
 
   return [...league.standings]
     .sort((a, b) =>
-      b.points - a.points
-      || rate(b.wins, b.wins + b.losses) - rate(a.wins, a.wins + a.losses)
-      || b.wins - a.wins
-      || a.losses - b.losses
+      rate(b.wins, b.wins + b.losses) - rate(a.wins, a.wins + a.losses)
+      || b.gamesWon - a.gamesWon
+      || a.gamesLost - b.gamesLost
       || b.monDiff - a.monDiff
+      || headToHead(b, a)
       || a.name.localeCompare(b.name))
     .map((s, i) => ({ ...s, rank: i + 1 }))
 }
@@ -373,21 +388,21 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
         {/* The tiebreaks in the order they apply, sitting where the columns they
             refer to are — one line, so it reads as a caption and not a paragraph. */}
         <p className="sort-note">
-          Pts → Match Win % → Wins → Fewest losses → Diff
+          Match Win % → Game Wins → Fewest Game Losses → Diff → Head-to-head
         </p>
       </div>
       <div className="table-scroll">
         <table className="stat-table standings-table">
           <thead>
             <tr>
-              {/* Left to right in the order the sort applies them, with the
-                  columns it does not use following after. */}
+              {/* Left to right in the order the sort applies them. W and L are
+                  not steps of their own; they sit beside the rate they make.
+                  Head-to-head has no column — it is read from the schedule. */}
               <th>#</th><th className="col-name">Player</th><th className="col-abil">Team</th>
-              <th>Pts</th>
               <th title="Series won as a share of series played">Match Win %</th>
               <th>W</th><th>L</th>
-              <th title="Pokémon remaining differential">Diff</th>
               <th>GW</th><th>GL</th>
+              <th title="Pokémon remaining differential">Diff</th>
             </tr>
           </thead>
           <tbody>
@@ -424,19 +439,18 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                     <span>{s.name}</span>
                   </th>
                   <td className="col-abil">{s.team ?? <em className="none">TBD</em>}</td>
-                  <td><strong>{s.points}</strong></td>
-                  <td>{played ? `${Math.round((s.wins / played) * 100)}%` : '—'}</td>
+                  <td><strong>{played ? `${Math.round((s.wins / played) * 100)}%` : '—'}</strong></td>
                   <td>{s.wins}</td>
                   <td>{s.losses}</td>
+                  <td>{s.gamesWon}</td>
+                  <td>{s.gamesLost}</td>
                   <td className={s.monDiff > 0 ? 'pos' : s.monDiff < 0 ? 'neg' : ''}>
                     {s.monDiff > 0 ? `+${s.monDiff}` : s.monDiff}
                   </td>
-                  <td>{s.gamesWon}</td>
-                  <td>{s.gamesLost}</td>
                 </tr>
                 {showing && (
                   <tr className="team-row">
-                    <td colSpan={10}>
+                    <td colSpan={9}>
                       {picks.length === 0
                         ? <p className="panel-note">No team drafted yet.</p>
                         : (
