@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { loadPokemon, spriteUrl } from '../../data/load'
 import type { PokemonDex } from '../../data/types'
 import {
@@ -45,8 +45,7 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
 
   return (
     <div className="league">
-      {tab === 'standings' && <Standings league={league} />}
-      {tab === 'players' && <Players league={league} dex={dex} />}
+      {tab === 'standings' && <Standings league={league} dex={dex} />}
       {tab === 'matches' && <Matches league={league} dex={dex} />}
       {tab === 'board' && <Board league={league} dex={dex} />}
       {tab === 'stats' && <Stats league={league} dex={dex} />}
@@ -351,8 +350,12 @@ function rankStandings(league: League): Standing[] {
     .map((s, i) => ({ ...s, rank: i + 1 }))
 }
 
-function Standings({ league }: { league: League }) {
+function Standings({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
   const ranked = rankStandings(league)
+  /** A Pokémon belongs to one player, so its league totals are that player's. */
+  const totals = useMemo(() => totalsFromMatches(league.matchStats ?? []), [league.matchStats])
+  /** Which player's team is open. The ranking is also the way into a roster. */
+  const [team, setTeam] = useState<string | null>(null)
   // Reporting and roster changes write to the database. The spreadsheet season
   // is read-only at the source, so those controls do not appear for it.
   const editable = currentSeason().source === 'database'
@@ -397,12 +400,35 @@ function Standings({ league }: { league: League }) {
               const played = s.wins + s.losses
               const gamesPlayed = s.gamesWon + s.gamesLost
               const medal = MEDALS[s.rank]
+              const showing = team === s.player
+              const picks = [...(league.rosters[s.player] ?? [])].sort(
+                (a, b) => byTier(a.tier, b.tier)
+                  || (totals[b.pokemon]?.diff ?? 0) - (totals[a.pokemon]?.diff ?? 0)
+                  || (dex[a.pokemon]?.name ?? '').localeCompare(dex[b.pokemon]?.name ?? ''),
+              )
               return (
-                <tr key={s.player} className={medal ? `medal-row medal-${s.rank}` : ''}>
+                <Fragment key={s.player}>
+                <tr
+                  className={`${medal ? `medal-row medal-${s.rank}` : ''}${showing ? ' is-open' : ''} clickable`}
+                  onClick={() => setTeam(showing ? null : s.player)}
+                  // The whole row is the target, which a <tr> cannot be on its
+                  // own — so it takes focus and answers the keys a button would.
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      setTeam(showing ? null : s.player)
+                    }
+                  }}
+                  aria-expanded={showing}
+                >
                   <td className="rank-cell">
                     {medal ? <span className="medal" title={medal.label}>{medal.icon}</span> : s.rank}
                   </td>
-                  <th scope="row" className="col-name"><span>{s.name}</span></th>
+                  <th scope="row" className="col-name">
+                    <span className="player-caret" aria-hidden="true">{showing ? '▾' : '▸'}</span>
+                    <span>{s.name}</span>
+                  </th>
                   <td className="col-abil">{s.team ?? <em className="none">TBD</em>}</td>
                   <td>{s.wins}</td>
                   <td>{s.losses}</td>
@@ -415,146 +441,61 @@ function Standings({ league }: { league: League }) {
                   </td>
                   <td><strong>{s.points}</strong></td>
                 </tr>
+                {showing && (
+                  <tr className="team-row">
+                    <td colSpan={11}>
+                      {picks.length === 0
+                        ? <p className="panel-note">No team drafted yet.</p>
+                        : (
+                          <ul className="team-picks">
+                            {picks.map((pick) => {
+                              const mon = dex[pick.pokemon]
+                              if (!mon) return null
+                              const t = totals[pick.pokemon]
+                              return (
+                                <li key={pick.pokemon}>
+                                  <PokemonLink id={pick.pokemon} title={mon.name}>
+                                    <img src={spriteUrl(mon)} alt="" width={40} height={32} loading="lazy" />
+                                  </PokemonLink>
+                                  <span className={`${tierClass(pick.tier)} team-tier`}>{pick.tier}</span>
+                                  <span className="team-name">
+                                    <PokemonLink id={pick.pokemon}>{mon.name}</PokemonLink>
+                                  </span>
+                                  <span className="team-types">
+                                    {mon.types.map((ty) => <TypeChip key={ty} type={ty} />)}
+                                  </span>
+                                  {/* Dashes rather than zeroes: a Pokémon that has
+                                      not played is not one that did nothing. */}
+                                  <span className="team-stat" title="Games played">
+                                    {t ? t.gamesPlayed : '—'}<em>G</em>
+                                  </span>
+                                  <span className="team-stat" title="Knockouts">
+                                    {t ? t.kills : '—'}<em>KO</em>
+                                  </span>
+                                  <span className="team-stat" title="Deaths">
+                                    {t ? t.deaths : '—'}<em>D</em>
+                                  </span>
+                                  <span
+                                    className={`team-stat ${t && t.diff > 0 ? 'pos' : t && t.diff < 0 ? 'neg' : ''}`}
+                                    title="Knockouts minus deaths"
+                                  >
+                                    {t ? (t.diff > 0 ? `+${t.diff}` : t.diff) : '—'}<em>+/-</em>
+                                  </span>
+                                </li>
+                              )
+                            })}
+                          </ul>
+                        )}
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               )
             })}
           </tbody>
         </table>
       </div>
     </section>
-  )
-}
-
-/**
- * The players, in ranking order, each opening onto their team.
- *
- * Ordered by where they stand rather than by seed or by name, so the list reads
- * as the league currently is. A player's Pokémon are theirs alone — nobody else
- * can draft them — so a Pokémon's league-wide totals are that player's totals
- * for it, and no separate per-player tally is needed.
- */
-function Players({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
-  const [query, setQuery] = useState('')
-  const [open, setOpen] = useState<string | null>(null)
-
-  const totals = useMemo(
-    () => totalsFromMatches(league.matchStats ?? []),
-    [league.matchStats],
-  )
-  const standing = useMemo(
-    () => Object.fromEntries(league.standings.map((s) => [s.player, s])),
-    [league.standings],
-  )
-
-  const ordered = useMemo(
-    () => [...league.players].sort(
-      (a, b) => (standing[a.id]?.rank ?? Infinity) - (standing[b.id]?.rank ?? Infinity)
-        || a.seed - b.seed,
-    ),
-    [league.players, standing],
-  )
-
-  const q = query.trim().toLowerCase()
-  const visible = useMemo(() => ordered.filter((p) => {
-    if (!q) return true
-    if (p.name.toLowerCase().includes(q) || p.team?.toLowerCase().includes(q)) return true
-    return (league.rosters[p.id] ?? []).some(
-      (pick) => (dex[pick.pokemon]?.name ?? pick.pokemon).toLowerCase().includes(q),
-    )
-  }), [ordered, league.rosters, dex, q])
-
-  // A search for a Pokémon is a question about whose team it is on, and the
-  // answer is inside the row. Searching opens what it found.
-  const isOpen = (id: string) => (q ? true : open === id)
-
-  return (
-    <>
-      <div className="controls">
-        <input
-          type="search" value={query} onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search player, team, or Pokémon…" aria-label="Search players"
-        />
-        <span className="count">{visible.length} of {league.players.length}</span>
-      </div>
-
-      <section className="panel">
-        <ul className="player-list">
-          {visible.map((p) => {
-            const picks = [...(league.rosters[p.id] ?? [])].sort(
-              (a, b) => byTier(a.tier, b.tier) || (dex[b.pokemon]?.bst ?? 0) - (dex[a.pokemon]?.bst ?? 0),
-            )
-            const s = standing[p.id]
-            const showing = isOpen(p.id)
-            return (
-              <li key={p.id} className={showing ? 'is-open' : undefined}>
-                <button
-                  type="button"
-                  className="player-head"
-                  aria-expanded={showing}
-                  onClick={() => setOpen(showing && !q ? null : p.id)}
-                >
-                  <span className="player-caret" aria-hidden="true">{showing ? '▾' : '▸'}</span>
-                  {s?.rank ? <span className="player-rank">{s.rank}</span> : null}
-                  <span className="player-name">{p.name}</span>
-                  <span className="player-team">{p.team ?? '—'}</span>
-                  {s && (
-                    <span className="player-record">
-                      {s.wins}–{s.losses}
-                      <em>{s.points} pts</em>
-                    </span>
-                  )}
-                  <span className="player-count">{picks.length}</span>
-                </button>
-
-                {showing && (
-                  <div className="player-body">
-                    {s && (
-                      <dl className="player-stats">
-                        {([
-                          ['Record', `${s.wins}–${s.losses}`],
-                          ['Games', `${s.gamesWon}–${s.gamesLost}`],
-                          ['Differential', s.monDiff > 0 ? `+${s.monDiff}` : `${s.monDiff}`],
-                          ['Points', `${s.points}`],
-                        ] as [string, string][]).map(([k, v]) => (
-                          <div key={k}><dt>{k}</dt><dd>{v}</dd></div>
-                        ))}
-                      </dl>
-                    )}
-                    {picks.length === 0 ? (
-                      <p className="panel-note">No team drafted yet.</p>
-                    ) : (
-                      <ul className="player-picks">
-                        {picks.map((pick) => {
-                          const mon = dex[pick.pokemon]
-                          if (!mon) return null
-                          const t = totals[pick.pokemon]
-                          return (
-                            <li key={pick.pokemon}>
-                              <PokemonLink id={pick.pokemon} title={mon.name}>
-                                <img src={spriteUrl(mon)} alt="" width={44} height={36} loading="lazy" />
-                              </PokemonLink>
-                              <span className="pick-name">
-                                <PokemonLink id={pick.pokemon}>{mon.name}</PokemonLink>
-                              </span>
-                              <span className="pick-types">
-                                {mon.types.map((ty) => <TypeChip key={ty} type={ty} />)}
-                              </span>
-                              <span className={tierClass(pick.tier)}>{pick.tier}</span>
-                              <span className="pick-kd" title="KOs / deaths">
-                                {t ? <><b>{t.kills}</b> / {t.deaths}</> : <em>—</em>}
-                              </span>
-                            </li>
-                          )
-                        })}
-                      </ul>
-                    )}
-                  </div>
-                )}
-              </li>
-            )
-          })}
-        </ul>
-      </section>
-    </>
   )
 }
 

@@ -512,64 +512,10 @@
 .game-kd { flex: none; font-variant-numeric: tabular-nums; color: var(--muted); }
 .game-kd b { color: var(--fg); }
 
-/* ---- players, each opening onto their team ---- */
-.player-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.player-list > li { border-bottom: 1px solid var(--line); }
-.player-list > li:last-child { border-bottom: 0; }
-.player-list > li.is-open { background: rgb(127 127 127 / 4%); }
 
-.player-head {
-  width: 100%; display: flex; align-items: center; gap: 0.6rem;
-  font: inherit; font-size: 0.88rem; text-align: left; cursor: pointer;
-  background: none; border: 0; color: inherit; padding: 0.5rem 0.35rem;
-}
-.player-head:hover { background: var(--chip); }
-.player-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .player-caret { width: 0.75rem; flex: none; font-size: 0.7rem; color: var(--muted); }
-.player-rank {
-  flex: none; min-width: 1.6rem; text-align: right;
-  font-variant-numeric: tabular-nums; font-size: 0.78rem; color: var(--muted);
-}
-.player-name { font-weight: 600; }
-.player-team { flex: 1; min-width: 0; color: var(--muted); font-size: 0.8rem;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.player-record {
-  flex: none; display: flex; align-items: baseline; gap: 0.4rem;
-  font-variant-numeric: tabular-nums; font-size: 0.82rem;
-}
-.player-record em { font-style: normal; color: var(--muted); font-size: 0.72rem; }
-.player-count {
-  flex: none; min-width: 1.5rem; text-align: center;
-  font-size: 0.7rem; color: var(--muted);
-  background: var(--chip); border-radius: 999px; padding: 0.05rem 0.4rem;
-}
 
-.player-body { padding: 0 0.35rem 0.75rem 2.1rem; }
-.player-stats { display: flex; flex-wrap: wrap; gap: 0.35rem 1.5rem; margin: 0 0 0.6rem; }
-.player-stats div { display: flex; flex-direction: column; }
-.player-stats dt {
-  font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted);
-}
-.player-stats dd { margin: 0; font-size: 0.85rem; font-weight: 600; font-variant-numeric: tabular-nums; }
 
-.player-picks {
-  list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr)); gap: 0.1rem 1.25rem;
-}
-.player-picks li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; }
-/* The name is the point of the row, so it holds a floor rather than being
-   squeezed to nothing by two type chips and a tier badge. */
-.player-picks .pick-name {
-  flex: 1 1 auto; min-width: 7rem;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.player-picks .pick-types { display: flex; gap: 0.2rem; flex: none; }
-.pick-kd {
-  flex: none; min-width: 2.75rem; text-align: right;
-  font-variant-numeric: tabular-nums; font-size: 0.78rem; color: var(--muted);
-}
-.pick-kd b { color: var(--fg); }
-.pick-kd em { font-style: normal; }
 
 /* The Pokémon ranking's controls are one line: search, how many matched, the
    week filter, and the order they are in. The note takes the right edge and
@@ -586,3 +532,45 @@
   .stats-view .controls { flex-wrap: wrap; }
   .stats-view .sort-note { margin-left: 0; }
 }
+
+/* ---- a player's team, opened from their ranking row ---- */
+.standings-table tr.clickable { cursor: pointer; }
+.standings-table tr.clickable:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.standings-table tr.clickable:hover { background: var(--chip); }
+.standings-table tr.is-open { background: rgb(127 127 127 / 6%); }
+.standings-table .player-caret {
+  display: inline-block; width: 0.9rem; flex: none;
+  font-size: 0.8rem; line-height: 1; color: var(--muted);
+}
+.standings-table tr.clickable:hover .player-caret,
+.standings-table tr.is-open .player-caret { color: var(--fg); }
+
+/* The surrounding table centres its numeric cells; this one is a panel of
+   its own and reads left to right. */
+.team-row > td {
+  padding: 0.4rem 0.6rem 0.7rem 1.6rem; background: rgb(127 127 127 / 5%); text-align: left;
+}
+/* Wide enough for a sprite, a tier badge, a long name, two type chips and
+   four figures — cramming a third column in clipped the last of them. */
+.team-picks {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(31rem, 1fr));
+  gap: 0.15rem 2rem;
+}
+.team-picks li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; }
+/* Tier first: the team is ordered by it, so it reads as the grouping it is. */
+.team-tier { flex: none; min-width: 2.9rem; text-align: center; }
+.team-name {
+  flex: 1 1 auto; min-width: 6rem; text-align: left;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.team-types { display: flex; gap: 0.2rem; flex: none; }
+.team-stat {
+  flex: none; min-width: 2.6rem; text-align: right;
+  font-variant-numeric: tabular-nums; font-size: 0.78rem; color: var(--fg);
+}
+.team-stat em {
+  font-style: normal; color: var(--muted); font-size: 0.62rem; margin-left: 0.12rem;
+}
+.team-stat.pos { color: #6dc79a; }
+.team-stat.neg { color: #e0838a; }
