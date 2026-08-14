@@ -3,6 +3,8 @@ import { useElementHeight } from './lib/useElementHeight'
 import { QuickMatchup } from './features/quick-matchup/QuickMatchup'
 import { LeagueView } from './features/league/LeagueView'
 import { LEAGUE_TABS, type LeagueTab } from './features/league/tabs'
+import { ReportMatch } from './features/league/ReportMatch'
+import { ManagePlayers } from './features/league/ManagePlayers'
 import {
   currentSeason, isSheetBusy, leagueTimestamp, loadLeague, refreshLeagueFromSheet,
   reloadSeason, revalidateLeague, SEASONS, setSeason, subscribeLeague, subscribeSheetBusy,
@@ -46,6 +48,8 @@ export default function App() {
   // page starts on load — not only the one the button starts itself.
   const [refreshing, setRefreshing] = useState(isSheetBusy)
   const [refreshError, setRefreshError] = useState<string | null>(null)
+  /** Editing lives in the secondary bar, beside the tabs it acts on. */
+  const [editing, setEditing] = useState<'match' | 'players' | null>(null)
   const [dataAt, setDataAt] = useState<Date | null>(null)
   const [season, setSeasonId] = useState(() => currentSeason().id)
   /**
@@ -205,6 +209,14 @@ export default function App() {
                 </button>
               ))}
             </nav>
+            {/* Only a database season can be edited; the spreadsheet is read
+                at its source and never written to. */}
+            {onDatabase && (
+              <div className="sub-actions">
+                <button type="button" onClick={() => setEditing('match')}>Record a match</button>
+                <button type="button" onClick={() => setEditing('players')}>Add / remove players</button>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -216,6 +228,21 @@ export default function App() {
         {view === 'matchup' && <QuickMatchup />}
         {view === 'dex' && <Dex />}
       </main>
+
+      {league && editing === 'match' && (
+        <ReportMatch
+          league={league}
+          onClose={() => setEditing(null)}
+          onSaved={() => reloadSeason(season)}
+        />
+      )}
+      {league && editing === 'players' && (
+        <ManagePlayers
+          league={league}
+          onClose={() => setEditing(null)}
+          onSaved={() => reloadSeason(season)}
+        />
+      )}
 
       <PokemonModal />
     </PokemonModalProvider>

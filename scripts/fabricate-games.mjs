@@ -42,10 +42,22 @@ const headers = {
   Prefer: 'return=representation',
 }
 
+/**
+ * Reads a table whole.
+ *
+ * PostgREST stops at a thousand rows and does not say so in the body, so a
+ * single GET silently returns a prefix. Paging is the only way to be sure.
+ */
 const get = async (path) => {
-  const res = await fetch(`${URL_}/rest/v1/${path}`, { headers })
-  if (!res.ok) throw new Error(`GET ${path}: ${res.status} ${await res.text()}`)
-  return res.json()
+  const out = []
+  const join = path.includes('?') ? '&' : '?'
+  for (let from = 0; ; from += 1000) {
+    const res = await fetch(`${URL_}/rest/v1/${path}${join}limit=1000&offset=${from}`, { headers })
+    if (!res.ok) throw new Error(`GET ${path}: ${res.status} ${await res.text()}`)
+    const page = await res.json()
+    out.push(...page)
+    if (page.length < 1000) return out
+  }
 }
 
 const post = async (table, rows) => {

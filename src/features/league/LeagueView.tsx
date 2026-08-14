@@ -2,15 +2,13 @@ import { Fragment, useEffect, useMemo, useState } from 'react'
 import { loadPokemon, spriteUrl } from '../../data/load'
 import type { PokemonDex } from '../../data/types'
 import {
-  byId, byTier, currentSeason, loadLeague, mergeDex, reloadSeason, subscribeLeague, tierClass,
+  byId, byTier, loadLeague, mergeDex, subscribeLeague, tierClass,
   totalsFromMatches, type Standing,
   type GameLine, type League, type LeaguePokemon, type Match, type MatchStat,
   type PokemonTotals,
 } from '../../data/league'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
-import { ReportMatch } from './ReportMatch'
-import { ManagePlayers } from './ManagePlayers'
 import type { LeagueTab } from './tabs'
 import './league.css'
 import { PokemonLink } from '../../components/PokemonLink'
@@ -381,29 +379,15 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
   const totals = useMemo(() => totalsFromMatches(league.matchStats ?? []), [league.matchStats])
   /** Which player's team is open. The ranking is also the way into a roster. */
   const [team, setTeam] = useState<string | null>(null)
-  // Reporting and roster changes write to the database. The spreadsheet season
-  // is read-only at the source, so those controls do not appear for it.
-  const editable = currentSeason().source === 'database'
-  const [managing, setManaging] = useState(false)
-  const refresh = () => { reloadSeason(currentSeason().id) }
-
   return (
     <section className="panel">
       <div className="standings-head">
-        {editable && (
-          <div className="standings-actions">
-            <button type="button" onClick={() => setManaging(true)}>Add / remove players</button>
-          </div>
-        )}
         {/* The tiebreaks in the order they apply, sitting where the columns they
             refer to are — one line, so it reads as a caption and not a paragraph. */}
         <p className="sort-note">
           Pts → Match Win % → Game Win % → Diff → Head-to-head
         </p>
       </div>
-      {managing && (
-        <ManagePlayers league={league} onClose={() => setManaging(false)} onSaved={refresh} />
-      )}
       <div className="table-scroll">
         <table className="stat-table standings-table">
           <thead>
@@ -553,8 +537,8 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
     () => [...new Set(league.schedule.map((m) => m.week))].sort((a, b) => a - b),
     [league.schedule],
   )
-  const [week, setWeek] = useState<number | 'all'>('all')
-  const [recording, setRecording] = useState(false)
+  /** Weeks the reader has folded away. Everything starts open. */
+  const [shut, setShut] = useState<Set<number>>(new Set())
 
   /**
    * The per-Pokémon lines for a match that has no games under it.
@@ -572,43 +556,33 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
     league.schedule.forEach((m, i) => map.set(m, league.matchStats?.[i]))
     return map
   }, [league.schedule, league.matchStats])
-  const editable = currentSeason().source === 'database'
   const label = (ids: string[]) => ids.map((p) => people[p]?.name ?? p).join(' + ')
-  const shown = week === 'all' ? weeks : weeks.filter((w) => w === week)
+  const toggle = (w: number) => setShut((prev) => {
+    const next = new Set(prev)
+    if (!next.delete(w)) next.add(w)
+    return next
+  })
 
   return (
     <div className="schedule">
-      <div className="controls matches-controls">
-        {editable && (
-          <button type="button" className="record-btn" onClick={() => setRecording(true)}>
-            Record a match
-          </button>
-        )}
-        <label className="week-picker">
-          Week
-          <select
-            value={week}
-            onChange={(e) => setWeek(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+      {weeks.map((w) => {
+        const open = !shut.has(w)
+        const inWeek = league.schedule.filter((m) => m.week === w)
+        return (
+        <section key={w} className={`panel week-panel${open ? '' : ' is-shut'}`}>
+          <button
+            type="button"
+            className="week-head"
+            aria-expanded={open}
+            onClick={() => toggle(w)}
           >
-            <option value="all">All weeks</option>
-            {weeks.map((w) => <option key={w} value={w}>Week {w}</option>)}
-          </select>
-        </label>
-      </div>
-
-      {recording && (
-        <ReportMatch
-          league={league}
-          onClose={() => setRecording(false)}
-          onSaved={() => reloadSeason(currentSeason().id)}
-        />
-      )}
-
-      {shown.map((w) => (
-        <section key={w} className="panel">
-          <h3>Week {w}</h3>
+            <span className="week-caret" aria-hidden="true">{open ? '▾' : '▸'}</span>
+            <span className="week-name">Week {w}</span>
+            <span className="week-count">{inWeek.length} matches</span>
+          </button>
+          {open && (
           <ul className="match-list">
-            {league.schedule.filter((m) => m.week === w).map((m, i) => {
+            {inWeek.map((m, i) => {
               const done = m.scoreA !== null && m.scoreB !== null
               // Outline the result: green on the winner, red on the loser.
               const cls = (isA: boolean) => {
@@ -619,7 +593,8 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
               }
               const games = m.games ? [...m.games].sort((x, y) => x.number - y.number) : []
               return (
-                <li key={i} className={games.length ? 'has-games' : undefined}>
+                <li key={i} className={`match-card${games.length ? ' has-games' : ''}`}>
+                  <h4 className="match-title">Match {i + 1}</h4>
                   <div className="match-row">
                     <span className={cls(true)}>{label(m.a)}</span>
                     <span className="score">{done ? `${m.scoreA} – ${m.scoreB}` : 'vs'}</span>
@@ -631,10 +606,18 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
                       <GameTeam lines={g.a} dex={dex} align="left" won={g.winner === 'a'} />
                       <span className="game-label">
                         {g.replayUrl ? (
-                          <a href={g.replayUrl} target="_blank" rel="noreferrer noopener">
-                            G{g.number} ↗
+                          <a
+                            className="game-pill"
+                            href={g.replayUrl}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            title="Watch this game on Pokémon Showdown"
+                          >
+                            Game {g.number}<span className="game-arrow" aria-hidden="true">↗</span>
                           </a>
-                        ) : `G${g.number}`}
+                        ) : (
+                          <span className="game-pill is-plain">Game {g.number}</span>
+                        )}
                       </span>
                       <GameTeam lines={g.b} dex={dex} align="right" won={g.winner === 'b'} />
                     </div>
@@ -647,8 +630,13 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
                         lines={seriesLines(statsFor.get(m))!.a} dex={dex} align="left"
                         won={m.scoreA !== null && m.scoreB !== null && m.scoreA > m.scoreB}
                       />
-                      <span className="game-label" title="Totals for the whole match; the games were not recorded separately">
-                        Match
+                      <span className="game-label">
+                        <span
+                          className="game-pill is-plain"
+                          title="Totals for the whole match; the games were not recorded separately"
+                        >
+                          Match
+                        </span>
                       </span>
                       <GameTeam
                         lines={seriesLines(statsFor.get(m))!.b} dex={dex} align="right"
@@ -660,8 +648,10 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
               )
             })}
           </ul>
+          )}
         </section>
-      ))}
+        )
+      })}
     </div>
   )
 }
@@ -714,7 +704,7 @@ function GameTeam({
         {entry && (
           <img
             className={l.deaths ? 'is-fainted' : undefined}
-            src={spriteUrl(entry)} alt={name} width={32} height={26} loading="lazy"
+            src={spriteUrl(entry)} alt={name} width={40} height={33} loading="lazy"
           />
         )}
       </PokemonLink>

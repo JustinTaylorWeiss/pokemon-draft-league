@@ -285,3 +285,13 @@
 .rules-link:hover { color: var(--fg); background: var(--chip); }
 .rules-link.is-active { color: var(--accent); }
 .rules-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Editing sits at the far end of the secondary bar, away from the tabs. */
+.sub-actions { margin-left: auto; display: flex; gap: 0.5rem; }
+.sub-actions button {
+  font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+  padding: 0.3rem 0.7rem; border-radius: 999px;
+  background: var(--chip); border: 1px solid var(--line); color: var(--muted);
+}
+.sub-actions button:hover { color: var(--accent); border-color: var(--accent); }
+.sub-actions button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }

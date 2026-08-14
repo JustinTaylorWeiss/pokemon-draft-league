@@ -67,20 +67,43 @@ interface StandingRow {
   points: number
 }
 
+/**
+ * PostgREST answers a plain select with at most a thousand rows, and says so
+ * only in a header nobody reads. Past that it simply stops, so a league quietly
+ * loses its newest games rather than failing — which is how `game_lines` came
+ * to be missing everything after row 1000 while every query looked fine.
+ *
+ * `limit` does not lift it and neither does a Range header; the cap is set on
+ * the server. Paging is the only way to read a table whole.
+ */
+const PAGE = 1000
+
+async function readAll(table: string, ...order: string[]) {
+  const rows: unknown[] = []
+  for (let from = 0; ; from += PAGE) {
+    let query = db.from(table).select('*').range(from, from + PAGE - 1)
+    for (const col of order) query = query.order(col)
+    const { data, error } = await query
+    if (error) return { data: rows, error }
+    rows.push(...(data ?? []))
+    if ((data?.length ?? 0) < PAGE) return { data: rows, error: null }
+  }
+}
+
 /** Every table in one round trip each, in parallel. */
 export async function loadLeagueFromSupabase(): Promise<League> {
   const [meta, players, board, rosters, matches, lines, standings, rules, games, gameLines] =
     await Promise.all([
       db.from('league_meta').select('*').maybeSingle(),
-      db.from('players').select('*').order('seed'),
-      db.from('board').select('*'),
-      db.from('rosters').select('*'),
-      db.from('matches').select('*').order('week').order('id'),
-      db.from('match_lines').select('*').order('id'),
-      db.from('standings').select('*'),
-      db.from('rules_sections').select('*').order('position'),
-      db.from('games').select('*').order('match_id').order('number'),
-      db.from('game_lines').select('*').order('id'),
+      readAll('players', 'seed'),
+      readAll('board'),
+      readAll('rosters'),
+      readAll('matches', 'week', 'id'),
+      readAll('match_lines', 'id'),
+      readAll('standings'),
+      readAll('rules_sections', 'position'),
+      readAll('games', 'match_id', 'number'),
+      readAll('game_lines', 'id'),
     ])
 
   const firstError = [meta, players, board, rosters, matches, lines, standings, rules]

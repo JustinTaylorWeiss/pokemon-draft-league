@@ -72,7 +72,7 @@
 .match-list {
   list-style: none; margin: 0; padding: 0;
   display: grid; grid-template-columns: repeat(auto-fill, minmax(37rem, 1fr));
-  gap: 0.35rem 1.75rem;
+  gap: 0.6rem 1.25rem;
 }
 .match-list li { font-size: 0.85rem; }
 /* The result line, with the run of games in the middle beside the score.
@@ -80,7 +80,7 @@
    lines up down the page — sized by content it would vary row to row, since
    each row is its own grid and they share no column. */
 .match-row {
-  display: grid; grid-template-columns: 1fr 3.2rem 1fr; align-items: stretch; gap: 0.25rem;
+  display: grid; grid-template-columns: 1fr 5.2rem 1fr; align-items: stretch; gap: 0.25rem;
 }
 .match-list .side {
   min-width: 0; overflow-wrap: anywhere;
@@ -455,7 +455,7 @@
 .players-remove:hover { color: #e05563; border-color: #e05563; }
 
 /* ---- the games inside a match ---- */
-.match-list li.has-games { padding-bottom: 0.2rem; }
+
 
 /* Score and the run of games, side by side, so a match stays one line. */
 
@@ -537,6 +537,34 @@
 
 /* ---- the games inside a match ---- */
 .matches-controls { margin-bottom: 0.9rem; }
+
+/* ---- a week, which folds away ---- */
+.week-panel { padding-top: 0.5rem; }
+.week-head {
+  width: 100%; display: flex; align-items: center; gap: 0.6rem;
+  font: inherit; text-align: left; cursor: pointer;
+  background: none; border: 0; color: inherit; padding: 0.35rem 0.15rem;
+}
+.week-head:hover .week-name { color: var(--accent); }
+.week-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+.week-caret { width: 0.85rem; font-size: 0.72rem; color: var(--muted); }
+.week-name {
+  font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--muted);
+}
+.week-count { margin-left: auto; font-size: 0.72rem; color: var(--muted); }
+.week-panel.is-shut { padding-bottom: 0.5rem; }
+
+/* ---- one match, boxed with its number ---- */
+.match-card {
+  border: 1px solid var(--line); border-radius: 10px;
+  padding: 0.45rem 0.6rem 0.5rem;
+  background: rgb(127 127 127 / 3%);
+}
+.match-title {
+  margin: 0 0 0.35rem; font-size: 0.66rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted);
+}
 .record-btn {
   font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer;
   padding: 0.4rem 0.8rem; border-radius: 999px;
@@ -551,18 +579,31 @@
 
 /* The same three tracks as the result line above, so each team's Pokémon sit
    under the player who brought them. */
+/* Every track here is shared with the result line above, so a team sits under
+   the player who brought it. Sized so six sprites a side fit the card at two
+   columns — they overflowed it before, and the far team was clipped. */
 .game-row {
-  display: grid; grid-template-columns: 1fr 3.2rem 1fr; gap: 0.25rem;
-  align-items: center; padding: 0.05rem 0;
+  display: grid; grid-template-columns: 1fr 5.2rem 1fr; gap: 0.25rem;
+  align-items: center; padding: 0.08rem 0; min-width: 0;
 }
-.game-label {
-  text-align: center; font-size: 0.68rem; font-variant-numeric: tabular-nums;
-  color: var(--muted);
+.game-row > * { min-width: 0; }
+.game-label { display: flex; justify-content: center; }
+/* The link out to the replay, and the only thing in the row that leads
+   anywhere — so it looks like it does. */
+.game-pill {
+  display: inline-flex; align-items: center; gap: 0.15rem; white-space: nowrap;
+  font-size: 0.68rem; font-weight: 600; text-decoration: none;
+  padding: 0.12rem 0.45rem; border-radius: 999px;
+  border: 1px solid var(--accent); color: var(--accent);
 }
-.game-label a { color: var(--muted); text-decoration: none; }
-.game-label a:hover { color: var(--accent); }
+.game-pill:hover { background: var(--accent); color: #fff; }
+.game-pill:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+.game-arrow { font-size: 0.62rem; line-height: 1; }
+/* No replay to reach: says which game it is and stops there. */
+.game-pill.is-plain { border-color: var(--line); color: var(--muted); }
+.game-pill.is-plain:hover { background: none; color: var(--muted); }
 
-.game-team { display: flex; align-items: center; gap: 0.4rem; padding: 0 0.35rem; }
+.game-team { display: flex; align-items: center; gap: 0.3rem; padding: 0 0.2rem; }
 .game-team.right { flex-direction: row-reverse; }
 .game-brought, .game-bench { display: flex; align-items: center; }
 .game-team.right .game-brought, .game-team.right .game-bench { flex-direction: row-reverse; }
