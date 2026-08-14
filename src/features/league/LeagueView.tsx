@@ -42,7 +42,7 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
       </p>
     )
   }
-  if (!league || !dex) return <p className="loading">Loading league…</p>
+  if (!league || !dex) return <LoadingBall />
 
   return (
     <div className="league">
@@ -51,6 +51,20 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
       {tab === 'board' && <Board league={league} dex={dex} />}
       {tab === 'stats' && <Stats league={league} dex={dex} />}
       {tab === 'rules' && <Rules league={league} />}
+    </div>
+  )
+}
+
+/** Something to watch while the league loads, rather than a line of text. */
+function LoadingBall() {
+  return (
+    <div className="loading-stage" role="status" aria-live="polite">
+      <div className="pokeball" aria-hidden="true">
+        <span className="pokeball-top" />
+        <span className="pokeball-band" />
+        <span className="pokeball-button" />
+      </div>
+      <p>Loading league…</p>
     </div>
   )
 }
@@ -614,7 +628,7 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
 
                   {games.map((g) => (
                     <div key={g.number} className="game-row">
-                      <GameTeam lines={g.a} dex={dex} align="left" />
+                      <GameTeam lines={g.a} dex={dex} align="left" won={g.winner === 'a'} />
                       <span className="game-label">
                         {g.replayUrl ? (
                           <a href={g.replayUrl} target="_blank" rel="noreferrer noopener">
@@ -622,18 +636,24 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
                           </a>
                         ) : `G${g.number}`}
                       </span>
-                      <GameTeam lines={g.b} dex={dex} align="right" />
+                      <GameTeam lines={g.b} dex={dex} align="right" won={g.winner === 'b'} />
                     </div>
                   ))}
 
                   {/* No games recorded, but the match's own totals are known. */}
                   {games.length === 0 && seriesLines(statsFor.get(m)) && (
                     <div className="game-row">
-                      <GameTeam lines={seriesLines(statsFor.get(m))!.a} dex={dex} align="left" />
+                      <GameTeam
+                        lines={seriesLines(statsFor.get(m))!.a} dex={dex} align="left"
+                        won={m.scoreA !== null && m.scoreB !== null && m.scoreA > m.scoreB}
+                      />
                       <span className="game-label" title="Totals for the whole match; the games were not recorded separately">
                         Match
                       </span>
-                      <GameTeam lines={seriesLines(statsFor.get(m))!.b} dex={dex} align="right" />
+                      <GameTeam
+                        lines={seriesLines(statsFor.get(m))!.b} dex={dex} align="right"
+                        won={m.scoreA !== null && m.scoreB !== null && m.scoreB > m.scoreA}
+                      />
                     </div>
                   )}
                 </li>
@@ -672,11 +692,12 @@ function seriesLines(stat: MatchStat | undefined) {
  * recorded rather than inferred.
  */
 function GameTeam({
-  lines, dex, align,
+  lines, dex, align, won,
 }: {
   lines: GameLine[]
   dex: Record<string, LeaguePokemon>
   align: 'left' | 'right'
+  won: boolean
 }) {
   const played = lines.filter((l) => l.brought)
   const bench = lines.filter((l) => !l.brought)
@@ -693,7 +714,7 @@ function GameTeam({
         {entry && (
           <img
             className={l.deaths ? 'is-fainted' : undefined}
-            src={spriteUrl(entry)} alt={name} width={38} height={31} loading="lazy"
+            src={spriteUrl(entry)} alt={name} width={32} height={26} loading="lazy"
           />
         )}
       </PokemonLink>
@@ -701,8 +722,9 @@ function GameTeam({
   }
   return (
     <div className={`game-team ${align}`}>
-      {/* The ones that played are boxed together; the bench sits outside it. */}
-      <span className="game-brought">{played.map(mon)}</span>
+      {/* The ones that played are boxed together, in the colour of the result;
+          the bench sits outside it. */}
+      <span className={`game-brought ${won ? 'won' : 'lost'}`}>{played.map(mon)}</span>
       {bench.length > 0 && <span className="game-bench">{bench.map(mon)}</span>}
     </div>
   )
