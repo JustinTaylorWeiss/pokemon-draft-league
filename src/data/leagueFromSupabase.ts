@@ -1,5 +1,5 @@
 import { db } from './supabase'
-import type { League, Match, MatchStat, Player, Standing } from './league'
+import type { Game, League, Match, MatchStat, Player, Standing } from './league'
 
 /**
  * Assembles a League from the database.
@@ -37,6 +37,23 @@ interface LineRow {
   deaths: number
 }
 
+interface GameRow {
+  id: number
+  match_id: number
+  number: number
+  winner: 'a' | 'b' | null
+  replay_url: string | null
+  survivors: number | null
+}
+
+interface GameLineRow {
+  game_id: number
+  side: 'a' | 'b'
+  pokemon_id: string
+  kills: number
+  deaths: number
+}
+
 interface StandingRow {
   player_id: string
   name: string
@@ -51,16 +68,19 @@ interface StandingRow {
 
 /** Every table in one round trip each, in parallel. */
 export async function loadLeagueFromSupabase(): Promise<League> {
-  const [meta, players, board, rosters, matches, lines, standings, rules] = await Promise.all([
-    db.from('league_meta').select('*').maybeSingle(),
-    db.from('players').select('*').order('seed'),
-    db.from('board').select('*'),
-    db.from('rosters').select('*'),
-    db.from('matches').select('*').order('week').order('id'),
-    db.from('match_lines').select('*').order('id'),
-    db.from('standings').select('*'),
-    db.from('rules_sections').select('*').order('position'),
-  ])
+  const [meta, players, board, rosters, matches, lines, standings, rules, games, gameLines] =
+    await Promise.all([
+      db.from('league_meta').select('*').maybeSingle(),
+      db.from('players').select('*').order('seed'),
+      db.from('board').select('*'),
+      db.from('rosters').select('*'),
+      db.from('matches').select('*').order('week').order('id'),
+      db.from('match_lines').select('*').order('id'),
+      db.from('standings').select('*'),
+      db.from('rules_sections').select('*').order('position'),
+      db.from('games').select('*').order('match_id').order('number'),
+      db.from('game_lines').select('*').order('id'),
+    ])
 
   const firstError = [meta, players, board, rosters, matches, lines, standings, rules]
     .find((r) => r.error)?.error
@@ -90,6 +110,37 @@ export async function loadLeagueFromSupabase(): Promise<League> {
   const sideLabel = (ids: string[]) =>
     ids.map((id) => nameById.get(id) ?? id).join(' / ')
 
+  // Games are only there for matches reported from replays; older and imported
+  // matches simply have none, which the views treat as "no breakdown", not as
+  // a match with zero games.
+  const gameRows = (games.data ?? []) as GameRow[]
+  const gameLineRows = (gameLines.data ?? []) as GameLineRow[]
+
+  const linesByGame = new Map<number, GameLineRow[]>()
+  for (const l of gameLineRows) {
+    const list = linesByGame.get(l.game_id)
+    if (list) list.push(l)
+    else linesByGame.set(l.game_id, [l])
+  }
+
+  const gamesByMatch = new Map<number, Game[]>()
+  for (const g of gameRows) {
+    const own = linesByGame.get(g.id) ?? []
+    const side = (s: 'a' | 'b') => own
+      .filter((l) => l.side === s)
+      .map((l) => ({ pokemon: l.pokemon_id, kills: l.kills, deaths: l.deaths }))
+    const list = gamesByMatch.get(g.match_id) ?? []
+    list.push({
+      number: g.number,
+      winner: g.winner,
+      replayUrl: g.replay_url,
+      survivors: g.survivors,
+      a: side('a'),
+      b: side('b'),
+    })
+    gamesByMatch.set(g.match_id, list)
+  }
+
   const schedule: Match[] = matchRows.map((m, i) => ({
     week: m.week,
     match: i + 1,
@@ -97,6 +148,7 @@ export async function loadLeagueFromSupabase(): Promise<League> {
     b: m.side_b,
     scoreA: m.score_a,
     scoreB: m.score_b,
+    ...(gamesByMatch.has(m.id) ? { games: gamesByMatch.get(m.id) } : {}),
   }))
 
   // Rebuilt rather than stored: the per-Pokemon lines plus the sides they were

@@ -50,6 +50,30 @@ export interface DraftPick {
 }
 
 /** One 2v2 partner match: two players per side. */
+/** One Pokémon's line in one game. */
+export interface GameLine {
+  pokemon: string
+  kills: number
+  deaths: number
+}
+
+/**
+ * A single game inside a match.
+ *
+ * Only present for matches reported from replays. A season imported from the
+ * spreadsheet knows its series scores and nothing about the games underneath,
+ * so this is empty there rather than wrong.
+ */
+export interface Game {
+  number: number
+  /** Which side of the *match* won, not which side of the Showdown log. */
+  winner: 'a' | 'b' | null
+  replayUrl: string | null
+  survivors: number | null
+  a: GameLine[]
+  b: GameLine[]
+}
+
 export interface Match {
   week: number
   match: string | number
@@ -57,6 +81,7 @@ export interface Match {
   b: string[]
   scoreA: number | null
   scoreB: number | null
+  games?: Game[]
 }
 
 export interface Standing {
@@ -122,8 +147,14 @@ export interface PokemonTotals {
   kills: number
   deaths: number
   diff: number
-  /** Kills per game — the rate behind the total, and the sort tiebreaker. */
+  /** KOs per game — the rate behind the total, and the sort tiebreaker. */
   killsPerGame: number
+  /**
+   * KOs per death. `Infinity` for a Pokémon that has never fainted, which is
+   * the honest value and sorts it above everything with a finite ratio; the
+   * table shows that as ∞ rather than a number.
+   */
+  kd: number
 }
 
 export interface League {
@@ -453,13 +484,16 @@ export function totalsFromMatches(matches: MatchStat[]): Record<string, PokemonT
     for (const side of [match.a, match.b]) {
       for (const line of side.lines) {
         const t = (out[line.pokemon] ??= {
-          pokemon: line.pokemon, gamesPlayed: 0, kills: 0, deaths: 0, diff: 0, killsPerGame: 0,
+          pokemon: line.pokemon, gamesPlayed: 0, kills: 0, deaths: 0, diff: 0,
+          killsPerGame: 0, kd: 0,
         })
         t.gamesPlayed++
         t.kills += line.kills || 0
         t.deaths += line.deaths || 0
         t.diff = t.kills - t.deaths
         t.killsPerGame = t.gamesPlayed ? t.kills / t.gamesPlayed : 0
+        // Never fainted is not a ratio of zero, it is a ratio without a bottom.
+        t.kd = t.deaths ? t.kills / t.deaths : t.kills ? Infinity : 0
       }
     }
   }

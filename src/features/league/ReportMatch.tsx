@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fetchReplay, type ReplayGame } from '../../lib/parseReplay'
+import { fetchReplay, replayId, type ReplayGame } from '../../lib/parseReplay'
 import { db, errorText, insertRows, updateRow } from '../../data/supabase'
 import { toId } from '../../data/load'
 import type { League } from '../../data/league'
@@ -25,6 +25,8 @@ interface Props {
 /** A game with its two sides put in a stable order across the series. */
 interface AlignedGame {
   game: ReplayGame
+  /** The link it came from, kept so the match can point back at the replay. */
+  link: string
   /** The side of this game's log belonging to the series' first account. */
   a: ReplayGame['a']
   b: ReplayGame['a']
@@ -32,6 +34,8 @@ interface AlignedGame {
 }
 
 const normalise = (account: string) => account.toLowerCase().replace(/\s+/g, '')
+/** `Urshifu-Rapid-Strike` and `Urshifu-*` share a base, so they are one Pokémon. */
+const baseName = (mon: string) => mon.split('-')[0].trim().toLowerCase()
 
 export function ReportMatch({ league, onClose, onSaved }: Props) {
   const [week, setWeek] = useState(() => nextWeek(league))
@@ -89,8 +93,11 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
           )
         }
         return straight
-          ? { game: g, a: g.a, b: g.b, winner: g.winner }
-          : { game: g, a: g.b, b: g.a, winner: g.winner === 'a' ? 'b' : g.winner === 'b' ? 'a' : null }
+          ? { game: g, link: given[i], a: g.a, b: g.b, winner: g.winner }
+          : {
+              game: g, link: given[i], a: g.b, b: g.a,
+              winner: g.winner === 'a' ? 'b' : g.winner === 'b' ? 'a' : null,
+            }
       })
 
       if (aligned.some((g) => !g.winner)) {
@@ -150,7 +157,8 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
         score_b: scoreB,
       }])
 
-      const lines = totals(games).map((l) => ({
+      const summed = totals(games)
+      const lines = summed.map((l) => ({
         match_id: match.id as number,
         side: l.side,
         pokemon_id: toId(l.pokemon),
@@ -158,6 +166,39 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
         deaths: l.deaths,
       }))
       if (lines.length) await insertRows('match_lines', lines)
+
+      // One id per Pokemon across the whole series. Team preview masks formes,
+      // so the same Pokemon can be `Urshifu-*` in one game and
+      // `Urshifu-Rapid-Strike` in another; the series totals have already
+      // settled on the concrete name, and the games follow it rather than
+      // filing the same Pokemon under two ids.
+      const canonical = new Map(summed.map((l) => [`${l.side}-${baseName(l.pokemon)}`, toId(l.pokemon)]))
+      const idOf = (side: 'a' | 'b', mon: string) =>
+        canonical.get(`${side}-${baseName(mon)}`) ?? toId(mon)
+
+      // Saved in the order they were played, which is the order they were
+      // pasted — game 1 in the first field.
+      for (const [i, g] of games.entries()) {
+        const id = replayId(g.link)
+        const [row] = await insertRows<Record<string, unknown>>('games', [{
+          match_id: match.id as number,
+          number: i + 1,
+          winner: g.winner,
+          replay_url: id ? `https://replay.pokemonshowdown.com/${id}` : g.link,
+          survivors: g.game.survivors,
+        }])
+
+        const perGame = (['a', 'b'] as const).flatMap((side) =>
+          g[side].lines.map((l) => ({
+            game_id: row.id as number,
+            side,
+            pokemon_id: idOf(side, l.pokemon),
+            kills: l.kills,
+            deaths: l.deaths,
+          })),
+        )
+        if (perGame.length) await insertRows('game_lines', perGame)
+      }
 
       // Remember the accounts, so the next report from these two fills itself in.
       for (const [account, player] of [[accounts[0], playerA], [accounts[1], playerB]] as const) {
@@ -289,7 +330,7 @@ function totals(games: AlignedGame[]) {
   for (const g of games) {
     for (const side of ['a', 'b'] as const) {
       for (const line of g[side].lines) {
-        const key = `${side}-${line.pokemon.split('-')[0].trim().toLowerCase()}`
+        const key = `${side}-${baseName(line.pokemon)}`
         const row = acc.get(key) ?? { side, pokemon: line.pokemon, kills: 0, deaths: 0 }
         if (row.pokemon.includes('*') && !line.pokemon.includes('*')) row.pokemon = line.pokemon
         row.kills += line.kills

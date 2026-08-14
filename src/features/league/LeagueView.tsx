@@ -4,7 +4,7 @@ import type { PokemonDex } from '../../data/types'
 import {
   byId, byTier, currentSeason, loadLeague, mergeDex, reloadSeason, subscribeLeague, tierClass,
   totalsFromMatches, type Standing,
-  type League, type LeaguePokemon, type PokemonTotals,
+  type GameLine, type League, type LeaguePokemon, type PokemonTotals,
 } from '../../data/league'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
@@ -46,8 +46,8 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
   return (
     <div className="league">
       {tab === 'standings' && <Standings league={league} />}
-      {tab === 'rosters' && <Rosters league={league} dex={dex} />}
-      {tab === 'schedule' && <Schedule league={league} />}
+      {tab === 'players' && <Players league={league} dex={dex} />}
+      {tab === 'matches' && <Matches league={league} dex={dex} />}
       {tab === 'board' && <Board league={league} dex={dex} />}
       {tab === 'stats' && <Stats league={league} dex={dex} />}
       {tab === 'rules' && <Rules league={league} />}
@@ -62,21 +62,29 @@ const MEDALS: Record<number, { icon: string; label: string }> = {
   3: { icon: '🥉', label: '3rd' },
 }
 
-/** A full week is every player paired off: 20 players, 4 per match. */
-const WEEK_MATCHES = 5
+/**
+ * A never-fainted Pokémon has an infinite K/D, and `Infinity - Infinity` is
+ * NaN, so ratios are compared through a finite stand-in rather than silently
+ * losing their ordering.
+ */
+const finite = (n: number) => (n === Infinity ? Number.MAX_VALUE : n)
 
 /**
- * The ranking shown when no column is sorted: best differential first, then
- * kills per game, then raw kills, then fewest deaths. Each step only decides
- * rows the one before it left tied.
+ * The ranking shown when no column is sorted. Each step only decides the rows
+ * the one before it left tied.
  */
 const byPowerRanking = (a: PokemonTotals, b: PokemonTotals) =>
   b.diff - a.diff
+  || finite(b.kd) - finite(a.kd)
   || b.killsPerGame - a.killsPerGame
   || b.kills - a.kills
+  || b.gamesPlayed - a.gamesPlayed
   || a.deaths - b.deaths
 
-type StatSort = 'kills' | 'deaths' | 'diff' | 'gamesPlayed' | 'killsPerGame' | 'name'
+/** The same order, said in words, for the header. */
+const POWER_RANKING_NOTE = 'Diff → K/D → KOs/game → KOs → games → fewest deaths'
+
+type StatSort = 'kills' | 'deaths' | 'diff' | 'gamesPlayed' | 'killsPerGame' | 'kd' | 'name'
 
 function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
   // dir 0 is the power ranking above; a column cycles through both directions
@@ -92,22 +100,24 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
       if (prev.dir !== 0) return { key, dir: 0 }
       return { key, dir: first }
     })
-  const [week, setWeek] = useState<number | 'all'>('all')
   const [query, setQuery] = useState('')
 
   const matches = useMemo(() => league.matchStats ?? [], [league.matchStats])
 
-  /** Recomputed per week filter, so the board reflects whatever is selected. */
-  const totals = useMemo(() => {
-    const scoped = week === 'all' ? matches : matches.filter((m) => m.week === week)
-    return Object.values(totalsFromMatches(scoped))
-  }, [matches, week])
+  /** The whole season, always: a ranking of the season is the point. */
+  const totals = useMemo(() => Object.values(totalsFromMatches(matches)), [matches])
+
+  /** Still grouped by week further down, where the match log is. */
+  const weeks = useMemo(
+    () => [...new Set(matches.map((m) => m.week))].sort((a, b) => a - b),
+    [matches],
+  )
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()
     return totals
       .filter((t) => !q || dex[t.pokemon]?.name.toLowerCase().includes(q))
-      // Kills per game breaks ties: two Pokémon on the same total are separated
+      // KOs per game breaks ties: two Pokémon on the same total are separated
       // by how few games it took. The tiebreak keeps its own direction so it
       // stays meaningful when the column is flipped.
       .sort((a, b) => {
@@ -116,14 +126,11 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
         if (!sort.dir) return byPowerRanking(a, b) || nameA.localeCompare(nameB)
         if (sort.key === 'name') return nameA.localeCompare(nameB) * sort.dir
         // dir -1 is descending, so subtract in ascending order and flip.
-        return (a[sort.key] - b[sort.key]) * sort.dir
+        return (finite(a[sort.key]) - finite(b[sort.key])) * sort.dir
           || b.killsPerGame - a.killsPerGame
           || nameA.localeCompare(nameB)
       })
   }, [totals, sort, query, dex])
-
-  const weeks = useMemo(() => [...new Set(matches.map((m) => m.week))].sort((a, b) => a - b), [matches])
-  const played = matches.filter((m) => m.a.lines.length || m.b.lines.length)
 
   if (!matches.length) {
     return <p className="panel-note">No match stats in the sheet yet. Re-run the import once they are filled in.</p>
@@ -141,31 +148,11 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           type="search" value={query} onChange={(e) => setQuery(e.target.value)}
           placeholder="Search Pokémon…" aria-label="Search stats"
         />
-        <div className="pill-group" role="group" aria-label="Filter by week">
-          <button
-            type="button" className={`pill${week === 'all' ? ' is-active' : ''}`}
-            onClick={() => setWeek('all')}
-          >
-            All weeks<em>{played.length}</em>
-          </button>
-          {weeks.map((w) => {
-            const n = matches.filter((m) => m.week === w && (m.a.lines.length || m.b.lines.length)).length
-            // Five matches is a full week; anything short is still being played
-            // or recorded, and the colour says which at a glance.
-            const state = n >= WEEK_MATCHES ? 'is-complete' : 'is-partial'
-            return (
-              <button
-                key={w} type="button"
-                className={`pill week-pill ${state}${week === w ? ' is-active' : ''}`}
-                onClick={() => setWeek(w)} disabled={!n}
-                title={`${n} of ${WEEK_MATCHES} matches recorded`}
-              >
-                Week {w}
-              </button>
-            )
-          })}
-        </div>
         <span className="count">{rows.length} Pokémon</span>
+        {/* Shown only while the power ranking is what is actually applied —
+            once a column is picked, that column is the order, and the chain
+            would be describing something that is no longer happening. */}
+        {!sort.dir && <p className="sort-note">{POWER_RANKING_NOTE}</p>}
       </div>
 
       <section className="panel">
@@ -174,9 +161,9 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
             <thead>
               <tr>
                 <th className="rank-col">#</th>
-                {([['name', 'Pokémon'], ['gamesPlayed', 'Games'], ['kills', 'Kills'],
-                   ['killsPerGame', 'K/Game'], ['deaths', 'Deaths'],
-                   ['diff', '+/-']] as [StatSort, string][]).map(([key, label]) => (
+                {([['name', 'Pokémon'], ['gamesPlayed', 'Games'], ['kills', 'KOs'],
+                   ['killsPerGame', 'KOs/Game'], ['deaths', 'Deaths'], ['kd', 'K/D'],
+                   ['diff', 'Diff']] as [StatSort, string][]).map(([key, label]) => (
                   <th
                     key={key}
                     className={`sortable${key === 'name' ? ' col-name' : ''}${sort.key === key && sort.dir ? ' is-sorted' : ''}`}
@@ -226,6 +213,11 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                     <td>{t.kills}</td>
                     <td>{t.killsPerGame.toFixed(2)}</td>
                     <td>{t.deaths}</td>
+                    {/* A Pokémon that has never fainted has no ratio to give,
+                        which is better said than rounded to a number. */}
+                    <td title={t.deaths ? undefined : 'Never fainted'}>
+                      {!t.kills && !t.deaths ? '—' : t.kd === Infinity ? '∞' : t.kd.toFixed(2)}
+                    </td>
                     <td className={t.diff > 0 ? 'pos' : t.diff < 0 ? 'neg' : ''}>
                       {t.diff > 0 ? `+${t.diff}` : t.diff}
                     </td>
@@ -242,7 +234,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
       </section>
 
       <div className="match-log">
-        {weeks.filter((w) => week === 'all' || w === week).map((w) => (
+        {weeks.map((w) => (
           <section key={w} className="panel">
             <h3>Week {w}</h3>
             <div className="match-cards">
@@ -268,7 +260,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                               <span className="ml-name">
                                 <PokemonLink id={l.pokemon}>{mon?.name ?? l.pokemon}</PokemonLink>
                               </span>
-                              <span className="ml-kd" title={`${l.kills} kills, ${l.deaths} deaths`}>
+                              <span className="ml-kd" title={`${l.kills} KOs, ${l.deaths} deaths`}>
                                 <em className="k">{l.kills}</em>/<em className="d">{l.deaths}</em>
                               </span>
                             </li>
@@ -432,74 +424,157 @@ function Standings({ league }: { league: League }) {
   )
 }
 
-function Rosters({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
+/**
+ * The players, in ranking order, each opening onto their team.
+ *
+ * Ordered by where they stand rather than by seed or by name, so the list reads
+ * as the league currently is. A player's Pokémon are theirs alone — nobody else
+ * can draft them — so a Pokémon's league-wide totals are that player's totals
+ * for it, and no separate per-player tally is needed.
+ */
+function Players({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
   const [query, setQuery] = useState('')
+  const [open, setOpen] = useState<string | null>(null)
 
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    return league.players.filter((p) => {
-      if (!league.rosters[p.id]?.length) return false
-      if (!q) return true
-      if (p.name.toLowerCase().includes(q) || p.team?.toLowerCase().includes(q)) return true
-      return league.rosters[p.id].some((pick) => dex[pick.pokemon]?.name.toLowerCase().includes(q))
-    })
-  }, [league, dex, query])
+  const totals = useMemo(
+    () => totalsFromMatches(league.matchStats ?? []),
+    [league.matchStats],
+  )
+  const standing = useMemo(
+    () => Object.fromEntries(league.standings.map((s) => [s.player, s])),
+    [league.standings],
+  )
+
+  const ordered = useMemo(
+    () => [...league.players].sort(
+      (a, b) => (standing[a.id]?.rank ?? Infinity) - (standing[b.id]?.rank ?? Infinity)
+        || a.seed - b.seed,
+    ),
+    [league.players, standing],
+  )
+
+  const q = query.trim().toLowerCase()
+  const visible = useMemo(() => ordered.filter((p) => {
+    if (!q) return true
+    if (p.name.toLowerCase().includes(q) || p.team?.toLowerCase().includes(q)) return true
+    return (league.rosters[p.id] ?? []).some(
+      (pick) => (dex[pick.pokemon]?.name ?? pick.pokemon).toLowerCase().includes(q),
+    )
+  }), [ordered, league.rosters, dex, q])
+
+  // A search for a Pokémon is a question about whose team it is on, and the
+  // answer is inside the row. Searching opens what it found.
+  const isOpen = (id: string) => (q ? true : open === id)
 
   return (
     <>
       <div className="controls">
         <input
           type="search" value={query} onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search player, team, or Pokémon…" aria-label="Search rosters"
+          placeholder="Search player, team, or Pokémon…" aria-label="Search players"
         />
         <span className="count">{visible.length} of {league.players.length}</span>
       </div>
-      <div className="roster-grid">
-        {visible.map((p) => {
-          // Best picks first, so the shape of a roster reads at a glance.
-          const picks = [...league.rosters[p.id]].sort(
-            (a, b) => byTier(a.tier, b.tier) || (dex[b.pokemon]?.bst ?? 0) - (dex[a.pokemon]?.bst ?? 0),
-          )
-          return (
-            <section key={p.id} className="panel roster-card">
-              <header>
-                <h3>{p.team ?? p.name}</h3>
-                {p.team && <span className="panel-note">{p.name}</span>}
-              </header>
-              <ul>
-                {picks.map((pick) => {
-                  const mon = dex[pick.pokemon]
-                  if (!mon) return null
-                  return (
-                    <li key={pick.pokemon}>
-                      <PokemonLink id={pick.pokemon} title={mon.name}>
-                        <img src={spriteUrl(mon)} alt="" width={44} height={36} loading="lazy" />
-                      </PokemonLink>
-                      <span className="pick-name">
-                        <PokemonLink id={pick.pokemon}>{mon.name}</PokemonLink>
-                      </span>
-                      <span className="pick-types">
-                        {mon.types.map((t) => <TypeChip key={t} type={t} />)}
-                      </span>
-                      <span className={tierClass(pick.tier)}>{pick.tier}</span>
-                    </li>
-                  )
-                })}
-              </ul>
-            </section>
-          )
-        })}
-      </div>
+
+      <section className="panel">
+        <ul className="player-list">
+          {visible.map((p) => {
+            const picks = [...(league.rosters[p.id] ?? [])].sort(
+              (a, b) => byTier(a.tier, b.tier) || (dex[b.pokemon]?.bst ?? 0) - (dex[a.pokemon]?.bst ?? 0),
+            )
+            const s = standing[p.id]
+            const showing = isOpen(p.id)
+            return (
+              <li key={p.id} className={showing ? 'is-open' : undefined}>
+                <button
+                  type="button"
+                  className="player-head"
+                  aria-expanded={showing}
+                  onClick={() => setOpen(showing && !q ? null : p.id)}
+                >
+                  <span className="player-caret" aria-hidden="true">{showing ? '▾' : '▸'}</span>
+                  {s?.rank ? <span className="player-rank">{s.rank}</span> : null}
+                  <span className="player-name">{p.name}</span>
+                  <span className="player-team">{p.team ?? '—'}</span>
+                  {s && (
+                    <span className="player-record">
+                      {s.wins}–{s.losses}
+                      <em>{s.points} pts</em>
+                    </span>
+                  )}
+                  <span className="player-count">{picks.length}</span>
+                </button>
+
+                {showing && (
+                  <div className="player-body">
+                    {s && (
+                      <dl className="player-stats">
+                        {([
+                          ['Record', `${s.wins}–${s.losses}`],
+                          ['Games', `${s.gamesWon}–${s.gamesLost}`],
+                          ['Differential', s.monDiff > 0 ? `+${s.monDiff}` : `${s.monDiff}`],
+                          ['Points', `${s.points}`],
+                        ] as [string, string][]).map(([k, v]) => (
+                          <div key={k}><dt>{k}</dt><dd>{v}</dd></div>
+                        ))}
+                      </dl>
+                    )}
+                    {picks.length === 0 ? (
+                      <p className="panel-note">No team drafted yet.</p>
+                    ) : (
+                      <ul className="player-picks">
+                        {picks.map((pick) => {
+                          const mon = dex[pick.pokemon]
+                          if (!mon) return null
+                          const t = totals[pick.pokemon]
+                          return (
+                            <li key={pick.pokemon}>
+                              <PokemonLink id={pick.pokemon} title={mon.name}>
+                                <img src={spriteUrl(mon)} alt="" width={44} height={36} loading="lazy" />
+                              </PokemonLink>
+                              <span className="pick-name">
+                                <PokemonLink id={pick.pokemon}>{mon.name}</PokemonLink>
+                              </span>
+                              <span className="pick-types">
+                                {mon.types.map((ty) => <TypeChip key={ty} type={ty} />)}
+                              </span>
+                              <span className={tierClass(pick.tier)}>{pick.tier}</span>
+                              <span className="pick-kd" title="KOs / deaths">
+                                {t ? <><b>{t.kills}</b> / {t.deaths}</> : <em>—</em>}
+                              </span>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+      </section>
     </>
   )
 }
 
-function Schedule({ league }: { league: League }) {
+/**
+ * The matches, and the games inside them.
+ *
+ * A match is a best-of-three, so its 2-1 is a summary of three battles that
+ * each had their own story. Any game reported from a replay can be opened to
+ * see who knocked out what, and links back to the replay itself.
+ *
+ * Matches imported from the spreadsheet have no games underneath — the sheet
+ * never recorded them — so they render exactly as they always did.
+ */
+function Matches({ league, dex }: { league: League; dex: PokemonDex }) {
   const people = useMemo(() => byId(league.players), [league.players])
   const weeks = useMemo(
     () => [...new Set(league.schedule.map((m) => m.week))].sort((a, b) => a - b),
     [league.schedule],
   )
+  const [open, setOpen] = useState<string | null>(null)
   const label = (ids: string[]) => ids.map((p) => people[p]?.name ?? p).join(' + ')
 
   return (
@@ -518,16 +593,94 @@ function Schedule({ league }: { league: League }) {
                 return `side ${won ? 'won' : 'lost'}`
               }
               return (
-                <li key={i}>
-                  <span className={cls(true)}>{label(m.a)}</span>
-                  <span className="score">{done ? `${m.scoreA} – ${m.scoreB}` : 'vs'}</span>
-                  <span className={cls(false)}>{label(m.b)}</span>
+                <li key={i} className={m.games?.length ? 'has-games' : undefined}>
+                  <div className="match-row">
+                    <span className={cls(true)}>{label(m.a)}</span>
+                    <span className="score">{done ? `${m.scoreA} – ${m.scoreB}` : 'vs'}</span>
+                    <span className={cls(false)}>{label(m.b)}</span>
+                  </div>
+                  {m.games && m.games.length > 0 && (
+                    <ol className="game-list">
+                      {[...m.games].sort((x, y) => x.number - y.number).map((g) => {
+                        const key = `${week}-${i}-${g.number}`
+                        const isOpen = open === key
+                        const winner = g.winner === 'a' ? label(m.a) : g.winner === 'b' ? label(m.b) : null
+                        return (
+                          <li key={g.number}>
+                            <div className="game-head">
+                              <button
+                                type="button"
+                                className="game-toggle"
+                                aria-expanded={isOpen}
+                                onClick={() => setOpen(isOpen ? null : key)}
+                              >
+                                <span className="game-caret" aria-hidden="true">{isOpen ? '▾' : '▸'}</span>
+                                <span className="game-no">Game {g.number}</span>
+                                {winner && <span className="game-winner">{winner}</span>}
+                                {g.survivors !== null && (
+                                  <span className="game-survivors">
+                                    {g.survivors} left
+                                  </span>
+                                )}
+                              </button>
+                              {g.replayUrl && (
+                                <a
+                                  className="game-replay"
+                                  href={g.replayUrl}
+                                  target="_blank"
+                                  rel="noreferrer noopener"
+                                >
+                                  Replay ↗
+                                </a>
+                              )}
+                            </div>
+                            {isOpen && (
+                              <div className="game-detail">
+                                <GameSide title={label(m.a)} lines={g.a} dex={dex} league={league} />
+                                <GameSide title={label(m.b)} lines={g.b} dex={dex} league={league} />
+                              </div>
+                            )}
+                          </li>
+                        )
+                      })}
+                    </ol>
+                  )}
                 </li>
               )
             })}
           </ul>
         </section>
       ))}
+    </div>
+  )
+}
+
+/** One team's Pokémon in one game, worst-hit last. */
+function GameSide({
+  title, lines, dex, league,
+}: { title: string; lines: GameLine[]; dex: PokemonDex; league: League }) {
+  const board = league.board
+  const sorted = [...lines].sort((a, b) => b.kills - a.kills || a.deaths - b.deaths)
+  return (
+    <div className="game-side">
+      <h4>{title}</h4>
+      <ul>
+        {sorted.map((l) => {
+          const mon = dex[l.pokemon]
+          const name = mon?.name ?? board[l.pokemon]?.name ?? l.pokemon
+          return (
+            <li key={l.pokemon} className={l.kills || l.deaths ? undefined : 'idle'}>
+              <PokemonLink id={l.pokemon} title={name}>
+                {mon && <img src={spriteUrl(mon)} alt="" width={36} height={30} loading="lazy" />}
+                <span>{name}</span>
+              </PokemonLink>
+              <span className="game-kd" title={`${l.kills} KOs, fainted ${l.deaths} times`}>
+                <b>{l.kills}</b> / {l.deaths}
+              </span>
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 }

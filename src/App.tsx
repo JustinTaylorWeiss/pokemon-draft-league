@@ -23,10 +23,14 @@ const LEAGUE_SHEET_URL =
   'https://docs.google.com/spreadsheets/d/1xnKp-XtR9o-zJy1BNS78PxXy891zv_n4rawKto6rlyE/export?format=xlsx'
 
 /** "Draft League Season 4 VGC Reg F" -> "Season 4". */
-type View = 'league' | 'matchup' | 'dex'
+type View = 'league' | 'draft' | 'matchup' | 'dex'
 
 const VIEWS: { key: View; label: string }[] = [
   { key: 'league', label: 'League Sheet' },
+  // The draft is its own thing rather than a tab inside the league: it happens
+  // before a season rather than during one, and it is about to grow a live
+  // draft screen alongside the board.
+  { key: 'draft', label: 'Draft' },
   { key: 'matchup', label: 'Quick Matchup' },
   { key: 'dex', label: 'Dex' },
 ]
@@ -185,6 +189,7 @@ export default function App() {
 
       <main className="shell">
         {view === 'league' && <LeagueView tab={leagueTab} />}
+        {view === 'draft' && <LeagueView tab="board" />}
         {view === 'matchup' && <QuickMatchup />}
         {view === 'dex' && <Dex />}
       </main>
