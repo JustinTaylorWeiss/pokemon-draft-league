@@ -3,6 +3,8 @@ import { useElementHeight } from './lib/useElementHeight'
 import { QuickMatchup } from './features/quick-matchup/QuickMatchup'
 import { LeagueView } from './features/league/LeagueView'
 import { LEAGUE_TABS, type LeagueTab } from './features/league/tabs'
+import { DRAFT_TABS, type DraftTab } from './features/league/draftTabs'
+import { DraftToggle } from './features/league/DraftToggle'
 import { ReportMatch } from './features/league/ReportMatch'
 import { ManagePlayers } from './features/league/ManagePlayers'
 import {
@@ -41,6 +43,7 @@ export default function App() {
   const [view, setView] = useState<View>('league')
   // Lifted so the secondary bar can sit directly under the primary one.
   const [leagueTab, setLeagueTab] = useState<LeagueTab>('standings')
+  const [draftTab, setDraftTab] = useState<DraftTab>('board')
   // Loaded here too so the secondary nav can name the season; the loader caches,
   // so this shares one fetch with the views below.
   const [league, setLeague] = useState<League | null>(null)
@@ -195,6 +198,31 @@ export default function App() {
         </div>
       </header>
 
+      {view === 'draft' && (
+        <div className="subbar">
+          <div className="bar-inner">
+            <nav className="sub-nav">
+              {DRAFT_TABS.map((t) => (
+                <button
+                  key={t.key} type="button"
+                  className={draftTab === t.key ? 'is-active' : ''}
+                  onClick={() => setDraftTab(t.key)}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </nav>
+            {/* Opening and closing the draft is the one gated control, so it
+                sits apart from the tabs at the far end. */}
+            {onDatabase && (
+              <div className="sub-actions">
+                <DraftToggle onChanged={() => reloadSeason(season)} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {view === 'league' && (
         <div className="subbar">
           <div className="bar-inner">
@@ -223,7 +251,7 @@ export default function App() {
 
       <main className="shell">
         {view === 'league' && <LeagueView tab={leagueTab} />}
-        {view === 'draft' && <LeagueView tab="board" />}
+        {view === 'draft' && <LeagueView tab={draftTab === 'teams' ? 'draft-teams' : 'board'} />}
         {view === 'rules' && <LeagueView tab="rules" />}
         {view === 'matchup' && <QuickMatchup />}
         {view === 'dex' && <Dex />}

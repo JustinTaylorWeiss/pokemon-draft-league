@@ -12,6 +12,7 @@ import { TypeChip } from '../../components/TypeChip'
 import type { LeagueTab } from './tabs'
 import './league.css'
 import { PokemonLink } from '../../components/PokemonLink'
+import { DraftTeams } from './DraftTeams'
 
 export function LeagueView({ tab }: { tab: LeagueTab }) {
   const [league, setLeague] = useState<League | null>(null)
@@ -47,6 +48,7 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
       {tab === 'standings' && <Standings league={league} dex={dex} />}
       {tab === 'matches' && <Matches league={league} dex={dex} />}
       {tab === 'board' && <Board league={league} dex={dex} />}
+      {tab === 'draft-teams' && <DraftTeams league={league} dex={dex} />}
       {tab === 'stats' && <Stats league={league} dex={dex} />}
       {tab === 'rules' && <Rules league={league} />}
     </div>

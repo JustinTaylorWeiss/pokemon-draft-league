@@ -130,6 +130,51 @@ export async function revertEvent(eventId: number): Promise<number> {
   return data as number
 }
 
+export interface DraftState {
+  status: 'not_started' | 'active' | 'complete'
+  current_round: number | null
+  current_pick: number | null
+  started_at: string | null
+}
+
+/** What the draft is currently doing. */
+export async function draftState(): Promise<DraftState | null> {
+  const { data } = await db.from('draft_state').select('*').maybeSingle()
+  return (data as DraftState) ?? null
+}
+
+/** Closes the draft. Clears nothing — the rosters are the season. */
+export async function endDraft(passphrase: string) {
+  const { data, error } = await db.rpc('end_draft', { passphrase, who: currentActor() })
+  if (error) throw error
+  return data
+}
+
+/**
+ * Claims a Pokémon, writing the roster row and the board's claim together.
+ *
+ * Not passphrase-gated: drafting is the thing everyone is here to do. The
+ * database refuses one somebody else already holds, and does the check inside
+ * the same transaction as the write, so two people picking at once cannot both
+ * come away with it.
+ */
+export async function claimPokemon(playerId: string, pokemonId: string) {
+  const { data, error } = await db.rpc('claim_pokemon', {
+    player_id: playerId, pokemon_id: pokemonId, who: currentActor(),
+  })
+  if (error) throw error
+  return data as string
+}
+
+/** Gives a Pokémon back to the board. */
+export async function releasePokemon(playerId: string, pokemonId: string) {
+  const { data, error } = await db.rpc('release_pokemon', {
+    player_id: playerId, pokemon_id: pokemonId, who: currentActor(),
+  })
+  if (error) throw error
+  return data as string
+}
+
 /** Opens the draft. The passphrase is checked by the database, not here. */
 export async function startDraft(passphrase: string) {
   const { data, error } = await db.rpc('start_draft', {
