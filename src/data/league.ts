@@ -55,6 +55,8 @@ export interface GameLine {
   pokemon: string
   kills: number
   deaths: number
+  /** Whether it was sent out: six are previewed, four are usually played. */
+  brought: boolean
 }
 
 /**

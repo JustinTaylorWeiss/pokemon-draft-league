@@ -17,7 +17,17 @@ export interface ReplaySide {
   account: string
   /** Team preview, so a Pokémon that never switched in is still listed. */
   team: string[]
-  lines: { pokemon: string; kills: number; deaths: number }[]
+  lines: {
+    pokemon: string
+    kills: number
+    deaths: number
+    /**
+     * Whether it was actually brought — six are previewed and four are played.
+     * Not derivable from the numbers: a Pokémon that came in and neither scored
+     * nor fainted reads 0/0, exactly like one that sat on the bench.
+     */
+    brought: boolean
+  }[]
 }
 
 export interface ReplayGame {
@@ -105,6 +115,8 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
 
   /** Which team slot is in each battle position, which the log does not say directly. */
   const active: Record<string, number> = {}
+  /** Team slots that were sent out at any point, by side. */
+  const brought: Record<string, Set<number>> = { p1: new Set(), p2: new Set() }
   /** Last attacker to damage each Pokémon, which is who gets the KO. */
   const lastHitBy: Record<string, { side: string; index: number } | null> = {}
 
@@ -125,7 +137,9 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       const who = parseIdent(parts[2] ?? '')
       if (who) {
         const slot = (parts[2] ?? '').split(':')[0].trim()
-        active[slot] = teamIndex(teams[who.side], speciesOf(parts[3] ?? who.name))
+        const index = teamIndex(teams[who.side], speciesOf(parts[3] ?? who.name))
+        active[slot] = index
+        brought[who.side]?.add(index)
       }
 
     } else if (kind === 'move') {
@@ -181,6 +195,9 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       pokemon: mon,
       kills: kills[key][i] ?? 0,
       deaths: deaths[key][i] ?? 0,
+      // A Pokémon that fainted was plainly on the field, even in the odd log
+      // where its switch-in is missing.
+      brought: brought[key].has(i) || (deaths[key][i] ?? 0) > 0,
     })),
   })
 
@@ -190,8 +207,8 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
   // Survivors are counted from the team that actually brought Pokemon, so a
   // team preview of six does not inflate a four-Pokemon VGC bring.
   const winSide = won === 'a' ? a : won === 'b' ? b : null
-  const brought = winSide ? winSide.lines.filter((l) => l.kills || l.deaths).length : 0
+  const played = winSide ? winSide.lines.filter((l) => l.brought).length : 0
   const lost = winSide ? winSide.lines.reduce((n, l) => n + l.deaths, 0) : 0
 
-  return { format, winner: won, a, b, survivors: Math.max(0, brought - lost) }
+  return { format, winner: won, a, b, survivors: Math.max(0, played - lost) }
 }

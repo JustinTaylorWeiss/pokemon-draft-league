@@ -191,9 +191,13 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
       const idOf = (side: 'a' | 'b', mon: string) =>
         canonical.get(`${side}-${baseName(mon)}`) ?? toId(mon)
 
-      const lineOf = (side: 'a' | 'b') => (l: { pokemon: string; kills: number; deaths: number }) => ({
-        pokemon_id: idOf(side, l.pokemon), kills: l.kills, deaths: l.deaths,
-      })
+      const lineOf = (side: 'a' | 'b') =>
+        (l: { pokemon: string; kills: number; deaths: number; brought: boolean }) => ({
+          pokemon_id: idOf(side, l.pokemon),
+          kills: l.kills,
+          deaths: l.deaths,
+          brought: l.brought,
+        })
 
       // Numbered in the order they were played, which is the order they were
       // pasted — game 1 in the first field. The score is left to the database,

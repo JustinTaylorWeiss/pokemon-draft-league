@@ -4,7 +4,7 @@ import type { PokemonDex } from '../../data/types'
 import {
   byId, byTier, currentSeason, loadLeague, mergeDex, reloadSeason, subscribeLeague, tierClass,
   totalsFromMatches, type Standing,
-  type League, type LeaguePokemon, type PokemonTotals,
+  type GameLine, type League, type LeaguePokemon, type PokemonTotals,
 } from '../../data/league'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
@@ -46,7 +46,7 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
   return (
     <div className="league">
       {tab === 'standings' && <Standings league={league} dex={dex} />}
-      {tab === 'matches' && <Matches league={league} />}
+      {tab === 'matches' && <Matches league={league} dex={dex} />}
       {tab === 'board' && <Board league={league} dex={dex} />}
       {tab === 'stats' && <Stats league={league} dex={dex} />}
       {tab === 'rules' && <Rules league={league} />}
@@ -83,7 +83,7 @@ const byPowerRanking = (a: PokemonTotals, b: PokemonTotals) =>
 /** The same order, said in words, for the header. */
 const POWER_RANKING_NOTE = 'Diff → K/D → KOs/game → KOs → games → fewest deaths'
 
-type StatSort = 'kills' | 'deaths' | 'diff' | 'gamesPlayed' | 'killsPerGame' | 'kd' | 'name'
+type StatSort = 'kills' | 'deaths' | 'diff' | 'gamesPlayed' | 'killsPerGame' | 'kd' | 'name' | 'tier'
 
 function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
   // dir 0 is the power ranking above; a column cycles through both directions
@@ -93,7 +93,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
   const toggleSort = (key: StatSort) =>
     setSort((prev) => {
       // Numbers open highest-first; the name column opens A-Z.
-      const first: 1 | -1 = key === 'name' ? 1 : -1
+      const first: 1 | -1 = key === 'name' || key === 'tier' ? 1 : -1
       if (prev.key !== key) return { key, dir: first }
       if (prev.dir === first) return { key, dir: (first === 1 ? -1 : 1) as 1 | -1 }
       if (prev.dir !== 0) return { key, dir: 0 }
@@ -124,6 +124,11 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
         const nameB = dex[b.pokemon]?.name ?? ''
         if (!sort.dir) return byPowerRanking(a, b) || nameA.localeCompare(nameB)
         if (sort.key === 'name') return nameA.localeCompare(nameB) * sort.dir
+        // Best tier first, not "Banned, High, Low, Mid, Top" alphabetically.
+        if (sort.key === 'tier') {
+          return byTier(dex[a.pokemon]?.draftTier ?? null, dex[b.pokemon]?.draftTier ?? null) * sort.dir
+            || nameA.localeCompare(nameB)
+        }
         // dir -1 is descending, so subtract in ascending order and flip.
         return (finite(a[sort.key]) - finite(b[sort.key])) * sort.dir
           || b.killsPerGame - a.killsPerGame
@@ -160,7 +165,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
             <thead>
               <tr>
                 <th className="rank-col">#</th>
-                {([['name', 'Pokémon'], ['gamesPlayed', 'Games'], ['kills', 'KOs'],
+                {([['name', 'Pokémon'], ['tier', 'Tier'], ['gamesPlayed', 'Games'], ['kills', 'KOs'],
                    ['killsPerGame', 'KOs/Game'], ['deaths', 'Deaths'], ['kd', 'K/D'],
                    ['diff', 'Diff']] as [StatSort, string][]).map(([key, label]) => (
                   <th
@@ -208,6 +213,11 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                         {mon?.types[1] && <TypeChip type={mon.types[1]} />}
                       </span>
                     </th>
+                    <td>
+                      {mon?.draftTier
+                        ? <span className={tierClass(mon.draftTier)}>{mon.draftTier}</span>
+                        : <em className="none">—</em>}
+                    </td>
                     <td>{t.gamesPlayed}</td>
                     <td>{t.kills}</td>
                     <td>{t.killsPerGame.toFixed(2)}</td>
@@ -451,7 +461,9 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                                 <th className="team-col-types">Types</th>
                                 <th>Games</th>
                                 <th>KOs</th>
+                                <th>KOs/Game</th>
                                 <th>Deaths</th>
+                                <th title="KOs per death">K/D</th>
                                 <th title="KOs minus deaths">Diff</th>
                               </tr>
                             </thead>
@@ -481,7 +493,13 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                                         has not played is not one that did nothing. */}
                                     <td>{t ? t.gamesPlayed : '—'}</td>
                                     <td>{t ? t.kills : '—'}</td>
+                                    <td>{t ? t.killsPerGame.toFixed(2) : '—'}</td>
                                     <td>{t ? t.deaths : '—'}</td>
+                                    <td>
+                                      {!t || (!t.kills && !t.deaths)
+                                        ? '—'
+                                        : t.kd === Infinity ? '∞' : t.kd.toFixed(2)}
+                                    </td>
                                     <td className={t && t.diff > 0 ? 'pos' : t && t.diff < 0 ? 'neg' : ''}>
                                       {t ? (t.diff > 0 ? `+${t.diff}` : t.diff) : '—'}
                                     </td>
@@ -514,23 +532,38 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
  * Matches imported from the spreadsheet have no games underneath — the sheet
  * never recorded them — so they render exactly as they always did.
  */
-function Matches({ league }: { league: League }) {
+function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
   const people = useMemo(() => byId(league.players), [league.players])
   const weeks = useMemo(
     () => [...new Set(league.schedule.map((m) => m.week))].sort((a, b) => a - b),
     [league.schedule],
   )
+  const [week, setWeek] = useState<number | 'all'>('all')
   const [recording, setRecording] = useState(false)
   const editable = currentSeason().source === 'database'
   const label = (ids: string[]) => ids.map((p) => people[p]?.name ?? p).join(' + ')
+  const shown = week === 'all' ? weeks : weeks.filter((w) => w === week)
 
   return (
     <div className="schedule">
-      {editable && (
-        <div className="standings-actions matches-actions">
-          <button type="button" onClick={() => setRecording(true)}>Record a match</button>
-        </div>
-      )}
+      <div className="controls matches-controls">
+        {editable && (
+          <button type="button" className="record-btn" onClick={() => setRecording(true)}>
+            Record a match
+          </button>
+        )}
+        <label className="week-picker">
+          Week
+          <select
+            value={week}
+            onChange={(e) => setWeek(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+          >
+            <option value="all">All weeks</option>
+            {weeks.map((w) => <option key={w} value={w}>Week {w}</option>)}
+          </select>
+        </label>
+      </div>
+
       {recording && (
         <ReportMatch
           league={league}
@@ -538,11 +571,12 @@ function Matches({ league }: { league: League }) {
           onSaved={() => reloadSeason(currentSeason().id)}
         />
       )}
-      {weeks.map((week) => (
-        <section key={week} className="panel">
-          <h3>Week {week}</h3>
+
+      {shown.map((w) => (
+        <section key={w} className="panel">
+          <h3>Week {w}</h3>
           <ul className="match-list">
-            {league.schedule.filter((m) => m.week === week).map((m, i) => {
+            {league.schedule.filter((m) => m.week === w).map((m, i) => {
               const done = m.scoreA !== null && m.scoreB !== null
               // Outline the result: green on the winner, red on the loser.
               const cls = (isA: boolean) => {
@@ -552,61 +586,78 @@ function Matches({ league }: { league: League }) {
                 return `side ${won ? 'won' : 'lost'}`
               }
               const games = m.games ? [...m.games].sort((x, y) => x.number - y.number) : []
-
-              /**
-               * The games a side won, linking out to each replay.
-               *
-               * Which games a player took is a fact about that player, so it
-               * belongs next to their name; and the useful thing to do with a
-               * game is watch it, so the label is the link.
-               */
-              const wonBy = (side: 'a' | 'b') => {
-                const mine = games.filter((g) => g.winner === side)
-                if (!mine.length) return null
-                return (
-                  <span className="side-games">
-                    {mine.map((g) => (g.replayUrl ? (
-                      <a
-                        key={g.number}
-                        className="side-game"
-                        href={g.replayUrl}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        title={`Watch game ${g.number} on Pokémon Showdown`}
-                        // The row underneath is not a link; this is.
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        Game {g.number} ↗
-                      </a>
-                    ) : (
-                      <span key={g.number} className="side-game no-replay" title="No replay saved">
-                        Game {g.number}
-                      </span>
-                    )))}
-                  </span>
-                )
-              }
-
               return (
                 <li key={i} className={games.length ? 'has-games' : undefined}>
                   <div className="match-row">
-                    <span className={cls(true)}>
-                      <span className="side-name">{label(m.a)}</span>
-                      {wonBy('a')}
-                    </span>
+                    <span className={cls(true)}>{label(m.a)}</span>
                     <span className="score">{done ? `${m.scoreA} – ${m.scoreB}` : 'vs'}</span>
-                    <span className={cls(false)}>
-                      {wonBy('b')}
-                      <span className="side-name">{label(m.b)}</span>
-                    </span>
+                    <span className={cls(false)}>{label(m.b)}</span>
                   </div>
 
+                  {games.map((g) => (
+                    <div key={g.number} className="game-row">
+                      <GameTeam lines={g.a} dex={dex} won={g.winner === 'a'} align="left" />
+                      <span className="game-label">
+                        {g.replayUrl ? (
+                          <a href={g.replayUrl} target="_blank" rel="noreferrer noopener">
+                            G{g.number} ↗
+                          </a>
+                        ) : `G${g.number}`}
+                      </span>
+                      <GameTeam lines={g.b} dex={dex} won={g.winner === 'b'} align="right" />
+                    </div>
+                  ))}
                 </li>
               )
             })}
           </ul>
         </section>
       ))}
+    </div>
+  )
+}
+
+/**
+ * One side's six Pokémon for one game: the ones brought, a gap, then the bench.
+ *
+ * A Pokémon that fainted is greyed out, so the state of the team at the end of
+ * the game reads at a glance. Brought-but-idle and benched look identical in
+ * the numbers — both are 0/0 — which is why the replay's switch-ins are
+ * recorded rather than inferred.
+ */
+function GameTeam({
+  lines, dex, won, align,
+}: {
+  lines: GameLine[]
+  dex: Record<string, LeaguePokemon>
+  won: boolean
+  align: 'left' | 'right'
+}) {
+  const played = lines.filter((l) => l.brought)
+  const bench = lines.filter((l) => !l.brought)
+  const mon = (l: GameLine) => {
+    const entry = dex[l.pokemon]
+    const name = entry?.name ?? l.pokemon
+    return (
+      <PokemonLink
+        key={l.pokemon}
+        id={l.pokemon}
+        title={`${name} — ${l.kills} KO${l.kills === 1 ? '' : 's'}, ${
+          l.deaths ? 'knocked out' : 'survived'}`}
+      >
+        {entry && (
+          <img
+            className={l.deaths ? 'is-fainted' : undefined}
+            src={spriteUrl(entry)} alt={name} width={38} height={31} loading="lazy"
+          />
+        )}
+      </PokemonLink>
+    )
+  }
+  return (
+    <div className={`game-team ${align}${won ? ' won' : ''}`}>
+      <span className="game-brought">{played.map(mon)}</span>
+      {bench.length > 0 && <span className="game-bench">{bench.map(mon)}</span>}
     </div>
   )
 }
