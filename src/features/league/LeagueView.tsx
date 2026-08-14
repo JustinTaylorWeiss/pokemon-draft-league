@@ -343,32 +343,20 @@ function Rules({ league }: { league: League }) {
 /**
  * The league's tiebreak order, applied in full.
  *
- * Head-to-head sits last and only separates two players who are level on
- * everything else, so it is resolved from the schedule rather than stored:
- * whoever won more of the series they played against each other.
+ * Points, then the rate of series won, then the raw wins behind that rate,
+ * then fewest losses, then Pokémon differential. Each step only decides the
+ * rows the one before it left tied.
  */
 function rankStandings(league: League): Standing[] {
-  const headToHead = (a: Standing, b: Standing) => {
-    let wins = 0
-    for (const m of league.schedule) {
-      if (m.scoreA === null || m.scoreB === null) continue
-      const aOnA = m.a.includes(a.player), bOnB = m.b.includes(b.player)
-      const aOnB = m.b.includes(a.player), bOnA = m.a.includes(b.player)
-      if (aOnA && bOnB) wins += m.scoreA > m.scoreB ? 1 : m.scoreA < m.scoreB ? -1 : 0
-      else if (aOnB && bOnA) wins += m.scoreB > m.scoreA ? 1 : m.scoreB < m.scoreA ? -1 : 0
-    }
-    return wins
-  }
-
   const rate = (won: number, total: number) => (total ? won / total : 0)
 
   return [...league.standings]
     .sort((a, b) =>
       b.points - a.points
       || rate(b.wins, b.wins + b.losses) - rate(a.wins, a.wins + a.losses)
-      || rate(b.gamesWon, b.gamesWon + b.gamesLost) - rate(a.gamesWon, a.gamesWon + a.gamesLost)
+      || b.wins - a.wins
+      || a.losses - b.losses
       || b.monDiff - a.monDiff
-      || headToHead(b, a)
       || a.name.localeCompare(b.name))
     .map((s, i) => ({ ...s, rank: i + 1 }))
 }
@@ -385,29 +373,26 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
         {/* The tiebreaks in the order they apply, sitting where the columns they
             refer to are — one line, so it reads as a caption and not a paragraph. */}
         <p className="sort-note">
-          Pts → Match Win % → Game Win % → Diff → Head-to-head
+          Pts → Match Win % → Wins → Fewest losses → Diff
         </p>
       </div>
       <div className="table-scroll">
         <table className="stat-table standings-table">
           <thead>
             <tr>
-              {/* Left to right in the order the table is sorted: points, then
-                  match win %, then game win %, then differential. The raw
-                  counts sit beside the percentage each one feeds. */}
+              {/* Left to right in the order the sort applies them, with the
+                  columns it does not use following after. */}
               <th>#</th><th className="col-name">Player</th><th className="col-abil">Team</th>
               <th>Pts</th>
-              <th>W</th><th>L</th>
               <th title="Series won as a share of series played">Match Win %</th>
-              <th>GW</th><th>GL</th>
-              <th title="Individual games won as a share of games played">Game Win %</th>
+              <th>W</th><th>L</th>
               <th title="Pokémon remaining differential">Diff</th>
+              <th>GW</th><th>GL</th>
             </tr>
           </thead>
           <tbody>
             {ranked.map((s) => {
               const played = s.wins + s.losses
-              const gamesPlayed = s.gamesWon + s.gamesLost
               const medal = MEDALS[s.rank]
               const showing = team === s.player
               const picks = [...(league.rosters[s.player] ?? [])].sort(
@@ -440,19 +425,18 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                   </th>
                   <td className="col-abil">{s.team ?? <em className="none">TBD</em>}</td>
                   <td><strong>{s.points}</strong></td>
+                  <td>{played ? `${Math.round((s.wins / played) * 100)}%` : '—'}</td>
                   <td>{s.wins}</td>
                   <td>{s.losses}</td>
-                  <td>{played ? `${Math.round((s.wins / played) * 100)}%` : '—'}</td>
-                  <td>{s.gamesWon}</td>
-                  <td>{s.gamesLost}</td>
-                  <td>{gamesPlayed ? `${Math.round((s.gamesWon / gamesPlayed) * 100)}%` : '—'}</td>
                   <td className={s.monDiff > 0 ? 'pos' : s.monDiff < 0 ? 'neg' : ''}>
                     {s.monDiff > 0 ? `+${s.monDiff}` : s.monDiff}
                   </td>
+                  <td>{s.gamesWon}</td>
+                  <td>{s.gamesLost}</td>
                 </tr>
                 {showing && (
                   <tr className="team-row">
-                    <td colSpan={11}>
+                    <td colSpan={10}>
                       {picks.length === 0
                         ? <p className="panel-note">No team drafted yet.</p>
                         : (
@@ -706,11 +690,10 @@ function GameTeam({
           l.deaths ? 'knocked out' : 'survived'}`}
       >
         {entry && (
-          // The cross is drawn on the wrapper, not the sprite: an <img> is a
-          // replaced element and has no pseudo-elements to draw it with.
-          <span className={`game-mon${l.deaths ? ' is-fainted' : ''}`}>
-            <img src={spriteUrl(entry)} alt={name} width={40} height={33} loading="lazy" />
-          </span>
+          <img
+            className={l.deaths ? 'is-fainted' : undefined}
+            src={spriteUrl(entry)} alt={name} width={40} height={33} loading="lazy"
+          />
         )}
       </PokemonLink>
     )
