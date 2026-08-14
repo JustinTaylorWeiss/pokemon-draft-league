@@ -369,22 +369,25 @@ function Standings({ league }: { league: League }) {
 
   return (
     <section className="panel">
-      {editable && (
-        <div className="standings-actions">
-          <button type="button" onClick={() => setOpen('report')}>Report a match</button>
-          <button type="button" onClick={() => setOpen('players')}>Add / remove players</button>
-        </div>
-      )}
+      <div className="standings-head">
+        {editable && (
+          <div className="standings-actions">
+            <button type="button" onClick={() => setOpen('report')}>Report a match</button>
+            <button type="button" onClick={() => setOpen('players')}>Add / remove players</button>
+          </div>
+        )}
+        {/* The tiebreaks in the order they apply, sitting where the columns they
+            refer to are — one line, so it reads as a caption and not a paragraph. */}
+        <p className="sort-note">
+          Pts → Match Win % → Game Win % → Diff → Head-to-head
+        </p>
+      </div>
       {open === 'report' && (
         <ReportMatch league={league} onClose={() => setOpen(null)} onSaved={refresh} />
       )}
       {open === 'players' && (
         <ManagePlayers league={league} onClose={() => setOpen(null)} onSaved={refresh} />
       )}
-      <p className="sort-note">
-        Sorted by points, then match win %, then game win %, then Pokémon
-        differential, then head-to-head record.
-      </p>
       <div className="table-scroll">
         <table className="stat-table standings-table">
           <thead>
