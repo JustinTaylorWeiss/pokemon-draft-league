@@ -164,6 +164,48 @@ export async function removePlayer(passphrase: string, playerId: string) {
   return data as string
 }
 
+export interface ReportedGame {
+  number: number
+  winner: 'a' | 'b' | null
+  replay_url: string
+  survivors: number
+  a: { pokemon_id: string; kills: number; deaths: number }[]
+  b: { pokemon_id: string; kills: number; deaths: number }[]
+}
+
+/**
+ * Records a match and everything under it in one go.
+ *
+ * One call rather than four, because PostgREST gives each request its own
+ * transaction: saving the match, then its lines, then its games as separate
+ * writes meant a failure part-way through left the earlier ones standing. The
+ * match would exist with nothing beneath it, while the error on screen implied
+ * nothing had been saved. The database does the whole thing or none of it.
+ *
+ * The series score is not passed — it is counted from the games at the other
+ * end, so there is no second copy of it to disagree.
+ */
+export async function reportMatch(input: {
+  week: number
+  label: string
+  sideA: string[]
+  sideB: string[]
+  games: ReportedGame[]
+  lines: { side: 'a' | 'b'; pokemon_id: string; kills: number; deaths: number }[]
+}): Promise<number> {
+  const { data, error } = await db.rpc('report_match', {
+    week: input.week,
+    side_a: input.sideA,
+    side_b: input.sideB,
+    label: input.label,
+    games: input.games,
+    lines: input.lines,
+    who: currentActor(),
+  })
+  if (error) throw error
+  return data as number
+}
+
 /** Puts a hidden player back in the league. */
 export async function restorePlayer(passphrase: string, playerId: string) {
   const { data, error } = await db.rpc('restore_player', {

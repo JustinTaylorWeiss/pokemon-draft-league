@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchReplay, replayId, type ReplayGame } from '../../lib/parseReplay'
-import { db, errorText, insertRows, updateRow } from '../../data/supabase'
+import { db, errorText, reportMatch, updateRow } from '../../data/supabase'
 import { toId } from '../../data/load'
 import type { League } from '../../data/league'
 
@@ -179,28 +179,8 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
     setBusy(true)
     setError(null)
     try {
-      const scoreA = games.filter((g) => g.winner === 'a').length
-      const scoreB = games.length - scoreA
       const nameOf = (id: string) => league.players.find((p) => p.id === id)?.name ?? id
-
-      const [match] = await insertRows<Record<string, unknown>>('matches', [{
-        week,
-        label: `${nameOf(playerA)} vs ${nameOf(playerB)}`,
-        side_a: [playerA],
-        side_b: [playerB],
-        score_a: scoreA,
-        score_b: scoreB,
-      }])
-
       const summed = totals(games)
-      const lines = summed.map((l) => ({
-        match_id: match.id as number,
-        side: l.side,
-        pokemon_id: toId(l.pokemon),
-        kills: l.kills,
-        deaths: l.deaths,
-      }))
-      if (lines.length) await insertRows('match_lines', lines)
 
       // One id per Pokemon across the whole series. Team preview masks formes,
       // so the same Pokemon can be `Urshifu-*` in one game and
@@ -211,29 +191,33 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
       const idOf = (side: 'a' | 'b', mon: string) =>
         canonical.get(`${side}-${baseName(mon)}`) ?? toId(mon)
 
-      // Saved in the order they were played, which is the order they were
-      // pasted — game 1 in the first field.
-      for (const [i, g] of games.entries()) {
-        const id = replayId(g.link)
-        const [row] = await insertRows<Record<string, unknown>>('games', [{
-          match_id: match.id as number,
-          number: i + 1,
-          winner: g.winner,
-          replay_url: id ? `https://replay.pokemonshowdown.com/${id}` : g.link,
-          survivors: g.game.survivors,
-        }])
+      const lineOf = (side: 'a' | 'b') => (l: { pokemon: string; kills: number; deaths: number }) => ({
+        pokemon_id: idOf(side, l.pokemon), kills: l.kills, deaths: l.deaths,
+      })
 
-        const perGame = (['a', 'b'] as const).flatMap((side) =>
-          g[side].lines.map((l) => ({
-            game_id: row.id as number,
-            side,
-            pokemon_id: idOf(side, l.pokemon),
-            kills: l.kills,
-            deaths: l.deaths,
-          })),
-        )
-        if (perGame.length) await insertRows('game_lines', perGame)
-      }
+      // Numbered in the order they were played, which is the order they were
+      // pasted — game 1 in the first field. The score is left to the database,
+      // which counts it from these.
+      await reportMatch({
+        week,
+        label: `${nameOf(playerA)} vs ${nameOf(playerB)}`,
+        sideA: [playerA],
+        sideB: [playerB],
+        games: games.map((g, i) => {
+          const id = replayId(g.link)
+          return {
+            number: i + 1,
+            winner: g.winner,
+            replay_url: id ? `https://replay.pokemonshowdown.com/${id}` : g.link,
+            survivors: g.game.survivors,
+            a: g.a.lines.map(lineOf('a')),
+            b: g.b.lines.map(lineOf('b')),
+          }
+        }),
+        lines: summed.map((l) => ({
+          side: l.side, pokemon_id: toId(l.pokemon), kills: l.kills, deaths: l.deaths,
+        })),
+      })
 
       // Remember the accounts, so the next report from these two fills itself in.
       for (const [account, player] of [[accounts[0], playerA], [accounts[1], playerB]] as const) {
