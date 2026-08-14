@@ -555,12 +555,17 @@
 .game-label a { color: var(--muted); text-decoration: none; }
 .game-label a:hover { color: var(--accent); }
 
-.game-team { display: flex; align-items: center; gap: 0.75rem; padding: 0 0.6rem; }
+.game-team { display: flex; align-items: center; gap: 0.5rem; padding: 0 0.6rem; }
 .game-team.right { flex-direction: row-reverse; }
 .game-brought, .game-bench { display: flex; align-items: center; }
 .game-team.right .game-brought, .game-team.right .game-bench { flex-direction: row-reverse; }
-/* The bench sits past a gap, and reads as reserve rather than as played. */
-.game-bench { opacity: 0.45; }
+/* The ones that played, boxed as the team that was actually fielded. */
+.game-brought {
+  border: 1px solid var(--line); border-radius: 8px;
+  padding: 0.1rem 0.35rem; gap: 0.1rem;
+}
+/* The bench sits outside the box, and reads as reserve rather than as played. */
+.game-bench { opacity: 0.4; gap: 0.1rem; }
 .game-team img { display: block; object-fit: contain; }
 /* Knocked out: greyed, so what survived reads at a glance. */
 .game-team img.is-fainted { filter: grayscale(1) brightness(0.55); opacity: 0.7; }

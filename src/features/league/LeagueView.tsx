@@ -4,7 +4,8 @@ import type { PokemonDex } from '../../data/types'
 import {
   byId, byTier, currentSeason, loadLeague, mergeDex, reloadSeason, subscribeLeague, tierClass,
   totalsFromMatches, type Standing,
-  type GameLine, type League, type LeaguePokemon, type PokemonTotals,
+  type GameLine, type League, type LeaguePokemon, type Match, type MatchStat,
+  type PokemonTotals,
 } from '../../data/league'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
@@ -540,6 +541,23 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
   )
   const [week, setWeek] = useState<number | 'all'>('all')
   const [recording, setRecording] = useState(false)
+
+  /**
+   * The per-Pokémon lines for a match that has no games under it.
+   *
+   * Matches imported from the spreadsheet only ever recorded series totals —
+   * one set of numbers covering all two or three games — so they cannot be
+   * split into games without inventing them. They are shown as one row for the
+   * match instead, and said to be that.
+   *
+   * `matchStats` and `schedule` describe the same matches in the same order,
+   * which is how the importer joins them.
+   */
+  const statsFor = useMemo(() => {
+    const map = new Map<Match, MatchStat | undefined>()
+    league.schedule.forEach((m, i) => map.set(m, league.matchStats?.[i]))
+    return map
+  }, [league.schedule, league.matchStats])
   const editable = currentSeason().source === 'database'
   const label = (ids: string[]) => ids.map((p) => people[p]?.name ?? p).join(' + ')
   const shown = week === 'all' ? weeks : weeks.filter((w) => w === week)
@@ -596,7 +614,7 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
 
                   {games.map((g) => (
                     <div key={g.number} className="game-row">
-                      <GameTeam lines={g.a} dex={dex} won={g.winner === 'a'} align="left" />
+                      <GameTeam lines={g.a} dex={dex} align="left" />
                       <span className="game-label">
                         {g.replayUrl ? (
                           <a href={g.replayUrl} target="_blank" rel="noreferrer noopener">
@@ -604,9 +622,20 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
                           </a>
                         ) : `G${g.number}`}
                       </span>
-                      <GameTeam lines={g.b} dex={dex} won={g.winner === 'b'} align="right" />
+                      <GameTeam lines={g.b} dex={dex} align="right" />
                     </div>
                   ))}
+
+                  {/* No games recorded, but the match's own totals are known. */}
+                  {games.length === 0 && seriesLines(statsFor.get(m)) && (
+                    <div className="game-row">
+                      <GameTeam lines={seriesLines(statsFor.get(m))!.a} dex={dex} align="left" />
+                      <span className="game-label" title="Totals for the whole match; the games were not recorded separately">
+                        Match
+                      </span>
+                      <GameTeam lines={seriesLines(statsFor.get(m))!.b} dex={dex} align="right" />
+                    </div>
+                  )}
                 </li>
               )
             })}
@@ -618,6 +647,23 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
 }
 
 /**
+ * Turns a match's series totals into the same shape a game's lines have.
+ *
+ * There is no record of who was brought, only of who scored or fainted, so a
+ * Pokémon that played the whole series without doing either is counted as
+ * benched. Over two or three games that is unlikely but not impossible.
+ */
+function seriesLines(stat: MatchStat | undefined) {
+  if (!stat || (!stat.a.lines.length && !stat.b.lines.length)) return null
+  const side = (lines: MatchStat['a']['lines']): GameLine[] =>
+    lines.map((l) => ({
+      pokemon: l.pokemon, kills: l.kills, deaths: l.deaths,
+      brought: Boolean(l.kills || l.deaths),
+    }))
+  return { a: side(stat.a.lines), b: side(stat.b.lines) }
+}
+
+/**
  * One side's six Pokémon for one game: the ones brought, a gap, then the bench.
  *
  * A Pokémon that fainted is greyed out, so the state of the team at the end of
@@ -626,11 +672,10 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
  * recorded rather than inferred.
  */
 function GameTeam({
-  lines, dex, won, align,
+  lines, dex, align,
 }: {
   lines: GameLine[]
   dex: Record<string, LeaguePokemon>
-  won: boolean
   align: 'left' | 'right'
 }) {
   const played = lines.filter((l) => l.brought)
@@ -655,7 +700,8 @@ function GameTeam({
     )
   }
   return (
-    <div className={`game-team ${align}${won ? ' won' : ''}`}>
+    <div className={`game-team ${align}`}>
+      {/* The ones that played are boxed together; the bench sits outside it. */}
       <span className="game-brought">{played.map(mon)}</span>
       {bench.length > 0 && <span className="game-bench">{bench.map(mon)}</span>}
     </div>
