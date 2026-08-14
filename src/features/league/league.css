@@ -550,27 +550,33 @@
 .team-row > td {
   padding: 0.4rem 0.6rem 0.7rem 1.6rem; background: rgb(127 127 127 / 5%); text-align: left;
 }
-/* Wide enough for a sprite, a tier badge, a long name, two type chips and
-   four figures — cramming a third column in clipped the last of them. */
-.team-picks {
-  list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(31rem, 1fr));
-  gap: 0.15rem 2rem;
+
+/* The team itself: one Pokémon per row, under the player it belongs to. */
+.team-table {
+  width: 100%; border-collapse: collapse; font-size: 0.8rem;
+  max-width: 60rem;
 }
-.team-picks li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.82rem; }
-/* Tier first: the team is ordered by it, so it reads as the grouping it is. */
-.team-tier { flex: none; min-width: 2.9rem; text-align: center; }
-.team-name {
-  flex: 1 1 auto; min-width: 6rem; text-align: left;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.team-table th, .team-table td {
+  padding: 0.2rem 0.6rem; text-align: right; white-space: nowrap;
+  border-bottom: 1px solid var(--line);
 }
-.team-types { display: flex; gap: 0.2rem; flex: none; }
-.team-stat {
-  flex: none; min-width: 2.6rem; text-align: right;
-  font-variant-numeric: tabular-nums; font-size: 0.78rem; color: var(--fg);
+.team-table thead th {
+  font-size: 0.64rem; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--muted); font-weight: 600; border-bottom-color: var(--fg);
+  border-bottom-width: 1px;
 }
-.team-stat em {
-  font-style: normal; color: var(--muted); font-size: 0.62rem; margin-left: 0.12rem;
+.team-table tbody tr:last-child th, .team-table tbody tr:last-child td { border-bottom: 0; }
+/* Tier leads, since the team is ordered by it. */
+.team-table th:first-child, .team-table td:first-child { text-align: left; width: 4.5rem; }
+.team-col-name { text-align: left !important; }
+.team-table tbody .team-col-name {
+  display: flex; align-items: center; gap: 0.45rem; font-weight: 600;
 }
-.team-stat.pos { color: #6dc79a; }
-.team-stat.neg { color: #e0838a; }
+.team-col-types { text-align: left !important; width: 9.5rem; }
+.team-table .team-col-types { padding-top: 0.15rem; padding-bottom: 0.15rem; }
+.team-table td .type-chip { margin-right: 0.2rem; }
+.team-table tbody td { font-variant-numeric: tabular-nums; }
+.team-table .pos { color: #6dc79a; }
+.team-table .neg { color: #e0838a; }
+
+.matches-actions { margin-bottom: 0; }

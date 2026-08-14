@@ -10,7 +10,7 @@ export type LeagueTab = 'standings' | 'matches' | 'stats' | 'board' | 'rules'
  * each row opens onto that player's team.
  */
 export const LEAGUE_TABS: { key: LeagueTab; label: string }[] = [
-  { key: 'standings', label: 'Player Ranking' },
+  { key: 'standings', label: 'Players' },
   { key: 'stats', label: 'Pokémon Ranking' },
   { key: 'matches', label: 'Matches' },
   { key: 'rules', label: 'Rules' },

@@ -5,7 +5,7 @@ import { toId } from '../../data/load'
 import type { League } from '../../data/league'
 
 /**
- * Reporting a match by pasting its replays.
+ * Recording a match by pasting its replays.
  *
  * The replay log already knows who played, who won, and who knocked out what,
  * so the form asks for links and nothing else. Typing a result in by hand means
@@ -244,9 +244,9 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
   // ✕, which nobody presses without meaning to.
   return (
     <div className="modal-backdrop">
-      <div className="modal report-modal" role="dialog" aria-modal="true" aria-label="Report a match">
+      <div className="modal report-modal" role="dialog" aria-modal="true" aria-label="Record a match">
         <button type="button" className="modal-close" onClick={onClose} aria-label="Close">✕</button>
-        <h2 className="report-title">Report a match</h2>
+        <h2 className="report-title">Record a match</h2>
         <p className="report-lead">
           Paste the Showdown replays. Everything else — who won, and every
           knockout — is read out of the battle.

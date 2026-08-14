@@ -359,7 +359,7 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
   // Reporting and roster changes write to the database. The spreadsheet season
   // is read-only at the source, so those controls do not appear for it.
   const editable = currentSeason().source === 'database'
-  const [open, setOpen] = useState<'report' | 'players' | null>(null)
+  const [managing, setManaging] = useState(false)
   const refresh = () => { reloadSeason(currentSeason().id) }
 
   return (
@@ -367,8 +367,7 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
       <div className="standings-head">
         {editable && (
           <div className="standings-actions">
-            <button type="button" onClick={() => setOpen('report')}>Report a match</button>
-            <button type="button" onClick={() => setOpen('players')}>Add / remove players</button>
+            <button type="button" onClick={() => setManaging(true)}>Add / remove players</button>
           </div>
         )}
         {/* The tiebreaks in the order they apply, sitting where the columns they
@@ -377,11 +376,8 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
           Pts → Match Win % → Game Win % → Diff → Head-to-head
         </p>
       </div>
-      {open === 'report' && (
-        <ReportMatch league={league} onClose={() => setOpen(null)} onSaved={refresh} />
-      )}
-      {open === 'players' && (
-        <ManagePlayers league={league} onClose={() => setOpen(null)} onSaved={refresh} />
+      {managing && (
+        <ManagePlayers league={league} onClose={() => setManaging(false)} onSaved={refresh} />
       )}
       <div className="table-scroll">
         <table className="stat-table standings-table">
@@ -447,44 +443,53 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                       {picks.length === 0
                         ? <p className="panel-note">No team drafted yet.</p>
                         : (
-                          <ul className="team-picks">
-                            {picks.map((pick) => {
-                              const mon = dex[pick.pokemon]
-                              if (!mon) return null
-                              const t = totals[pick.pokemon]
-                              return (
-                                <li key={pick.pokemon}>
-                                  <PokemonLink id={pick.pokemon} title={mon.name}>
-                                    <img src={spriteUrl(mon)} alt="" width={40} height={32} loading="lazy" />
-                                  </PokemonLink>
-                                  <span className={`${tierClass(pick.tier)} team-tier`}>{pick.tier}</span>
-                                  <span className="team-name">
-                                    <PokemonLink id={pick.pokemon}>{mon.name}</PokemonLink>
-                                  </span>
-                                  <span className="team-types">
-                                    {mon.types.map((ty) => <TypeChip key={ty} type={ty} />)}
-                                  </span>
-                                  {/* Dashes rather than zeroes: a Pokémon that has
-                                      not played is not one that did nothing. */}
-                                  <span className="team-stat" title="Games played">
-                                    {t ? t.gamesPlayed : '—'}<em>G</em>
-                                  </span>
-                                  <span className="team-stat" title="Knockouts">
-                                    {t ? t.kills : '—'}<em>KO</em>
-                                  </span>
-                                  <span className="team-stat" title="Deaths">
-                                    {t ? t.deaths : '—'}<em>D</em>
-                                  </span>
-                                  <span
-                                    className={`team-stat ${t && t.diff > 0 ? 'pos' : t && t.diff < 0 ? 'neg' : ''}`}
-                                    title="Knockouts minus deaths"
-                                  >
-                                    {t ? (t.diff > 0 ? `+${t.diff}` : t.diff) : '—'}<em>+/-</em>
-                                  </span>
-                                </li>
-                              )
-                            })}
-                          </ul>
+                          <table className="team-table">
+                            <thead>
+                              <tr>
+                                <th>Tier</th>
+                                <th className="team-col-name">Pokémon</th>
+                                <th className="team-col-types">Types</th>
+                                <th>Games</th>
+                                <th>KOs</th>
+                                <th>Deaths</th>
+                                <th title="KOs minus deaths">Diff</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {picks.map((pick) => {
+                                const mon = dex[pick.pokemon]
+                                if (!mon) return null
+                                const t = totals[pick.pokemon]
+                                return (
+                                  <tr key={pick.pokemon}>
+                                    <td>
+                                      <span className={tierClass(pick.tier)}>{pick.tier}</span>
+                                    </td>
+                                    <th scope="row" className="team-col-name">
+                                      <PokemonLink id={pick.pokemon} title={mon.name}>
+                                        <img
+                                          src={spriteUrl(mon)} alt=""
+                                          width={40} height={32} loading="lazy"
+                                        />
+                                      </PokemonLink>
+                                      <PokemonLink id={pick.pokemon}>{mon.name}</PokemonLink>
+                                    </th>
+                                    <td className="team-col-types">
+                                      {mon.types.map((ty) => <TypeChip key={ty} type={ty} />)}
+                                    </td>
+                                    {/* Dashes rather than zeroes: a Pokémon that
+                                        has not played is not one that did nothing. */}
+                                    <td>{t ? t.gamesPlayed : '—'}</td>
+                                    <td>{t ? t.kills : '—'}</td>
+                                    <td>{t ? t.deaths : '—'}</td>
+                                    <td className={t && t.diff > 0 ? 'pos' : t && t.diff < 0 ? 'neg' : ''}>
+                                      {t ? (t.diff > 0 ? `+${t.diff}` : t.diff) : '—'}
+                                    </td>
+                                  </tr>
+                                )
+                              })}
+                            </tbody>
+                          </table>
                         )}
                     </td>
                   </tr>
@@ -516,10 +521,24 @@ function Matches({ league, dex }: { league: League; dex: PokemonDex }) {
     [league.schedule],
   )
   const [open, setOpen] = useState<string | null>(null)
+  const [recording, setRecording] = useState(false)
+  const editable = currentSeason().source === 'database'
   const label = (ids: string[]) => ids.map((p) => people[p]?.name ?? p).join(' + ')
 
   return (
     <div className="schedule">
+      {editable && (
+        <div className="standings-actions matches-actions">
+          <button type="button" onClick={() => setRecording(true)}>Record a match</button>
+        </div>
+      )}
+      {recording && (
+        <ReportMatch
+          league={league}
+          onClose={() => setRecording(false)}
+          onSaved={() => reloadSeason(currentSeason().id)}
+        />
+      )}
       {weeks.map((week) => (
         <section key={week} className="panel">
           <h3>Week {week}</h3>
