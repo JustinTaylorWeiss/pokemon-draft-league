@@ -600,12 +600,13 @@
 /* The link out to the replay, and the only thing in the row that leads
    anywhere — so it looks like it does. */
 .game-pill {
-  display: inline-flex; align-items: center; white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 0.25rem; white-space: nowrap;
   font-size: 0.68rem; font-weight: 600; text-decoration: none;
   padding: 0.12rem 0.45rem; border-radius: 999px;
   border: 1px solid var(--accent); color: var(--accent);
 }
 .game-pill:hover { background: var(--accent); color: #fff; }
+.game-ps { display: block; flex: none; object-fit: contain; border-radius: 2px; }
 .game-pill:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
 /* No replay to reach: says which game it is and stops there. */
 .game-pill.is-plain { border-color: var(--line); color: var(--muted); }
