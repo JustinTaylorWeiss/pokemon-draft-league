@@ -71,17 +71,21 @@
 .match-list li { font-size: 0.85rem; }
 /* The result line, with the run of games in the middle beside the score.
    The centre column is a fixed width rather than `auto` so that every match
-   lines up down the page — sized by content, a match carrying three chips
-   would pinch its own name boxes narrower than its neighbours'. */
+   lines up down the page — sized by content it would vary row to row, since
+   each row is its own grid and they share no column. */
 .match-row {
-  display: grid; grid-template-columns: 1fr 7.5rem 1fr; align-items: stretch; gap: 0.5rem;
+  display: grid; grid-template-columns: 1fr 4rem 1fr; align-items: stretch; gap: 0.5rem;
 }
 .match-list .side {
   min-width: 0; overflow-wrap: anywhere;
   padding: 0.35rem 0.6rem; border: 1px solid var(--line); border-radius: 8px;
-  display: flex; align-items: center;
+  display: flex; align-items: center; gap: 0.5rem;
 }
-.match-list .side:last-child { text-align: right; justify-content: flex-end; }
+.match-list .side-name { min-width: 0; }
+/* The winner's games sit at the inner edge, nearest the score they explain. */
+.match-list .side:first-child { justify-content: space-between; }
+.match-list .side:last-child { text-align: right; justify-content: space-between; flex-direction: row; }
+.match-list .side:last-child .side-name { margin-left: auto; }
 .match-list .side.won {
   border-color: #3f9d6d; background: rgb(63 157 109 / 12%); color: var(--fg); font-weight: 600;
 }
@@ -444,21 +448,20 @@
 .match-list li.has-games { padding-bottom: 0.2rem; }
 
 /* Score and the run of games, side by side, so a match stays one line. */
-.score-cell {
-  align-self: center; display: flex; align-items: center; justify-content: center; gap: 0.4rem;
-}
-.game-chips { display: flex; gap: 0.15rem; }
-.game-chip {
-  width: 1.15rem; height: 1.15rem; padding: 0; border-radius: 5px;
-  font: inherit; font-size: 0.6rem; font-weight: 700; line-height: 1; cursor: pointer;
+
+/* A game the side won, opening its knockouts. Inside a coloured box already,
+   so it borrows that colour rather than declaring one of its own. */
+.side-games { display: flex; gap: 0.2rem; flex: none; }
+.side-game {
+  width: 1.3rem; height: 1.3rem; padding: 0; border-radius: 5px;
+  font: inherit; font-size: 0.68rem; font-weight: 700; line-height: 1; cursor: pointer;
   display: grid; place-items: center;
-  border: 1px solid var(--line); background: var(--chip); color: var(--muted);
+  background: rgb(255 255 255 / 8%); border: 1px solid currentColor; color: inherit;
+  opacity: 0.75;
 }
-.game-chip.won { border-color: #3f9d6d; background: rgb(63 157 109 / 18%); color: #6dc79a; }
-.game-chip.lost { border-color: #b8474f; background: rgb(184 71 79 / 15%); color: #e0838a; }
-.game-chip:hover { filter: brightness(1.35); }
-.game-chip.is-open { outline: 2px solid var(--accent); outline-offset: 1px; }
-.game-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.side-game:hover { opacity: 1; background: rgb(255 255 255 / 16%); }
+.side-game.is-open { opacity: 1; background: rgb(255 255 255 / 20%); box-shadow: inset 0 0 0 1px currentColor; }
+.side-game:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* The one game currently open, under the match it belongs to. */
 .game-open { margin: 0.35rem 0 0.2rem; padding-left: 0.75rem; border-left: 2px solid var(--line); }
@@ -478,16 +481,18 @@
 }
 
 .game-replay {
-  flex: none; font-size: 0.72rem; color: var(--muted); text-decoration: none;
-  border: 1px solid var(--line); border-radius: 999px; padding: 0.15rem 0.5rem;
+  flex: none; font-size: 0.75rem; font-weight: 600; text-decoration: none;
+  background: var(--accent); color: #fff; border: 1px solid var(--accent);
+  border-radius: 999px; padding: 0.3rem 0.85rem;
 }
-.game-replay:hover { color: var(--accent); border-color: var(--accent); }
+.game-replay:hover { filter: brightness(1.12); }
+.game-replay:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
 
 /* Capped rather than stretched: two teams of six read as a pair of lists, not
    as two columns at opposite edges of a wide screen. */
 .game-detail {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 22rem));
-  gap: 0.75rem 2.5rem; padding: 0.5rem 0.35rem 0.7rem;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 19rem));
+  gap: 0.5rem 2rem; padding: 0.35rem 0.35rem 0.5rem;
 }
 .game-side h4 {
   margin: 0 0 0.3rem; font-size: 0.7rem; text-transform: uppercase;
@@ -495,9 +500,10 @@
 }
 .game-side ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .game-side li {
-  display: flex; align-items: center; gap: 0.4rem;
-  padding: 0.1rem 0; font-size: 0.78rem;
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0; font-size: 0.75rem; line-height: 1.35;
 }
+.game-side li img { width: 26px; height: 22px; object-fit: contain; }
 .game-side li .mon-link { flex: 1; min-width: 0; gap: 0.35rem; }
 .game-side li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* A Pokemon that neither scored nor fainted did not do anything this game —

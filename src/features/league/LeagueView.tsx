@@ -594,39 +594,49 @@ function Matches({ league, dex }: { league: League; dex: PokemonDex }) {
               }
               const games = m.games ? [...m.games].sort((x, y) => x.number - y.number) : []
               const shown = games.find((g) => open === `${week}-${i}-${g.number}`)
+
+              /**
+               * The games a side won, as buttons inside that side's own box.
+               * Which games a player took is a fact about that player, so it
+               * belongs next to their name rather than in a neutral strip that
+               * needs decoding.
+               */
+              const wonBy = (side: 'a' | 'b') => {
+                const mine = games.filter((g) => g.winner === side)
+                if (!mine.length) return null
+                return (
+                  <span className="side-games">
+                    {mine.map((g) => {
+                      const key = `${week}-${i}-${g.number}`
+                      return (
+                        <button
+                          key={g.number}
+                          type="button"
+                          className={`side-game${open === key ? ' is-open' : ''}`}
+                          aria-expanded={open === key}
+                          title={`Game ${g.number} — open the knockouts`}
+                          onClick={() => setOpen(open === key ? null : key)}
+                        >
+                          {g.number}
+                        </button>
+                      )
+                    })}
+                  </span>
+                )
+              }
+
               return (
                 <li key={i} className={games.length ? 'has-games' : undefined}>
                   <div className="match-row">
-                    <span className={cls(true)}>{label(m.a)}</span>
-                    <span className="score-cell">
-                      <span className="score">{done ? `${m.scoreA} – ${m.scoreB}` : 'vs'}</span>
-                      {/* One chip per game, read from the left side's point of
-                          view, so a 2-1 shows as W L W and the shape of the
-                          series is legible without opening anything. */}
-                      {games.length > 0 && (
-                        <span className="game-chips">
-                          {games.map((g) => {
-                            const key = `${week}-${i}-${g.number}`
-                            const winner = g.winner === 'a' ? label(m.a)
-                              : g.winner === 'b' ? label(m.b) : null
-                            return (
-                              <button
-                                key={g.number}
-                                type="button"
-                                className={`game-chip${g.winner === 'a' ? ' won' : ' lost'}${
-                                  open === key ? ' is-open' : ''}`}
-                                aria-expanded={open === key}
-                                title={`Game ${g.number}${winner ? ` — won by ${winner}` : ''}`}
-                                onClick={() => setOpen(open === key ? null : key)}
-                              >
-                                {g.winner === 'a' ? 'W' : 'L'}
-                              </button>
-                            )
-                          })}
-                        </span>
-                      )}
+                    <span className={cls(true)}>
+                      <span className="side-name">{label(m.a)}</span>
+                      {wonBy('a')}
                     </span>
-                    <span className={cls(false)}>{label(m.b)}</span>
+                    <span className="score">{done ? `${m.scoreA} – ${m.scoreB}` : 'vs'}</span>
+                    <span className={cls(false)}>
+                      {wonBy('b')}
+                      <span className="side-name">{label(m.b)}</span>
+                    </span>
                   </div>
 
                   {shown && (
