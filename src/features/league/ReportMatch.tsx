@@ -34,6 +34,10 @@ interface AlignedGame {
 }
 
 const normalise = (account: string) => account.toLowerCase().replace(/\s+/g, '')
+/** "1 and 3", or "1, 2 and 3". */
+const listOf = (items: string[]) =>
+  items.length < 2 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`
+
 /** `Urshifu-Rapid-Strike` and `Urshifu-*` share a base, so they are one Pokémon. */
 const baseName = (mon: string) => mon.split('-')[0].trim().toLowerCase()
 
@@ -47,6 +51,8 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [needThird, setNeedThird] = useState(false)
+  /** Field indices holding a link that also appears in another field. */
+  const [clashing, setClashing] = useState<Set<number>>(new Set())
 
   // Accounts already claimed by a player fill themselves in, so the mapping is
   // asked for once per person and never again.
@@ -69,11 +75,40 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
   async function read() {
     setError(null)
     setNeedThird(false)
-    const given = links.map((l) => l.trim()).filter(Boolean)
-    if (given.length < 2) {
+    setClashing(new Set())
+
+    // Kept with their field numbers, so a complaint can name the box it means
+    // rather than a position in a filtered list.
+    const entries = links
+      .map((link, i) => ({ link: link.trim(), field: i + 1, index: i }))
+      .filter((e) => e.link)
+
+    if (entries.length < 2) {
       setError('Paste at least the first two games. The third is only needed if the series went to one.')
       return
     }
+
+    // The same replay twice is the same game twice, and would record a result
+    // that never happened — two of the same game reads as a 2-0. Compared by
+    // replay id rather than by text, so the same game pasted once with a
+    // trailing slash and once with a `?p2` still counts as the same game.
+    const seenAt = new Map<string, number[]>()
+    for (const e of entries) {
+      const id = replayId(e.link) ?? e.link.toLowerCase()
+      seenAt.set(id, [...(seenAt.get(id) ?? []), e.field])
+    }
+    const repeated = [...seenAt.values()].filter((fields) => fields.length > 1)
+    if (repeated.length) {
+      const fields = repeated.flat().sort((a, b) => a - b)
+      setClashing(new Set(fields.map((f) => f - 1)))
+      setError(
+        `Game ${listOf(fields.map(String))} are the same replay. `
+        + 'Each game needs its own link.',
+      )
+      return
+    }
+
+    const given = entries.map((e) => e.link)
 
     setBusy(true)
     try {
@@ -239,7 +274,12 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
 
         <div className="report-links">
           {links.map((link, i) => (
-            <label key={i} className={needThird && i === 2 ? 'wants-link' : undefined}>
+            <label
+              key={i}
+              className={
+                clashing.has(i) ? 'dupe-link' : needThird && i === 2 ? 'wants-link' : undefined
+              }
+            >
               <span>
                 Game {i + 1}
                 {i === 2 && <em>{needThird ? ' — needed' : ' — only if it went three'}</em>}

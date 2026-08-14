@@ -358,6 +358,9 @@
 /* The series split, so game three is not optional after all. */
 .report-links .wants-link > span { color: var(--accent); }
 .report-links .wants-link input { border-color: var(--accent); }
+/* The same replay is in more than one box. */
+.report-links .dupe-link > span { color: #e05563; }
+.report-links .dupe-link input { border-color: #e05563; }
 
 .report-error, .report-done { margin: 0; font-size: 0.8rem; }
 .report-error { color: #e05563; }
