@@ -730,11 +730,7 @@
 .draft-who select { font-size: 0.95rem; padding: 0.45rem 0.6rem; }
 
 .draft-mine h3 { display: flex; align-items: baseline; gap: 0.6rem; margin: 0 0 0.6rem; }
-.draft-roster { list-style: none; margin: 0 0 0.8rem; padding: 0;
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(24rem, 1fr)); gap: 0.15rem 1.5rem; }
-.draft-roster li, .draft-results li {
-  display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;
-}
+.draft-results li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
 .draft-tier { flex: none; min-width: 2.9rem; text-align: center; }
 .draft-name { flex: 1 1 auto; min-width: 6rem;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -770,6 +766,36 @@
   display: grid; grid-template-columns: repeat(auto-fill, minmax(19rem, 1fr)); gap: 0.75rem;
 }
 .draft-other header { display: flex; align-items: baseline; gap: 0.5rem; margin-bottom: 0.4rem; }
-.draft-other header .count { margin-left: auto; }
+/* Beside the name, not adrift at the card's far edge where it reads as
+   belonging to the next one. */
+.draft-other-count {
+  font-size: 0.68rem; color: var(--muted);
+  background: var(--chip); border-radius: 999px; padding: 0.05rem 0.4rem;
+}
 .draft-other ul { list-style: none; margin: 0; padding: 0; }
 .draft-other li { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; }
+
+/* Your team, one Pokémon a row, with what you need to judge it. */
+.draft-table { width: 100%; margin-bottom: 0.9rem; }
+.draft-table th, .draft-table td { text-align: right; white-space: nowrap; }
+.draft-table th:first-child, .draft-table td:first-child { text-align: left; width: 4.5rem; }
+.draft-col-name { text-align: left !important; }
+.draft-table tbody .draft-col-name {
+  display: flex; align-items: center; gap: 0.5rem; font-weight: 600;
+}
+.draft-col-types { text-align: left !important; width: 9.5rem; }
+.draft-col-types .type-chip { margin-right: 0.2rem; }
+.draft-stat, .draft-bst { font-variant-numeric: tabular-nums; width: 3rem; }
+.draft-bst { font-weight: 600; }
+/* Abilities wrap rather than stretching the row: three is common and long
+   names are normal. */
+.draft-col-abil { text-align: left !important; white-space: normal !important; min-width: 12rem; }
+.draft-abils { display: flex; flex-wrap: wrap; gap: 0.2rem 0.35rem; }
+.draft-abils span {
+  font-size: 0.74rem; color: var(--muted);
+  background: var(--chip); border: 1px solid var(--line);
+  border-radius: 999px; padding: 0.05rem 0.45rem;
+}
+/* The hidden ability is one of the three but not one you can just pick. */
+.draft-hidden-ability { border-style: dashed !important; }
+.draft-table td:last-child { width: 5.5rem; }

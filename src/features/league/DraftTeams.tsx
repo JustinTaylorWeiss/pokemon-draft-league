@@ -5,6 +5,7 @@ import {
   type DraftTier, type League, type LeaguePokemon,
 } from '../../data/league'
 import { claimPokemon, errorText, releasePokemon } from '../../data/supabase'
+import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
 import { PokemonLink } from '../../components/PokemonLink'
 
@@ -102,32 +103,78 @@ export function DraftTeams({ league, dex }: Props) {
             </span>
           </h3>
 
-          <ul className="draft-roster">
-            {[...mine].sort(byTierThenName).map((pick) => {
-              const mon = dex[pick.pokemon]
-              return (
-                <li key={pick.pokemon}>
-                  <PokemonLink id={pick.pokemon} title={mon?.name ?? pick.pokemon}>
-                    {mon && <img src={spriteUrl(mon)} alt="" width={40} height={33} loading="lazy" />}
-                  </PokemonLink>
-                  <span className={`${tierClass(pick.tier)} draft-tier`}>{pick.tier}</span>
-                  <span className="draft-name">
-                    <PokemonLink id={pick.pokemon}>{mon?.name ?? pick.pokemon}</PokemonLink>
-                  </span>
-                  <span className="draft-types">
-                    {mon?.types.map((t) => <TypeChip key={t} type={t} />)}
-                  </span>
-                  <button
-                    type="button" className="draft-drop" disabled={busy}
-                    onClick={() => run(() => releasePokemon(me, pick.pokemon))}
-                  >
-                    Remove
-                  </button>
-                </li>
-              )
-            })}
-            {mine.length === 0 && <li className="draft-empty">Nothing drafted yet.</li>}
-          </ul>
+          {mine.length === 0 ? (
+            <p className="draft-empty">Nothing drafted yet.</p>
+          ) : (
+            <div className="table-scroll">
+              <table className="stat-table draft-table">
+                <thead>
+                  <tr>
+                    <th>Tier</th>
+                    <th className="draft-col-name">Pokémon</th>
+                    <th className="draft-col-types">Types</th>
+                    {BST_ORDER.map((k) => <th key={k}>{STAT_LABELS[k]}</th>)}
+                    <th>BST</th>
+                    <th className="draft-col-abil">Abilities</th>
+                    <th />
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...mine].sort(byTierThenName).map((pick) => {
+                    const mon = dex[pick.pokemon]
+                    // The hidden ability is the one keyed "H", and reads as such.
+                    const abilities = Object.entries(mon?.abilities ?? {})
+                    return (
+                      <tr key={pick.pokemon}>
+                        <td>
+                          <span className={tierClass(pick.tier)}>{pick.tier}</span>
+                        </td>
+                        <th scope="row" className="draft-col-name">
+                          <PokemonLink id={pick.pokemon} title={mon?.name ?? pick.pokemon}>
+                            {mon && (
+                              <img src={spriteUrl(mon)} alt="" width={40} height={33} loading="lazy" />
+                            )}
+                          </PokemonLink>
+                          <PokemonLink id={pick.pokemon}>{mon?.name ?? pick.pokemon}</PokemonLink>
+                        </th>
+                        <td className="draft-col-types">
+                          {mon?.types.map((t) => <TypeChip key={t} type={t} />)}
+                        </td>
+                        {BST_ORDER.map((k) => (
+                          <td key={k} className="draft-stat">{mon?.baseStats[k] ?? '—'}</td>
+                        ))}
+                        <td className="draft-bst">{mon?.bst ?? '—'}</td>
+                        <td className="draft-col-abil">
+                          {/* Wrapped rather than making the cell itself a flex
+                              box: a <td> that is display:flex stops being a
+                              table cell and drops out of the row's alignment. */}
+                          <span className="draft-abils">
+                            {abilities.length === 0 ? '—' : abilities.map(([slot, name]) => (
+                              <span
+                                key={slot}
+                                className={slot === 'H' ? 'draft-hidden-ability' : undefined}
+                                title={slot === 'H' ? 'Hidden ability' : undefined}
+                              >
+                                {name}
+                              </span>
+                            ))}
+                          </span>
+                        </td>
+                        <td>
+                          <button
+                            type="button" className="draft-drop" disabled={busy}
+                            onClick={() => run(() => releasePokemon(me, pick.pokemon))}
+                          >
+                            Remove
+                          </button>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           <div className="draft-add">
             <input
@@ -177,8 +224,8 @@ export function DraftTeams({ league, dex }: Props) {
             <section key={p.id} className="panel draft-other">
               <header>
                 <strong>{p.name}</strong>
+                <span className="draft-other-count">{picks.length}</span>
                 <span className="panel-note">{p.team ?? '—'}</span>
-                <span className="count">{picks.length}</span>
               </header>
               <ul>
                 {picks.map((pick) => {
