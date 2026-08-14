@@ -66,9 +66,15 @@ export async function loadLeagueFromSupabase(): Promise<League> {
     .find((r) => r.error)?.error
   if (firstError) throw firstError
 
-  const playerRows = (players.data ?? []) as Player[]
+  // Hidden players are removed from the league, not from the record. They stay
+  // in this list so their name still resolves in matches they already played —
+  // a past result should read "beat Nolan", not "beat nolan" — but they are
+  // kept out of everything the site presents as the current league.
+  const allPlayers = (players.data ?? []) as (Player & { hidden?: boolean })[]
+  const playerRows = allPlayers.filter((p) => !p.hidden)
   // The board and the stats tab name people; the database references them by id.
-  const nameById = new Map(playerRows.map((p) => [p.id, p.name]))
+  const nameById = new Map(allPlayers.map((p) => [p.id, p.name]))
+  const visible = new Set(playerRows.map((p) => p.id))
 
   const boardRows = (board.data ?? []) as BoardRow[]
   const matchRows = (matches.data ?? []) as MatchRow[]
@@ -141,6 +147,7 @@ export async function loadLeagueFromSupabase(): Promise<League> {
     }])) as League['board'],
     rosters: (rosters.data ?? []).reduce<League['rosters']>((acc, r) => {
       const row = r as { player_id: string; pokemon_id: string; tier: string }
+      if (!visible.has(row.player_id)) return acc
       ;(acc[row.player_id] ??= []).push({ pokemon: row.pokemon_id, tier: row.tier as never })
       return acc
     }, {}),

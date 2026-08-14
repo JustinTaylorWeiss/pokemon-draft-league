@@ -42,6 +42,7 @@ knockouts 5-0, and standings come from the former.
    - `migrations/0003_access.sql` — access rules and the draft passphrase
    - `migrations/0004_showdown.sql` — the Showdown account on each player
    - `migrations/0005_players.sql` — the gated add/remove player functions
+   - `migrations/0006_hide_players.sql` — removal as hiding, and the UI unlock
 3. Set the draft passphrase, from the SQL editor rather than the site:
 
    ```sql
@@ -86,11 +87,21 @@ Two actions sit behind the passphrase, and neither of them clears anything:
   in and they do the passphrase check themselves — a browser cannot bypass them
   by calling PostgREST directly.
 
-`remove_player` refuses to remove anyone who appears in a recorded match.
-`matches.side_a` and `side_b` are arrays of player ids with no foreign key
-behind them, so the delete would not fail — it would quietly leave matches
-pointing at somebody who no longer exists, and the standings would be wrong in
-a way nobody could see.
+**Removing a player hides them rather than deleting them.** The row stays, the
+matches stay, and `standings` filters them out — so they disappear from the
+site and nothing is lost. `restore_player` puts them back, and re-adding the
+same name does too.
+
+This is why removal is always allowed. A hard delete could not be: `side_a` and
+`side_b` are arrays of player ids with no foreign key behind them, so deleting
+someone who had played would not fail — it would quietly leave matches pointing
+at a player who no longer exists, and the standings would be wrong in a way
+nobody could see. Hiding has none of that problem, so there is nothing left to
+refuse.
+
+Hiding someone deliberately does **not** rewrite their opponents' records. The
+matches they played still count for the other player. Taking somebody out of
+the league should not retroactively change everybody else's season.
 
 ## Things worth knowing before writing client code
 

@@ -58,6 +58,24 @@ export class WriteRefused extends Error {
   }
 }
 
+/**
+ * The message to show a person for anything that went wrong.
+ *
+ * PostgREST rejections arrive as plain objects rather than Errors, so the usual
+ * `e instanceof Error ? e.message : String(e)` turns every database message —
+ * including the ones written to be read, like "That passphrase is not right" —
+ * into "[object Object]".
+ */
+export function errorText(e: unknown): string {
+  if (e instanceof Error) return e.message
+  if (e && typeof e === 'object') {
+    const { message, hint, details } = e as Record<string, string | undefined>
+    const said = message || hint || details
+    if (said) return said
+  }
+  return 'Something went wrong, and the database did not say what.'
+}
+
 type Row = Record<string, unknown>
 
 /** Inserts rows, stamping the actor, and confirms they landed. */
@@ -134,11 +152,36 @@ export async function addPlayer(passphrase: string, name: string, team?: string)
   return data
 }
 
-/** Removes a player. Refuses if they appear in a recorded match. */
+/**
+ * Hides a player. Their row and their results stay; the site stops showing
+ * them. Nothing here can delete a player outright — there is no such call.
+ */
 export async function removePlayer(passphrase: string, playerId: string) {
   const { data, error } = await db.rpc('remove_player', {
     passphrase, player_id: playerId, who: currentActor(),
   })
   if (error) throw error
   return data as string
+}
+
+/** Puts a hidden player back in the league. */
+export async function restorePlayer(passphrase: string, playerId: string) {
+  const { data, error } = await db.rpc('restore_player', {
+    passphrase, player_id: playerId, who: currentActor(),
+  })
+  if (error) throw error
+  return data as string
+}
+
+/**
+ * Checks the passphrase, so the UI can unlock before showing anything.
+ *
+ * Unlocking is a convenience, not the security boundary: every gated action
+ * re-checks the passphrase in the database, so getting past this screen by
+ * other means gets you a form whose buttons still do not work.
+ */
+export async function unlock(passphrase: string): Promise<boolean> {
+  const { data, error } = await db.rpc('unlock', { passphrase })
+  if (error) throw error
+  return data === true
 }

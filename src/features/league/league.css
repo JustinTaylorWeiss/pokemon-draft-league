@@ -408,6 +408,27 @@
   text-align: right; font-variant-numeric: tabular-nums;
 }
 
+/* The lock screen: one field, nothing else to look at until it opens. */
+.players-gate { display: flex; gap: 0.5rem; align-items: center; }
+.players-gate input {
+  flex: 1 1 auto; font: inherit; font-size: 0.9rem; color: var(--fg);
+  background: var(--chip); border: 1px solid var(--line);
+  border-radius: 8px; padding: 0.5rem 0.65rem;
+}
+.players-gate input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.players-hidden-head {
+  margin: 0.4rem 0 0; font-size: 0.78rem; font-weight: 600;
+}
+.players-hidden-head span { font-weight: 400; color: var(--muted); font-size: 0.72rem; }
+.players-hidden .players-name, .players-hidden .players-team { opacity: 0.6; }
+.players-restore {
+  font: inherit; font-size: 0.72rem; cursor: pointer;
+  padding: 0.25rem 0.6rem; border-radius: 999px;
+  background: var(--chip); border: 1px solid var(--line); color: var(--muted);
+}
+.players-restore:hover { color: var(--accent); border-color: var(--accent); }
+
 .players-add { display: flex; gap: 0.6rem; align-items: flex-end; flex-wrap: wrap; }
 .players-add label { display: flex; flex-direction: column; gap: 0.25rem; flex: 1 1 10rem; }
 .players-add label > span {

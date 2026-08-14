@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchReplay, type ReplayGame } from '../../lib/parseReplay'
-import { db, insertRows, updateRow } from '../../data/supabase'
+import { db, errorText, insertRows, updateRow } from '../../data/supabase'
 import { toId } from '../../data/load'
 import type { League } from '../../data/league'
 
@@ -115,7 +115,7 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
         [normalise(pair[1])]: known[normalise(pair[1])] ?? '',
       })
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
     } finally {
       setBusy(false)
     }
@@ -170,7 +170,7 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
       onSaved()
       onClose()
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e))
+      setError(errorText(e))
     } finally {
       setBusy(false)
     }
