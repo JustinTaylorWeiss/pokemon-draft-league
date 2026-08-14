@@ -21,6 +21,9 @@
  * `match_lines`, which is what the rankings read, so nothing derived is wrong;
  * only the invented split does not add back up on those lines.
  *
+ * The replay each game links to is a stand-in — one real battle shared by all
+ * of them — since an invented game has no replay of its own.
+ *
  * Every row is stamped `generated`, so undoing it is one delete:
  *   curl -X DELETE "$URL/rest/v1/games?edited_by=eq.generated" -H ...
  * which cascades to the game lines.
@@ -79,6 +82,16 @@ function rng(seed) {
 }
 
 const VGC_BRING = 4
+
+/**
+ * A stand-in replay for games that never happened.
+ *
+ * These games are invented, so none of them has a replay of its own. Pointing
+ * them all at one real battle is a placeholder so the link reads as a link —
+ * it is emphatically not this game, and every one of them points at the same
+ * place, which is the giveaway.
+ */
+const PLACEHOLDER_REPLAY = 'https://replay.pokemonshowdown.com/gen96v6doublesdraft-2661971751'
 
 /**
  * Which of a side's Pokemon die in each game.
@@ -242,7 +255,7 @@ for (const m of matches) {
       match_id: m.id,
       number: i + 1,
       winner: winners[i],
-      replay_url: null, // there is no replay; inventing a link would be worse
+      replay_url: PLACEHOLDER_REPLAY, // see above: a stand-in, not this game
       survivors: Math.max(0, winnerSurvivors),
       edited_by: 'generated',
     }])

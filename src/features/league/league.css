@@ -543,14 +543,23 @@
 .week-head {
   width: 100%; display: flex; align-items: center; gap: 0.6rem;
   font: inherit; text-align: left; cursor: pointer;
-  background: none; border: 0; color: inherit; padding: 0.35rem 0.15rem;
+  background: none; border: 0; color: inherit; padding: 0.3rem 0.15rem;
+  border-radius: 8px;
 }
-.week-head:hover .week-name { color: var(--accent); }
-.week-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
-.week-caret { width: 0.85rem; font-size: 0.72rem; color: var(--muted); }
+.week-head:hover { background: var(--chip); }
+.week-head:hover .week-name, .week-head:hover .week-caret { color: var(--accent); }
+.week-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Big enough to read as the control it is — the week header is the only way to
+   fold a week away, so it should not look like punctuation. */
+.week-caret {
+  display: grid; place-items: center; flex: none;
+  width: 1.6rem; height: 1.6rem; border-radius: 6px;
+  font-size: 0.95rem; line-height: 1; color: var(--muted);
+  background: var(--chip); border: 1px solid var(--line);
+}
 .week-name {
-  font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 0.08em; color: var(--muted);
+  font-size: 0.92rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--fg);
 }
 .week-count { margin-left: auto; font-size: 0.72rem; color: var(--muted); }
 .week-panel.is-shut { padding-bottom: 0.5rem; }
