@@ -4,7 +4,7 @@ import type { PokemonDex } from '../../data/types'
 import {
   byId, byTier, currentSeason, loadLeague, mergeDex, reloadSeason, subscribeLeague, tierClass,
   totalsFromMatches, type Standing,
-  type GameLine, type League, type LeaguePokemon, type PokemonTotals,
+  type League, type LeaguePokemon, type PokemonTotals,
 } from '../../data/league'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
@@ -46,7 +46,7 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
   return (
     <div className="league">
       {tab === 'standings' && <Standings league={league} dex={dex} />}
-      {tab === 'matches' && <Matches league={league} dex={dex} />}
+      {tab === 'matches' && <Matches league={league} />}
       {tab === 'board' && <Board league={league} dex={dex} />}
       {tab === 'stats' && <Stats league={league} dex={dex} />}
       {tab === 'rules' && <Rules league={league} />}
@@ -514,13 +514,12 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
  * Matches imported from the spreadsheet have no games underneath — the sheet
  * never recorded them — so they render exactly as they always did.
  */
-function Matches({ league, dex }: { league: League; dex: PokemonDex }) {
+function Matches({ league }: { league: League }) {
   const people = useMemo(() => byId(league.players), [league.players])
   const weeks = useMemo(
     () => [...new Set(league.schedule.map((m) => m.week))].sort((a, b) => a - b),
     [league.schedule],
   )
-  const [open, setOpen] = useState<string | null>(null)
   const [recording, setRecording] = useState(false)
   const editable = currentSeason().source === 'database'
   const label = (ids: string[]) => ids.map((p) => people[p]?.name ?? p).join(' + ')
@@ -553,34 +552,37 @@ function Matches({ league, dex }: { league: League; dex: PokemonDex }) {
                 return `side ${won ? 'won' : 'lost'}`
               }
               const games = m.games ? [...m.games].sort((x, y) => x.number - y.number) : []
-              const shown = games.find((g) => open === `${week}-${i}-${g.number}`)
 
               /**
-               * The games a side won, as buttons inside that side's own box.
+               * The games a side won, linking out to each replay.
+               *
                * Which games a player took is a fact about that player, so it
-               * belongs next to their name rather than in a neutral strip that
-               * needs decoding.
+               * belongs next to their name; and the useful thing to do with a
+               * game is watch it, so the label is the link.
                */
               const wonBy = (side: 'a' | 'b') => {
                 const mine = games.filter((g) => g.winner === side)
                 if (!mine.length) return null
                 return (
                   <span className="side-games">
-                    {mine.map((g) => {
-                      const key = `${week}-${i}-${g.number}`
-                      return (
-                        <button
-                          key={g.number}
-                          type="button"
-                          className={`side-game${open === key ? ' is-open' : ''}`}
-                          aria-expanded={open === key}
-                          title={`Game ${g.number} — open the knockouts`}
-                          onClick={() => setOpen(open === key ? null : key)}
-                        >
-                          Game {g.number}
-                        </button>
-                      )
-                    })}
+                    {mine.map((g) => (g.replayUrl ? (
+                      <a
+                        key={g.number}
+                        className="side-game"
+                        href={g.replayUrl}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        title={`Watch game ${g.number} on Pokémon Showdown`}
+                        // The row underneath is not a link; this is.
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Game {g.number} ↗
+                      </a>
+                    ) : (
+                      <span key={g.number} className="side-game no-replay" title="No replay saved">
+                        Game {g.number}
+                      </span>
+                    )))}
                   </span>
                 )
               }
@@ -599,69 +601,12 @@ function Matches({ league, dex }: { league: League; dex: PokemonDex }) {
                     </span>
                   </div>
 
-                  {shown && (
-                    <div className="game-open">
-                      <div className="game-open-head">
-                        <strong>Game {shown.number}</strong>
-                        {shown.winner && (
-                          <span>won by {shown.winner === 'a' ? label(m.a) : label(m.b)}</span>
-                        )}
-                        {shown.survivors !== null && (
-                          <span className="game-survivors">{shown.survivors} left</span>
-                        )}
-                        {shown.replayUrl && (
-                          <a
-                            className="game-replay"
-                            href={shown.replayUrl}
-                            target="_blank"
-                            rel="noreferrer noopener"
-                          >
-                            Replay ↗
-                          </a>
-                        )}
-                      </div>
-                      <div className="game-detail">
-                        <GameSide title={label(m.a)} lines={shown.a} dex={dex} league={league} />
-                        <GameSide title={label(m.b)} lines={shown.b} dex={dex} league={league} />
-                      </div>
-                    </div>
-                  )}
                 </li>
               )
             })}
           </ul>
         </section>
       ))}
-    </div>
-  )
-}
-
-/** One team's Pokémon in one game, worst-hit last. */
-function GameSide({
-  title, lines, dex, league,
-}: { title: string; lines: GameLine[]; dex: PokemonDex; league: League }) {
-  const board = league.board
-  const sorted = [...lines].sort((a, b) => b.kills - a.kills || a.deaths - b.deaths)
-  return (
-    <div className="game-side">
-      <h4>{title}</h4>
-      <ul>
-        {sorted.map((l) => {
-          const mon = dex[l.pokemon]
-          const name = mon?.name ?? board[l.pokemon]?.name ?? l.pokemon
-          return (
-            <li key={l.pokemon} className={l.kills || l.deaths ? undefined : 'idle'}>
-              <PokemonLink id={l.pokemon} title={name}>
-                {mon && <img src={spriteUrl(mon)} alt="" width={36} height={30} loading="lazy" />}
-                <span>{name}</span>
-              </PokemonLink>
-              <span className="game-kd" title={`${l.kills} KOs, fainted ${l.deaths} times`}>
-                <b>{l.kills}</b> / {l.deaths}
-              </span>
-            </li>
-          )
-        })}
-      </ul>
     </div>
   )
 }
