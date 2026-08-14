@@ -197,7 +197,65 @@ function withBench(played, lines) {
   ]
 }
 
+/**
+ * Builds a side's six from the rosters of whoever played on it.
+ *
+ * A handful of matches have a result but no per-Pokemon lines at all — the
+ * sheet recorded who won and the stats tab was never filled in. There is
+ * nothing to split for those, so the team is taken from what those players
+ * actually drafted and the game invented from the rules alone.
+ *
+ * Only `game_lines` are written, never `match_lines`, so the Pokemon rankings
+ * -- which read the match totals -- do not move because of this.
+ */
+function teamFromRosters(playerIds, rosters, rand) {
+  const pool = playerIds.flatMap((id) => rosters.get(id) ?? [])
+  const shuffled = [...new Set(pool)].sort(() => rand() - 0.5)
+  return shuffled.slice(0, 6).map((pokemon_id) => ({ pokemon_id, kills: 0, deaths: 0 }))
+}
+
+/**
+ * Invents a game with no totals to honour: the loser brings four and loses all
+ * four, the winner loses some of theirs, and the winner's knockouts are the
+ * loser's losses.
+ */
+function inventGames(a, b, winners, rand) {
+  const pick = (team) => [...team].sort(() => rand() - 0.5).slice(0, VGC_BRING)
+  const out = { a: [], b: [] }
+  for (const w of winners) {
+    const rows = { a: pick(a), b: pick(b) }
+    const loser = w === 'a' ? 'b' : 'a'
+    // Losing means the whole team went down; the winner keeps at least one.
+    const winnerLosses = Math.floor(rand() * 3)
+    const lines = {}
+    for (const side of ['a', 'b']) {
+      const dying = side === loser ? VGC_BRING : winnerLosses
+      lines[side] = rows[side].map((p, i) => ({
+        pokemon_id: p.pokemon_id, kills: 0, deaths: i < dying ? 1 : 0, brought: true,
+      }))
+    }
+    // Every knockout on one side is a death on the other.
+    for (const side of ['a', 'b']) {
+      const other = side === 'a' ? 'b' : 'a'
+      let owed = lines[other].reduce((n, x) => n + x.deaths, 0)
+      const alive = lines[side].filter((x) => !x.deaths)
+      const pool = alive.length ? alive : lines[side]
+      for (let i = 0; owed > 0; i = (i + 1) % pool.length) { pool[i].kills++; owed-- }
+    }
+    out.a.push(lines.a)
+    out.b.push(lines.b)
+  }
+  return out
+}
+
 const matches = await get('matches?select=id,week,label,score_a,score_b&order=id')
+const rosterRows = await get('rosters?select=player_id,pokemon_id')
+const rosters = new Map()
+for (const r of rosterRows) {
+  rosters.set(r.player_id, [...(rosters.get(r.player_id) ?? []), r.pokemon_id])
+}
+const sides = new Map(
+  (await get('matches?select=id,side_a,side_b')).map((m) => [m.id, m]))
 const allLines = await get('match_lines?select=match_id,side,pokemon_id,kills,deaths&order=id')
 const existing = await get('games?select=match_id')
 const hasGames = new Set(existing.map((g) => g.match_id))
@@ -214,11 +272,19 @@ for (const m of matches) {
   if (m.score_a === null || m.score_b === null) { skipped++; continue }
 
   const total = m.score_a + m.score_b
-  const a = linesBy.get(`${m.id}-a`) ?? []
-  const b = linesBy.get(`${m.id}-b`) ?? []
-  if (!total || !a.length || !b.length) { noLines++; continue }
-
+  if (!total) { skipped++; continue }
   const rand = rng(m.id * 7919)
+
+  let a = linesBy.get(`${m.id}-a`) ?? []
+  let b = linesBy.get(`${m.id}-b`) ?? []
+  // No lines at all: build the teams from what those players drafted.
+  const fromRosters = !a.length || !b.length
+  if (fromRosters) {
+    const s = sides.get(m.id)
+    a = teamFromRosters(s?.side_a ?? [], rosters, rand)
+    b = teamFromRosters(s?.side_b ?? [], rosters, rand)
+    if (!a.length || !b.length) { noLines++; continue }
+  }
   // Winners add up to the real score: the loser's wins sit in the middle,
   // which is where a series that goes long usually turns.
   const winners = [
@@ -241,10 +307,18 @@ for (const m of matches) {
     }
   }
 
-  const gamesA = deathsPerGame(a, winners, 'a', rand)
-  const gamesB = deathsPerGame(b, winners, 'b', rand)
-  assignKills(gamesA, gamesB, a)
-  assignKills(gamesB, gamesA, b)
+  let gamesA
+  let gamesB
+  if (fromRosters) {
+    const made = inventGames(a, b, winners, rand)
+    gamesA = made.a
+    gamesB = made.b
+  } else {
+    gamesA = deathsPerGame(a, winners, 'a', rand)
+    gamesB = deathsPerGame(b, winners, 'b', rand)
+    assignKills(gamesA, gamesB, a)
+    assignKills(gamesB, gamesA, b)
+  }
 
   for (let i = 0; i < total; i++) {
     const side = winners[i] === 'a' ? gamesA[i] : gamesB[i]

@@ -392,12 +392,16 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
         <table className="stat-table standings-table">
           <thead>
             <tr>
+              {/* Left to right in the order the table is sorted: points, then
+                  match win %, then game win %, then differential. The raw
+                  counts sit beside the percentage each one feeds. */}
               <th>#</th><th className="col-name">Player</th><th className="col-abil">Team</th>
+              <th>Pts</th>
               <th>W</th><th>L</th>
               <th title="Series won as a share of series played">Match Win %</th>
               <th>GW</th><th>GL</th>
               <th title="Individual games won as a share of games played">Game Win %</th>
-              <th title="Pokémon remaining differential">Diff</th><th>Pts</th>
+              <th title="Pokémon remaining differential">Diff</th>
             </tr>
           </thead>
           <tbody>
@@ -435,6 +439,7 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                     <span>{s.name}</span>
                   </th>
                   <td className="col-abil">{s.team ?? <em className="none">TBD</em>}</td>
+                  <td><strong>{s.points}</strong></td>
                   <td>{s.wins}</td>
                   <td>{s.losses}</td>
                   <td>{played ? `${Math.round((s.wins / played) * 100)}%` : '—'}</td>
@@ -444,7 +449,6 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                   <td className={s.monDiff > 0 ? 'pos' : s.monDiff < 0 ? 'neg' : ''}>
                     {s.monDiff > 0 ? `+${s.monDiff}` : s.monDiff}
                   </td>
-                  <td><strong>{s.points}</strong></td>
                 </tr>
                 {showing && (
                   <tr className="team-row">
