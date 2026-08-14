@@ -706,10 +706,11 @@ function GameTeam({
           l.deaths ? 'knocked out' : 'survived'}`}
       >
         {entry && (
-          <img
-            className={l.deaths ? 'is-fainted' : undefined}
-            src={spriteUrl(entry)} alt={name} width={40} height={33} loading="lazy"
-          />
+          // The cross is drawn on the wrapper, not the sprite: an <img> is a
+          // replaced element and has no pseudo-elements to draw it with.
+          <span className={`game-mon${l.deaths ? ' is-fainted' : ''}`}>
+            <img src={spriteUrl(entry)} alt={name} width={40} height={33} loading="lazy" />
+          </span>
         )}
       </PokemonLink>
     )
