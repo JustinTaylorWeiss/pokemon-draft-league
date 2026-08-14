@@ -692,8 +692,3 @@
 @media (prefers-reduced-motion: reduce) {
   .pokeball, .pokeball-button { animation: none; }
 }
-
-/* Matches won and lost: shown for reference, but no part of the order, so they
-   sit past the ranking columns and read a shade quieter. */
-.standings-table th:nth-last-child(2), .standings-table th:last-child { color: var(--muted); }
-.standings-table td.not-ranked { color: var(--muted); }
