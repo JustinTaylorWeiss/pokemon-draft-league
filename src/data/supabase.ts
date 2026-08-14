@@ -121,3 +121,24 @@ export async function startDraft(passphrase: string) {
   if (error) throw error
   return data
 }
+
+/**
+ * Adds a player. Gated, and not by this function — `players` has no insert
+ * policy at all, so this RPC is the only way in and it does the check itself.
+ */
+export async function addPlayer(passphrase: string, name: string, team?: string) {
+  const { data, error } = await db.rpc('add_player', {
+    passphrase, name, team: team || null, who: currentActor(),
+  })
+  if (error) throw error
+  return data
+}
+
+/** Removes a player. Refuses if they appear in a recorded match. */
+export async function removePlayer(passphrase: string, playerId: string) {
+  const { data, error } = await db.rpc('remove_player', {
+    passphrase, player_id: playerId, who: currentActor(),
+  })
+  if (error) throw error
+  return data as string
+}

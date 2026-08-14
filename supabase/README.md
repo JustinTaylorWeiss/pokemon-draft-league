@@ -40,6 +40,8 @@ knockouts 5-0, and standings come from the former.
    - `migrations/0001_league.sql` — tables and the derived standings views
    - `migrations/0002_history.sql` — the event log, its triggers, and revert
    - `migrations/0003_access.sql` — access rules and the draft passphrase
+   - `migrations/0004_showdown.sql` — the Showdown account on each player
+   - `migrations/0005_players.sql` — the gated add/remove player functions
 3. Set the draft passphrase, from the SQL editor rather than the site:
 
    ```sql
@@ -74,9 +76,21 @@ There is **no** operation that clears a week, resets a season, or empties a
 table. These were considered and left out rather than gated, because an
 operation that does not exist cannot be misused or mis-clicked.
 
-Starting a draft is the one action behind the passphrase. Note that it clears
-nothing — it flips a status flag — so getting it wrong costs a flag, not a
-season.
+Two actions sit behind the passphrase, and neither of them clears anything:
+
+- **Starting a draft** flips a status flag, so getting it wrong costs a flag
+  rather than a season.
+- **Adding or removing a player** changes who is in the league, which moves the
+  seeding, the schedule and the rosters with it. `players` has no insert or
+  delete policy at all, so `add_player` and `remove_player` are the only routes
+  in and they do the passphrase check themselves — a browser cannot bypass them
+  by calling PostgREST directly.
+
+`remove_player` refuses to remove anyone who appears in a recorded match.
+`matches.side_a` and `side_b` are arrays of player ids with no foreign key
+behind them, so the delete would not fail — it would quietly leave matches
+pointing at somebody who no longer exists, and the standings would be wrong in
+a way nobody could see.
 
 ## Things worth knowing before writing client code
 

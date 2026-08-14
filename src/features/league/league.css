@@ -31,6 +31,11 @@
 
 /* ---- standings ---- */
 .standings-table td, .standings-table th { white-space: nowrap; }
+/* Says how the table is ordered, since five tiebreaks is more than a reader
+   should have to infer from the rows. */
+.sort-note {
+  margin: 0 0 0.75rem; font-size: 0.78rem; color: var(--muted); max-width: 62ch;
+}
 .rank-cell { font-variant-numeric: tabular-nums; }
 .medal { font-size: 1.05rem; line-height: 1; }
 
@@ -330,3 +335,93 @@
   .roster-card .tier { display: none; }
   .pill { font-size: 0.7rem; padding: 0.2rem 0.5rem; }
 }
+
+/* ---- reporting a match, and managing players ---- */
+.standings-actions { display: flex; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.standings-actions button {
+  font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  padding: 0.4rem 0.8rem; border-radius: 999px;
+  background: var(--chip); border: 1px solid var(--line); color: var(--fg);
+}
+.standings-actions button:hover { border-color: var(--accent); color: var(--accent); }
+
+.report-modal, .players-modal { width: min(640px, 100%); }
+.report-title { margin: 0; font-size: 1.25rem; }
+.report-lead { margin: 0; font-size: 0.82rem; color: var(--muted); max-width: 56ch; }
+
+.report-week, .players-pass {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.78rem; font-weight: 600; color: var(--muted);
+}
+.report-week select, .report-week input, .players-pass input,
+.players-add input, .report-links input, .report-map select {
+  font: inherit; font-size: 0.85rem; color: var(--fg);
+  background: var(--chip); border: 1px solid var(--line);
+  border-radius: 8px; padding: 0.4rem 0.55rem;
+}
+.players-pass input { flex: 1 1 14rem; }
+
+.report-links { display: flex; flex-direction: column; gap: 0.6rem; }
+.report-links label { display: flex; flex-direction: column; gap: 0.25rem; }
+.report-links label > span {
+  font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.report-links em { font-style: normal; font-weight: 400; text-transform: none; letter-spacing: 0; }
+/* The series split, so game three is not optional after all. */
+.report-links .wants-link > span { color: var(--accent); }
+.report-links .wants-link input { border-color: var(--accent); }
+
+.report-error, .report-done { margin: 0; font-size: 0.8rem; }
+.report-error { color: #e05563; }
+.report-done { color: var(--accent); }
+
+.report-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+.report-go, .report-back {
+  font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  padding: 0.45rem 1rem; border-radius: 999px; border: 1px solid var(--line);
+}
+.report-go { background: var(--accent); border-color: var(--accent); color: #fff; }
+.report-go:disabled { opacity: 0.55; cursor: default; }
+.report-back { background: var(--chip); color: var(--fg); }
+
+.report-result { display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; }
+.report-result h3 {
+  margin: 0; font-size: 2rem; font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+}
+.report-sides { display: flex; gap: 1rem; flex-wrap: wrap; }
+.report-map { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.75rem; color: var(--muted); }
+
+.report-lines { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.report-lines th, .report-lines td {
+  text-align: left; padding: 0.3rem 0.5rem; border-bottom: 1px solid var(--line);
+}
+.report-lines th { font-size: 0.68rem; text-transform: uppercase; color: var(--muted); }
+.report-lines td:nth-child(3), .report-lines td:nth-child(4),
+.report-lines th:nth-child(3), .report-lines th:nth-child(4) {
+  text-align: right; font-variant-numeric: tabular-nums;
+}
+
+.players-add { display: flex; gap: 0.6rem; align-items: flex-end; flex-wrap: wrap; }
+.players-add label { display: flex; flex-direction: column; gap: 0.25rem; flex: 1 1 10rem; }
+.players-add label > span {
+  font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.players-add em { font-style: normal; font-weight: 400; text-transform: none; }
+
+.players-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.players-list li {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.4rem 0; border-top: 1px solid var(--line); font-size: 0.85rem;
+}
+.players-name { font-weight: 600; }
+.players-team { flex: 1; color: var(--muted); font-size: 0.78rem; }
+.players-locked { font-size: 0.72rem; color: var(--muted); }
+.players-confirm { display: flex; gap: 0.4rem; }
+.players-confirm button, .players-remove {
+  font: inherit; font-size: 0.72rem; cursor: pointer;
+  padding: 0.25rem 0.6rem; border-radius: 999px;
+  background: var(--chip); border: 1px solid var(--line); color: var(--muted);
+}
+.players-remove:hover { color: #e05563; border-color: #e05563; }
