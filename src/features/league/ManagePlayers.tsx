@@ -105,9 +105,8 @@ export function ManagePlayers({ league, onClose, onSaved }: Props) {
     return shell(
       <>
         <h2 className="report-title">Players</h2>
-        <p className="report-lead">
-          Changing who is in the league moves the seeding and the schedule with
-          it, so this one needs the passphrase.
+        <p className="report-lead one-line">
+          Adding or removing players needs the passphrase.
         </p>
         <form
           className="players-gate"

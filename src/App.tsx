@@ -23,7 +23,7 @@ const LEAGUE_SHEET_URL =
   'https://docs.google.com/spreadsheets/d/1xnKp-XtR9o-zJy1BNS78PxXy891zv_n4rawKto6rlyE/export?format=xlsx'
 
 /** "Draft League Season 4 VGC Reg F" -> "Season 4". */
-type View = 'league' | 'draft' | 'matchup' | 'dex'
+type View = 'league' | 'draft' | 'matchup' | 'dex' | 'rules'
 
 const VIEWS: { key: View; label: string }[] = [
   { key: 'league', label: 'League Sheet' },
@@ -48,7 +48,15 @@ export default function App() {
   const [refreshError, setRefreshError] = useState<string | null>(null)
   const [dataAt, setDataAt] = useState<Date | null>(null)
   const [season, setSeasonId] = useState(() => currentSeason().id)
-  const onDatabase = SEASONS.find((s) => s.id === season)?.source === 'database'
+  /**
+   * The refresh button re-reads the spreadsheet, so it only means anything for
+   * a season backed by one. A database season is already the source: it is
+   * read on load and re-read after every edit, and there is no older copy for a
+   * refresh to replace.
+   */
+  const source = SEASONS.find((s) => s.id === season)?.source
+  const onDatabase = source === 'database'
+  const fromSheet = source === 'sheet'
 
   // The primary bar wraps to two rows on narrow screens, so the secondary bar
   // cannot assume a fixed offset to stick below.
@@ -115,6 +123,17 @@ export default function App() {
           </nav>
 
           <div className="nav-tail">
+            {/* Rules sit here rather than among the league's tabs: they describe
+                the league itself, not a view of its data. */}
+            <button
+              type="button"
+              className={`rules-link${view === 'rules' ? ' is-active' : ''}`}
+              onClick={() => setView('rules')}
+            >
+              Rules
+            </button>
+
+            {fromSheet && (
             <span className={`refresh-stamp${refreshError ? ' is-error' : ''}`}>
               {refreshError
                 ? refreshError
@@ -124,9 +143,11 @@ export default function App() {
                     })}`
                   : ''}
             </span>
+            )}
 
             {/* Re-reads the master sheet. This only ever GETs — the sheet is
                 read-only, see CLAUDE.md. */}
+            {fromSheet && (
             <button
             type="button"
             className={`refresh-btn${refreshing ? ' is-busy' : ''}`}
@@ -146,6 +167,7 @@ export default function App() {
                 {refreshing ? 'Refreshing…' : refreshError ? 'Retry' : 'Refresh'}
               </span>
             </button>
+            )}
 
             {/* One season for now; this is where other seasons or leagues will
                 be chosen once there is more than one to import. */}
@@ -190,6 +212,7 @@ export default function App() {
       <main className="shell">
         {view === 'league' && <LeagueView tab={leagueTab} />}
         {view === 'draft' && <LeagueView tab="board" />}
+        {view === 'rules' && <LeagueView tab="rules" />}
         {view === 'matchup' && <QuickMatchup />}
         {view === 'dex' && <Dex />}
       </main>

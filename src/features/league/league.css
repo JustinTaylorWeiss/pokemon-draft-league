@@ -74,7 +74,7 @@
    lines up down the page — sized by content it would vary row to row, since
    each row is its own grid and they share no column. */
 .match-row {
-  display: grid; grid-template-columns: 1fr 4rem 1fr; align-items: stretch; gap: 0.5rem;
+  display: grid; grid-template-columns: 1fr 3.4rem 1fr; align-items: stretch; gap: 0.3rem;
 }
 .match-list .side {
   min-width: 0; overflow-wrap: anywhere;
@@ -91,9 +91,12 @@
 }
 .match-list .side.lost { border-color: #b8474f; background: rgb(184 71 79 / 10%); color: var(--muted); }
 .match-list .side.drew { border-color: var(--line); }
+/* Sized by its column, not its text, so every score is the same width and the
+   channel between the two boxes stays a constant width down the page. */
 .match-list .score {
-  align-self: center; font-variant-numeric: tabular-nums; color: var(--muted);
-  font-size: 0.8rem; background: var(--chip); padding: 0.1rem 0.5rem; border-radius: 999px;
+  align-self: center; text-align: center;
+  font-variant-numeric: tabular-nums; color: var(--muted);
+  font-size: 0.8rem; background: var(--chip); padding: 0.1rem 0.2rem; border-radius: 999px;
 }
 
 /* ---- pickers in the matchup wizard ---- */
@@ -342,6 +345,8 @@
 .report-modal, .players-modal { width: min(640px, 100%); }
 .report-title { margin: 0; font-size: 1.25rem; }
 .report-lead { margin: 0; font-size: 0.82rem; color: var(--muted); max-width: 56ch; }
+/* A lead that has to stay on one line ignores the reading-width cap. */
+.report-lead.one-line { max-width: none; white-space: nowrap; }
 
 .report-week, .players-pass {
   display: flex; align-items: center; gap: 0.5rem;
