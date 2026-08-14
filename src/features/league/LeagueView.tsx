@@ -577,7 +577,7 @@ function Matches({ league, dex }: { league: League; dex: PokemonDex }) {
                           title={`Game ${g.number} — open the knockouts`}
                           onClick={() => setOpen(open === key ? null : key)}
                         >
-                          {g.number}
+                          Game {g.number}
                         </button>
                       )
                     })}
