@@ -69,9 +69,12 @@
 .schedule h3 { margin: 0; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
 .match-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.25rem; }
 .match-list li { font-size: 0.85rem; }
-/* The result line. Games, when there are any, hang underneath it. */
+/* The result line, with the run of games in the middle beside the score.
+   The centre column is a fixed width rather than `auto` so that every match
+   lines up down the page — sized by content, a match carrying three chips
+   would pinch its own name boxes narrower than its neighbours'. */
 .match-row {
-  display: grid; grid-template-columns: 1fr auto 1fr; align-items: stretch; gap: 0.5rem;
+  display: grid; grid-template-columns: 1fr 7.5rem 1fr; align-items: stretch; gap: 0.5rem;
 }
 .match-list .side {
   min-width: 0; overflow-wrap: anywhere;
@@ -438,25 +441,36 @@
 .players-remove:hover { color: #e05563; border-color: #e05563; }
 
 /* ---- the games inside a match ---- */
-.match-list li.has-games { padding-bottom: 0.35rem; }
+.match-list li.has-games { padding-bottom: 0.2rem; }
 
-.game-list {
-  list-style: none; margin: 0.3rem 0 0; padding: 0 0 0 0.75rem;
-  display: flex; flex-direction: column; gap: 0.15rem;
-  border-left: 2px solid var(--line);
+/* Score and the run of games, side by side, so a match stays one line. */
+.score-cell {
+  align-self: center; display: flex; align-items: center; justify-content: center; gap: 0.4rem;
 }
-.game-head { display: flex; align-items: center; gap: 0.5rem; }
+.game-chips { display: flex; gap: 0.15rem; }
+.game-chip {
+  width: 1.15rem; height: 1.15rem; padding: 0; border-radius: 5px;
+  font: inherit; font-size: 0.6rem; font-weight: 700; line-height: 1; cursor: pointer;
+  display: grid; place-items: center;
+  border: 1px solid var(--line); background: var(--chip); color: var(--muted);
+}
+.game-chip.won { border-color: #3f9d6d; background: rgb(63 157 109 / 18%); color: #6dc79a; }
+.game-chip.lost { border-color: #b8474f; background: rgb(184 71 79 / 15%); color: #e0838a; }
+.game-chip:hover { filter: brightness(1.35); }
+.game-chip.is-open { outline: 2px solid var(--accent); outline-offset: 1px; }
+.game-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-.game-toggle {
-  flex: 1; display: flex; align-items: center; gap: 0.5rem;
-  font: inherit; font-size: 0.78rem; text-align: left; cursor: pointer;
-  background: none; border: 0; color: var(--muted);
-  padding: 0.25rem 0.35rem; border-radius: 6px;
+/* The one game currently open, under the match it belongs to. */
+.game-open { margin: 0.35rem 0 0.2rem; padding-left: 0.75rem; border-left: 2px solid var(--line); }
+.game-open-head {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.75rem; color: var(--muted); padding: 0.15rem 0.35rem;
 }
-.game-toggle:hover { background: var(--chip); color: var(--fg); }
-.game-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.game-caret { width: 0.75rem; flex: none; font-size: 0.7rem; }
-.game-no { font-weight: 600; color: var(--fg); }
+.game-open-head strong { color: var(--fg); font-size: 0.78rem; }
+.game-open-head .game-survivors { margin-left: 0; }
+.game-open-head .game-replay { margin-left: auto; }
+
+
 .game-winner::before { content: 'won by '; color: var(--muted); }
 .game-survivors {
   margin-left: auto; font-variant-numeric: tabular-nums; font-size: 0.72rem;

@@ -592,58 +592,69 @@ function Matches({ league, dex }: { league: League; dex: PokemonDex }) {
                 const won = isA ? m.scoreA! > m.scoreB! : m.scoreB! > m.scoreA!
                 return `side ${won ? 'won' : 'lost'}`
               }
+              const games = m.games ? [...m.games].sort((x, y) => x.number - y.number) : []
+              const shown = games.find((g) => open === `${week}-${i}-${g.number}`)
               return (
-                <li key={i} className={m.games?.length ? 'has-games' : undefined}>
+                <li key={i} className={games.length ? 'has-games' : undefined}>
                   <div className="match-row">
                     <span className={cls(true)}>{label(m.a)}</span>
-                    <span className="score">{done ? `${m.scoreA} – ${m.scoreB}` : 'vs'}</span>
+                    <span className="score-cell">
+                      <span className="score">{done ? `${m.scoreA} – ${m.scoreB}` : 'vs'}</span>
+                      {/* One chip per game, read from the left side's point of
+                          view, so a 2-1 shows as W L W and the shape of the
+                          series is legible without opening anything. */}
+                      {games.length > 0 && (
+                        <span className="game-chips">
+                          {games.map((g) => {
+                            const key = `${week}-${i}-${g.number}`
+                            const winner = g.winner === 'a' ? label(m.a)
+                              : g.winner === 'b' ? label(m.b) : null
+                            return (
+                              <button
+                                key={g.number}
+                                type="button"
+                                className={`game-chip${g.winner === 'a' ? ' won' : ' lost'}${
+                                  open === key ? ' is-open' : ''}`}
+                                aria-expanded={open === key}
+                                title={`Game ${g.number}${winner ? ` — won by ${winner}` : ''}`}
+                                onClick={() => setOpen(open === key ? null : key)}
+                              >
+                                {g.winner === 'a' ? 'W' : 'L'}
+                              </button>
+                            )
+                          })}
+                        </span>
+                      )}
+                    </span>
                     <span className={cls(false)}>{label(m.b)}</span>
                   </div>
-                  {m.games && m.games.length > 0 && (
-                    <ol className="game-list">
-                      {[...m.games].sort((x, y) => x.number - y.number).map((g) => {
-                        const key = `${week}-${i}-${g.number}`
-                        const isOpen = open === key
-                        const winner = g.winner === 'a' ? label(m.a) : g.winner === 'b' ? label(m.b) : null
-                        return (
-                          <li key={g.number}>
-                            <div className="game-head">
-                              <button
-                                type="button"
-                                className="game-toggle"
-                                aria-expanded={isOpen}
-                                onClick={() => setOpen(isOpen ? null : key)}
-                              >
-                                <span className="game-caret" aria-hidden="true">{isOpen ? '▾' : '▸'}</span>
-                                <span className="game-no">Game {g.number}</span>
-                                {winner && <span className="game-winner">{winner}</span>}
-                                {g.survivors !== null && (
-                                  <span className="game-survivors">
-                                    {g.survivors} left
-                                  </span>
-                                )}
-                              </button>
-                              {g.replayUrl && (
-                                <a
-                                  className="game-replay"
-                                  href={g.replayUrl}
-                                  target="_blank"
-                                  rel="noreferrer noopener"
-                                >
-                                  Replay ↗
-                                </a>
-                              )}
-                            </div>
-                            {isOpen && (
-                              <div className="game-detail">
-                                <GameSide title={label(m.a)} lines={g.a} dex={dex} league={league} />
-                                <GameSide title={label(m.b)} lines={g.b} dex={dex} league={league} />
-                              </div>
-                            )}
-                          </li>
-                        )
-                      })}
-                    </ol>
+
+                  {shown && (
+                    <div className="game-open">
+                      <div className="game-open-head">
+                        <strong>Game {shown.number}</strong>
+                        {shown.winner && (
+                          <span>won by {shown.winner === 'a' ? label(m.a) : label(m.b)}</span>
+                        )}
+                        {shown.survivors !== null && (
+                          <span className="game-survivors">{shown.survivors} left</span>
+                        )}
+                        {shown.replayUrl && (
+                          <a
+                            className="game-replay"
+                            href={shown.replayUrl}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                          >
+                            Replay ↗
+                          </a>
+                        )}
+                      </div>
+                      <div className="game-detail">
+                        <GameSide title={label(m.a)} lines={shown.a} dex={dex} league={league} />
+                        <GameSide title={label(m.b)} lines={shown.b} dex={dex} league={league} />
+                      </div>
+                    </div>
                   )}
                 </li>
               )
