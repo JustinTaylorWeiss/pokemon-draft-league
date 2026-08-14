@@ -395,14 +395,14 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
         <table className="stat-table standings-table">
           <thead>
             <tr>
-              {/* Left to right in the order the sort applies them. W and L are
-                  not steps of their own; they sit beside the rate they make.
-                  Head-to-head has no column — it is read from the schedule. */}
+              {/* Left to right in the order the sort applies them, then the
+                  two counts it does not use at all. Head-to-head has no column —
+                  it is read from the schedule. */}
               <th>#</th><th className="col-name">Player</th><th className="col-abil">Team</th>
               <th title="Series won as a share of series played">Match Win %</th>
-              <th>W</th><th>L</th>
-              <th>GW</th><th>GL</th>
+              <th title="Games won">GW</th><th title="Games lost">GL</th>
               <th title="Pokémon remaining differential">Diff</th>
+              <th title="Matches won">MW</th><th title="Matches lost">ML</th>
             </tr>
           </thead>
           <tbody>
@@ -440,13 +440,13 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                   </th>
                   <td className="col-abil">{s.team ?? <em className="none">TBD</em>}</td>
                   <td><strong>{played ? `${Math.round((s.wins / played) * 100)}%` : '—'}</strong></td>
-                  <td>{s.wins}</td>
-                  <td>{s.losses}</td>
                   <td>{s.gamesWon}</td>
                   <td>{s.gamesLost}</td>
                   <td className={s.monDiff > 0 ? 'pos' : s.monDiff < 0 ? 'neg' : ''}>
                     {s.monDiff > 0 ? `+${s.monDiff}` : s.monDiff}
                   </td>
+                  <td className="not-ranked">{s.wins}</td>
+                  <td className="not-ranked">{s.losses}</td>
                 </tr>
                 {showing && (
                   <tr className="team-row">
