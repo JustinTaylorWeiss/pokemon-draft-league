@@ -255,8 +255,11 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
   const scoreA = games ? games.filter((g) => g.winner === 'a').length : 0
   const scoreB = games ? games.length - scoreA : 0
 
+  // No click-away close: the backdrop is easy to hit by accident, and hitting
+  // it would throw away three pasted links and a parsed result. Closing is the
+  // ✕, which nobody presses without meaning to.
   return (
-    <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+    <div className="modal-backdrop">
       <div className="modal report-modal" role="dialog" aria-modal="true" aria-label="Report a match">
         <button type="button" className="modal-close" onClick={onClose} aria-label="Close">✕</button>
         <h2 className="report-title">Report a match</h2>

@@ -89,8 +89,11 @@ export function ManagePlayers({ league, onClose, onSaved }: Props) {
     }
   }
 
+  // No click-away close: the backdrop is easy to hit by accident, and hitting
+  // it would throw away a form that took real effort to fill in — or, here, a
+  // passphrase. Closing is the ✕, which nobody presses without meaning to.
   const shell = (children: React.ReactNode) => (
-    <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) onClose() }}>
+    <div className="modal-backdrop">
       <div className="modal players-modal" role="dialog" aria-modal="true" aria-label="Add or remove players">
         <button type="button" className="modal-close" onClick={onClose} aria-label="Close">✕</button>
         {children}
