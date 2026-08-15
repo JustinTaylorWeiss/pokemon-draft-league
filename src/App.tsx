@@ -3,9 +3,8 @@ import { useElementHeight } from './lib/useElementHeight'
 import { QuickMatchup } from './features/quick-matchup/QuickMatchup'
 import { LeagueView } from './features/league/LeagueView'
 import { LEAGUE_TABS, type LeagueTab } from './features/league/tabs'
-import { DRAFT_TABS, type DraftTab } from './features/league/draftTabs'
 import { DraftToggle } from './features/league/DraftToggle'
-import { WhoPicker } from './features/league/WhoPicker'
+import { DropPicker } from './components/DropPicker'
 import { myPlayerId, setMyPlayer, subscribeIdentity } from './data/identity'
 import { ReportMatch } from './features/league/ReportMatch'
 import { ManagePlayers } from './features/league/ManagePlayers'
@@ -29,23 +28,20 @@ const LEAGUE_SHEET_URL =
   'https://docs.google.com/spreadsheets/d/1xnKp-XtR9o-zJy1BNS78PxXy891zv_n4rawKto6rlyE/export?format=xlsx'
 
 /** "Draft League Season 4 VGC Reg F" -> "Season 4". */
-type View = 'league' | 'draft' | 'matchup' | 'dex'
+type View = 'league' | 'matchup' | 'dex' | 'history'
 
 const VIEWS: { key: View; label: string }[] = [
-  { key: 'league', label: 'League Sheet' },
-  // The draft is its own thing rather than a tab inside the league: it happens
-  // before a season rather than during one, and it is about to grow a live
-  // draft screen alongside the board.
-  { key: 'draft', label: 'Draft' },
+  { key: 'league', label: 'League' },
   { key: 'matchup', label: 'Quick Matchup' },
   { key: 'dex', label: 'Dex' },
+  // The log covers every part of the league, not just the draft it started in.
+  { key: 'history', label: 'History' },
 ]
 
 export default function App() {
   const [view, setView] = useState<View>('league')
   // Lifted so the secondary bar can sit directly under the primary one.
   const [leagueTab, setLeagueTab] = useState<LeagueTab>('standings')
-  const [draftTab, setDraftTab] = useState<DraftTab>('teams')
   // Loaded here too so the secondary nav can name the season; the loader caches,
   // so this shares one fetch with the views below.
   const [league, setLeague] = useState<League | null>(null)
@@ -165,10 +161,12 @@ export default function App() {
               ?
             </button>
             {league && league.players.length > 0 && (
-              <WhoPicker
-                players={league.players}
+              <DropPicker
+                className="who-picker"
+                ariaLabel="Which player you are"
+                items={league.players.map((p) => ({ id: p.id, label: p.name, note: p.team }))}
                 value={me}
-                onPick={(p) => setMyPlayer(p.id, p.name)}
+                onPick={(p) => setMyPlayer(p.id, p.label)}
               />
             )}
 
@@ -211,49 +209,24 @@ export default function App() {
             {/* One season for now; this is where other seasons or leagues will
                 be chosen once there is more than one to import. */}
             {league && (
-              <label className="season-picker">
-                <select
-                  value={season}
-                  onChange={(e) => changeSeason(e.target.value)}
-                  aria-label="League and season"
-                >
-                  {/* Labels come from the registry, not from the league in
-                      hand: sourcing them from the loaded data made every option
-                      take the name of whichever season was showing. */}
-                  {SEASONS.map((s) => (
-                    <option key={s.id} value={s.id}>{s.label}</option>
-                  ))}
-                </select>
-              </label>
+              /* Labels come from the registry, not from the league in hand:
+                 sourcing them from the loaded data made every option take the
+                 name of whichever season was showing. */
+              <DropPicker
+                className="season-picker"
+                ariaLabel="League and season"
+                items={SEASONS.map((x) => ({
+                  id: x.id,
+                  label: x.label,
+                  note: x.source === 'database' ? 'Edited on the site' : 'From the spreadsheet',
+                }))}
+                value={season}
+                onPick={(x) => changeSeason(x.id)}
+              />
             )}
           </div>
         </div>
       </header>
-
-      {view === 'draft' && (
-        <div className="subbar">
-          <div className="bar-inner">
-            <nav className="sub-nav">
-              {DRAFT_TABS.map((t) => (
-                <button
-                  key={t.key} type="button"
-                  className={draftTab === t.key ? 'is-active' : ''}
-                  onClick={() => setDraftTab(t.key)}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </nav>
-            {/* Opening and closing the draft is the one gated control, so it
-                sits apart from the tabs at the far end. */}
-            {onDatabase && (
-              <div className="sub-actions">
-                <DraftToggle onChanged={() => reloadSeason(season)} />
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {view === 'league' && (
         <div className="subbar">
@@ -275,6 +248,7 @@ export default function App() {
               <div className="sub-actions">
                 <button type="button" onClick={() => setEditing('match')}>Record a match</button>
                 <button type="button" onClick={() => setEditing('players')}>Add / remove players</button>
+                <DraftToggle onChanged={() => reloadSeason(season)} />
               </div>
             )}
           </div>
@@ -283,11 +257,7 @@ export default function App() {
 
       <main className="shell">
         {view === 'league' && <LeagueView tab={leagueTab} />}
-        {view === 'draft' && (
-          <LeagueView
-            tab={draftTab === 'teams' ? 'draft-teams' : draftTab === 'history' ? 'history' : 'board'}
-          />
-        )}
+        {view === 'history' && <LeagueView tab="history" />}
         {view === 'matchup' && <QuickMatchup />}
         {view === 'dex' && <Dex />}
       </main>

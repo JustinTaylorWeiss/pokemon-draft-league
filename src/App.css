@@ -48,13 +48,15 @@
 
 /* Season picker: currently one option, but it is where other seasons or
    leagues will be selected. */
-.season-picker { display: flex; align-items: center; min-width: 0; padding: 0.4rem 0; }
-.season-picker select {
-  background: var(--surface); border: 1px solid var(--line); color: var(--accent);
-  border-radius: 10px; padding: 0.3rem 0.6rem; font: inherit;
-  font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em; max-width: 100%;
+.season-picker { min-width: 0; }
+.season-picker .drop-current {
+  color: var(--accent); border-radius: 10px; padding: 0.3rem 0.6rem;
+  font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em;
 }
-.season-picker select:hover { border-color: var(--accent); }
+.season-picker .drop-caret { font-size: 1rem; color: var(--accent); }
+/* Anchored to its right edge: it is the last thing in the bar, and a list
+   hanging off the left would run past the window. */
+.season-picker .drop-list { left: auto; right: 0; }
 
 .main-nav { display: flex; gap: 0.25rem; min-width: 0; overflow-x: auto; scrollbar-width: none; }
 .main-nav::-webkit-scrollbar { display: none; }
@@ -302,37 +304,40 @@
 .sub-actions button:hover { color: var(--accent); border-color: var(--accent); }
 .sub-actions button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-/* Who you are: set once, beside the season it applies to. Unlabelled — it
-   holds a person's name, which is its own explanation. */
-.who-picker { position: relative; }
-.who-current {
-  display: flex; align-items: center; gap: 0.4rem;
+/* Both top-bar pickers: a button, and a list that always opens under it. */
+.drop-picker { position: relative; }
+.drop-current {
+  display: flex; align-items: center; gap: 0.4rem; max-width: 100%;
   font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer;
   padding: 0.35rem 0.6rem; border-radius: 8px;
   background: var(--surface); border: 1px solid var(--line); color: var(--fg);
 }
-.who-current:hover { border-color: var(--accent); }
-.who-current:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.who-caret { font-size: 0.6rem; color: var(--muted); }
+.drop-current:hover { border-color: var(--accent); }
+.drop-current:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.drop-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Big enough to read as the control it is, since the button is otherwise just
+   a name and nothing says it opens. */
+.drop-caret { font-size: 0.9rem; line-height: 1; color: var(--muted); }
+.drop-current:hover .drop-caret { color: var(--accent); }
 
-/* Below the name, always: the list should not cover what it belongs to. */
-.who-list {
+/* Below the button, always: the list should not cover what it belongs to. */
+.drop-list {
   position: absolute; top: calc(100% + 0.35rem); left: 0; z-index: 30;
   list-style: none; margin: 0; padding: 0.25rem;
   min-width: 100%; max-height: 60vh; overflow-y: auto;
   background: var(--widget); border: 1px solid var(--line); border-radius: 10px;
   box-shadow: 0 14px 32px rgb(0 0 0 / 50%);
 }
-.who-list button {
+.drop-list button {
   width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 0.05rem;
   font: inherit; font-size: 0.82rem; text-align: left; cursor: pointer; white-space: nowrap;
   background: none; border: 0; color: var(--fg);
   padding: 0.3rem 0.6rem; border-radius: 6px;
 }
-.who-list button:hover { background: var(--chip); }
-.who-list button.is-current { color: var(--accent); }
-.who-list button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.who-list em { font-style: normal; font-size: 0.68rem; color: var(--muted); }
+.drop-list button:hover { background: var(--chip); }
+.drop-list button.is-current { color: var(--accent); }
+.drop-list button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.drop-list em { font-style: normal; font-size: 0.68rem; color: var(--muted); }
 
 /* Asked once, and there is no way past it but answering. */
 .who-modal { width: min(680px, 100%); }

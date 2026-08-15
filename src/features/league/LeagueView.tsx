@@ -49,7 +49,7 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
       {tab === 'standings' && <Standings league={league} dex={dex} />}
       {tab === 'matches' && <Matches league={league} dex={dex} />}
       {tab === 'board' && <Board league={league} dex={dex} />}
-      {tab === 'draft-teams' && <DraftTeams league={league} dex={dex} />}
+      {tab === 'my-team' && <DraftTeams league={league} dex={dex} />}
       {tab === 'history' && <History league={league} />}
       {tab === 'stats' && <Stats league={league} dex={dex} />}
       {tab === 'rules' && <Rules league={league} />}
@@ -749,10 +749,10 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
   // complete and each pill narrows it.
   const [tiers, setTiers] = useState<Set<string>>(new Set())
   const [avail, setAvail] = useState<Set<'available' | 'drafted'>>(new Set())
-  // dir 0 means unsorted, so a column cycles through both directions and off.
-  // Tier ascending is the default because TIER_RANK runs best-to-worst, so it
-  // puts Top at the head of the board the way the sheet's own sections do.
-  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 | 0 }>({ key: 'tier', dir: 1 })
+  // dir 0 is the board's own order — best tier first, strongest within it —
+  // rather than "unsorted". It is what the board looks like before anyone
+  // touches a column, so no column is marked as doing it.
+  const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 | 0 }>({ key: 'tier', dir: 0 })
 
   const toggleIn = <T,>(setter: (fn: (prev: Set<T>) => Set<T>) => void, value: T) =>
     setter((prev) => {
@@ -784,7 +784,11 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
       .map(([id, e]) => ({ id, entry: e, mon: dex[id] }))
 
     const { key, dir } = sort
-    if (!dir) return list
+    const byBoardOrder = (a: typeof list[number], b: typeof list[number]) =>
+      byTier(a.entry.tier, b.entry.tier)
+      || (b.mon?.bst ?? 0) - (a.mon?.bst ?? 0)
+      || a.entry.name.localeCompare(b.entry.name)
+    if (!dir) return list.sort(byBoardOrder)
     return list.sort((a, b) => {
       // Within a tier the strongest first, and that tiebreak keeps its own
       // direction — flipping the tier order should not also flip BST.

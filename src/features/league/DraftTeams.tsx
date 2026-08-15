@@ -53,18 +53,30 @@ export function DraftTeams({ league, dex }: Props) {
   }
 
   const mine = me ? league.rosters[me] ?? [] : []
+  /** The board names who drafted a Pokémon, not their id. */
+  const myName = league.players.find((p) => p.id === me)?.name ?? ''
   const byTierThenName = (a: { pokemon: string; tier: DraftTier }, b: typeof a) =>
     byTier(a.tier, b.tier) || (dex[a.pokemon]?.name ?? '').localeCompare(dex[b.pokemon]?.name ?? '')
 
-  /** Everything still on the board, which is what there is left to take. */
+  /**
+   * What the board has, matching the search.
+   *
+   * Taken and banned Pokémon are listed rather than filtered out. Hiding them
+   * makes a search for one look like a spelling mistake; showing them, greyed
+   * and saying who has it, answers the question that was actually being asked.
+   * Free ones come first, since those are the ones you can act on.
+   */
   const available = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return []
     return Object.entries(league.board)
-      .filter(([id, e]) => !e.draftedBy && e.tier !== 'Banned'
-        && (dex[id]?.name ?? e.name).toLowerCase().includes(q))
-      .sort(([aId, a], [bId, b]) =>
-        byTier(a.tier, b.tier) || (dex[aId]?.name ?? '').localeCompare(dex[bId]?.name ?? ''))
+      .filter(([id, e]) => (dex[id]?.name ?? e.name).toLowerCase().includes(q))
+      .sort(([aId, a], [bId, b]) => {
+        const free = (e: typeof a) => (!e.draftedBy && e.tier !== 'Banned' ? 0 : 1)
+        return free(a) - free(b)
+          || byTier(a.tier, b.tier)
+          || (dex[aId]?.name ?? '').localeCompare(dex[bId]?.name ?? '')
+      })
       .slice(0, 24)
   }, [league.board, dex, query])
 
@@ -167,26 +179,37 @@ export function DraftTeams({ league, dex }: Props) {
               <ul className="draft-results">
                 {available.map(([id, entry]) => {
                   const mon = dex[id]
+                  const banned = entry.tier === 'Banned'
+                  const taken = Boolean(entry.draftedBy)
+                  const why = banned ? 'Banned'
+                    : entry.draftedBy === myName ? 'On your team'
+                    : taken ? `Drafted by ${entry.draftedBy}` : null
                   return (
                     <li key={id}>
-                      {mon && <img src={spriteUrl(mon)} alt="" width={36} height={30} loading="lazy" />}
-                      <span className={`${tierClass(entry.tier)} draft-tier`}>{entry.tier}</span>
-                      <span className="draft-name">{mon?.name ?? entry.name}</span>
+                      {/* The row is the control. A separate Draft button on
+                          every result was a small target repeated twenty times
+                          for the only thing a result can do. */}
                       <button
-                        type="button" className="draft-take" disabled={busy}
+                        type="button"
+                        className={`draft-result${why ? ' is-gone' : ''}`}
+                        disabled={busy || Boolean(why)}
+                        title={why ?? `Draft ${mon?.name ?? entry.name}`}
                         onClick={() => run(async () => {
                           const msg = await claimPokemon(me, id)
                           setQuery('')
                           return msg
                         })}
                       >
-                        Draft
+                        <span className={`${tierClass(entry.tier)} draft-tier`}>{entry.tier}</span>
+                        {mon && <img src={spriteUrl(mon)} alt="" width={36} height={30} loading="lazy" />}
+                        <span className="draft-name">{mon?.name ?? entry.name}</span>
+                        {why && <span className="draft-taken">{why}</span>}
                       </button>
                     </li>
                   )
                 })}
                 {available.length === 0 && (
-                  <li className="draft-empty">Nothing undrafted matches that.</li>
+                  <li className="draft-empty">Nothing on the board matches that.</li>
                 )}
               </ul>
             )}
@@ -213,10 +236,10 @@ export function DraftTeams({ league, dex }: Props) {
                   const mon = dex[pick.pokemon]
                   return (
                     <li key={pick.pokemon}>
+                      <span className={`${tierClass(pick.tier)} draft-tier`}>{pick.tier}</span>
                       <PokemonLink id={pick.pokemon} title={mon?.name ?? pick.pokemon}>
                         {mon && <img src={spriteUrl(mon)} alt="" width={32} height={26} loading="lazy" />}
                       </PokemonLink>
-                      <span className={`${tierClass(pick.tier)} draft-tier`}>{pick.tier}</span>
                       <span className="draft-name">
                         <PokemonLink id={pick.pokemon}>{mon?.name ?? pick.pokemon}</PokemonLink>
                       </span>

@@ -730,22 +730,42 @@
 .draft-who select { font-size: 0.95rem; padding: 0.45rem 0.6rem; }
 
 .draft-mine h3 { display: flex; align-items: baseline; gap: 0.6rem; margin: 0 0 0.6rem; }
-.draft-results li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
+.draft-results li { display: flex; }
+/* Each result is a whole clickable row: hovering says it is one, and choosing
+   it drafts the Pokémon. */
+.draft-result {
+  flex: 1; display: flex; align-items: center; gap: 0.5rem;
+  font: inherit; font-size: 0.85rem; text-align: left; cursor: pointer;
+  background: none; border: 1px solid transparent; border-radius: 8px;
+  color: inherit; padding: 0.15rem 0.4rem;
+}
+.draft-result:hover { background: var(--chip); border-color: var(--accent); }
+.draft-result:hover .draft-name { color: var(--accent); }
+.draft-result:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.draft-result:disabled { cursor: default; }
+.draft-result:disabled:hover { background: none; border-color: transparent; }
+.draft-result:disabled:hover .draft-name { color: inherit; }
+/* Already gone: shown so a search for it answers rather than returning
+   nothing, but plainly not something you can take. */
+.draft-result.is-gone { opacity: 0.55; }
+.draft-result.is-gone img { filter: grayscale(1); }
+.draft-taken {
+  margin-left: auto; flex: none; font-size: 0.7rem; color: var(--muted);
+  white-space: nowrap;
+}
 .draft-tier { flex: none; min-width: 2.9rem; text-align: center; }
 .draft-name { flex: 1 1 auto; min-width: 6rem;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .draft-types { display: flex; gap: 0.2rem; flex: none; }
 .draft-empty { color: var(--muted); font-size: 0.82rem; }
 
-.draft-drop, .draft-take {
+.draft-drop {
   flex: none; font: inherit; font-size: 0.72rem; font-weight: 600; cursor: pointer;
   padding: 0.2rem 0.6rem; border-radius: 999px;
   background: var(--chip); border: 1px solid var(--line); color: var(--muted);
 }
 .draft-drop:hover { color: #e05563; border-color: #e05563; }
-.draft-take { color: var(--accent); border-color: var(--accent); }
-.draft-take:hover { background: var(--accent); color: #fff; }
-.draft-drop:disabled, .draft-take:disabled { opacity: 0.5; cursor: default; }
+.draft-drop:disabled { opacity: 0.5; cursor: default; }
 
 .draft-add { border-top: 1px solid var(--line); padding-top: 0.7rem; }
 .draft-add input {
@@ -774,6 +794,8 @@
 }
 .draft-other ul { list-style: none; margin: 0; padding: 0; }
 .draft-other li { display: flex; align-items: center; gap: 0.4rem; font-size: 0.78rem; }
+/* Tier first, so a team reads down its tiers rather than down its sprites. */
+.draft-other li .draft-name { flex: 1 1 auto; }
 
 /* Your team, one Pokémon a row, with what you need to judge it. */
 .draft-table { width: 100%; margin-bottom: 0.9rem; }
@@ -785,6 +807,10 @@
 }
 .draft-col-types { text-align: left !important; width: 9.5rem; }
 .draft-col-types .type-chip { margin-right: 0.2rem; }
+/* Centred: a column of two- and three-digit numbers reads as a block, and
+   right-aligning them left the headers floating away from their values. */
+.draft-table th:not(:first-child):not(.draft-col-name):not(.draft-col-types):not(.draft-col-abil),
+.draft-stat, .draft-bst { text-align: center !important; }
 .draft-stat, .draft-bst { font-variant-numeric: tabular-nums; width: 3rem; }
 .draft-bst { font-weight: 600; }
 /* Abilities wrap rather than stretching the row: three is common and long
@@ -820,6 +846,7 @@
 /* A stripe saying what kind of change it was, so the log skims. */
 .history-list li { border-left: 3px solid transparent; padding-left: 0.6rem; }
 .history-list li.kind-draft { border-left-color: var(--accent); }
+.history-list li.kind-trades { border-left-color: #4aa3c7; }
 .history-list li.kind-matches { border-left-color: #3f9d6d; }
 .history-list li.kind-players { border-left-color: #d09a3c; }
 .history-list li.kind-league { border-left-color: var(--line); }

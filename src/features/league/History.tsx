@@ -24,18 +24,33 @@ interface EventRow {
   row_key: Record<string, unknown> | null
   before: Record<string, unknown> | null
   after: Record<string, unknown> | null
+  /** What the league was doing when this happened. Null for older rows. */
+  phase: string | null
 }
 
-/** What a table change is really about, for filtering and for wording. */
+/**
+ * What a change is really about.
+ *
+ * A pick and a trade are the same write — a roster row and the board's claim —
+ * and only the moment tells them apart. The trigger stamps the draft's status
+ * as it happens, so a roster change made after somebody closed the draft is a
+ * trade and one made while it was open is a pick.
+ */
 const KINDS = [
   { key: 'draft', label: 'Draft', tables: ['rosters', 'board', 'draft_picks', 'draft_state'] },
+  { key: 'trades', label: 'Trades', tables: [] },
   { key: 'matches', label: 'Matches', tables: ['matches', 'match_lines', 'games', 'game_lines'] },
   { key: 'players', label: 'Players', tables: ['players'] },
   { key: 'league', label: 'League', tables: ['league_meta', 'rules_sections'] },
 ] as const
 
-const kindOf = (table: string) =>
-  KINDS.find((k) => (k.tables as readonly string[]).includes(table))?.key ?? 'league'
+const ROSTER_TABLES = ['rosters', 'board', 'draft_picks']
+
+function kindOf(table: string, phase: string | null) {
+  // Only a roster change can be a trade; ending the draft is still the draft.
+  if (ROSTER_TABLES.includes(table) && phase === 'complete') return 'trades'
+  return KINDS.find((k) => (k.tables as readonly string[]).includes(table))?.key ?? 'league'
+}
 
 /**
  * One transaction's worth of changes.
@@ -49,6 +64,7 @@ interface Group {
   at: string
   actor: string
   table: string
+  phase: string | null
   action: EventRow['action']
   rows: EventRow[]
 }
@@ -95,7 +111,10 @@ function describe(g: Group, names: Map<string, string>): string {
   const subject = names.get(key(rows[0])) ?? key(rows[0])
 
   if (g.table === 'rosters') {
-    const verb = g.action === 'insert' ? 'drafted' : g.action === 'delete' ? 'released' : 'changed'
+    const traded = g.phase === 'complete'
+    const verb = g.action === 'insert' ? (traded ? 'traded for' : 'drafted')
+      : g.action === 'delete' ? (traded ? 'traded away' : 'released')
+      : 'changed'
     const mons = rows.map((r) => names.get(String(r.row_key?.pokemon_id ?? '')) ?? r.row_key?.pokemon_id)
     return `${verb} ${mons.slice(0, 4).join(', ')}${n > 4 ? ` and ${n - 4} more` : ''}`
   }
@@ -120,8 +139,9 @@ function describe(g: Group, names: Map<string, string>): string {
   if (g.table === 'board' && g.action === 'update') {
     const claim = rows[0].after?.drafted_by
     const mon = names.get(String(rows[0].row_key?.pokemon_id ?? '')) ?? subject
-    if (claim) return `claimed ${mon}`
-    if (rows[0].before?.drafted_by) return `released ${mon}`
+    const traded = g.phase === 'complete'
+    if (claim) return traded ? `traded for ${mon}` : `claimed ${mon}`
+    if (rows[0].before?.drafted_by) return traded ? `traded away ${mon}` : `released ${mon}`
     return `edited ${mon}`
   }
 
@@ -184,7 +204,7 @@ export function History({ league }: { league: League }) {
       } else {
         out.push({
           id: e.id, at: e.at, actor: e.actor ?? 'anonymous',
-          table: e.table_name, action: e.action, rows: [e],
+          table: e.table_name, phase: e.phase, action: e.action, rows: [e],
         })
       }
     }
@@ -196,7 +216,9 @@ export function History({ league }: { league: League }) {
     return out
   }, [events])
 
-  const shown = kinds.size === 0 ? groups : groups.filter((g) => kinds.has(kindOf(g.table)))
+  const shown = kinds.size === 0
+    ? groups
+    : groups.filter((g) => kinds.has(kindOf(g.table, g.phase)))
 
   const toggle = (key: string) => setKinds((prev) => {
     const next = new Set(prev)
@@ -218,7 +240,7 @@ export function History({ league }: { league: League }) {
             Everything<em>{groups.length}</em>
           </button>
           {KINDS.map((k) => {
-            const n = groups.filter((g) => kindOf(g.table) === k.key).length
+            const n = groups.filter((g) => kindOf(g.table, g.phase) === k.key).length
             return (
               <button
                 key={k.key} type="button"
@@ -236,7 +258,7 @@ export function History({ league }: { league: League }) {
       <section className="panel">
         <ul className="history-list">
           {shown.map((g) => (
-            <li key={g.id} className={`kind-${kindOf(g.table)}`}>
+            <li key={g.id} className={`kind-${kindOf(g.table, g.phase)}`}>
               <span className="history-actor">{g.actor}</span>
               <span className="history-what">{describe(g, names)}</span>
               <span className="history-when" title={new Date(g.at).toLocaleString()}>
