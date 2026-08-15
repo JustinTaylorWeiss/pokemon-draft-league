@@ -5,6 +5,7 @@ import { LeagueView } from './features/league/LeagueView'
 import { LEAGUE_TABS, type LeagueTab } from './features/league/tabs'
 import { DRAFT_TABS, type DraftTab } from './features/league/draftTabs'
 import { DraftToggle } from './features/league/DraftToggle'
+import { WhoPicker } from './features/league/WhoPicker'
 import { myPlayerId, setMyPlayer, subscribeIdentity } from './data/identity'
 import { ReportMatch } from './features/league/ReportMatch'
 import { ManagePlayers } from './features/league/ManagePlayers'
@@ -150,25 +151,6 @@ export default function App() {
           </nav>
 
           <div className="nav-tail">
-            {league && league.players.length > 0 && (
-              <label className="who-picker">
-                <span className="who-label">You</span>
-                <select
-                  value={me}
-                  aria-label="Which player you are"
-                  onChange={(e) => {
-                    const p = league.players.find((x) => x.id === e.target.value)
-                    setMyPlayer(p?.id ?? '', p?.name ?? '')
-                  }}
-                >
-                  <option value="">Not set</option>
-                  {league.players.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
-              </label>
-            )}
-
             {/* Rules describe the league itself rather than a view of its
                 data, so they open over whatever you are looking at instead of
                 replacing it. */}
@@ -182,6 +164,13 @@ export default function App() {
             >
               ?
             </button>
+            {league && league.players.length > 0 && (
+              <WhoPicker
+                players={league.players}
+                value={me}
+                onPick={(p) => setMyPlayer(p.id, p.name)}
+              />
+            )}
 
             {fromSheet && (
             <span className={`refresh-stamp${refreshError ? ' is-error' : ''}`}>
