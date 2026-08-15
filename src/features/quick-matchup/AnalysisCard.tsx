@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Widget } from '../../components/Widget'
-import type { AbilityDex, LearnsetDex, MoveDex, SetDex, TypeChart } from '../../data/types'
-import { loadAbilities, loadSets } from '../../data/load'
+import type { LearnsetDex, MoveDex, SetDex, TypeChart } from '../../data/types'
+import { loadSets } from '../../data/load'
 import { DraftSummaryBody } from './DraftSummary'
 import { DefensiveChartBody } from './DefensiveChart'
 import { buildMoveRows, LearnedMovesBody } from './LearnedMoves'
@@ -67,9 +67,6 @@ export function AnalysisCard({
     if (!hostSpeedTiers && tab === SPEED_TAB.key) setTab(TABS[0].key)
   }, [hostSpeedTiers, tab])
 
-  // Descriptions for the ability pills' tooltips.
-  const [abilityDex, setAbilityDex] = useState<AbilityDex | null>(null)
-  useEffect(() => { loadAbilities().then(setAbilityDex, () => {}) }, [])
   const [sets, setSets] = useState<SetDex | null>(null)
   useEffect(() => { loadSets().then(setSets, () => {}) }, [])
 
@@ -132,9 +129,7 @@ export function AnalysisCard({
       className="analysis-card" actions={actions} footnote={footnote}
     >
       {tab === 'summary' && (
-        <DraftSummaryBody
-          team={analyzed} neutral={neutral} abilities={abilityDex}
-        />
+        <DraftSummaryBody team={analyzed} neutral={neutral} />
       )}
       {tab === 'types' && (
         <DefensiveChartBody

@@ -106,13 +106,20 @@
      empty. A wider column also means fewer abilities behind a "+N more". */
   white-space: normal; font-size: 0.95rem; line-height: 1.3;
 }
-/* Exactly two lines: clamped so a long pair cannot spill to a third, and held
-   open to that height so every row is the same regardless of how many
-   abilities it has. */
+/* Two rows of pills: held open to that height so every row is the same
+   regardless of how many abilities a Pokémon has, and clipped so a fourth
+   cannot push the table out of shape. */
 .summary-table .col-abil .ability-lines {
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
-  overflow: hidden;
-  min-height: 2.5em;
+  display: flex; flex-wrap: wrap; align-content: center;
+  gap: 0.2rem 0.3rem; min-height: 2.9em; max-height: 2.9em; overflow: hidden;
+}
+/* Inert: no tooltip, no hover of their own, no pointer. The row underneath is
+   the thing you click, and a pill that looked separately clickable would only
+   be a smaller target for the same action. */
+.summary-table .col-abil .ability-lines span {
+  font-size: 0.78rem; line-height: 1.4; color: var(--muted); white-space: nowrap;
+  background: var(--chip); border: 1px solid var(--line);
+  border-radius: 999px; padding: 0.02rem 0.45rem;
 }
 
 .stat-table thead th, .type-table thead th { color: var(--muted); font-weight: 600; font-size: 0.72rem; }

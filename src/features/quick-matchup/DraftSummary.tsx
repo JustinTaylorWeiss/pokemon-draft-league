@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { spriteUrl, toId } from '../../data/load'
-import type { AbilityDex, StatKey } from '../../data/types'
+import { spriteUrl } from '../../data/load'
+import type { StatKey } from '../../data/types'
 import { BST_ORDER, STAT_LABELS, summarize } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
 import type { Team } from './TeamEditor'
@@ -21,11 +21,7 @@ function heat(value: number, neutral: number): string {
 }
 
 /** `neutral` is owned by the parent card so the slider can live in its header. */
-export function DraftSummaryBody(
-  { team, neutral, abilities }: {
-    team: Team; neutral: number; abilities: AbilityDex | null
-  },
-) {
+export function DraftSummaryBody({ team, neutral }: { team: Team; neutral: number }) {
 
   const rows = useMemo(
     () => [...team.members].sort((a, b) => b.pokemon.bst - a.pokemon.bst),
@@ -86,13 +82,12 @@ export function DraftSummaryBody(
                     </span>
                   </th>
                   <td className="col-abil">
-                    {/* Plain text: the description still shows on hover. */}
+                    {/* Pills, and inert ones: no tooltip and nothing of their
+                        own to click. The row already opens the Pokémon, and a
+                        control inside it that looks separately clickable but
+                        does the same thing is just a smaller target for it. */}
                     <span className="ability-lines">
-                      {abilityNames.map((name, i) => (
-                        <span key={name} title={abilities?.[toId(name)]?.shortDesc || name}>
-                          {i > 0 && ', '}{name}
-                        </span>
-                      ))}
+                      {abilityNames.map((name) => <span key={name}>{name}</span>)}
                     </span>
                   </td>
                   {BST_ORDER.map((k: StatKey) => (
