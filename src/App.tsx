@@ -27,7 +27,7 @@ const LEAGUE_SHEET_URL =
   'https://docs.google.com/spreadsheets/d/1xnKp-XtR9o-zJy1BNS78PxXy891zv_n4rawKto6rlyE/export?format=xlsx'
 
 /** "Draft League Season 4 VGC Reg F" -> "Season 4". */
-type View = 'league' | 'draft' | 'matchup' | 'dex' | 'rules'
+type View = 'league' | 'draft' | 'matchup' | 'dex'
 
 const VIEWS: { key: View; label: string }[] = [
   { key: 'league', label: 'League Sheet' },
@@ -53,6 +53,16 @@ export default function App() {
   const [refreshError, setRefreshError] = useState<string | null>(null)
   /** Editing lives in the secondary bar, beside the tabs it acts on. */
   const [editing, setEditing] = useState<'match' | 'players' | null>(null)
+  const [rulesOpen, setRulesOpen] = useState(false)
+
+  // Rules are read-only, so a stray click costs nothing and closing on one is
+  // the quickest way out. Escape does the same.
+  useEffect(() => {
+    if (!rulesOpen) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setRulesOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [rulesOpen])
   const [dataAt, setDataAt] = useState<Date | null>(null)
   const [season, setSeasonId] = useState(() => currentSeason().id)
   /**
@@ -130,14 +140,18 @@ export default function App() {
           </nav>
 
           <div className="nav-tail">
-            {/* Rules sit here rather than among the league's tabs: they describe
-                the league itself, not a view of its data. */}
+            {/* Rules describe the league itself rather than a view of its
+                data, so they open over whatever you are looking at instead of
+                replacing it. */}
             <button
               type="button"
-              className={`rules-link${view === 'rules' ? ' is-active' : ''}`}
-              onClick={() => setView('rules')}
+              className={`rules-link${rulesOpen ? ' is-active' : ''}`}
+              onClick={() => setRulesOpen((v) => !v)}
+              aria-expanded={rulesOpen}
+              aria-label="League rules"
+              title="League rules"
             >
-              Rules
+              ?
             </button>
 
             {fromSheet && (
@@ -252,10 +266,26 @@ export default function App() {
       <main className="shell">
         {view === 'league' && <LeagueView tab={leagueTab} />}
         {view === 'draft' && <LeagueView tab={draftTab === 'teams' ? 'draft-teams' : 'board'} />}
-        {view === 'rules' && <LeagueView tab="rules" />}
         {view === 'matchup' && <QuickMatchup />}
         {view === 'dex' && <Dex />}
       </main>
+
+      {rulesOpen && (
+        <div
+          className="modal-backdrop rules-backdrop"
+          onClick={(e) => { if (e.target === e.currentTarget) setRulesOpen(false) }}
+        >
+          <div className="modal rules-modal" role="dialog" aria-modal="true" aria-label="League rules">
+            <button
+              type="button" className="modal-close"
+              onClick={() => setRulesOpen(false)} aria-label="Close"
+            >
+              ✕
+            </button>
+            <LeagueView tab="rules" />
+          </div>
+        </div>
+      )}
 
       {league && editing === 'match' && (
         <ReportMatch
