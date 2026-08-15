@@ -4,6 +4,7 @@ import { QuickMatchup } from './features/quick-matchup/QuickMatchup'
 import { LeagueView } from './features/league/LeagueView'
 import { LEAGUE_TABS, type LeagueTab } from './features/league/tabs'
 import { DraftToggle } from './features/league/DraftToggle'
+import { draftState, type DraftState } from './data/supabase'
 import { DropPicker } from './components/DropPicker'
 import { myPlayerId, setMyPlayer, subscribeIdentity } from './data/identity'
 import { ReportMatch } from './features/league/ReportMatch'
@@ -41,7 +42,7 @@ const VIEWS: { key: View; label: string }[] = [
 export default function App() {
   const [view, setView] = useState<View>('league')
   // Lifted so the secondary bar can sit directly under the primary one.
-  const [leagueTab, setLeagueTab] = useState<LeagueTab>('standings')
+  const [leagueTab, setLeagueTab] = useState<LeagueTab>('my-team')
   // Loaded here too so the secondary nav can name the season; the loader caches,
   // so this shares one fetch with the views below.
   const [league, setLeague] = useState<League | null>(null)
@@ -52,6 +53,8 @@ export default function App() {
   /** Editing lives in the secondary bar, beside the tabs it acts on. */
   const [editing, setEditing] = useState<'match' | 'players' | null>(null)
   const [rulesOpen, setRulesOpen] = useState(false)
+  /** Owned here so the "draft mode" marker and the switch can sit apart. */
+  const [draft, setDraft] = useState<DraftState | null>(null)
   const [me, setMeState] = useState(myPlayerId)
   useEffect(() => subscribeIdentity(setMeState), [])
 
@@ -78,6 +81,8 @@ export default function App() {
    * read on load and re-read after every edit, and there is no older copy for a
    * refresh to replace.
    */
+  useEffect(() => { draftState().then(setDraft, () => {}) }, [season])
+
   const source = SEASONS.find((s) => s.id === season)?.source
   const onDatabase = source === 'database'
   const fromSheet = source === 'sheet'
@@ -246,9 +251,21 @@ export default function App() {
                 at its source and never written to. */}
             {onDatabase && (
               <div className="sub-actions">
+                {/* Said only while it is true: a draft that has not started
+                    needs no announcing, and the switch says what it would do. */}
+                {draft?.status === 'active' && (
+                  <span className="draft-live">
+                    <span className="draft-dot" aria-hidden="true" />
+                    Draft mode enabled
+                  </span>
+                )}
                 <button type="button" onClick={() => setEditing('match')}>Record a match</button>
                 <button type="button" onClick={() => setEditing('players')}>Add / remove players</button>
-                <DraftToggle onChanged={() => reloadSeason(season)} />
+                <DraftToggle
+                  state={draft}
+                  setState={setDraft}
+                  onChanged={() => reloadSeason(season)}
+                />
               </div>
             )}
           </div>

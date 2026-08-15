@@ -695,8 +695,16 @@
 
 /* ---- the draft: opening it, and picking a team ---- */
 .draft-toggle { position: relative; display: flex; align-items: center; gap: 0.6rem; }
-.draft-status { font-size: 0.72rem; color: var(--muted); }
-.draft-status.is-active { color: #6dc79a; }
+/* Shown only while a draft is running, and sitting before the editing buttons
+   so it reads as a state the whole bar is in. */
+.draft-live {
+  display: flex; align-items: center; gap: 0.4rem;
+  font-size: 0.75rem; font-weight: 600; color: #6dc79a; white-space: nowrap;
+}
+.draft-dot {
+  width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #3f9d6d;
+  box-shadow: 0 0 0 3px rgb(63 157 109 / 22%);
+}
 .draft-switch {
   font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer;
   padding: 0.3rem 0.75rem; border-radius: 999px;
@@ -858,3 +866,8 @@
   background: var(--chip); border: 1px solid var(--line); color: var(--muted);
 }
 .history-more button:hover { color: var(--accent); border-color: var(--accent); }
+
+/* The board's tier filter: one tier or all of them, rather than five toggles
+   in any combination. */
+.tier-picker .drop-current { padding: 0.4rem 0.7rem; }
+.tier-picker .drop-list { min-width: 12rem; }

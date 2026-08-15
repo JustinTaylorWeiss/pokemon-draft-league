@@ -174,7 +174,11 @@ export function History({ league }: { league: League }) {
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
-    db.from('events').select('*').order('id', { ascending: false }).limit(limit)
+    // The invented season's rows are not things anybody did, and a log of what
+    // people did should not be mostly a script talking to itself.
+    db.from('events').select('*')
+      .not('actor', 'in', '("generated","import")')
+      .order('id', { ascending: false }).limit(limit)
       .then(({ data, error: err }) => {
         if (err) setError(errorText(err))
         else setEvents((data ?? []) as EventRow[])

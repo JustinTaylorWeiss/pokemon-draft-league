@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { draftState, endDraft, errorText, startDraft, type DraftState } from '../../data/supabase'
+import { useState } from 'react'
+import { endDraft, errorText, startDraft, type DraftState } from '../../data/supabase'
 
 /**
  * Opening and closing the draft.
@@ -12,15 +12,21 @@ import { draftState, endDraft, errorText, startDraft, type DraftState } from '..
  * The passphrase is asked for at the point of clicking rather than up front —
  * there is only one action behind it, so a separate unlock step would be a
  * screen that exists to be dismissed.
+ *
+ * The status is owned by the bar rather than by this button, because the
+ * "draft mode" marker sits at the other end of it.
  */
-export function DraftToggle({ onChanged }: { onChanged: () => void }) {
-  const [state, setState] = useState<DraftState | null>(null)
+export function DraftToggle({
+  state, setState, onChanged,
+}: {
+  state: DraftState | null
+  setState: (s: DraftState | null) => void
+  onChanged: () => void
+}) {
   const [asking, setAsking] = useState(false)
   const [passphrase, setPassphrase] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => { draftState().then(setState, () => {}) }, [])
 
   const active = state?.status === 'active'
 
@@ -48,9 +54,6 @@ export function DraftToggle({ onChanged }: { onChanged: () => void }) {
 
   return (
     <div className="draft-toggle">
-      <span className={`draft-status is-${state?.status ?? 'unknown'}`}>
-        {active ? 'Drafting' : state?.status === 'complete' ? 'Draft closed' : 'Not started'}
-      </span>
       <button
         type="button"
         className={`draft-switch${active ? ' is-active' : ''}`}

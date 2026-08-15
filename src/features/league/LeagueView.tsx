@@ -12,6 +12,7 @@ import { TypeChip } from '../../components/TypeChip'
 import type { LeagueTab } from './tabs'
 import './league.css'
 import { PokemonLink } from '../../components/PokemonLink'
+import { DropPicker } from '../../components/DropPicker'
 import { DraftTeams } from './DraftTeams'
 import { History } from './History'
 
@@ -826,18 +827,21 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           type="search" value={query} onChange={(e) => setQuery(e.target.value)}
           placeholder="Search the board…" aria-label="Search draft board"
         />
-        <div className="pill-group" role="group" aria-label="Filter by draft tier">
-          {TIER_PILLS.map((t) => (
-            <button
-              key={t} type="button"
-              className={`pill pill-${t.toLowerCase()}${tiers.has(t) ? ' is-active' : ''}`}
-              aria-pressed={tiers.has(t)}
-              onClick={() => toggleIn(setTiers, t)}
-            >
-              {t}<em>{counts[t] ?? 0}</em>
-            </button>
-          ))}
-        </div>
+        {/* One tier at a time, or all of them. Five toggles that could be in
+            any combination made a board nobody could describe; a tier is the
+            thing people actually want to look at. */}
+        <DropPicker
+          className="tier-picker"
+          ariaLabel="Filter by draft tier"
+          items={[
+            { id: '', label: 'All tiers', note: `${Object.keys(league.board).length} Pokémon` },
+            ...TIER_PILLS.map((t) => ({
+              id: t, label: t, note: `${counts[t] ?? 0} Pokémon`,
+            })),
+          ]}
+          value={[...tiers][0] ?? ''}
+          onPick={(item) => setTiers(item.id ? new Set([item.id]) : new Set())}
+        />
         <span className="pill-divider" aria-hidden="true" />
         <div className="pill-group" role="group" aria-label="Filter by availability">
           {(['available', 'drafted'] as const).map((a) => (

@@ -11,9 +11,9 @@ export type LeagueTab =
  * reaches from the top bar, and the rules open over whatever you are reading.
  */
 export const LEAGUE_TABS: { key: LeagueTab; label: string }[] = [
+  { key: 'my-team', label: 'My Team' },
   { key: 'standings', label: 'Players' },
   { key: 'matches', label: 'Matches' },
   { key: 'stats', label: 'Pokémon Ranking' },
-  { key: 'my-team', label: 'My Team' },
   { key: 'board', label: 'Draft List' },
 ]

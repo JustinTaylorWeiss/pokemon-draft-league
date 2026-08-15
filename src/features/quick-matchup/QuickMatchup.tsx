@@ -134,12 +134,10 @@ export function QuickMatchup() {
       {/* Its own bar under the main nav, matching the League Sheet's. */}
       <div className="subbar subbar-bleed">
         <div className="bar-inner matchup-bar">
-          <button type="button" className="btn ghost sm" onClick={() => setStep('team1')}>Edit</button>
           <h2>Quick Matchup</h2>
-          <dl className="matchup-meta">
-            <div><dt>Ruleset</dt><dd>{league?.meta.regulation ? `Gen 9 Reg ${league.meta.regulation.replace(/\s*\(.*$/, '')}` : 'Gen 9'}</dd></div>
-            <div><dt>Format</dt><dd>{league?.meta.format?.replace(/\s*\(.*$/, '') ?? 'Singles'}</dd></div>
-          </dl>
+          <button type="button" className="btn ghost sm" onClick={() => setStep('team1')}>
+            Edit teams
+          </button>
           <div className="perspective">
             <span>Analyzing</span>
             <div className="segmented">
