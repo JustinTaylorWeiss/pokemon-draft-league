@@ -113,9 +113,9 @@ export function DraftTeams({ league, dex }: Props) {
                     <th>Tier</th>
                     <th className="draft-col-name">Pokémon</th>
                     <th className="draft-col-types">Types</th>
+                    <th className="draft-col-abil">Abilities</th>
                     {BST_ORDER.map((k) => <th key={k}>{STAT_LABELS[k]}</th>)}
                     <th>BST</th>
-                    <th className="draft-col-abil">Abilities</th>
                     <th />
                   </tr>
                 </thead>
@@ -140,10 +140,6 @@ export function DraftTeams({ league, dex }: Props) {
                         <td className="draft-col-types">
                           {mon?.types.map((t) => <TypeChip key={t} type={t} />)}
                         </td>
-                        {BST_ORDER.map((k) => (
-                          <td key={k} className="draft-stat">{mon?.baseStats[k] ?? '—'}</td>
-                        ))}
-                        <td className="draft-bst">{mon?.bst ?? '—'}</td>
                         <td className="draft-col-abil">
                           {/* Wrapped rather than making the cell itself a flex
                               box: a <td> that is display:flex stops being a
@@ -160,6 +156,10 @@ export function DraftTeams({ league, dex }: Props) {
                             ))}
                           </span>
                         </td>
+                        {BST_ORDER.map((k) => (
+                          <td key={k} className="draft-stat">{mon?.baseStats[k] ?? '—'}</td>
+                        ))}
+                        <td className="draft-bst">{mon?.bst ?? '—'}</td>
                         <td>
                           <button
                             type="button" className="draft-drop" disabled={busy}
