@@ -13,6 +13,7 @@ import type { LeagueTab } from './tabs'
 import './league.css'
 import { PokemonLink } from '../../components/PokemonLink'
 import { DraftTeams } from './DraftTeams'
+import { History } from './History'
 
 export function LeagueView({ tab }: { tab: LeagueTab }) {
   const [league, setLeague] = useState<League | null>(null)
@@ -49,6 +50,7 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
       {tab === 'matches' && <Matches league={league} dex={dex} />}
       {tab === 'board' && <Board league={league} dex={dex} />}
       {tab === 'draft-teams' && <DraftTeams league={league} dex={dex} />}
+      {tab === 'history' && <History league={league} />}
       {tab === 'stats' && <Stats league={league} dex={dex} />}
       {tab === 'rules' && <Rules league={league} />}
     </div>

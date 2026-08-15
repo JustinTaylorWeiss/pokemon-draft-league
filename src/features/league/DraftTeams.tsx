@@ -5,6 +5,7 @@ import {
   type DraftTier, type League, type LeaguePokemon,
 } from '../../data/league'
 import { claimPokemon, errorText, releasePokemon } from '../../data/supabase'
+import { myPlayerId, subscribeIdentity } from '../../data/identity'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
 import { PokemonLink } from '../../components/PokemonLink'
@@ -17,15 +18,10 @@ import { PokemonLink } from '../../components/PokemonLink'
  * permission — the point is to make it hard to edit the wrong team by accident,
  * not to stop someone determined.
  *
- * Who you are is remembered, because picking yourself out of twenty names on
- * every visit gets old immediately.
+ * Who you are is set once for the whole site, beside the season, rather than
+ * here — it decides what the history records as well as which team this screen
+ * edits, and two places to answer the same question is one too many.
  */
-
-const ME_KEY = 'league:me'
-
-const readMe = () => {
-  try { return localStorage.getItem(ME_KEY) ?? '' } catch { return '' }
-}
 
 interface Props {
   league: League
@@ -33,15 +29,12 @@ interface Props {
 }
 
 export function DraftTeams({ league, dex }: Props) {
-  const [me, setMe] = useState(readMe)
+  const [me, setMe] = useState(myPlayerId)
+  useEffect(() => subscribeIdentity(setMe), [])
   const [query, setQuery] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [said, setSaid] = useState<string | null>(null)
-
-  useEffect(() => {
-    try { localStorage.setItem(ME_KEY, me) } catch { /* private browsing */ }
-  }, [me])
 
   const refresh = () => reloadSeason(currentSeason().id)
 
@@ -79,21 +72,8 @@ export function DraftTeams({ league, dex }: Props) {
 
   return (
     <div className="draft-teams">
-      <div className="controls draft-who">
-        <label>
-          You are
-          <select value={me} onChange={(e) => setMe(e.target.value)}>
-            <option value="">Pick your name…</option>
-            {league.players.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
-            ))}
-          </select>
-        </label>
-        {me && <span className="count">{mine.length} drafted</span>}
-      </div>
-
       {!me ? (
-        <p className="panel-note">Pick your name to edit your team.</p>
+        <p className="panel-note">Say who you are, beside the season, to edit your team.</p>
       ) : (
         <section className="panel draft-mine">
           <h3>
@@ -101,6 +81,7 @@ export function DraftTeams({ league, dex }: Props) {
             <span className="panel-note">
               {league.players.find((p) => p.id === me)?.name}
             </span>
+            <span className="count">{mine.length} drafted</span>
           </h3>
 
           {mine.length === 0 ? (

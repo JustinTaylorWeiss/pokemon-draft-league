@@ -301,3 +301,26 @@
 }
 .sub-actions button:hover { color: var(--accent); border-color: var(--accent); }
 .sub-actions button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Who you are: set once, beside the season it applies to. */
+.who-picker { display: flex; align-items: center; gap: 0.4rem; }
+.who-label {
+  font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted);
+}
+.who-picker select { font-size: 0.8rem; padding: 0.3rem 0.5rem; }
+
+/* Asked once, and there is no way past it but answering. */
+.who-modal { width: min(680px, 100%); }
+.who-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.4rem; margin-top: 0.4rem;
+}
+.who-grid button {
+  display: flex; flex-direction: column; gap: 0.1rem; align-items: flex-start;
+  font: inherit; font-size: 0.88rem; font-weight: 600; cursor: pointer; text-align: left;
+  padding: 0.5rem 0.7rem; border-radius: 10px;
+  background: var(--chip); border: 1px solid var(--line); color: var(--fg);
+}
+.who-grid button:hover { border-color: var(--accent); color: var(--accent); }
+.who-grid button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.who-grid em { font-style: normal; font-weight: 400; font-size: 0.72rem; color: var(--muted); }

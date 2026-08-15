@@ -5,6 +5,7 @@ import { LeagueView } from './features/league/LeagueView'
 import { LEAGUE_TABS, type LeagueTab } from './features/league/tabs'
 import { DRAFT_TABS, type DraftTab } from './features/league/draftTabs'
 import { DraftToggle } from './features/league/DraftToggle'
+import { myPlayerId, setMyPlayer, subscribeIdentity } from './data/identity'
 import { ReportMatch } from './features/league/ReportMatch'
 import { ManagePlayers } from './features/league/ManagePlayers'
 import {
@@ -54,6 +55,15 @@ export default function App() {
   /** Editing lives in the secondary bar, beside the tabs it acts on. */
   const [editing, setEditing] = useState<'match' | 'players' | null>(null)
   const [rulesOpen, setRulesOpen] = useState(false)
+  const [me, setMeState] = useState(myPlayerId)
+  useEffect(() => subscribeIdentity(setMeState), [])
+
+  /**
+   * Asked once, the first time somebody arrives without having said who they
+   * are. Every edit is stamped with it, so a season's history is only worth
+   * having if this is answered before the editing starts.
+   */
+  const askWho = !me && !!league?.players.length
 
   // Rules are read-only, so a stray click costs nothing and closing on one is
   // the quickest way out. Escape does the same.
@@ -140,6 +150,25 @@ export default function App() {
           </nav>
 
           <div className="nav-tail">
+            {league && league.players.length > 0 && (
+              <label className="who-picker">
+                <span className="who-label">You</span>
+                <select
+                  value={me}
+                  aria-label="Which player you are"
+                  onChange={(e) => {
+                    const p = league.players.find((x) => x.id === e.target.value)
+                    setMyPlayer(p?.id ?? '', p?.name ?? '')
+                  }}
+                >
+                  <option value="">Not set</option>
+                  {league.players.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </label>
+            )}
+
             {/* Rules describe the league itself rather than a view of its
                 data, so they open over whatever you are looking at instead of
                 replacing it. */}
@@ -265,10 +294,38 @@ export default function App() {
 
       <main className="shell">
         {view === 'league' && <LeagueView tab={leagueTab} />}
-        {view === 'draft' && <LeagueView tab={draftTab === 'teams' ? 'draft-teams' : 'board'} />}
+        {view === 'draft' && (
+          <LeagueView
+            tab={draftTab === 'teams' ? 'draft-teams' : draftTab === 'history' ? 'history' : 'board'}
+          />
+        )}
         {view === 'matchup' && <QuickMatchup />}
         {view === 'dex' && <Dex />}
       </main>
+
+      {askWho && league && (
+        <div className="modal-backdrop">
+          <div className="modal who-modal" role="dialog" aria-modal="true" aria-label="Who are you">
+            <h2 className="report-title">Who are you?</h2>
+            <p className="report-lead">
+              Every change is recorded against a name, and the draft screen only
+              lets you edit your own team. You can change this later beside the
+              season.
+            </p>
+            <div className="who-grid">
+              {league.players.map((p) => (
+                <button
+                  key={p.id} type="button"
+                  onClick={() => setMyPlayer(p.id, p.name)}
+                >
+                  {p.name}
+                  {p.team && <em>{p.team}</em>}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {rulesOpen && (
         <div

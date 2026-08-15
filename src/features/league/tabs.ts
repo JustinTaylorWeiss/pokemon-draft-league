@@ -1,5 +1,6 @@
 /** Kept out of LeagueView so the app shell can render the secondary nav. */
-export type LeagueTab = 'standings' | 'matches' | 'stats' | 'board' | 'draft-teams' | 'rules'
+export type LeagueTab =
+  | 'standings' | 'matches' | 'stats' | 'board' | 'draft-teams' | 'history' | 'rules'
 
 /**
  * The league's own tabs.

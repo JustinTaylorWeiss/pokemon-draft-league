@@ -799,3 +799,35 @@
 /* The hidden ability is one of the three but not one you can just pick. */
 .draft-hidden-ability { border-style: dashed !important; }
 .draft-table td:last-child { width: 5.5rem; }
+
+/* ---- what everyone has done ---- */
+.history-controls { margin-bottom: 0.9rem; }
+.history-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.history-list li {
+  display: flex; align-items: baseline; gap: 0.6rem;
+  padding: 0.4rem 0.2rem; border-bottom: 1px solid var(--line); font-size: 0.85rem;
+}
+.history-list li:last-child { border-bottom: 0; }
+.history-actor {
+  flex: none; min-width: 9rem; font-weight: 600;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.history-what { flex: 1; min-width: 0; color: var(--muted); }
+.history-when {
+  flex: none; font-size: 0.75rem; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.history-empty { color: var(--muted); }
+/* A stripe saying what kind of change it was, so the log skims. */
+.history-list li { border-left: 3px solid transparent; padding-left: 0.6rem; }
+.history-list li.kind-draft { border-left-color: var(--accent); }
+.history-list li.kind-matches { border-left-color: #3f9d6d; }
+.history-list li.kind-players { border-left-color: #d09a3c; }
+.history-list li.kind-league { border-left-color: var(--line); }
+
+.history-more { margin-top: 0.8rem; display: flex; justify-content: center; }
+.history-more button {
+  font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  padding: 0.4rem 1rem; border-radius: 999px;
+  background: var(--chip); border: 1px solid var(--line); color: var(--muted);
+}
+.history-more button:hover { color: var(--accent); border-color: var(--accent); }
