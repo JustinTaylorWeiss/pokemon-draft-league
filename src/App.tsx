@@ -43,7 +43,7 @@ export default function App() {
   const [view, setView] = useState<View>('league')
   // Lifted so the secondary bar can sit directly under the primary one.
   const [leagueTab, setLeagueTab] = useState<LeagueTab>('standings')
-  const [draftTab, setDraftTab] = useState<DraftTab>('board')
+  const [draftTab, setDraftTab] = useState<DraftTab>('teams')
   // Loaded here too so the secondary nav can name the season; the loader caches,
   // so this shares one fetch with the views below.
   const [league, setLeague] = useState<League | null>(null)

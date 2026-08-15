@@ -2,6 +2,6 @@
 export type DraftTab = 'board' | 'teams'
 
 export const DRAFT_TABS: { key: DraftTab; label: string }[] = [
-  { key: 'board', label: 'Draft List' },
   { key: 'teams', label: 'Teams' },
+  { key: 'board', label: 'Draft List' },
 ]
