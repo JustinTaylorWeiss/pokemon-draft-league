@@ -120,11 +120,16 @@ export async function deleteRow(table: string, key: Row): Promise<void> {
   if (!data?.length) throw new WriteRefused(`Removing from ${table}`)
 }
 
-/** Puts a row back the way it was before one event, and records the undo. */
-export async function revertEvent(eventId: number): Promise<number> {
+/**
+ * Puts a row back the way it was before one event, and records the undo.
+ *
+ * Gated, and not by this function — the ungated signature was dropped, so this
+ * is the only route and the database does the check. Undoing reaches backwards
+ * through somebody else's work, which is why it is not as open as editing.
+ */
+export async function revertEvent(passphrase: string, eventId: number): Promise<number> {
   const { data, error } = await db.rpc('revert_event', {
-    event_id: eventId,
-    who: currentActor(),
+    passphrase, event_id: eventId, who: currentActor(),
   })
   if (error) throw error
   return data as number

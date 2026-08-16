@@ -12,6 +12,7 @@ import { TypeChip } from '../../components/TypeChip'
 import type { LeagueTab } from './tabs'
 import './league.css'
 import { PokemonLink } from '../../components/PokemonLink'
+import { LoadingBall } from '../../components/LoadingBall'
 import { DropPicker } from '../../components/DropPicker'
 import { DraftTeams } from './DraftTeams'
 import { History } from './History'
@@ -43,7 +44,7 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
       </p>
     )
   }
-  if (!league || !dex) return <LoadingBall />
+  if (!league || !dex) return <LoadingBall label="Loading league…" />
 
   return (
     <div className="league">
@@ -54,20 +55,6 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
       {tab === 'history' && <History league={league} />}
       {tab === 'stats' && <Stats league={league} dex={dex} />}
       {tab === 'rules' && <Rules league={league} />}
-    </div>
-  )
-}
-
-/** Something to watch while the league loads, rather than a line of text. */
-function LoadingBall() {
-  return (
-    <div className="loading-stage" role="status" aria-live="polite">
-      <div className="pokeball" aria-hidden="true">
-        <span className="pokeball-top" />
-        <span className="pokeball-band" />
-        <span className="pokeball-button" />
-      </div>
-      <p>Loading league…</p>
     </div>
   )
 }

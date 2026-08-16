@@ -363,3 +363,95 @@
 .who-grid button:hover { border-color: var(--accent); color: var(--accent); }
 .who-grid button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .who-grid em { font-style: normal; font-weight: 400; font-size: 0.72rem; color: var(--muted); }
+
+/* ---- waiting for the league ---- */
+.loading-stage {
+  min-height: 60vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 1.75rem;
+}
+.loading-stage p {
+  margin: 0; color: var(--muted); font-size: 0.9rem; letter-spacing: 0.02em;
+}
+
+/* A Poké Ball, drawn in CSS: it falls in, then rocks the way one does before
+   it clicks shut. */
+.pokeball {
+  position: relative; width: 116px; height: 116px; border-radius: 50%;
+  background: #f5f5f5;
+  border: 5px solid #17181c;
+  overflow: hidden;
+  box-shadow: 0 14px 34px rgb(0 0 0 / 45%);
+  animation: ball-drop 620ms cubic-bezier(0.3, 1.5, 0.6, 1) both, ball-rock 1.5s 620ms ease-in-out infinite;
+}
+.pokeball-top {
+  position: absolute; inset: 0 0 50% 0;
+  background: linear-gradient(180deg, #ff5a5f 0%, #e0343c 100%);
+}
+.pokeball-band { position: absolute; inset: calc(50% - 5px) 0 calc(50% - 5px) 0; background: #17181c; }
+.pokeball-button {
+  position: absolute; top: 50%; left: 50%; width: 34px; height: 34px;
+  margin: -17px 0 0 -17px; border-radius: 50%;
+  background: #f5f5f5; border: 5px solid #17181c;
+  animation: ball-blink 1.5s 620ms ease-in-out infinite;
+}
+
+@keyframes ball-drop {
+  from { transform: translateY(-140px) scale(0.6); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes ball-rock {
+  0%, 62%, 100% { transform: rotate(0deg); }
+  70% { transform: rotate(-15deg); }
+  78% { transform: rotate(13deg); }
+  86% { transform: rotate(-8deg); }
+  93% { transform: rotate(4deg); }
+}
+@keyframes ball-blink {
+  0%, 62%, 100% { box-shadow: 0 0 0 0 rgb(255 90 95 / 0%); }
+  76% { box-shadow: 0 0 16px 5px rgb(255 90 95 / 75%); }
+}
+
+/* A ball that will not stop moving is worse than a line of text. */
+/* A ball that will not stop moving is worse than a line of text. */
+@media (prefers-reduced-motion: reduce) {
+  .pokeball, .pokeball-button { animation: none; }
+}
+
+/* Inside a card that has already drawn, it takes the room it is given rather
+   than half the window. */
+.loading-stage.is-inline { min-height: 12rem; gap: 1rem; }
+.loading-stage.is-inline .pokeball { width: 64px; height: 64px; border-width: 3px; }
+.loading-stage.is-inline .pokeball-band { inset: calc(50% - 3px) 0 calc(50% - 3px) 0; }
+.loading-stage.is-inline .pokeball-button {
+  width: 20px; height: 20px; margin: -10px 0 0 -10px; border-width: 3px;
+}
+
+/* ---- history: searching, and undoing ---- */
+.history-search {
+  font: inherit; font-size: 0.85rem; color: var(--fg);
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: 8px; padding: 0.4rem 0.6rem; min-width: 14rem;
+}
+.undo-unlock, .history-undo {
+  font: inherit; font-size: 0.75rem; font-weight: 600; cursor: pointer;
+  padding: 0.25rem 0.7rem; border-radius: 999px;
+  background: var(--chip); border: 1px solid var(--line); color: var(--muted);
+}
+.undo-unlock { margin-left: 0.5rem; }
+.undo-unlock:hover, .history-undo:hover { color: #e05563; border-color: #e05563; }
+.history-undo { flex: none; margin-left: 0.5rem; }
+.history-undo:disabled { opacity: 0.5; cursor: default; }
+.undo-ready { font-size: 0.75rem; font-weight: 600; color: #e0838a; }
+.undo-ask { display: flex; align-items: center; gap: 0.4rem; }
+.undo-ask input {
+  font: inherit; font-size: 0.82rem; color: var(--fg);
+  background: var(--chip); border: 1px solid var(--line);
+  border-radius: 8px; padding: 0.3rem 0.5rem; width: 9rem;
+}
+.undo-ask button {
+  font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+  padding: 0.3rem 0.7rem; border-radius: 999px;
+  background: var(--accent); border: 1px solid var(--accent); color: #fff;
+}
+/* An undo is its own kind of change, and reads as one. */
+.history-list li.kind-undos { border-left-color: #e0838a; }

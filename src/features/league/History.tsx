@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { db, errorText } from '../../data/supabase'
+import { db, errorText, revertEvent, unlock } from '../../data/supabase'
 import { DropPicker } from '../../components/DropPicker'
+import { LoadingBall } from '../../components/LoadingBall'
 import type { League } from '../../data/league'
 
 /**
@@ -27,6 +28,8 @@ interface EventRow {
   after: Record<string, unknown> | null
   /** What the league was doing when this happened. Null for older rows. */
   phase: string | null
+  /** The event this one undoes, if it is an undo. */
+  reverts: number | null
 }
 
 /**
@@ -40,6 +43,7 @@ interface EventRow {
 const KINDS = [
   { key: 'draft', label: 'Draft', tables: ['rosters', 'board', 'draft_picks', 'draft_state'] },
   { key: 'trades', label: 'Trades', tables: [] },
+  { key: 'undos', label: 'Undos', tables: [] },
   { key: 'matches', label: 'Matches', tables: ['matches', 'match_lines', 'games', 'game_lines'] },
   { key: 'players', label: 'Players', tables: ['players'] },
   { key: 'league', label: 'League', tables: ['league_meta', 'rules_sections'] },
@@ -47,7 +51,9 @@ const KINDS = [
 
 const ROSTER_TABLES = ['rosters', 'board', 'draft_picks']
 
-function kindOf(table: string, phase: string | null) {
+function kindOf(table: string, phase: string | null, reverts?: number | null) {
+  // An undo is an undo whatever it touched.
+  if (reverts != null) return 'undos'
   // Drafting is what happens while the draft is open. A roster change at any
   // other time is a trade, whether the draft has ended or never began — the
   // only thing that makes a pick a pick is that a draft was running.
@@ -71,6 +77,7 @@ interface Group {
   actor: string
   table: string
   phase: string | null
+  reverts: number | null
   action: EventRow['action']
   rows: EventRow[]
 }
@@ -177,6 +184,56 @@ export function History({ league }: { league: League }) {
   const [error, setError] = useState<string | null>(null)
   /** One kind at a time, or everything. */
   const [kind, setKind] = useState('')
+  const [query, setQuery] = useState('')
+  /**
+   * Undoing reaches backwards through other people's work, so it is asked for
+   * once and then stays open while you work through the log. The passphrase is
+   * kept only to send with each undo — the database checks it every time, so
+   * this unlock is a convenience and not the boundary.
+   */
+  const [passphrase, setPassphrase] = useState('')
+  const [unlocked, setUnlocked] = useState(false)
+  const [asking, setAsking] = useState(false)
+  const [busy, setBusy] = useState<number | null>(null)
+  const [undoError, setUndoError] = useState<string | null>(null)
+
+  async function tryUnlock(e: React.FormEvent) {
+    e.preventDefault()
+    setUndoError(null)
+    try {
+      if (await unlock(passphrase)) { setUnlocked(true); setAsking(false) }
+      else setUndoError('That passphrase is not right.')
+    } catch (err) {
+      setUndoError(errorText(err))
+    }
+  }
+
+  /**
+   * Undoes a whole transaction, newest write first.
+   *
+   * A claim writes two rows and a match report writes dozens; undoing only the
+   * one the line is named after would leave the rest standing. Reverse order
+   * matters — the later writes have to come off before the earlier ones.
+   */
+  async function undo(g: Group) {
+    setBusy(g.id)
+    setUndoError(null)
+    try {
+      for (const row of [...g.rows].sort((a, b) => b.id - a.id)) {
+        await revertEvent(passphrase, row.id)
+      }
+      setLimit((n) => n) // keep the window
+      const { data } = await db.from('events').select('*')
+        .not('actor', 'in', '("generated","import")')
+        .order('id', { ascending: false }).limit(limit)
+      setEvents((data ?? []) as EventRow[])
+      setNow(Date.now())
+    } catch (err) {
+      setUndoError(errorText(err))
+    } finally {
+      setBusy(null)
+    }
+  }
   const [limit, setLimit] = useState(PAGE)
   // Stamped when the log is read, so "3 min ago" is measured from the same
   // moment for every row rather than from whenever each one happens to render.
@@ -217,7 +274,8 @@ export function History({ league }: { league: League }) {
       } else {
         out.push({
           id: e.id, at: e.at, actor: e.actor ?? 'anonymous',
-          table: e.table_name, phase: e.phase, action: e.action, rows: [e],
+          table: e.table_name, phase: e.phase, reverts: e.reverts,
+          action: e.action, rows: [e],
         })
       }
     }
@@ -225,25 +283,38 @@ export function History({ league }: { league: League }) {
     for (const g of out) {
       g.table = lead(g.rows)
       g.action = g.rows.find((r) => r.table_name === g.table)?.action ?? g.action
+      g.reverts = g.rows.find((r) => r.reverts != null)?.reverts ?? null
     }
     return out
   }, [events])
 
-  const shown = kind ? groups.filter((g) => kindOf(g.table, g.phase) === kind) : groups
+  const q = query.trim().toLowerCase()
+  const shown = groups.filter((g) => {
+    if (kind && kindOf(g.table, g.phase, g.reverts) !== kind) return false
+    if (!q) return true
+    // Searched on what the row actually reads as, so looking for a Pokémon or
+    // a person finds it without knowing which table it came from.
+    return `${g.actor} ${describe(g, names)}`.toLowerCase().includes(q)
+  })
 
   if (error) return <p className="error">Could not read the history: {error}</p>
-  if (!events) return <p className="loading">Reading the history…</p>
+  if (!events) return <LoadingBall label="Reading the history…" inline />
 
   return (
     <div className="history">
       <div className="controls history-controls">
+        <input
+          type="search" className="history-search" value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search the history…" aria-label="Search the history"
+        />
         <DropPicker
           className="history-picker"
           ariaLabel="Filter the history"
           items={[
             { id: '', label: 'Everything', note: `${groups.length} changes` },
             ...KINDS.map((k) => {
-              const n = groups.filter((g) => kindOf(g.table, g.phase) === k.key).length
+              const n = groups.filter((g) => kindOf(g.table, g.phase, g.reverts) === k.key).length
               return { id: k.key, label: k.label, note: `${n} change${n === 1 ? '' : 's'}` }
             }),
           ]}
@@ -251,17 +322,47 @@ export function History({ league }: { league: League }) {
           onPick={(item) => setKind(item.id)}
         />
         <span className="count">{shown.length} shown</span>
+
+        {unlocked ? (
+          <span className="undo-ready">Undo enabled</span>
+        ) : (
+          <button type="button" className="undo-unlock" onClick={() => setAsking((v) => !v)}>
+            Revert changes
+          </button>
+        )}
+        {asking && !unlocked && (
+          <form className="undo-ask" onSubmit={tryUnlock}>
+            <input
+              type="password" value={passphrase} autoFocus autoComplete="off"
+              placeholder="Passphrase" onChange={(e) => setPassphrase(e.target.value)}
+            />
+            <button type="submit" disabled={!passphrase.trim()}>Unlock</button>
+          </form>
+        )}
       </div>
+      {undoError && <p className="report-error">{undoError}</p>}
 
       <section className="panel">
         <ul className="history-list">
           {shown.map((g) => (
-            <li key={g.id} className={`kind-${kindOf(g.table, g.phase)}`}>
+            <li key={g.id} className={`kind-${kindOf(g.table, g.phase, g.reverts)}`}>
               <span className="history-actor">{g.actor}</span>
               <span className="history-what">{describe(g, names)}</span>
               <span className="history-when" title={new Date(g.at).toLocaleString()}>
                 {ago(g.at, now)}
               </span>
+              {unlocked && (
+                <button
+                  type="button" className="history-undo"
+                  disabled={busy !== null}
+                  title={g.rows.length > 1
+                    ? `Undo all ${g.rows.length} changes this made`
+                    : 'Undo this change'}
+                  onClick={() => undo(g)}
+                >
+                  {busy === g.id ? '…' : 'Undo'}
+                </button>
+              )}
             </li>
           ))}
           {shown.length === 0 && <li className="history-empty">Nothing of that kind yet.</li>}

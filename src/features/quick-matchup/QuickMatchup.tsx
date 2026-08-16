@@ -8,6 +8,7 @@ import { useMediaQuery } from '../../lib/useMediaQuery'
 import { TeamsAndSpeed } from './TeamsAndSpeed'
 import { AnalysisCard } from './AnalysisCard'
 import './quick-matchup.css'
+import { LoadingBall } from '../../components/LoadingBall'
 
 type Step = 'team1' | 'team2' | 'results'
 
@@ -113,7 +114,7 @@ export function QuickMatchup() {
   )
 
   if (error) return <p className="error">Could not load data: {error}</p>
-  if (!core || !dex) return <p className="loading">Loading dex…</p>
+  if (!core || !dex) return <LoadingBall label="Loading dex…" />
 
   if (step !== 'results') {
     return (

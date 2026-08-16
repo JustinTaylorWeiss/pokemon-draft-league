@@ -8,6 +8,7 @@ import { buildMoveRows, LearnedMovesBody } from './LearnedMoves'
 import { CoverageBody } from './CoveragePanel'
 import { useSpeedTiersPanel } from './useSpeedTiersPanel'
 import type { Team } from './TeamEditor'
+import { LoadingBall } from '../../components/LoadingBall'
 
 const TABS = [
   { key: 'summary', label: 'Draft Summary' },
@@ -140,7 +141,7 @@ export function AnalysisCard({
           that file is still downloading. */}
       {tab === 'moves' && (learnsets
         ? <LearnedMovesBody team={analyzed} rows={moveRows} byId={byId} />
-        : <p className="loading">Loading learnsets…</p>)}
+        : <LoadingBall label="Loading learnsets…" inline />)}
       {tab === 'speed' && speed.body}
       {tab === 'coverage' && (learnsets
         ? (
@@ -150,7 +151,7 @@ export function AnalysisCard({
             sets={sets}
           />
         )
-        : <p className="loading">Loading learnsets…</p>)}
+        : <LoadingBall label="Loading learnsets…" inline />)}
     </Widget>
   )
 }

@@ -14,6 +14,7 @@ import { useProgressiveList } from '../../lib/useProgressiveList'
 import { CommonSetCard } from './CommonSetCard'
 import { usePokemonModal } from './PokemonModalContext'
 import './pokemon-modal.css'
+import { LoadingBall } from '../../components/LoadingBall'
 
 /** Learn-source prefixes, in the order the sheet-style tables read best. */
 const MOVE_GROUPS: { key: string; label: string; match: (s: string) => boolean }[] = [
@@ -325,13 +326,13 @@ export function PokemonModal() {
                       )
                     })}
                   </ul>
-                ) : <p className="loading">Loading type chart…</p>}
+                ) : <LoadingBall label="Loading type chart…" inline />}
                 <p className="modal-hint">Includes this Pokémon's abilities.</p>
               </section>
 
               <section className="modal-card modal-wide">
                 <h3>Moves</h3>
-                {!allMoves ? <p className="loading">Loading moves…</p> : (
+                {!allMoves ? <LoadingBall label="Loading moves…" inline /> : (
                   <>
                     <div className="move-controls">
                       <input

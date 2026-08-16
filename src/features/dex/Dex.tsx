@@ -6,6 +6,7 @@ import { STAT_LABELS, BST_ORDER } from '../../lib/stats'
 import { BATTLE_TYPES } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
 import { PokemonLink } from '../../components/PokemonLink'
+import { LoadingBall } from '../../components/LoadingBall'
 
 const PAGE = 200
 
@@ -174,7 +175,7 @@ export function Dex() {
   )
 
   if (error) return <p className="error">Could not load data: {error}</p>
-  if (!dex) return <p className="loading">Loading dex…</p>
+  if (!dex) return <LoadingBall label="Loading dex…" />
 
   const pending = [!abilities && 'abilities', !moves && 'moves', !learnsets && 'learnsets'].filter(Boolean)
 
