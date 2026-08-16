@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db, errorText, revertEvent, unlock } from '../../data/supabase'
 import { DropPicker } from '../../components/DropPicker'
+import { PassphraseModal } from '../../components/PassphraseModal'
 import { LoadingBall } from '../../components/LoadingBall'
 import type { League } from '../../data/league'
 
@@ -197,17 +198,6 @@ export function History({ league }: { league: League }) {
   const [busy, setBusy] = useState<number | null>(null)
   const [undoError, setUndoError] = useState<string | null>(null)
 
-  async function tryUnlock(e: React.FormEvent) {
-    e.preventDefault()
-    setUndoError(null)
-    try {
-      if (await unlock(passphrase)) { setUnlocked(true); setAsking(false) }
-      else setUndoError('That passphrase is not right.')
-    } catch (err) {
-      setUndoError(errorText(err))
-    }
-  }
-
   /**
    * Undoes a whole transaction, newest write first.
    *
@@ -348,16 +338,22 @@ export function History({ league }: { league: League }) {
             Revert changes
           </button>
         )}
-        {asking && !unlocked && (
-          <form className="undo-ask" onSubmit={tryUnlock}>
-            <input
-              type="password" value={passphrase} autoFocus autoComplete="off"
-              placeholder="Passphrase" onChange={(e) => setPassphrase(e.target.value)}
-            />
-            <button type="submit" disabled={!passphrase.trim()}>Unlock</button>
-          </form>
-        )}
       </div>
+
+      {asking && !unlocked && (
+        <PassphraseModal
+          title="Revert changes"
+          note="Undoing reaches back through other people's work. Every undo is itself recorded, and can be undone in turn."
+          action="Enable undo"
+          onClose={() => setAsking(false)}
+          onConfirm={async (entered) => {
+            if (!await unlock(entered)) throw new Error('That passphrase is not right.')
+            setPassphrase(entered)
+            setUnlocked(true)
+            setAsking(false)
+          }}
+        />
+      )}
       {undoError && <p className="report-error">{undoError}</p>}
 
       <section className="panel">

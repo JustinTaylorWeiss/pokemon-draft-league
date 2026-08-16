@@ -539,7 +539,7 @@
 .matches-controls { margin-bottom: 0.9rem; }
 
 /* ---- a week, which folds away ---- */
-.week-panel { padding-top: 0.5rem; }
+.week-panel { padding: 0.5rem 0.3rem; }
 .week-head {
   width: 100%; display: flex; align-items: center; gap: 0.6rem;
   font: inherit; text-align: left; cursor: pointer;
@@ -561,7 +561,12 @@
   font-size: 0.92rem; font-weight: 700; text-transform: uppercase;
   letter-spacing: 0.07em; color: var(--fg);
 }
-.week-count { margin-left: auto; font-size: 0.72rem; color: var(--muted); }
+.week-count {
+  margin-left: auto; font-size: 0.72rem; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+/* A week that is fully in, said without having to compare the two numbers. */
+.week-count.is-done { color: #6dc79a; }
 .week-panel.is-shut { padding-bottom: 0.5rem; }
 
 /* ---- one match, boxed with its number ---- */
@@ -879,3 +884,68 @@
 }
 /* Not played yet, and saying so rather than showing a score that is not there. */
 .fixture-score.is-pending { color: var(--muted); background: none; font-style: italic; }
+
+/* ---- the season's progress, and editing its schedule ---- */
+.matches-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1.5rem; flex-wrap: wrap; margin-bottom: 0.9rem;
+}
+.season-progress { display: flex; align-items: center; gap: 0.75rem; min-width: 0; flex: 1 1 20rem; }
+.progress-track {
+  flex: 1 1 auto; max-width: 26rem; height: 0.5rem; border-radius: 999px;
+  background: var(--chip); overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 999px; background: #3f9d6d;
+  transition: width 220ms ease-out;
+}
+.progress-label {
+  flex: none; font-size: 0.8rem; color: var(--muted);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.matches-actions { position: relative; display: flex; align-items: center; gap: 0.5rem; }
+.matches-actions .undo-ask {
+  position: absolute; top: calc(100% + 0.4rem); right: 0; z-index: 20;
+  background: var(--widget); border: 1px solid var(--line); border-radius: 10px;
+  padding: 0.5rem; box-shadow: 0 12px 28px rgb(0 0 0 / 45%);
+}
+.record-btn.is-done { border-color: var(--accent); color: var(--accent); }
+
+.week-add { display: flex; align-items: center; gap: 0.7rem; margin-bottom: 0.9rem; }
+.week-add button {
+  font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  padding: 0.35rem 0.8rem; border-radius: 999px;
+  background: var(--chip); border: 1px dashed var(--line); color: var(--muted);
+}
+.week-add button:hover { color: var(--accent); border-color: var(--accent); }
+
+/* Building a fixture: each side collects players, then it is added. */
+.week-edit {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; flex-wrap: wrap;
+  padding: 0.5rem 0.3rem 0.7rem; border-bottom: 1px solid var(--line); margin-bottom: 0.6rem;
+}
+.fixture-build { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.fixture-pick { display: flex; align-items: center; gap: 0.3rem; flex-wrap: wrap; }
+.fixture-pick em { font-style: normal; color: var(--muted); font-size: 0.78rem; margin: 0 0.2rem; }
+.fixture-pick select { font-size: 0.78rem; padding: 0.25rem 0.4rem; }
+.fixture-chip {
+  font: inherit; font-size: 0.75rem; cursor: pointer;
+  padding: 0.15rem 0.5rem; border-radius: 999px;
+  background: var(--chip); border: 1px solid var(--line); color: var(--fg);
+}
+.fixture-chip:hover { color: #e05563; border-color: #e05563; }
+.fixture-add, .week-remove, .match-remove {
+  font: inherit; font-size: 0.75rem; font-weight: 600; cursor: pointer;
+  padding: 0.25rem 0.7rem; border-radius: 999px;
+  background: var(--chip); border: 1px solid var(--line); color: var(--muted);
+}
+.fixture-add { color: var(--accent); border-color: var(--accent); }
+.fixture-add:hover { background: var(--accent); color: #fff; }
+.fixture-add:disabled { opacity: 0.5; cursor: default; background: var(--chip); color: var(--muted); }
+.week-remove:hover, .match-remove:hover { color: #e05563; border-color: #e05563; }
+.match-remove { margin-left: auto; font-size: 0.66rem; padding: 0.1rem 0.5rem; }
+.match-title { display: flex; align-items: center; gap: 0.5rem; }
+
+/* The draft switch sits with the board it opens the drafting of. */
+.board-draft { margin-left: auto; display: flex; align-items: center; gap: 0.6rem; }

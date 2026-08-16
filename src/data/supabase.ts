@@ -256,6 +256,35 @@ export async function reportMatch(input: {
   return data as number
 }
 
+/** Adds an unplayed fixture. */
+export async function scheduleMatch(
+  passphrase: string, week: number, sideA: string[], sideB: string[],
+): Promise<number> {
+  const { data, error } = await db.rpc('schedule_match', {
+    passphrase, week, side_a: sideA, side_b: sideB, who: currentActor(),
+  })
+  if (error) throw error
+  return data as number
+}
+
+/** Removes a fixture, and everything recorded under it. */
+export async function unscheduleMatch(passphrase: string, matchId: number): Promise<string> {
+  const { data, error } = await db.rpc('unschedule_match', {
+    passphrase, match_id: matchId, who: currentActor(),
+  })
+  if (error) throw error
+  return data as string
+}
+
+/** Removes a whole week of fixtures, and says how many that was. */
+export async function removeWeek(passphrase: string, week: number): Promise<number> {
+  const { data, error } = await db.rpc('remove_week', {
+    passphrase, week, who: currentActor(),
+  })
+  if (error) throw error
+  return data as number
+}
+
 /** Puts a hidden player back in the league. */
 export async function restorePlayer(passphrase: string, playerId: string) {
   const { data, error } = await db.rpc('restore_player', {

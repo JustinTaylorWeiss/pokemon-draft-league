@@ -479,3 +479,13 @@
   width: 0.85rem; height: 0.85rem; border-radius: 3px;
   background: rgb(184 71 79 / 35%); border: 1px solid #b8474f;
 }
+
+/* One gate, one look, wherever it is asked for. */
+.passphrase-modal { width: min(520px, 100%); }
+.passphrase-form { display: flex; align-items: center; gap: 0.5rem; }
+.passphrase-form input {
+  flex: 1 1 auto; font: inherit; font-size: 0.9rem; color: var(--fg);
+  background: var(--chip); border: 1px solid var(--line);
+  border-radius: 8px; padding: 0.5rem 0.65rem;
+}
+.passphrase-form input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }

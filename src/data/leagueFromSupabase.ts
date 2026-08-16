@@ -168,6 +168,7 @@ export async function loadLeagueFromSupabase(): Promise<League> {
   }
 
   const schedule: Match[] = matchRows.map((m, i) => ({
+    id: m.id,
     week: m.week,
     match: i + 1,
     a: m.side_a,

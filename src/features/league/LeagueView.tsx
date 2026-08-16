@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react'
 import { loadPokemon, spriteUrl } from '../../data/load'
 import type { PokemonDex } from '../../data/types'
 import {
-  byId, byTier, loadLeague, mergeDex, subscribeLeague, tierClass,
+  byId, byTier, currentSeason, loadLeague, mergeDex, reloadSeason, subscribeLeague, tierClass,
   totalsFromMatches, type Standing,
   type GameLine, type League, type LeaguePokemon, type Match, type MatchStat,
   type PokemonTotals,
@@ -13,9 +13,13 @@ import type { LeagueTab } from './tabs'
 import './league.css'
 import { PokemonLink } from '../../components/PokemonLink'
 import { LoadingBall } from '../../components/LoadingBall'
+import { PassphraseModal } from '../../components/PassphraseModal'
+import { ManagePlayers } from './ManagePlayers'
+import { DraftToggle } from './DraftToggle'
+import { draftState, type DraftState } from '../../data/supabase'
+import { errorText, removeWeek, scheduleMatch, unlock, unscheduleMatch } from '../../data/supabase'
 import { DropPicker } from '../../components/DropPicker'
 import { DraftTeams } from './DraftTeams'
-import { myPlayerId, subscribeIdentity } from '../../data/identity'
 import { History } from './History'
 
 export function LeagueView({ tab }: { tab: LeagueTab }) {
@@ -51,7 +55,6 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
     <div className="league">
       {tab === 'standings' && <Standings league={league} dex={dex} />}
       {tab === 'matches' && <Matches league={league} dex={dex} />}
-      {tab === 'schedule' && <Schedule league={league} />}
       {tab === 'board' && <Board league={league} dex={dex} />}
       {tab === 'my-team' && <DraftTeams league={league} dex={dex} />}
       {tab === 'history' && <History league={league} />}
@@ -374,6 +377,8 @@ function rankStandings(league: League): Standing[] {
 
 function Standings({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
   const ranked = rankStandings(league)
+  const editable = currentSeason().source === 'database'
+  const [managing, setManaging] = useState(false)
   /** A Pokémon belongs to one player, so its league totals are that player's. */
   const totals = useMemo(() => totalsFromMatches(league.matchStats ?? []), [league.matchStats])
   /** Which player's team is open. The ranking is also the way into a roster. */
@@ -381,12 +386,25 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
   return (
     <section className="panel">
       <div className="standings-head">
+        {editable && (
+          <div className="standings-actions">
+            <button type="button" onClick={() => setManaging(true)}>Add / remove players</button>
+            <span className="count">{league.players.length} players</span>
+          </div>
+        )}
         {/* The tiebreaks in the order they apply, sitting where the columns they
             refer to are — one line, so it reads as a caption and not a paragraph. */}
         <p className="sort-note">
           Match Win % → Game Wins → Fewest Game Losses → Diff → Head-to-head
         </p>
       </div>
+      {managing && (
+        <ManagePlayers
+          league={league}
+          onClose={() => setManaging(false)}
+          onSaved={() => reloadSeason(currentSeason().id)}
+        />
+      )}
       <div className="table-scroll">
         <table className="stat-table standings-table">
           <thead>
@@ -522,76 +540,6 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
 }
 
 /**
- * The season's fixtures, week by week.
- *
- * The matches tab is about what happened in each one; this is about who plays
- * whom and when. It stays deliberately light — names, a score if there is one,
- * and nothing else — so a whole season fits on a screen or two and the weeks
- * that have not been played yet are as visible as the ones that have.
- */
-function Schedule({ league }: { league: League }) {
-  const people = useMemo(() => byId(league.players), [league.players])
-  const [me, setMe] = useState(myPlayerId)
-  useEffect(() => subscribeIdentity(setMe), [])
-
-  const weeks = useMemo(
-    () => [...new Set(league.schedule.map((m) => m.week))].sort((a, b) => a - b),
-    [league.schedule],
-  )
-  const label = (ids: string[]) => ids.map((p) => people[p]?.name ?? p).join(' + ')
-  const played = league.schedule.filter((m) => m.scoreA !== null).length
-
-  if (!league.schedule.length) {
-    return <p className="panel-note">No schedule for this season yet.</p>
-  }
-
-  return (
-    <div className="schedule-view">
-      <div className="controls">
-        <span className="count">
-          {played} of {league.schedule.length} matches played
-        </span>
-      </div>
-
-      <div className="schedule-weeks">
-        {weeks.map((w) => {
-          const inWeek = league.schedule.filter((m) => m.week === w)
-          const done = inWeek.filter((m) => m.scoreA !== null).length
-          return (
-            <section key={w} className="panel schedule-week">
-              <h3>
-                Week {w}
-                <span className={`schedule-progress${done === inWeek.length ? ' is-done' : ''}`}>
-                  {done}/{inWeek.length}
-                </span>
-              </h3>
-              <ul>
-                {inWeek.map((m, i) => {
-                  const finished = m.scoreA !== null && m.scoreB !== null
-                  // Your own fixtures are the ones you came to find.
-                  const mine = Boolean(me) && (m.a.includes(me) || m.b.includes(me))
-                  const aWon = finished && m.scoreA! > m.scoreB!
-                  const bWon = finished && m.scoreB! > m.scoreA!
-                  return (
-                    <li key={i} className={mine ? 'is-mine' : undefined}>
-                      <span className={`fixture-side${aWon ? ' won' : ''}`}>{label(m.a)}</span>
-                      <span className={`fixture-score${finished ? '' : ' is-pending'}`}>
-                        {finished ? `${m.scoreA}–${m.scoreB}` : 'vs'}
-                      </span>
-                      <span className={`fixture-side right${bWon ? ' won' : ''}`}>{label(m.b)}</span>
-                    </li>
-                  )
-                })}
-              </ul>
-            </section>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-/**
  * The matches, and the games inside them.
  *
  * A match is a best-of-three, so its 2-1 is a summary of three battles that
@@ -607,8 +555,20 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
     () => [...new Set(league.schedule.map((m) => m.week))].sort((a, b) => a - b),
     [league.schedule],
   )
-  /** Weeks the reader has folded away. Everything starts open. */
-  const [shut, setShut] = useState<Set<number>>(new Set())
+  /**
+   * Weeks the reader has opened. Everything starts folded: a season is eight
+   * weeks of five matches, and all of it at once is a wall rather than a page.
+   */
+  const [open, setOpen] = useState<Set<number>>(new Set())
+  const [editing, setEditing] = useState(false)
+  const [passphrase, setPassphrase] = useState('')
+  const [asking, setAsking] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [scheduleError, setScheduleError] = useState<string | null>(null)
+  /** The fixture being built, per week. */
+  const [adding, setAdding] = useState<Record<number, { a: string[]; b: string[] }>>({})
+  // The spreadsheet season is read at its source, so there is nothing to edit.
+  const editable = currentSeason().source === 'database'
 
   /**
    * The per-Pokémon lines for a match that has no games under it.
@@ -627,30 +587,172 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
     return map
   }, [league.schedule, league.matchStats])
   const label = (ids: string[]) => ids.map((p) => people[p]?.name ?? p).join(' + ')
-  const toggle = (w: number) => setShut((prev) => {
+  const toggle = (w: number) => setOpen((prev) => {
     const next = new Set(prev)
     if (!next.delete(w)) next.add(w)
     return next
   })
 
+  const refresh = () => reloadSeason(currentSeason().id)
+
+  async function run(action: () => Promise<unknown>) {
+    setBusy(true)
+    setScheduleError(null)
+    try {
+      await action()
+      await refresh()
+    } catch (e) {
+      setScheduleError(errorText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const played = league.schedule.filter((m) => m.scoreA !== null).length
+  const total = league.schedule.length
+  /** A new week goes after the last one, which is where a season grows. */
+  const nextWeek = weeks.length ? Math.max(...weeks) + 1 : 1
+
   return (
     <div className="schedule">
-      {weeks.map((w) => {
-        const open = !shut.has(w)
+      <div className="matches-head">
+        <div className="season-progress">
+          <div className="progress-track">
+            <div
+              className="progress-fill"
+              style={{ width: total ? `${Math.round((played / total) * 100)}%` : '0%' }}
+            />
+          </div>
+          <span className="progress-label">
+            {played} of {total} matches played
+          </span>
+        </div>
+
+        {editable && (
+          <div className="matches-actions">
+            {editing ? (
+              <button type="button" className="record-btn is-done" onClick={() => setEditing(false)}>
+                Done
+              </button>
+            ) : (
+              <button type="button" className="record-btn" onClick={() => setAsking((v) => !v)}>
+                Edit match schedule
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {asking && !editing && (
+        <PassphraseModal
+          title="Edit the schedule"
+          note="Adding a fixture is harmless. Removing one takes its games and its results with it, which is why this is asked for."
+          action="Edit schedule"
+          onClose={() => setAsking(false)}
+          onConfirm={async (entered) => {
+            if (!await unlock(entered)) throw new Error('That passphrase is not right.')
+            setPassphrase(entered)
+            setEditing(true)
+            setAsking(false)
+          }}
+        />
+      )}
+      {scheduleError && <p className="report-error">{scheduleError}</p>}
+
+      {editing && (
+        <div className="week-add">
+          <button
+            type="button" disabled={busy}
+            onClick={() => setOpen((prev) => new Set([...prev, nextWeek]))}
+          >
+            Add week {nextWeek}
+          </button>
+          <span className="panel-note">
+            A week exists once it has a match in it.
+          </span>
+        </div>
+      )}
+
+      {[...new Set([...weeks, ...(editing ? [...open].filter((w) => !weeks.includes(w)) : [])])]
+        .sort((a, b) => a - b).map((w) => {
+        const isOpen = open.has(w)
         const inWeek = league.schedule.filter((m) => m.week === w)
+        const done = inWeek.filter((m) => m.scoreA !== null).length
+        const draft = adding[w] ?? { a: [], b: [] }
+        const taken = new Set([...draft.a, ...draft.b])
         return (
-        <section key={w} className={`panel week-panel${open ? '' : ' is-shut'}`}>
+        <section key={w} className={`panel week-panel${isOpen ? '' : ' is-shut'}`}>
           <button
             type="button"
             className="week-head"
-            aria-expanded={open}
+            aria-expanded={isOpen}
             onClick={() => toggle(w)}
           >
-            <span className="week-caret" aria-hidden="true">{open ? '▾' : '▸'}</span>
+            <span className="week-caret" aria-hidden="true">{isOpen ? '▾' : '▸'}</span>
             <span className="week-name">Week {w}</span>
-            <span className="week-count">{inWeek.length} matches</span>
+            <span className={`week-count${done === inWeek.length && inWeek.length ? ' is-done' : ''}`}>
+              {done}/{inWeek.length} matches completed
+            </span>
           </button>
-          {open && (
+          {isOpen && editing && (
+            <div className="week-edit">
+              <div className="fixture-build">
+                {(['a', 'b'] as const).map((side) => (
+                  <span key={side} className="fixture-pick">
+                    {draft[side].map((id) => (
+                      <button
+                        key={id} type="button" className="fixture-chip"
+                        title="Remove from this side"
+                        onClick={() => setAdding({
+                          ...adding,
+                          [w]: { ...draft, [side]: draft[side].filter((x) => x !== id) },
+                        })}
+                      >
+                        {people[id]?.name ?? id} ✕
+                      </button>
+                    ))}
+                    <select
+                      value=""
+                      aria-label={side === 'a' ? 'Add to the first side' : 'Add to the second side'}
+                      onChange={(e) => {
+                        if (!e.target.value) return
+                        setAdding({
+                          ...adding,
+                          [w]: { ...draft, [side]: [...draft[side], e.target.value] },
+                        })
+                      }}
+                    >
+                      <option value="">{side === 'a' ? '+ player' : '+ player'}</option>
+                      {league.players.filter((p) => !taken.has(p.id)).map((p) => (
+                        <option key={p.id} value={p.id}>{p.name}</option>
+                      ))}
+                    </select>
+                    {side === 'a' && <em>vs</em>}
+                  </span>
+                ))}
+                <button
+                  type="button" className="fixture-add"
+                  disabled={busy || !draft.a.length || !draft.b.length}
+                  onClick={() => run(async () => {
+                    await scheduleMatch(passphrase, w, draft.a, draft.b)
+                    setAdding({ ...adding, [w]: { a: [], b: [] } })
+                  })}
+                >
+                  Add match
+                </button>
+              </div>
+              {inWeek.length > 0 && (
+                <button
+                  type="button" className="week-remove" disabled={busy}
+                  title={`Remove all ${inWeek.length} matches in week ${w}`}
+                  onClick={() => run(() => removeWeek(passphrase, w))}
+                >
+                  Remove week {w}
+                </button>
+              )}
+            </div>
+          )}
+          {isOpen && (
           <ul className="match-list">
             {inWeek.map((m, i) => {
               const done = m.scoreA !== null && m.scoreB !== null
@@ -664,7 +766,18 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
               const games = m.games ? [...m.games].sort((x, y) => x.number - y.number) : []
               return (
                 <li key={i} className={`match-card${games.length ? ' has-games' : ''}`}>
-                  <h4 className="match-title">Match {i + 1}</h4>
+                  <h4 className="match-title">
+                    Match {i + 1}
+                    {editing && m.id != null && (
+                      <button
+                        type="button" className="match-remove" disabled={busy}
+                        title="Remove this match"
+                        onClick={() => run(() => unscheduleMatch(passphrase, m.id!))}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </h4>
                   <div className="match-row">
                     <span className={cls(true)}>{label(m.a)}</span>
                     <span className="score">{done ? `${m.scoreA} – ${m.scoreB}` : 'vs'}</span>
@@ -807,6 +920,9 @@ const TIER_PILLS = ['Top', 'High', 'Mid', 'Low', 'Banned'] as const
 
 function Board({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
   const [query, setQuery] = useState('')
+  const editable = currentSeason().source === 'database'
+  const [draft, setDraft] = useState<DraftState | null>(null)
+  useEffect(() => { if (editable) draftState().then(setDraft, () => {}) }, [editable])
   // Empty set means "no filter" rather than "show nothing", so the board starts
   // complete and each pill narrows it.
   const [tiers, setTiers] = useState<Set<string>>(new Set())
@@ -930,6 +1046,21 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           <div><dt className="swatch-taken" /><dd>taken</dd></div>
         </dl>
         <span className="count">{rows.length} shown</span>
+        {editable && (
+          <div className="board-draft">
+            {draft?.status === 'active' && (
+              <span className="draft-live">
+                <span className="draft-dot" aria-hidden="true" />
+                Draft mode enabled
+              </span>
+            )}
+            <DraftToggle
+              state={draft}
+              setState={setDraft}
+              onChanged={() => reloadSeason(currentSeason().id)}
+            />
+          </div>
+        )}
       </div>
 
       <section className="panel">

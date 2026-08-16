@@ -77,6 +77,12 @@ export interface Game {
 }
 
 export interface Match {
+  /**
+   * The database row, when there is one. Absent for a season read from the
+   * spreadsheet, which has no ids — and which is why removing a fixture is
+   * only offered where one exists.
+   */
+  id?: number
   week: number
   match: string | number
   a: string[]

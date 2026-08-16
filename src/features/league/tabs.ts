@@ -1,6 +1,6 @@
 /** Kept out of LeagueView so the app shell can render the secondary nav. */
 export type LeagueTab =
-  | 'standings' | 'matches' | 'schedule' | 'stats' | 'my-team' | 'board' | 'history' | 'rules'
+  | 'standings' | 'matches' | 'stats' | 'my-team' | 'board' | 'history' | 'rules'
 
 /**
  * The league's tabs.
@@ -14,7 +14,6 @@ export const LEAGUE_TABS: { key: LeagueTab; label: string }[] = [
   { key: 'my-team', label: 'My Team' },
   { key: 'standings', label: 'Players' },
   { key: 'matches', label: 'Matches' },
-  { key: 'schedule', label: 'Schedule' },
   { key: 'stats', label: 'Pokémon Ranking' },
   { key: 'board', label: 'Draft List' },
 ]
