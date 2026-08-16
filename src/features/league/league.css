@@ -805,9 +805,9 @@
 /* Your team, one Pokémon a row, with what you need to judge it. */
 .draft-table { width: 100%; margin-bottom: 0.9rem; }
 .draft-table th, .draft-table td { text-align: right; white-space: nowrap; }
-.draft-table th:first-child, .draft-table td:first-child { text-align: left; width: 5.5rem; }
-/* Every tier badge the same width, so the column reads as one edge rather than
-   five ragged ones. */
+/* Centred in its column, and every badge the same width, so the tiers read as
+   one stack rather than five ragged edges. */
+.draft-table th:first-child, .draft-table td:first-child { text-align: center; width: 5.5rem; }
 .draft-table td:first-child .tier {
   display: inline-block; min-width: 3.6rem; text-align: center;
 }
