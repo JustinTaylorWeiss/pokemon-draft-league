@@ -38,6 +38,7 @@
   display: flex; align-items: center; justify-content: space-between;
   gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem;
 }
+.standings-actions .count { margin-left: 0; }
 .sort-note {
   margin: 0 0 0 auto; font-size: 0.72rem; color: var(--muted);
   white-space: nowrap; font-variant-numeric: tabular-nums;
@@ -339,7 +340,10 @@
 }
 
 /* ---- reporting a match, and managing players ---- */
-.standings-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+/* Centred rather than stretched: a flex row defaults to pulling its children
+   to the row's full height, which left the button a tall lozenge and the count
+   floating against its top. */
+.standings-actions { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
 .standings-actions button {
   font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer;
   padding: 0.4rem 0.8rem; border-radius: 999px;
@@ -901,6 +905,10 @@
 }
 .progress-label {
   flex: none; font-size: 0.8rem; color: var(--muted);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.season-length {
+  flex: none; font-size: 0.8rem; font-weight: 600; color: var(--fg);
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
 .matches-actions { position: relative; display: flex; align-items: center; gap: 0.5rem; }

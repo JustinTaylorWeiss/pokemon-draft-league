@@ -617,6 +617,11 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
     <div className="schedule">
       <div className="matches-head">
         <div className="season-progress">
+          {/* Counted from the weeks that exist rather than the season's stated
+              length: a week is real once it has a fixture in it. */}
+          <span className="season-length">
+            {weeks.length} week{weeks.length === 1 ? '' : 's'}
+          </span>
           <div className="progress-track">
             <div
               className="progress-fill"
