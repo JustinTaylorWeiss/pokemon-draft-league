@@ -111,8 +111,14 @@ export function DraftTeams({ league, dex }: Props) {
                 return (
                   <div key={t}>
                     <dt className={tierClass(t)}>{t}</dt>
-                    <dd className={over ? 'is-over' : undefined} title={over ? `Over the limit of ${cap}` : undefined}>
-                      {cap ? `${held}/${cap}` : `${held} · no limit`}
+                    {/* An uncapped tier still reads as a fraction, so the row
+                        scans as one line of held-against-limit rather than one
+                        number and a sentence. */}
+                    <dd
+                      className={over ? 'is-over' : undefined}
+                      title={cap ? `Limit of ${cap}` : 'No limit on this tier'}
+                    >
+                      {held}/{cap ?? '∞'}
                     </dd>
                   </div>
                 )
