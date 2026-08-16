@@ -1,4 +1,5 @@
 /** Shapes produced by scripts/import-league.mjs from the master spreadsheet. */
+import { setDbSeason } from './supabase'
 import type { BaseStats, Pokemon, PokemonDex } from './types'
 
 export type DraftTier = 'Banned' | 'Top' | 'High' | 'Mid' | 'Low'
@@ -195,6 +196,7 @@ export interface Season {
 export const SEASONS: Season[] = [
   { id: 'season-4', label: 'Season 4', source: 'sheet' },
   { id: 'test', label: 'Test Season', source: 'database' },
+  { id: 'mega-mc', label: 'Mega Season — Reg M-C', source: 'database' },
 ]
 
 const SEASON_KEY = 'league:season'
@@ -211,6 +213,21 @@ function storedSeason(): Season {
 let season: Season = storedSeason()
 
 export const currentSeason = () => season
+
+/**
+ * Tells the database layer which season it is reading and writing.
+ *
+ * Kept in step in one place rather than at each call site: a season the site is
+ * showing but the database has not been told about would read one season's
+ * standings while saving into another's, and nothing on screen would say so.
+ * The spreadsheet season names no database rows, so it is passed as null and
+ * the database layer falls back.
+ */
+function tellDatabase(s: Season) {
+  setDbSeason(s.source === 'database' ? s.id : null)
+}
+
+tellDatabase(season)
 
 let pending: Promise<League> | null = null
 const listeners = new Set<(l: League) => void>()
@@ -327,6 +344,7 @@ export async function setSeason(id: string): Promise<void> {
   const next = SEASONS.find((s) => s.id === id)
   if (!next || next.id === season.id) return
   season = next
+  tellDatabase(next)
   try { localStorage.setItem(SEASON_KEY, next.id) } catch { /* private browsing */ }
 
   pending = null
@@ -346,6 +364,7 @@ export async function setSeason(id: string): Promise<void> {
 export async function reloadSeason(id: string): Promise<void> {
   const target = SEASONS.find((s) => s.id === id)
   if (!target) return
+  tellDatabase(target)
   setSheetBusy(true)
   try {
     const league = target.source === 'database' ? await loadFromDatabase() : await loadShipped()

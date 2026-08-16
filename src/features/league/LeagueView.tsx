@@ -1046,14 +1046,12 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           <div><dt className="swatch-taken" /><dd>taken</dd></div>
         </dl>
         <span className="count">{rows.length} shown</span>
+        {/* The "draft mode enabled" indicator used to sit here. It says
+            something about the whole League section rather than this tab, so it
+            lives in the bar above now. The button that opens the draft stays
+            with the board it acts on. */}
         {editable && (
           <div className="board-draft">
-            {draft?.status === 'active' && (
-              <span className="draft-live">
-                <span className="draft-dot" aria-hidden="true" />
-                Draft mode enabled
-              </span>
-            )}
             <DraftToggle
               state={draft}
               setState={setDraft}

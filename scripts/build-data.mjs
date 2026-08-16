@@ -49,9 +49,17 @@ async function fetchScript(name) {
 
 /**
  * Showdown marks anything unavailable in the current games with `isNonstandard`
- * ("Past", "CAP", "Future", "Custom"). Null means legal right now, which is the
- * only thing a Gen 9 draft league can pick.
+ * ("Past", "CAP", "Future", "Custom"). Null means legal right now.
+ *
+ * Mega and Primal formes are the exception, and are kept despite the mark. A
+ * Mega season needs them, and Showdown files them either as "Past" (the Gen 6
+ * and 7 Megas) or "Future" (the ones announced for Legends Z-A) — neither of
+ * which is a statement about this league. Which of them a season may actually
+ * draft is decided by that season's board, not here; this only decides what the
+ * site knows the stats and sprite for.
  */
+const isMega = (entry) => /^(Mega|Primal)/.test(entry.forme ?? '')
+
 const isCurrentGen = (entry) => !entry.isNonstandard
 
 async function main() {
@@ -70,8 +78,10 @@ async function main() {
   // ---- Pokemon -------------------------------------------------------------
   const pokemon = {}
   for (const [id, p] of Object.entries(dex)) {
-    // Showdown keeps CAP fakemon and retired formes in the same table.
-    if (!isCurrentGen(p) || !isCurrentGen(formats[id] ?? {})) continue
+    // Showdown keeps CAP fakemon and retired formes in the same table. The
+    // `formats` check is skipped for Megas as well as the dex one: it marks
+    // them by the same rule, and it has no forme to recognise them by.
+    if (!isMega(p) && (!isCurrentGen(p) || !isCurrentGen(formats[id] ?? {}))) continue
     if (!p.num || p.num < 1) continue // MissingNo and egg placeholders use num <= 0
 
     const bs = p.baseStats

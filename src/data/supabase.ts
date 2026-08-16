@@ -44,6 +44,27 @@ export function setActor(name: string) {
 }
 
 /**
+ * Which season every call below acts on.
+ *
+ * Held here rather than passed down, for the same reason the actor is: the
+ * season is a property of what the person is looking at, not of the button
+ * they pressed, and threading it through every component that can write would
+ * put it in a hundred call sites that have no opinion about it.
+ *
+ * `league.ts` owns the choice and pushes it here when it changes. The fallback
+ * matters — a stale saved id can name the spreadsheet season, which has no rows
+ * in the database at all, and a write aimed at it would land nowhere.
+ */
+const DEFAULT_SEASON = 'test'
+let seasonId = DEFAULT_SEASON
+
+export const currentSeasonId = () => seasonId
+
+export function setDbSeason(id: string | null) {
+  seasonId = id || DEFAULT_SEASON
+}
+
+/**
  * Raised when a write is refused.
  *
  * Row-level security denies by filtering rows rather than by raising, so a
@@ -144,13 +165,15 @@ export interface DraftState {
 
 /** What the draft is currently doing. */
 export async function draftState(): Promise<DraftState | null> {
-  const { data } = await db.from('draft_state').select('*').maybeSingle()
+  const { data } = await db.from('draft_state').select('*').eq('season_id', currentSeasonId()).maybeSingle()
   return (data as DraftState) ?? null
 }
 
 /** Closes the draft. Clears nothing — the rosters are the season. */
 export async function endDraft(passphrase: string) {
-  const { data, error } = await db.rpc('end_draft', { passphrase, who: currentActor() })
+  const { data, error } = await db.rpc('end_draft', {
+    passphrase, season: currentSeasonId(), who: currentActor(),
+  })
   if (error) throw error
   return data
 }
@@ -165,7 +188,8 @@ export async function endDraft(passphrase: string) {
  */
 export async function claimPokemon(playerId: string, pokemonId: string) {
   const { data, error } = await db.rpc('claim_pokemon', {
-    player_id: playerId, pokemon_id: pokemonId, who: currentActor(),
+    season: currentSeasonId(), player_id: playerId, pokemon_id: pokemonId,
+    who: currentActor(),
   })
   if (error) throw error
   return data as string
@@ -174,7 +198,8 @@ export async function claimPokemon(playerId: string, pokemonId: string) {
 /** Gives a Pokémon back to the board. */
 export async function releasePokemon(playerId: string, pokemonId: string) {
   const { data, error } = await db.rpc('release_pokemon', {
-    player_id: playerId, pokemon_id: pokemonId, who: currentActor(),
+    season: currentSeasonId(), player_id: playerId, pokemon_id: pokemonId,
+    who: currentActor(),
   })
   if (error) throw error
   return data as string
@@ -183,8 +208,7 @@ export async function releasePokemon(playerId: string, pokemonId: string) {
 /** Opens the draft. The passphrase is checked by the database, not here. */
 export async function startDraft(passphrase: string) {
   const { data, error } = await db.rpc('start_draft', {
-    passphrase,
-    who: currentActor(),
+    passphrase, season: currentSeasonId(), who: currentActor(),
   })
   if (error) throw error
   return data
@@ -196,7 +220,8 @@ export async function startDraft(passphrase: string) {
  */
 export async function addPlayer(passphrase: string, name: string, team?: string) {
   const { data, error } = await db.rpc('add_player', {
-    passphrase, name, team: team || null, who: currentActor(),
+    passphrase, season: currentSeasonId(), name, team: team || null,
+    who: currentActor(),
   })
   if (error) throw error
   return data
@@ -208,7 +233,7 @@ export async function addPlayer(passphrase: string, name: string, team?: string)
  */
 export async function removePlayer(passphrase: string, playerId: string) {
   const { data, error } = await db.rpc('remove_player', {
-    passphrase, player_id: playerId, who: currentActor(),
+    passphrase, season: currentSeasonId(), player_id: playerId, who: currentActor(),
   })
   if (error) throw error
   return data as string
@@ -244,6 +269,7 @@ export async function reportMatch(input: {
   lines: { side: 'a' | 'b'; pokemon_id: string; kills: number; deaths: number }[]
 }): Promise<number> {
   const { data, error } = await db.rpc('report_match', {
+    season: currentSeasonId(),
     week: input.week,
     side_a: input.sideA,
     side_b: input.sideB,
@@ -261,7 +287,8 @@ export async function scheduleMatch(
   passphrase: string, week: number, sideA: string[], sideB: string[],
 ): Promise<number> {
   const { data, error } = await db.rpc('schedule_match', {
-    passphrase, week, side_a: sideA, side_b: sideB, who: currentActor(),
+    passphrase, season: currentSeasonId(), week, side_a: sideA, side_b: sideB,
+    who: currentActor(),
   })
   if (error) throw error
   return data as number
@@ -279,7 +306,7 @@ export async function unscheduleMatch(passphrase: string, matchId: number): Prom
 /** Removes a whole week of fixtures, and says how many that was. */
 export async function removeWeek(passphrase: string, week: number): Promise<number> {
   const { data, error } = await db.rpc('remove_week', {
-    passphrase, week, who: currentActor(),
+    passphrase, season: currentSeasonId(), week, who: currentActor(),
   })
   if (error) throw error
   return data as number
@@ -288,7 +315,7 @@ export async function removeWeek(passphrase: string, week: number): Promise<numb
 /** Puts a hidden player back in the league. */
 export async function restorePlayer(passphrase: string, playerId: string) {
   const { data, error } = await db.rpc('restore_player', {
-    passphrase, player_id: playerId, who: currentActor(),
+    passphrase, season: currentSeasonId(), player_id: playerId, who: currentActor(),
   })
   if (error) throw error
   return data as string

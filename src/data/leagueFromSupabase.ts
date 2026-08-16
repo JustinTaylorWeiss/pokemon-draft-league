@@ -1,4 +1,4 @@
-import { db } from './supabase'
+import { currentSeasonId, db } from './supabase'
 import type { Game, League, Match, MatchStat, Player, Standing } from './league'
 
 /**
@@ -78,10 +78,48 @@ interface StandingRow {
  */
 const PAGE = 1000
 
+/** Reads one season's worth of a table, whole. */
 async function readAll(table: string, ...order: string[]) {
+  return readWhere(table, { eq: ['season_id', currentSeasonId()] }, order)
+}
+
+/**
+ * Reads rows belonging to a set of parent ids.
+ *
+ * `match_lines`, `games` and `game_lines` carry no season of their own — they
+ * hang off a match, and that match's season is theirs. So they are fetched by
+ * the ids of the matches this season actually has, rather than by a column.
+ *
+ * The ids are sent in batches because they travel in the URL, and a long season
+ * would otherwise build a query string longer than the server will accept.
+ */
+const IDS_PER_QUERY = 300
+
+async function readBy(table: string, column: string, ids: number[], ...order: string[]) {
+  if (!ids.length) return { data: [] as unknown[], error: null }
+  const rows: unknown[] = []
+  for (let i = 0; i < ids.length; i += IDS_PER_QUERY) {
+    const batch = ids.slice(i, i + IDS_PER_QUERY)
+    const got = await readWhere(table, { in: [column, batch] }, order)
+    if (got.error) return { data: rows, error: got.error }
+    rows.push(...got.data)
+  }
+  return { data: rows, error: null }
+}
+
+/**
+ * The one condition a read is narrowed by, as data rather than as a callback:
+ * the query builder's type is not nameable here without generated database
+ * types, and a function taking one cannot be written down.
+ */
+type Where = { eq: [string, string] } | { in: [string, number[]] }
+
+async function readWhere(table: string, where: Where, order: string[]) {
   const rows: unknown[] = []
   for (let from = 0; ; from += PAGE) {
-    let query = db.from(table).select('*').range(from, from + PAGE - 1)
+    const base = db.from(table).select('*')
+    let query = ('eq' in where ? base.eq(...where.eq) : base.in(...where.in))
+      .range(from, from + PAGE - 1)
     for (const col of order) query = query.order(col)
     const { data, error } = await query
     if (error) return { data: rows, error }
@@ -92,23 +130,36 @@ async function readAll(table: string, ...order: string[]) {
 
 /** Every table in one round trip each, in parallel. */
 export async function loadLeagueFromSupabase(): Promise<League> {
-  const [meta, players, board, rosters, matches, lines, standings, rules, games, gameLines] =
+  const season = currentSeasonId()
+
+  const [meta, players, board, rosters, matches, standings, rules] =
     await Promise.all([
-      db.from('league_meta').select('*').maybeSingle(),
+      db.from('league_meta').select('*').eq('season_id', season).maybeSingle(),
       readAll('players', 'seed'),
       readAll('board'),
       readAll('rosters'),
       readAll('matches', 'week', 'id'),
-      readAll('match_lines', 'id'),
       readAll('standings'),
       readAll('rules_sections', 'position'),
-      readAll('games', 'match_id', 'number'),
-      readAll('game_lines', 'id'),
     ])
 
-  const firstError = [meta, players, board, rosters, matches, lines, standings, rules]
+  const firstError = [meta, players, board, rosters, matches, standings, rules]
     .find((r) => r.error)?.error
   if (firstError) throw firstError
+
+  // Only now is it known which matches are this season's, and everything below
+  // a match is found through them.
+  const matchIds = ((matches.data ?? []) as { id: number }[]).map((m) => m.id)
+  const [lines, games] = await Promise.all([
+    readBy('match_lines', 'match_id', matchIds, 'id'),
+    readBy('games', 'match_id', matchIds, 'match_id', 'number'),
+  ])
+  const gameLines = await readBy(
+    'game_lines', 'game_id', ((games.data ?? []) as { id: number }[]).map((g) => g.id), 'id',
+  )
+
+  const belowError = [lines, games, gameLines].find((r) => r.error)?.error
+  if (belowError) throw belowError
 
   // Hidden players are removed from the league, not from the record. They stay
   // in this list so their name still resolves in matches they already played —

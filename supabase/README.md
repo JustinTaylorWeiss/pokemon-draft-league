@@ -156,3 +156,19 @@ Remove it when finished:
 ```bash
 docker rm -f pdl-pgtest
 ```
+
+## Seasons cannot be deleted
+
+`seasons` is the row every other table cascades from. On 2026-08-16 a single
+`DELETE` against it removed 2,925 rows across eleven tables — the entire Test
+Season — because the table had been created without row-level security.
+
+It now has it, with a read policy and nothing else, and the write grants are
+revoked besides. Seasons are created through `create_season`, behind the
+passphrase. **There is no `delete_season`, and there must not be one.** The same
+rule that forbids clearing a week or resetting a season applies to the table
+they hang off; a cascading foreign key is an operation like any other.
+
+The season was recovered in full from `events`, which stores the whole row in
+`before` for every delete — see `0016_restore_test_season.sql`. That the log
+made a complete restore possible is the reason it records what it does.

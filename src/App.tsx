@@ -12,6 +12,7 @@ import {
   reloadSeason, revalidateLeague, SEASONS, setSeason, subscribeLeague, subscribeSheetBusy,
   type League,
 } from './data/league'
+import { draftState, type DraftState } from './data/supabase'
 import { Dex } from './features/dex/Dex'
 import { PokemonModalProvider } from './features/pokemon/PokemonModalContext'
 import { PokemonModal } from './features/pokemon/PokemonModal'
@@ -48,6 +49,14 @@ export default function App() {
   // page starts on load — not only the one the button starts itself.
   const [refreshing, setRefreshing] = useState(isSheetBusy)
   const [refreshError, setRefreshError] = useState<string | null>(null)
+  /**
+   * Whether a draft is open, read here rather than on the Draft List tab.
+   *
+   * An open draft changes what every tab in the League section means — a roster
+   * change is a pick during one and a trade after it — so it belongs in the bar
+   * that spans them, not on the one page that happens to start it.
+   */
+  const [draft, setDraft] = useState<DraftState | null>(null)
   /** Editing lives in the secondary bar, beside the tabs it acts on. */
   const [editing, setEditing] = useState<'match' | 'players' | null>(null)
   const [rulesOpen, setRulesOpen] = useState(false)
@@ -99,6 +108,15 @@ export default function App() {
     const stopLeague = subscribeLeague((l) => { setLeague(l); setDataAt(leagueTimestamp()) })
     return () => { stopBusy(); stopLeague() }
   }, [])
+
+  // Re-read when the season changes, and whenever the league republishes —
+  // which is what opening or closing the draft does.
+  useEffect(() => {
+    if (!onDatabase) { setDraft(null); return }
+    let live = true
+    draftState().then((d) => { if (live) setDraft(d) }, () => {})
+    return () => { live = false }
+  }, [onDatabase, season, league])
 
   /** Re-reads the sheet in the browser. Read-only: a GET, nothing more. */
   const refresh = async () => {
@@ -245,6 +263,12 @@ export default function App() {
                 at its source and never written to. */}
             {onDatabase && (
               <div className="sub-actions">
+                {draft?.status === 'active' && (
+                  <span className="draft-live">
+                    <span className="draft-dot" aria-hidden="true" />
+                    Draft mode enabled
+                  </span>
+                )}
                 <button type="button" onClick={() => setEditing('match')}>Record a match</button>
               </div>
             )}
