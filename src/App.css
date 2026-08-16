@@ -9,22 +9,31 @@
 @media (min-width: 2400px) { :root { --content-max: 2040px; } }
 
 /* Full-bleed bars; only their contents are constrained. */
+/*
+ * Both bars draw their bottom edge inside themselves and reserve its height as
+ * padding.
+ *
+ * Neither half of that works alone. A `border-bottom` sits outside the box the
+ * contents are centred in, so they end up half a pixel high against the band
+ * you see. Drawing it inside without reserving the space is worse: the line
+ * eats from below and nothing balances it, so the contents sit low by its full
+ * thickness. Reserving it means the contents centre in the space above the
+ * line, which is the space that actually looks like the bar.
+ */
 .topbar {
   background: var(--widget);
-  /* Drawn rather than bordered. A border-bottom sits outside the box the
-     contents are centred in, so everything in the bar ends up half a pixel
-     off-centre against the band you actually see — invisible at 100% and not
-     at all invisible zoomed in. An inset shadow paints in the same space the
-     layout uses, so the two agree. */
   box-shadow:
     inset 0 -1px 0 var(--line),
     inset 0 -2px 0 rgb(74 168 255 / 22%);
+  padding-bottom: 2px;
   position: sticky; top: 0; z-index: 30;
 }
 .subbar {
   background: var(--surface);
-  border-bottom: 1px solid var(--line);
-  box-shadow: inset 0 -2px 0 rgb(232 97 95 / 20%);
+  box-shadow:
+    inset 0 -1px 0 var(--line),
+    inset 0 -2px 0 rgb(232 97 95 / 20%);
+  padding-bottom: 2px;
   position: sticky; top: var(--topbar-h); z-index: 29;
 }
 
