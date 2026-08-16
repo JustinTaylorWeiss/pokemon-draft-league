@@ -842,3 +842,40 @@
 }
 /* Over the cap: said in the one place the number is already being read. */
 .tier-limits dd.is-over { color: #e05563; font-weight: 700; }
+
+/* ---- the season's fixtures ---- */
+.schedule-weeks {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(23rem, 1fr)); gap: 0.9rem;
+}
+.schedule-week h3 {
+  display: flex; align-items: baseline; gap: 0.6rem; margin: 0 0 0.5rem;
+  font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--muted);
+}
+/* How much of the week is in, at a glance. */
+.schedule-progress {
+  margin-left: auto; font-size: 0.7rem; letter-spacing: 0; text-transform: none;
+  font-variant-numeric: tabular-nums;
+  background: var(--chip); border-radius: 999px; padding: 0.05rem 0.45rem;
+}
+.schedule-progress.is-done { color: #6dc79a; }
+
+.schedule-week ul { list-style: none; margin: 0; padding: 0; }
+.schedule-week li {
+  display: grid; grid-template-columns: 1fr 3.4rem 1fr; align-items: center;
+  gap: 0.4rem; padding: 0.3rem 0.35rem; border-radius: 6px;
+  font-size: 0.82rem; border-left: 3px solid transparent;
+}
+/* Your own fixtures, which are the ones you came to find. */
+.schedule-week li.is-mine {
+  background: rgb(127 127 127 / 7%); border-left-color: var(--accent);
+}
+.fixture-side { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fixture-side.right { text-align: right; }
+.fixture-side.won { font-weight: 700; color: var(--fg); }
+.fixture-score {
+  text-align: center; font-size: 0.78rem; font-variant-numeric: tabular-nums;
+  color: var(--fg); background: var(--chip); border-radius: 999px; padding: 0.05rem 0;
+}
+/* Not played yet, and saying so rather than showing a score that is not there. */
+.fixture-score.is-pending { color: var(--muted); background: none; font-style: italic; }

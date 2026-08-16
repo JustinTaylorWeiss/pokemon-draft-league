@@ -15,6 +15,7 @@ import { PokemonLink } from '../../components/PokemonLink'
 import { LoadingBall } from '../../components/LoadingBall'
 import { DropPicker } from '../../components/DropPicker'
 import { DraftTeams } from './DraftTeams'
+import { myPlayerId, subscribeIdentity } from '../../data/identity'
 import { History } from './History'
 
 export function LeagueView({ tab }: { tab: LeagueTab }) {
@@ -50,6 +51,7 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
     <div className="league">
       {tab === 'standings' && <Standings league={league} dex={dex} />}
       {tab === 'matches' && <Matches league={league} dex={dex} />}
+      {tab === 'schedule' && <Schedule league={league} />}
       {tab === 'board' && <Board league={league} dex={dex} />}
       {tab === 'my-team' && <DraftTeams league={league} dex={dex} />}
       {tab === 'history' && <History league={league} />}
@@ -516,6 +518,76 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
         </table>
       </div>
     </section>
+  )
+}
+
+/**
+ * The season's fixtures, week by week.
+ *
+ * The matches tab is about what happened in each one; this is about who plays
+ * whom and when. It stays deliberately light — names, a score if there is one,
+ * and nothing else — so a whole season fits on a screen or two and the weeks
+ * that have not been played yet are as visible as the ones that have.
+ */
+function Schedule({ league }: { league: League }) {
+  const people = useMemo(() => byId(league.players), [league.players])
+  const [me, setMe] = useState(myPlayerId)
+  useEffect(() => subscribeIdentity(setMe), [])
+
+  const weeks = useMemo(
+    () => [...new Set(league.schedule.map((m) => m.week))].sort((a, b) => a - b),
+    [league.schedule],
+  )
+  const label = (ids: string[]) => ids.map((p) => people[p]?.name ?? p).join(' + ')
+  const played = league.schedule.filter((m) => m.scoreA !== null).length
+
+  if (!league.schedule.length) {
+    return <p className="panel-note">No schedule for this season yet.</p>
+  }
+
+  return (
+    <div className="schedule-view">
+      <div className="controls">
+        <span className="count">
+          {played} of {league.schedule.length} matches played
+        </span>
+      </div>
+
+      <div className="schedule-weeks">
+        {weeks.map((w) => {
+          const inWeek = league.schedule.filter((m) => m.week === w)
+          const done = inWeek.filter((m) => m.scoreA !== null).length
+          return (
+            <section key={w} className="panel schedule-week">
+              <h3>
+                Week {w}
+                <span className={`schedule-progress${done === inWeek.length ? ' is-done' : ''}`}>
+                  {done}/{inWeek.length}
+                </span>
+              </h3>
+              <ul>
+                {inWeek.map((m, i) => {
+                  const finished = m.scoreA !== null && m.scoreB !== null
+                  // Your own fixtures are the ones you came to find.
+                  const mine = Boolean(me) && (m.a.includes(me) || m.b.includes(me))
+                  const aWon = finished && m.scoreA! > m.scoreB!
+                  const bWon = finished && m.scoreB! > m.scoreA!
+                  return (
+                    <li key={i} className={mine ? 'is-mine' : undefined}>
+                      <span className={`fixture-side${aWon ? ' won' : ''}`}>{label(m.a)}</span>
+                      <span className={`fixture-score${finished ? '' : ' is-pending'}`}>
+                        {finished ? `${m.scoreA}–${m.scoreB}` : 'vs'}
+                      </span>
+                      <span className={`fixture-side right${bWon ? ' won' : ''}`}>{label(m.b)}</span>
+                    </li>
+                  )
+                })}
+              </ul>
+            </section>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 
