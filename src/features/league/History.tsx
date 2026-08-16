@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { db, errorText } from '../../data/supabase'
+import { DropPicker } from '../../components/DropPicker'
 import type { League } from '../../data/league'
 
 /**
@@ -47,8 +48,13 @@ const KINDS = [
 const ROSTER_TABLES = ['rosters', 'board', 'draft_picks']
 
 function kindOf(table: string, phase: string | null) {
-  // Only a roster change can be a trade; ending the draft is still the draft.
-  if (ROSTER_TABLES.includes(table) && phase === 'complete') return 'trades'
+  // Drafting is what happens while the draft is open. A roster change at any
+  // other time is a trade, whether the draft has ended or never began — the
+  // only thing that makes a pick a pick is that a draft was running.
+  //
+  // A null phase is from before this was recorded, and stays with the draft
+  // rather than being called a trade on no evidence.
+  if (ROSTER_TABLES.includes(table) && phase !== null && phase !== 'active') return 'trades'
   return KINDS.find((k) => (k.tables as readonly string[]).includes(table))?.key ?? 'league'
 }
 
@@ -111,7 +117,7 @@ function describe(g: Group, names: Map<string, string>): string {
   const subject = names.get(key(rows[0])) ?? key(rows[0])
 
   if (g.table === 'rosters') {
-    const traded = g.phase === 'complete'
+    const traded = g.phase !== null && g.phase !== 'active'
     const verb = g.action === 'insert' ? (traded ? 'traded for' : 'drafted')
       : g.action === 'delete' ? (traded ? 'traded away' : 'released')
       : 'changed'
@@ -139,7 +145,7 @@ function describe(g: Group, names: Map<string, string>): string {
   if (g.table === 'board' && g.action === 'update') {
     const claim = rows[0].after?.drafted_by
     const mon = names.get(String(rows[0].row_key?.pokemon_id ?? '')) ?? subject
-    const traded = g.phase === 'complete'
+    const traded = g.phase !== null && g.phase !== 'active'
     if (claim) return traded ? `traded for ${mon}` : `claimed ${mon}`
     if (rows[0].before?.drafted_by) return traded ? `traded away ${mon}` : `released ${mon}`
     return `edited ${mon}`
@@ -167,7 +173,8 @@ const PAGE = 400
 export function History({ league }: { league: League }) {
   const [events, setEvents] = useState<EventRow[] | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [kinds, setKinds] = useState<Set<string>>(new Set())
+  /** One kind at a time, or everything. */
+  const [kind, setKind] = useState('')
   const [limit, setLimit] = useState(PAGE)
   // Stamped when the log is read, so "3 min ago" is measured from the same
   // moment for every row rather than from whenever each one happens to render.
@@ -220,15 +227,7 @@ export function History({ league }: { league: League }) {
     return out
   }, [events])
 
-  const shown = kinds.size === 0
-    ? groups
-    : groups.filter((g) => kinds.has(kindOf(g.table, g.phase)))
-
-  const toggle = (key: string) => setKinds((prev) => {
-    const next = new Set(prev)
-    if (!next.delete(key)) next.add(key)
-    return next
-  })
+  const shown = kind ? groups.filter((g) => kindOf(g.table, g.phase) === kind) : groups
 
   if (error) return <p className="error">Could not read the history: {error}</p>
   if (!events) return <p className="loading">Reading the history…</p>
@@ -236,26 +235,19 @@ export function History({ league }: { league: League }) {
   return (
     <div className="history">
       <div className="controls history-controls">
-        <div className="pill-group" role="group" aria-label="Filter by kind">
-          <button
-            type="button" className={`pill${kinds.size === 0 ? ' is-active' : ''}`}
-            onClick={() => setKinds(new Set())}
-          >
-            Everything<em>{groups.length}</em>
-          </button>
-          {KINDS.map((k) => {
-            const n = groups.filter((g) => kindOf(g.table, g.phase) === k.key).length
-            return (
-              <button
-                key={k.key} type="button"
-                className={`pill${kinds.has(k.key) ? ' is-active' : ''}`}
-                onClick={() => toggle(k.key)} disabled={!n}
-              >
-                {k.label}<em>{n}</em>
-              </button>
-            )
-          })}
-        </div>
+        <DropPicker
+          className="history-picker"
+          ariaLabel="Filter the history"
+          items={[
+            { id: '', label: 'Everything', note: `${groups.length} changes` },
+            ...KINDS.map((k) => {
+              const n = groups.filter((g) => kindOf(g.table, g.phase) === k.key).length
+              return { id: k.key, label: k.label, note: `${n} change${n === 1 ? '' : 's'}` }
+            }),
+          ]}
+          value={kind}
+          onPick={(item) => setKind(item.id)}
+        />
         <span className="count">{shown.length} shown</span>
       </div>
 

@@ -26,9 +26,13 @@
   max-width: var(--content-max); margin: 0 auto;
   padding: 0 1.25rem;
   display: flex; align-items: center; gap: 1.5rem;
-  /* Wraps rather than overflowing once the tail no longer fits beside the nav. */
-  flex-wrap: wrap; row-gap: 0;
+  /* One line, and the nav gives way rather than the tail dropping below it.
+     Wrapped to a second row the season and the name stop reading as centred
+     against the nav they sit beside. It only wraps below the breakpoint that
+     hides the brand, where there is genuinely no room. */
+  flex-wrap: nowrap;
 }
+@media (max-width: 700px) { .bar-inner { flex-wrap: wrap; row-gap: 0; } }
 
 /* Wordmark runs blue -> purple -> red, the site's three colours in order. */
 .brand {
@@ -229,8 +233,10 @@
   display: flex; align-items: center; gap: 0.75rem;
   margin-left: auto; flex: none; min-width: 0;
 }
-@media (max-width: 900px) {
-  /* The tail drops to its own line once it stops fitting beside the nav. */
+@media (max-width: 700px) {
+  /* Only once it truly cannot fit. The nav scrolls before this, which keeps
+     the season and the name beside it — dropped to a second line they stop
+     looking centred against the nav they belong to. */
   .nav-tail { margin-left: 0; width: 100%; justify-content: flex-end; padding-bottom: 0.5rem; }
   .refresh-stamp { max-width: 9rem; }
 }
