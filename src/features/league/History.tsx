@@ -117,9 +117,11 @@ function describe(g: Group, names: Map<string, string>): string {
   const subject = names.get(key(rows[0])) ?? key(rows[0])
 
   if (g.table === 'rosters') {
+    // The filter already says whether this was a draft or a trade; the line
+    // only has to say what happened to the Pokémon.
     const traded = g.phase !== null && g.phase !== 'active'
-    const verb = g.action === 'insert' ? (traded ? 'traded for' : 'drafted')
-      : g.action === 'delete' ? (traded ? 'traded away' : 'released')
+    const verb = g.action === 'insert' ? (traded ? 'picked up' : 'drafted')
+      : g.action === 'delete' ? 'released'
       : 'changed'
     const mons = rows.map((r) => names.get(String(r.row_key?.pokemon_id ?? '')) ?? r.row_key?.pokemon_id)
     return `${verb} ${mons.slice(0, 4).join(', ')}${n > 4 ? ` and ${n - 4} more` : ''}`
@@ -146,8 +148,8 @@ function describe(g: Group, names: Map<string, string>): string {
     const claim = rows[0].after?.drafted_by
     const mon = names.get(String(rows[0].row_key?.pokemon_id ?? '')) ?? subject
     const traded = g.phase !== null && g.phase !== 'active'
-    if (claim) return traded ? `traded for ${mon}` : `claimed ${mon}`
-    if (rows[0].before?.drafted_by) return traded ? `traded away ${mon}` : `released ${mon}`
+    if (claim) return traded ? `picked up ${mon}` : `claimed ${mon}`
+    if (rows[0].before?.drafted_by) return `released ${mon}`
     return `edited ${mon}`
   }
 

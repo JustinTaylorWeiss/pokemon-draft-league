@@ -506,10 +506,7 @@
 }
 
 /* The team itself: one Pokémon per row, under the player it belongs to. */
-.team-table {
-  width: 100%; border-collapse: collapse; font-size: 0.8rem;
-  max-width: 60rem;
-}
+.team-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
 .team-table th, .team-table td {
   padding: 0.2rem 0.6rem; text-align: right; white-space: nowrap;
   border-bottom: 1px solid var(--line);
@@ -808,7 +805,14 @@
 /* Your team, one Pokémon a row, with what you need to judge it. */
 .draft-table { width: 100%; margin-bottom: 0.9rem; }
 .draft-table th, .draft-table td { text-align: right; white-space: nowrap; }
-.draft-table th:first-child, .draft-table td:first-child { text-align: left; width: 4.5rem; }
+.draft-table th:first-child, .draft-table td:first-child { text-align: left; width: 5.5rem; }
+/* Every tier badge the same width, so the column reads as one edge rather than
+   five ragged ones. */
+.draft-table td:first-child .tier {
+  display: inline-block; min-width: 3.6rem; text-align: center;
+}
+/* The control belongs under its heading, not pushed to the table's edge. */
+.draft-table td:last-child { text-align: center; }
 .draft-col-name { text-align: left !important; }
 .draft-table tbody .draft-col-name {
   display: flex; align-items: center; gap: 0.5rem; font-weight: 600;
