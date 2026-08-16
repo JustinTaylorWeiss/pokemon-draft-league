@@ -1,8 +1,8 @@
-import { spriteUrl } from '../../data/load'
 import { statAt100 } from '../../lib/stats'
 import { TeamName } from '../../components/TeamName'
 import type { Team } from './TeamEditor'
 import { PokemonLink } from '../../components/PokemonLink'
+import { Sprite } from '../../components/Sprite'
 
 /**
  * The two rosters side by side, sorted fastest first. The right column is
@@ -38,7 +38,7 @@ function TeamColumn({ team, side, alternate }: { team: Team; side: 'one' | 'two'
           <div key={m.id} className="overview-row">
             <span className="sprite-cell">
               <PokemonLink id={m.id} title={m.pokemon.name}>
-                <img src={spriteUrl(m.pokemon)} alt="" width={46} height={40} />
+                <Sprite pokemon={m.pokemon} width={46} height={40} />
               </PokemonLink>
             </span>
             <span className="name-cell" title={m.pokemon.name}>

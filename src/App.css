@@ -11,8 +11,14 @@
 /* Full-bleed bars; only their contents are constrained. */
 .topbar {
   background: var(--widget);
-  border-bottom: 1px solid var(--line);
-  box-shadow: inset 0 -2px 0 rgb(74 168 255 / 22%);
+  /* Drawn rather than bordered. A border-bottom sits outside the box the
+     contents are centred in, so everything in the bar ends up half a pixel
+     off-centre against the band you actually see — invisible at 100% and not
+     at all invisible zoomed in. An inset shadow paints in the same space the
+     layout uses, so the two agree. */
+  box-shadow:
+    inset 0 -1px 0 var(--line),
+    inset 0 -2px 0 rgb(74 168 255 / 22%);
   position: sticky; top: 0; z-index: 30;
 }
 .subbar {
@@ -489,3 +495,11 @@
   border-radius: 8px; padding: 0.5rem 0.65rem;
 }
 .passphrase-form input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* A sprite that would not load, twice. Says which Pokémon it is rather than
+   showing the browser's broken-image glyph. */
+.sprite-missing {
+  display: inline-grid; place-items: center; flex: none;
+  border-radius: 6px; background: var(--chip); border: 1px dashed var(--line);
+  color: var(--muted); font-size: 0.72rem; font-weight: 700;
+}

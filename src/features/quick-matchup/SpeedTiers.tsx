@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
-import { spriteUrl } from '../../data/load'
 import { speedTiers } from '../../lib/stats'
 import type { Team, TeamEntry } from './TeamEditor'
+import { Sprite } from '../../components/Sprite'
 
 interface Props {
   teamOne: Team
@@ -58,7 +58,7 @@ export function SpeedTiersBody({ teamOne, teamTwo, filterOne, filterTwo, level, 
               <li key={b.id} className={rowClass(b.id)}>
                 <button type="button" onClick={() => toggle(b.id)} title={b.pokemon.name}>
                   <strong>{b.pokemon.baseStats.spe}</strong>
-                  <img src={spriteUrl(b.pokemon)} alt={b.pokemon.name} width={32} height={26} />
+                  <Sprite pokemon={b.pokemon} width={32} height={26} />
                 </button>
               </li>
             ))}
@@ -71,7 +71,7 @@ export function SpeedTiersBody({ teamOne, teamTwo, filterOne, filterTwo, level, 
             {all.map((t, i) => (
               <li key={`${t.id}-${t.investment}-${t.stage ?? ''}-${t.modifiers.join()}-${i}`} className={rowClass(t.id)}>
                 <button type="button" onClick={() => toggle(t.id)} title={t.pokemon.name}>
-                  <img src={spriteUrl(t.pokemon)} alt={t.pokemon.name} width={32} height={26} />
+                  <Sprite pokemon={t.pokemon} width={32} height={26} />
                   <span className="badge">{t.investment}</span>
                   {t.stage && <span className="badge badge-stage">{t.stage}</span>}
                   {t.modifiers.map((m) => (

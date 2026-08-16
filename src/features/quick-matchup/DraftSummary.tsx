@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { spriteUrl } from '../../data/load'
 import type { StatKey } from '../../data/types'
 import { BST_ORDER, STAT_LABELS, summarize } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
@@ -7,6 +6,7 @@ import type { Team } from './TeamEditor'
 import { PokemonLink } from '../../components/PokemonLink'
 import { usePokemonModal } from '../pokemon/PokemonModalContext'
 import { useFitToBox } from '../../lib/useFitToBox'
+import { Sprite } from '../../components/Sprite'
 
 /**
  * Colors a stat relative to the neutral value: below is red, above is green.
@@ -71,7 +71,7 @@ export function DraftSummaryBody({ team, neutral }: { team: Team; neutral: numbe
                         layout and it stops filling the row. */}
                     <span className="name-cell">
                       <PokemonLink id={id} title={pokemon.name}>
-                        <img src={spriteUrl(pokemon)} alt="" width={44} height={36} />
+                        <Sprite pokemon={pokemon} width={44} height={36} />
                       </PokemonLink>
                       <span className="name-stack">
                         <PokemonLink id={id}>{pokemon.name}</PokemonLink>

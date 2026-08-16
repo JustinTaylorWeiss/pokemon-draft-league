@@ -15,6 +15,7 @@ import { CommonSetCard } from './CommonSetCard'
 import { usePokemonModal } from './PokemonModalContext'
 import './pokemon-modal.css'
 import { LoadingBall } from '../../components/LoadingBall'
+import { Sprite } from '../../components/Sprite'
 
 /** Learn-source prefixes, in the order the sheet-style tables read best. */
 const MOVE_GROUPS: { key: string; label: string; match: (s: string) => boolean }[] = [
@@ -431,7 +432,7 @@ function EvoStep({ id, mon, current }: { id: string; mon: LeaguePokemon; current
       onClick={() => open(id)}
       disabled={current}
     >
-      <img src={spriteUrl(mon)} alt="" width={56} height={48} />
+      <Sprite pokemon={mon} width={56} height={48} />
       <span>{mon.name}</span>
     </button>
   )

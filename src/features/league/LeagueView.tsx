@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
-import { loadPokemon, spriteUrl } from '../../data/load'
+import { loadPokemon } from '../../data/load'
 import type { PokemonDex } from '../../data/types'
 import {
   byId, byTier, currentSeason, loadLeague, mergeDex, reloadSeason, subscribeLeague, tierClass,
@@ -21,6 +21,7 @@ import { errorText, removeWeek, scheduleMatch, unlock, unscheduleMatch } from '.
 import { DropPicker } from '../../components/DropPicker'
 import { DraftTeams } from './DraftTeams'
 import { History } from './History'
+import { Sprite } from '../../components/Sprite'
 
 export function LeagueView({ tab }: { tab: LeagueTab }) {
   const [league, setLeague] = useState<League | null>(null)
@@ -210,7 +211,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                     <th scope="row" className="col-name">
                       {mon && (
                         <PokemonLink id={t.pokemon} title={mon.name}>
-                          <img src={spriteUrl(mon)} alt="" width={40} height={32} loading="lazy" />
+                          <Sprite pokemon={mon} width={40} height={32} />
                         </PokemonLink>
                       )}
                       <span className="stats-name">
@@ -275,7 +276,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                             <li key={li}>
                               {mon && (
                                 <PokemonLink id={l.pokemon} title={mon.name}>
-                                  <img src={spriteUrl(mon)} alt="" width={32} height={26} loading="lazy" />
+                                  <Sprite pokemon={mon} width={32} height={26} />
                                 </PokemonLink>
                               )}
                               <span className="ml-name">
@@ -494,10 +495,7 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                                     </td>
                                     <th scope="row" className="team-col-name">
                                       <PokemonLink id={pick.pokemon} title={mon.name}>
-                                        <img
-                                          src={spriteUrl(mon)} alt=""
-                                          width={40} height={32} loading="lazy"
-                                        />
+                                        <Sprite pokemon={mon} width={40} height={32} />
                                       </PokemonLink>
                                       <PokemonLink id={pick.pokemon}>{mon.name}</PokemonLink>
                                     </th>
@@ -890,10 +888,7 @@ function GameTeam({
           l.deaths ? 'knocked out' : 'survived'}`}
       >
         {entry && (
-          <img
-            className={l.deaths ? 'is-fainted' : undefined}
-            src={spriteUrl(entry)} alt={name} width={40} height={33} loading="lazy"
-          />
+          <Sprite pokemon={entry} className={l.deaths ? 'is-fainted' : undefined} width={40} height={33} />
         )}
       </PokemonLink>
     )
@@ -1096,7 +1091,7 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                   <th scope="row" className="col-name">
                     {mon && (
                       <PokemonLink id={id} title={entry.name}>
-                        <img src={spriteUrl(mon)} alt="" width={40} height={32} loading="lazy" />
+                        <Sprite pokemon={mon} width={40} height={32} />
                       </PokemonLink>
                     )}
                     <span>

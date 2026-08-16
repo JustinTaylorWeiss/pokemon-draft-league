@@ -1,11 +1,11 @@
 import { useMemo } from 'react'
-import { spriteUrl } from '../../data/load'
 import type { TypeChart } from '../../data/types'
 import { BATTLE_TYPES, defensiveChart } from '../../lib/matchup'
 import { TypeIconChip } from '../../components/TypeIcon'
 import type { Team } from './TeamEditor'
 import { PokemonLink } from '../../components/PokemonLink'
 import { useFitToBox } from '../../lib/useFitToBox'
+import { Sprite } from '../../components/Sprite'
 
 interface Props {
   team: Team
@@ -79,7 +79,7 @@ export function DefensiveChartBody({ team, chart, useAbilities }: Props) {
               <tr key={row.id}>
                 <th scope="row" className="mon-cell">
                   <PokemonLink id={row.id} title={row.pokemon.name}>
-                    <img src={spriteUrl(row.pokemon)} alt={row.pokemon.name} width={40} height={32} />
+                    <Sprite pokemon={row.pokemon} width={40} height={32} />
                   </PokemonLink>
                 </th>
                 {BATTLE_TYPES.map((t) => (

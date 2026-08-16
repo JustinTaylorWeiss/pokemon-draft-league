@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { loadAbilities, loadLearnsets, loadMoves, loadPokemon, spriteUrl, toId } from '../../data/load'
+import { loadAbilities, loadLearnsets, loadMoves, loadPokemon, toId } from '../../data/load'
 import type { AbilityDex, LearnsetDex, MoveDex, PokemonDex, StatKey, TypeName } from '../../data/types'
 import { loadLeague, mergeDex, subscribeLeague, tierClass, type League, type LeaguePokemon } from '../../data/league'
 import { STAT_LABELS, BST_ORDER } from '../../lib/stats'
@@ -7,6 +7,7 @@ import { BATTLE_TYPES } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
 import { PokemonLink } from '../../components/PokemonLink'
 import { LoadingBall } from '../../components/LoadingBall'
+import { Sprite } from '../../components/Sprite'
 
 const PAGE = 200
 
@@ -318,7 +319,7 @@ function Card({ id, mon }: { id: string; mon: LeaguePokemon }) {
   return (
     <li className="dex-card">
       <PokemonLink id={id} title={mon.name}>
-        <img src={spriteUrl(mon)} alt="" loading="lazy" width={68} height={56} />
+        <Sprite pokemon={mon} width={68} height={56} />
       </PokemonLink>
       <div>
         <div className="dex-card-head">

@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { spriteUrl } from '../../data/load'
 import {
   byTier, currentSeason, reloadSeason, TIER_ORDER, tierClass,
   type DraftTier, type League, type LeaguePokemon,
@@ -9,6 +8,7 @@ import { myPlayerId, subscribeIdentity } from '../../data/identity'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
 import { PokemonLink } from '../../components/PokemonLink'
+import { Sprite } from '../../components/Sprite'
 
 /**
  * Drafting, from one player's side of it.
@@ -155,7 +155,7 @@ export function DraftTeams({ league, dex }: Props) {
                         <th scope="row" className="draft-col-name">
                           <PokemonLink id={pick.pokemon} title={mon?.name ?? pick.pokemon}>
                             {mon && (
-                              <img src={spriteUrl(mon)} alt="" width={40} height={33} loading="lazy" />
+                              <Sprite pokemon={mon} width={40} height={33} />
                             )}
                           </PokemonLink>
                           <PokemonLink id={pick.pokemon}>{mon?.name ?? pick.pokemon}</PokemonLink>
@@ -231,7 +231,7 @@ export function DraftTeams({ league, dex }: Props) {
                         })}
                       >
                         <span className={`${tierClass(entry.tier)} draft-tier`}>{entry.tier}</span>
-                        {mon && <img src={spriteUrl(mon)} alt="" width={36} height={30} loading="lazy" />}
+                        {mon && <Sprite pokemon={mon} width={36} height={30} />}
                         <span className="draft-name">{mon?.name ?? entry.name}</span>
                         {why && <span className="draft-taken">{why}</span>}
                       </button>
@@ -268,7 +268,7 @@ export function DraftTeams({ league, dex }: Props) {
                     <li key={pick.pokemon}>
                       <span className={`${tierClass(pick.tier)} draft-tier`}>{pick.tier}</span>
                       <PokemonLink id={pick.pokemon} title={mon?.name ?? pick.pokemon}>
-                        {mon && <img src={spriteUrl(mon)} alt="" width={32} height={26} loading="lazy" />}
+                        {mon && <Sprite pokemon={mon} width={32} height={26} />}
                       </PokemonLink>
                       <span className="draft-name">
                         <PokemonLink id={pick.pokemon}>{mon?.name ?? pick.pokemon}</PokemonLink>

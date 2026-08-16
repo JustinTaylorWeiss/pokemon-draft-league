@@ -1,11 +1,11 @@
 import { memo, useMemo, useState } from 'react'
-import { spriteUrl } from '../../data/load'
 import type { LearnsetDex, MoveDex, Pokemon, TypeName } from '../../data/types'
 import { MOVE_TAGS, tagsFor, type MoveTag } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
 import type { Team } from './TeamEditor'
 import { PokemonLink } from '../../components/PokemonLink'
 import { useProgressiveList } from '../../lib/useProgressiveList'
+import { Sprite } from '../../components/Sprite'
 
 interface Props {
   team: Team
@@ -138,7 +138,7 @@ const MoveCard = memo(function MoveCard({ row, byId }: { row: Row; byId: Record<
       <div className="move-learners">
         {row.learners.map((id) => (
           <PokemonLink key={id} id={id} title={byId[id]?.name}>
-            <img src={spriteUrl(byId[id])} alt="" width={34} height={28} />
+            <Sprite pokemon={byId[id]} width={34} height={28} />
           </PokemonLink>
         ))}
       </div>

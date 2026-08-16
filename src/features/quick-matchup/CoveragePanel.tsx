@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
-import { spriteUrl } from '../../data/load'
 import type { LearnsetDex, MoveDex, SetDex, TypeChart, TypeName } from '../../data/types'
 import { attackingTypes, coverage } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
 import type { Team } from './TeamEditor'
 import { PokemonLink } from '../../components/PokemonLink'
+import { Sprite } from '../../components/Sprite'
 
 interface Props {
   attackers: Team
@@ -140,7 +140,7 @@ export function CoverageBody({
             <li key={r.id} className="coverage-row">
               <div className="coverage-mon">
                 <PokemonLink id={r.id} title={r.pokemon.name}>
-                  <img src={spriteUrl(r.pokemon)} alt={r.pokemon.name} width={64} height={52} />
+                  <Sprite pokemon={r.pokemon} width={64} height={52} />
                 </PokemonLink>
                 <span>
                   <PokemonLink id={r.id}>{r.pokemon.name}</PokemonLink>
@@ -172,12 +172,12 @@ export function CoverageBody({
                 <div className="coverage-targets">
                   {r.hits.map((id) => (
                     <PokemonLink key={id} id={id} title={`Hits ${byId[id]?.name}`}>
-                      <img className="hit" src={spriteUrl(byId[id])} alt={byId[id]?.name} width={38} height={32} />
+                      <Sprite pokemon={byId[id]} className="hit" width={38} height={32} />
                     </PokemonLink>
                   ))}
                   {r.misses.map((id) => (
                     <PokemonLink key={id} id={id} title={`No super-effective hit on ${byId[id]?.name}`}>
-                      <img className="miss" src={spriteUrl(byId[id])} alt={byId[id]?.name} width={38} height={32} />
+                      <Sprite pokemon={byId[id]} className="miss" width={38} height={32} />
                     </PokemonLink>
                   ))}
                 </div>

@@ -1,8 +1,8 @@
 import { useMemo, useRef, useState } from 'react'
 import type { Pokemon, PokemonDex } from '../../data/types'
-import { spriteUrl } from '../../data/load'
 import { playerLabel, type League } from '../../data/league'
 import { PokemonLink } from '../../components/PokemonLink'
+import { Sprite } from '../../components/Sprite'
 
 export interface TeamEntry {
   id: string
@@ -191,7 +191,7 @@ export function TeamEditor({ dex, team, onChange, accent, league, showRosterPick
                   onMouseEnter={() => setHighlight(i)}
                   onClick={() => add(s.id, s.pokemon)}
                 >
-                  <img src={spriteUrl(s.pokemon)} alt="" width={40} height={30} />
+                  <Sprite pokemon={s.pokemon} width={40} height={30} />
                   <span>{s.pokemon.name}</span>
                   {s.pokemon.tier && <em>{s.pokemon.tier}</em>}
                 </button>
@@ -205,7 +205,7 @@ export function TeamEditor({ dex, team, onChange, accent, league, showRosterPick
         {team.members.map((m) => (
           <li key={m.id}>
             <PokemonLink id={m.id} title={m.pokemon.name}>
-              <img src={spriteUrl(m.pokemon)} alt="" width={48} height={40} />
+              <Sprite pokemon={m.pokemon} width={48} height={40} />
             </PokemonLink>
             <span className="roster-name">
               <PokemonLink id={m.id}>{m.pokemon.name}</PokemonLink>
