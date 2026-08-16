@@ -875,3 +875,16 @@
    in any combination. */
 .tier-picker .drop-current { padding: 0.4rem 0.7rem; }
 .tier-picker .drop-list { min-width: 12rem; }
+
+/* The tier rule, beside the heading of the team it governs. */
+.draft-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 1.5rem; flex-wrap: wrap; margin-bottom: 0.6rem;
+}
+.draft-head h3 { margin: 0; }
+.tier-limits { display: flex; gap: 1.1rem; margin: 0; flex-wrap: wrap; }
+.tier-limits div { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+.tier-limits dt { font-size: 0.6rem; min-width: 3.2rem; text-align: center; }
+.tier-limits dd {
+  margin: 0; font-size: 0.72rem; color: var(--muted); white-space: nowrap;
+}

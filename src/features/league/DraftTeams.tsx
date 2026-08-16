@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { spriteUrl } from '../../data/load'
 import {
-  byTier, currentSeason, reloadSeason, tierClass,
+  byTier, currentSeason, reloadSeason, TIER_ORDER, tierClass,
   type DraftTier, type League, type LeaguePokemon,
 } from '../../data/league'
 import { claimPokemon, errorText, releasePokemon } from '../../data/supabase'
@@ -22,6 +22,9 @@ import { PokemonLink } from '../../components/PokemonLink'
  * here — it decides what the history records as well as which team this screen
  * edits, and two places to answer the same question is one too many.
  */
+
+/** Best to worst, which is the order the board and the rules use. */
+const TIER_PILLS = [...TIER_ORDER].reverse()
 
 interface Props {
   league: League
@@ -88,13 +91,30 @@ export function DraftTeams({ league, dex }: Props) {
         <p className="panel-note">Say who you are, beside the season, to edit your team.</p>
       ) : (
         <section className="panel draft-mine">
-          <h3>
-            Your team
-            <span className="panel-note">
-              {league.players.find((p) => p.id === me)?.name}
-            </span>
-            <span className="count">{mine.length} drafted</span>
-          </h3>
+          <div className="draft-head">
+            <h3>
+              Your team
+              <span className="panel-note">
+                {league.players.find((p) => p.id === me)?.name}
+              </span>
+              <span className="count">{mine.length} drafted</span>
+            </h3>
+
+            {/* The rule, where the picking happens. A tier with no entry in the
+                league's limits has none — absent means unlimited rather than
+                zero, which is why it is not simply printed as a number. */}
+            <dl className="tier-limits">
+              {TIER_PILLS.filter((t) => t !== 'Banned').map((t) => {
+                const cap = league.meta.tierLimits?.[t]
+                return (
+                  <div key={t}>
+                    <dt className={tierClass(t)}>{t}</dt>
+                    <dd>{cap ? `Max ${cap}` : 'No limit'}</dd>
+                  </div>
+                )
+              })}
+            </dl>
+          </div>
 
           {mine.length === 0 ? (
             <p className="draft-empty">Nothing drafted yet.</p>
