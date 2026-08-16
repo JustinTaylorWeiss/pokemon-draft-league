@@ -461,3 +461,21 @@
 }
 /* An undo is its own kind of change, and reads as one. */
 .history-list li.kind-undos { border-left-color: #e0838a; }
+
+/* A change that has since been undone: struck from the record without being
+   removed from it, and offering to be put back. */
+.history-list li.is-undone { background: rgb(184 71 79 / 12%); }
+.history-list li.is-undone .history-actor,
+.history-list li.is-undone .history-what { color: #e0838a; text-decoration: line-through; }
+.history-undo.is-redo { color: #6dc79a; border-color: #3f9d6d; }
+.history-undo.is-redo:hover { color: #8ad9b3; }
+
+/* Says what the red rows mean, and only once there are any. */
+.history-key {
+  display: flex; align-items: center; gap: 0.35rem;
+  font-size: 0.75rem; color: var(--muted); white-space: nowrap;
+}
+.history-key-swatch {
+  width: 0.85rem; height: 0.85rem; border-radius: 3px;
+  background: rgb(184 71 79 / 35%); border: 1px solid #b8474f;
+}

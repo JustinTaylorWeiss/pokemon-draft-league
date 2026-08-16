@@ -265,6 +265,18 @@ export function History({ league }: { league: League }) {
    * timestamp, which is what makes this reliable rather than a guess about
    * things that happened close together.
    */
+  /**
+   * Events that some later undo reverses.
+   *
+   * An undo is an ordinary event carrying the id it reverses, so the set of
+   * undone changes is read straight off the log rather than tracked separately.
+   */
+  const undone = useMemo(() => {
+    const ids = new Set<number>()
+    for (const e of events ?? []) if (e.reverts != null) ids.add(e.reverts)
+    return ids
+  }, [events])
+
   const groups = useMemo(() => {
     const out: Group[] = []
     for (const e of events ?? []) {
@@ -322,6 +334,12 @@ export function History({ league }: { league: League }) {
           onPick={(item) => setKind(item.id)}
         />
         <span className="count">{shown.length} shown</span>
+        {[...undone].length > 0 && (
+          <span className="history-key">
+            <span className="history-key-swatch" aria-hidden="true" />
+            Undone
+          </span>
+        )}
 
         {unlocked ? (
           <span className="undo-ready">Undo enabled</span>
@@ -345,24 +363,35 @@ export function History({ league }: { league: League }) {
       <section className="panel">
         <ul className="history-list">
           {shown.map((g) => (
-            <li key={g.id} className={`kind-${kindOf(g.table, g.phase, g.reverts)}`}>
+            <li
+              key={g.id}
+              className={`kind-${kindOf(g.table, g.phase, g.reverts)}${
+                g.rows.some((r) => undone.has(r.id)) ? ' is-undone' : ''}`}
+            >
               <span className="history-actor">{g.actor}</span>
               <span className="history-what">{describe(g, names)}</span>
               <span className="history-when" title={new Date(g.at).toLocaleString()}>
                 {ago(g.at, now)}
               </span>
-              {unlocked && (
-                <button
-                  type="button" className="history-undo"
-                  disabled={busy !== null}
-                  title={g.rows.length > 1
-                    ? `Undo all ${g.rows.length} changes this made`
-                    : 'Undo this change'}
-                  onClick={() => undo(g)}
-                >
-                  {busy === g.id ? '…' : 'Undo'}
-                </button>
-              )}
+              {unlocked && (() => {
+                // Undoing an undone change puts it back — the same call either
+                // way, since an undo is just another change that can be undone.
+                const isUndone = g.rows.some((r) => undone.has(r.id))
+                return (
+                  <button
+                    type="button" className={`history-undo${isUndone ? ' is-redo' : ''}`}
+                    disabled={busy !== null}
+                    title={isUndone
+                      ? 'Put this change back'
+                      : g.rows.length > 1
+                        ? `Undo all ${g.rows.length} changes this made`
+                        : 'Undo this change'}
+                    onClick={() => undo(g)}
+                  >
+                    {busy === g.id ? '…' : isUndone ? 'Redo' : 'Undo'}
+                  </button>
+                )
+              })()}
             </li>
           ))}
           {shown.length === 0 && <li className="history-empty">Nothing of that kind yet.</li>}

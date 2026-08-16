@@ -484,19 +484,21 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                                     <td className="team-col-types">
                                       {mon.types.map((ty) => <TypeChip key={ty} type={ty} />)}
                                     </td>
-                                    {/* Dashes rather than zeroes: a Pokémon that
-                                        has not played is not one that did nothing. */}
-                                    <td>{t ? t.gamesPlayed : '—'}</td>
-                                    <td>{t ? t.kills : '—'}</td>
-                                    <td>{t ? t.killsPerGame.toFixed(2) : '—'}</td>
-                                    <td>{t ? t.deaths : '—'}</td>
+                                    {/* Counts are zero when nothing happened —
+                                        that is the answer, not missing data.
+                                        The rates are the ones with no answer:
+                                        both divide by something that is zero. */}
+                                    <td>{t?.gamesPlayed ?? 0}</td>
+                                    <td>{t?.kills ?? 0}</td>
+                                    <td>{t?.gamesPlayed ? t.killsPerGame.toFixed(2) : '—'}</td>
+                                    <td>{t?.deaths ?? 0}</td>
                                     <td>
                                       {!t || (!t.kills && !t.deaths)
                                         ? '—'
                                         : t.kd === Infinity ? '∞' : t.kd.toFixed(2)}
                                     </td>
                                     <td className={t && t.diff > 0 ? 'pos' : t && t.diff < 0 ? 'neg' : ''}>
-                                      {t ? (t.diff > 0 ? `+${t.diff}` : t.diff) : '—'}
+                                      {t && t.diff > 0 ? `+${t.diff}` : (t?.diff ?? 0)}
                                     </td>
                                   </tr>
                                 )

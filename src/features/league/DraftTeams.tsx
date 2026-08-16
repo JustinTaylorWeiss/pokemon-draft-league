@@ -106,10 +106,14 @@ export function DraftTeams({ league, dex }: Props) {
             <dl className="tier-limits">
               {TIER_PILLS.filter((t) => t !== 'Banned').map((t) => {
                 const cap = league.meta.tierLimits?.[t]
+                const held = mine.filter((pick) => pick.tier === t).length
+                const over = cap != null && held > cap
                 return (
                   <div key={t}>
                     <dt className={tierClass(t)}>{t}</dt>
-                    <dd>{cap ? `Max ${cap}` : 'No limit'}</dd>
+                    <dd className={over ? 'is-over' : undefined} title={over ? `Over the limit of ${cap}` : undefined}>
+                      {cap ? `${held}/${cap}` : `${held} · no limit`}
+                    </dd>
                   </div>
                 )
               })}

@@ -501,8 +501,10 @@
 
 /* The surrounding table centres its numeric cells; this one is a panel of
    its own and reads left to right. */
+/* An evenly inset panel that sits inside the row rather than against it, on
+   its own ground so it reads as belonging to the player above it. */
 .team-row > td {
-  padding: 0.4rem 0.6rem 0.7rem 1.6rem; background: rgb(127 127 127 / 5%); text-align: left;
+  padding: 0.7rem 1.6rem; background: var(--widget); text-align: left;
 }
 
 /* The team itself: one Pokémon per row, under the player it belongs to. */
@@ -516,7 +518,8 @@
   color: var(--muted); font-weight: 600; border-bottom-color: var(--fg);
   border-bottom-width: 1px;
 }
-.team-table tbody tr:last-child th, .team-table tbody tr:last-child td { border-bottom: 0; }
+/* The last row keeps its rule: the panel has its own ground now, so without
+   one the table just stops rather than ending. */
 /* Tier leads, since the team is ordered by it. */
 .team-table th:first-child, .team-table td:first-child { text-align: left; width: 4.5rem; }
 .team-col-name { text-align: left !important; }
@@ -834,5 +837,8 @@
 .tier-limits div { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
 .tier-limits dt { font-size: 0.6rem; min-width: 3.2rem; text-align: center; }
 .tier-limits dd {
-  margin: 0; font-size: 0.72rem; color: var(--muted); white-space: nowrap;
+  margin: 0; font-size: 0.78rem; color: var(--fg); white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
+/* Over the cap: said in the one place the number is already being read. */
+.tier-limits dd.is-over { color: #e05563; font-weight: 700; }

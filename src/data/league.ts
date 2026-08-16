@@ -417,9 +417,27 @@ let revalidateStarted = false
  * the failure is swallowed rather than surfaced — only the button reports
  * errors, because only the button was asked for.
  */
+/**
+ * How stale the copy in hand has to be before the sheet is read again.
+ *
+ * Reading it takes between four and twelve seconds — it is a spreadsheet
+ * export, not an API — and doing that on every single page load meant the
+ * refresh button spun for most of a visit and the numbers changed underneath
+ * whoever was reading them, almost always to the same numbers. The hourly sync
+ * commits the sheet into the build anyway, so a copy from ten minutes ago is
+ * not meaningfully behind.
+ */
+const REVALIDATE_AFTER = 10 * 60 * 1000
+
 export function revalidateLeague(sheetUrl: string) {
   if (revalidateStarted || typeof window === 'undefined') return
   revalidateStarted = true
+
+  const saved = readRefreshed()
+  const shipped = dataTimestamp?.getTime() ?? 0
+  const freshest = Math.max(saved?.at ?? 0, shipped)
+  if (freshest && Date.now() - freshest < REVALIDATE_AFTER) return
+
   const run = () => { refreshLeagueFromSheet(sheetUrl).catch(() => {}) }
   if (typeof window.requestIdleCallback === 'function') {
     window.requestIdleCallback(run, { timeout: 3000 })
