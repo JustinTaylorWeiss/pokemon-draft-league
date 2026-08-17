@@ -184,17 +184,9 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
 
   return (
     <div className="stats-view">
-      {/* Above the tabs, because it filters whichever one is open. */}
-      <div className="controls stats-search">
-        <input
-          type="search" value={query} onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search Pokémon…" aria-label="Search stats"
-        />
-        <span className="count">{rows.length} Pokémon</span>
-      </div>
-
       {/* Only the spreadsheet season has awards; a database season shows the
           ranking on its own rather than an empty row of tabs. */}
+      <section className="panel stats-panel">
       {awards.length > 0 && (
         <nav className="award-tabs" aria-label="Awards">
           {awards.map((a) => (
@@ -208,10 +200,16 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           ))}
         </nav>
       )}
-
-      <section className="panel stats-panel">
         {/* The award's write-up, above the ranking it describes. */}
         {showing?.blurb && <p className="award-blurb">{showing.blurb}</p>}
+
+        <div className="controls stats-search">
+          <input
+            type="search" value={query} onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search Pokémon…" aria-label="Search stats"
+          />
+          <span className="count">{rows.length} Pokémon</span>
+        </div>
 
         <div className="table-scroll">
           <table className="stat-table stats-table">

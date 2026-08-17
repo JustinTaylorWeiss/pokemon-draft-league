@@ -996,12 +996,19 @@
 .award-tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .award-tabs button.is-active { color: var(--fg); border-bottom-color: var(--accent); }
 
-/* No card. The tabs are their own strip now rather than something joined to a
-   panel's top edge, so the table sits on the page's own ground instead of a
-   grey block raised off it. */
-.stats-panel { padding: 0; }
+/* The card holds the whole thing — tabs, write-up, search and table — so it
+   reads as one object rather than a strip floating over a table. `--widget` is
+   the token for a panel raised off the page, and is a shade lighter than the
+   page rather than the grey of a chip. */
+.stats-panel {
+  background: var(--widget);
+  border-radius: 16px;
+  padding: 0.85rem 1rem 1rem;
+}
+/* The strip is the top of the card, so it reaches the card's edges rather than
+   sitting inside its padding. */
+.stats-panel .award-tabs { margin: 0 -1rem 0.9rem; padding: 0 1rem; }
 
-.stats-panel .controls { margin-bottom: 0.85rem; }
 
 /* The write-up runs the full width of the table it introduces, so the two read
    as one block rather than a narrow column sitting on a wide one. */
@@ -1025,8 +1032,9 @@
 .award-table tr.place-second .rank-col { color: #a8b3bd; }
 .award-table tr.place-third .rank-col { color: #c8834a; }
 
-/* The search sits above the tabs, so it needs the gap the strip does not. */
-.stats-search { margin-bottom: 0.85rem; }
+/* Under the write-up and hard left, sitting close to the table it filters. The
+   caption below it already provides the breathing room. */
+.stats-search { margin-bottom: 0.15rem; }
 
 /* Who the league actually named, inside the order computed from the stats. The
    two can disagree: the sheet's awards were written against older numbers, and
@@ -1043,7 +1051,9 @@
 .stats-table > caption {
   caption-side: top;
   text-align: right;
-  padding: 0 0.45rem 0.5rem;
-  font-size: 0.72rem; color: var(--muted);
+  padding: 0 0.45rem 0.15rem;
+  /* Tighter than the body's 1.5: this is one short line between the search box
+     and the header row, and the inherited leading was most of the gap. */
+  font-size: 0.72rem; line-height: 1.2; color: var(--muted);
   white-space: nowrap;
 }
