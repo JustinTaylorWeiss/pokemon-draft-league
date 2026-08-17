@@ -979,8 +979,23 @@ const TIER_PILLS = ['Top', 'High', 'Mid', 'Low', 'Banned'] as const
 function Board({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
   const [query, setQuery] = useState('')
   const editable = currentSeason().source === 'database'
+  /**
+   * Whether this season's draft is open, which is what the button offers to do
+   * next. Re-read whenever the league changes, and that includes changing
+   * season: both seasons are editable, so watching `editable` alone never
+   * noticed the switch and the button went on offering to open a draft that
+   * the season it had moved to already had open.
+   *
+   * The in-flight read is dropped if the season changes under it, so a slow
+   * answer for the season you left cannot overwrite the one you are on.
+   */
   const [draft, setDraft] = useState<DraftState | null>(null)
-  useEffect(() => { if (editable) draftState().then(setDraft, () => {}) }, [editable])
+  useEffect(() => {
+    if (!editable) { setDraft(null); return }
+    let live = true
+    draftState().then((d) => { if (live) setDraft(d) }, () => {})
+    return () => { live = false }
+  }, [editable, league])
   // Empty set means "no filter" rather than "show nothing", so the board starts
   // complete and each pill narrows it.
   const [tiers, setTiers] = useState<Set<string>>(new Set())
