@@ -62,6 +62,15 @@ export function DraftTeams({ league, dex }: Props) {
    */
   const megaCap = league.meta.tierLimits?.Mega ?? null
   const megasHeld = mine.filter((pick) => isMega(dex[pick.pokemon])).length
+
+  /**
+   * On a points season the budget is the constraint and the tier is only a
+   * colour, so the tier caps come down and this goes up in their place. The
+   * Mega cap stays either way — it is a separate rule about what a team may
+   * hold, not a restatement of the tier limits.
+   */
+  const budget = league.meta.pointsBudget
+  const spent = mine.reduce((total, pick) => total + (pick.points ?? 0), 0)
   /** The board names who drafted a Pokémon, not their id. */
   const myName = league.players.find((p) => p.id === me)?.name ?? ''
   const byTierThenName = (a: { pokemon: string; tier: DraftTier }, b: typeof a) =>
@@ -110,6 +119,17 @@ export function DraftTeams({ league, dex }: Props) {
                 league's limits has none — absent means unlimited rather than
                 zero, which is why it is not simply printed as a number. */}
             <dl className="tier-limits">
+              {budget != null && (
+                <div className="points-budget">
+                  <dt>Points</dt>
+                  <dd
+                    className={spent > budget ? 'is-over' : undefined}
+                    title={`${budget - spent} of ${budget} left`}
+                  >
+                    {spent}/{budget}
+                  </dd>
+                </div>
+              )}
               {/* Only where the season defines one. A Mega is not a tier — it
                   carries a tier of its own — so this is a second cap counted
                   over the same team, and a season with no Megas has no row. */}
@@ -124,7 +144,7 @@ export function DraftTeams({ league, dex }: Props) {
                   </dd>
                 </div>
               )}
-              {TIER_PILLS.filter((t) => t !== 'Banned').map((t) => {
+              {budget == null && TIER_PILLS.filter((t) => t !== 'Banned').map((t) => {
                 const cap = league.meta.tierLimits?.[t]
                 const held = mine.filter((pick) => pick.tier === t).length
                 const over = cap != null && held > cap
@@ -154,6 +174,7 @@ export function DraftTeams({ league, dex }: Props) {
                 <thead>
                   <tr>
                     <th>Tier</th>
+                    {budget != null && <th className="draft-col-pts">Pts</th>}
                     <th className="draft-col-name">Pokémon</th>
                     <th className="draft-col-types">Types</th>
                     <th className="draft-col-abil">Abilities</th>
@@ -172,6 +193,13 @@ export function DraftTeams({ league, dex }: Props) {
                         <td>
                           <span className={tierClass(pick.tier)}>{pick.tier}</span>
                         </td>
+                        {budget != null && (
+                          <td className="draft-col-pts">
+                            {/* What was paid, which is not always what the board
+                                asks now — a re-pricing does not resettle a team. */}
+                            {pick.points ?? <em className="none">—</em>}
+                          </td>
+                        )}
                         <th scope="row" className="draft-col-name">
                           <PokemonLink id={pick.pokemon} title={mon?.name ?? pick.pokemon}>
                             {mon && (

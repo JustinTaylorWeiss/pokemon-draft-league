@@ -932,6 +932,9 @@ function GameTeam({
 const BOARD_COLUMNS = [
   { key: 'name', label: 'Pokémon', numeric: false },
   { key: 'tier', label: 'Tier', numeric: false },
+  // Only on a points season. Beside the tier, because on those seasons the tier
+  // is the colour and this is the rule.
+  { key: 'points', label: 'Pts', numeric: true },
   { key: 'bst', label: 'BST', numeric: true },
   ...BST_ORDER.map((k) => ({ key: k, label: STAT_LABELS[k], numeric: true })),
   { key: 'draftedBy', label: 'Drafted by', numeric: false },
@@ -956,6 +959,13 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
   // rather than "unsorted". It is what the board looks like before anyone
   // touches a column, so no column is marked as doing it.
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 | 0 }>({ key: 'tier', dir: 0 })
+
+  /** A cost column only means something where costs are what limit a team. */
+  const onPoints = league.meta.pointsBudget != null
+  const columns = useMemo(
+    () => BOARD_COLUMNS.filter((c) => c.key !== 'points' || onPoints),
+    [onPoints],
+  )
 
   const toggleIn = <T,>(setter: (fn: (prev: Set<T>) => Set<T>) => void, value: T) =>
     setter((prev) => {
@@ -998,6 +1008,13 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
       if (key === 'tier') {
         return byTier(a.entry.tier, b.entry.tier) * dir
           || (b.mon?.bst ?? 0) - (a.mon?.bst ?? 0)
+      }
+      if (key === 'points') {
+        // Priceless is not free: a Banned Pokemon has no cost because it cannot
+        // be drafted at all, so it sorts to the end either way.
+        const av = a.entry.points, bv = b.entry.points
+        if ((av == null) !== (bv == null)) return av == null ? 1 : -1
+        return ((av ?? 0) - (bv ?? 0)) * dir || a.entry.name.localeCompare(b.entry.name)
       }
       if (key === 'bst') return ((a.mon?.bst ?? 0) - (b.mon?.bst ?? 0)) * dir
       if (key === 'name') return a.entry.name.localeCompare(b.entry.name) * dir
@@ -1091,7 +1108,7 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           <table className="stat-table board-table">
             <thead>
               <tr>
-                {BOARD_COLUMNS.map((c) => {
+                {columns.map((c) => {
                   const active = sort.key === c.key && sort.dir !== 0
                   return (
                     <th
@@ -1135,6 +1152,11 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                     </span>
                   </th>
                   <td><span className={tierClass(entry.tier)}>{entry.tier}</span></td>
+                  {onPoints && (
+                    <td className="board-points">
+                      {entry.points ?? <em className="none">—</em>}
+                    </td>
+                  )}
                   <td>{mon?.bst ?? '—'}</td>
                   {BST_ORDER.map((k) => <td key={k}>{mon?.baseStats[k] ?? '—'}</td>)}
                   <td className="col-abil">{entry.draftedBy ?? <em className="none">available</em>}</td>

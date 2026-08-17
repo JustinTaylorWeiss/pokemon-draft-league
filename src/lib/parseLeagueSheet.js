@@ -118,6 +118,8 @@ export function parseLeagueSheet(wb, dex) {
     picksPerPlayer: Number(setting('Picks Per Player')) || null,
     seriesLength: setting('Series Length'),
     tierLimits,
+    // The spreadsheet seasons are drafted on tier counts, not a budget.
+    pointsBudget: null,
   }
 
   // ---- Pokémon List: the draft board -----------------------------------

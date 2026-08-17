@@ -21,6 +21,11 @@ export interface LeagueMeta {
    * Mega carries its own tier and counts against this as well.
    */
   tierLimits: Partial<Record<DraftTier | 'Mega', number>>
+  /**
+   * What a coach may spend in total. Null for a season drafted on tier counts
+   * rather than a budget, which is every season before Season 5.
+   */
+  pointsBudget: number | null
 }
 
 export interface Player {
@@ -36,6 +41,8 @@ export interface BoardEntry {
   tier: DraftTier
   note: string | null
   draftedBy: string | null
+  /** What it costs to draft. Null on a season not drafted on points. */
+  points?: number | null
   /** Present when the sheet lists stats; these override the Showdown dex. */
   baseStats?: BaseStats
   bst?: number | null
@@ -45,6 +52,11 @@ export interface RosterPick {
   /** Dex id, joinable against pokemon.json. */
   pokemon: string
   tier: DraftTier
+  /**
+   * What was paid, at the time it was drafted — not what the board asks now.
+   * Re-pricing is a decision about future picks, not a rewrite of settled ones.
+   */
+  points?: number | null
 }
 
 export interface DraftPick {
@@ -543,6 +555,8 @@ export interface LeaguePokemon extends Pokemon {
   draftTier: DraftTier | null
   note: string | null
   draftedBy: string | null
+  /** What it costs to draft. Null on a season not drafted on points. */
+  points: number | null
   /** False when the sheet does not list this Pokémon at all. */
   onBoard: boolean
 }
@@ -570,6 +584,7 @@ export function mergeDex(dex: PokemonDex, league: League | null): Record<string,
       draftTier: entry?.tier ?? null,
       note: entry?.note ?? null,
       draftedBy: entry?.draftedBy ?? null,
+      points: entry?.points ?? null,
       onBoard: Boolean(entry),
     }
   }

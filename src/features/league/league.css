@@ -1062,3 +1062,12 @@
 }
 /* In the limits panel it stands in for a tier pill, so it takes their width. */
 .tier-limits .mega-badge { margin-left: 0; }
+
+/* ---- points, where a budget is what limits a team ---- */
+/* Reads as a total rather than a pill: it is a running sum against a ceiling,
+   not one of a set of named bands. */
+.points-budget dt {
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--muted);
+}
+.board-points, .draft-col-pts { text-align: center; font-variant-numeric: tabular-nums; }

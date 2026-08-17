@@ -17,6 +17,7 @@ interface BoardRow {
   drafted_by: string | null
   base_stats: Record<string, number> | null
   bst: number | null
+  points: number | null
 }
 
 interface MatchRow {
@@ -265,6 +266,7 @@ export async function loadLeagueFromSupabase(): Promise<League> {
       picksPerPlayer: meta.data?.picks_per_player ?? null,
       seriesLength: meta.data?.series_length ?? null,
       tierLimits: meta.data?.tier_limits ?? {},
+      pointsBudget: meta.data?.points_budget ?? null,
     },
     players: playerRows,
     board: Object.fromEntries(boardRows.map((b) => [b.pokemon_id, {
@@ -272,13 +274,16 @@ export async function loadLeagueFromSupabase(): Promise<League> {
       tier: b.tier as never,
       note: b.note,
       draftedBy: b.drafted_by ? nameById.get(b.drafted_by) ?? b.drafted_by : null,
+      points: b.points,
       ...(b.base_stats ? { baseStats: b.base_stats as never } : {}),
       bst: b.bst,
     }])) as League['board'],
     rosters: (rosters.data ?? []).reduce<League['rosters']>((acc, r) => {
-      const row = r as { player_id: string; pokemon_id: string; tier: string }
+      const row = r as { player_id: string; pokemon_id: string; tier: string; points: number | null }
       if (!visible.has(row.player_id)) return acc
-      ;(acc[row.player_id] ??= []).push({ pokemon: row.pokemon_id, tier: row.tier as never })
+      ;(acc[row.player_id] ??= []).push({
+        pokemon: row.pokemon_id, tier: row.tier as never, points: row.points,
+      })
       return acc
     }, {}),
     draft: [],
