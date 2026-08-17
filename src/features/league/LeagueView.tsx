@@ -121,9 +121,12 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
   const [award, setAward] = useState<string | null>(null)
 
   const awards = league.awards ?? []
-  const showing = awards.find((a) => a.title === award) ?? null
+  // With no Ranking tab to fall back to, the first award is what the tab opens
+  // on. A season with no awards has nothing to open, and shows the plain
+  // ranking instead.
+  const showing = awards.find((a) => a.title === award) ?? awards[0] ?? null
 
-  const pickTab = (title: string | null) => {
+  const pickTab = (title: string) => {
     setAward(title)
     // Otherwise a column sorted on one tab silently overrides the next tab's
     // own order, and the award would look like it ranked by something else.
@@ -194,16 +197,10 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           ranking on its own rather than an empty row of tabs. */}
       {awards.length > 0 && (
         <nav className="award-tabs" aria-label="Awards">
-          <button
-            type="button" className={award === null ? 'is-active' : ''}
-            onClick={() => pickTab(null)}
-          >
-            Ranking
-          </button>
           {awards.map((a) => (
             <button
               key={a.title} type="button"
-              className={award === a.title ? 'is-active' : ''}
+              className={showing?.title === a.title ? 'is-active' : ''}
               onClick={() => pickTab(a.title)}
             >
               {a.title}

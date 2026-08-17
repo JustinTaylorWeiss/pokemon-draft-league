@@ -967,61 +967,46 @@
 
 /* ---- the league's own awards, beside the computed ranking ---- */
 /*
- * Real tabs: the strip's baseline is the table's top edge, and the active tab
- * breaks through it, so the tab and the table it opens read as one surface.
- * That is the whole trick — the strip draws a line, every tab sits on it, and
- * the selected one paints over its own inch of it.
+ * The same tabs the Quick Matchup analysis card uses to switch between its
+ * Draft Summary and Defensive Type Chart: an underline strip, each tab taking
+ * an equal share of the width, the open one marked by the accent beneath it.
+ * Same job in both places — pick which view of the same data you are looking
+ * at — so it should not be a second thing to learn.
  *
- * Wraps rather than scrolls, because the titles are sentences ("That One Friend
- * You Can Always Rely On") and a single row would truncate most of them. Each
- * wrapped row then needs its own baseline, which is why the line is drawn under
- * the buttons rather than under the strip.
+ * Each tab grows from its own title rather than taking an equal share, which
+ * is what gets six of them — several whole sentences — onto one line. Equal
+ * shares would size every tab to the longest, and "That One Friend You Can
+ * Always Rely On" would force the other five to wrap with it.
+ *
+ * The strip still wraps when it genuinely cannot fit, rather than truncating:
+ * a cut-off award name says nothing.
  */
 .award-tabs {
-  display: flex; flex-wrap: wrap;
-  gap: 0 0.15rem;
-  margin: 0;
-  padding: 0;
+  display: flex; flex-wrap: wrap; align-items: stretch; width: 100%;
+  margin-bottom: 0.9rem;
 }
 .award-tabs button {
-  font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer;
-  padding: 0.45rem 0.85rem;
-  color: var(--muted); background: transparent;
-  border: 1px solid transparent;
-  border-bottom: 1px solid var(--line);
-  border-radius: 7px 7px 0 0;
-  white-space: nowrap;
+  flex: 1 1 auto; min-width: 0;
+  background: none; border: 0; border-bottom: 2px solid var(--line);
+  color: var(--muted); font: inherit; font-size: 0.75rem; font-weight: 700;
+  padding: 0.15rem 0.45rem 0.4rem; cursor: pointer; letter-spacing: -0.01em;
+  text-align: center; line-height: 1.25; white-space: nowrap;
 }
-.award-tabs button:hover { color: var(--accent); }
+.award-tabs button:hover { color: var(--fg); }
 .award-tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.award-tabs button.is-active {
-  color: var(--fg);
-  background: var(--chip);
-  border-color: var(--line);
-  /* The gap in the baseline that joins the tab to the table below it. */
-  border-bottom-color: var(--chip);
-}
+.award-tabs button.is-active { color: var(--fg); border-bottom-color: var(--accent); }
 
-/* The surface the active tab opens onto. It has to be a surface for the join to
-   be visible at all — an unpainted panel would leave the tab connected to
-   nothing. */
-.stats-panel {
-  background: var(--chip);
-  border: 1px solid var(--line);
-  border-top: 0;
-  border-radius: 0 7px 7px 7px;
-  padding: 0.9rem;
-}
-/* Without awards there are no tabs, so nothing is being joined to and the panel
-   is a plain card again. */
-.stats-view > .stats-panel:first-child { border-top: 1px solid var(--line); border-radius: 7px; }
+/* No card. The tabs are their own strip now rather than something joined to a
+   panel's top edge, so the table sits on the page's own ground instead of a
+   grey block raised off it. */
+.stats-panel { padding: 0; }
 
 .stats-panel .controls { margin-bottom: 0.85rem; }
 
-/* The write-up is the point of an award, so it gets reading width rather than
-   being stretched the width of the table under it. */
+/* The write-up runs the full width of the table it introduces, so the two read
+   as one block rather than a narrow column sitting on a wide one. */
 .award-blurb {
-  max-width: 62ch; margin: 0 0 1rem;
+  margin: 0 0 1rem;
   font-size: 0.86rem; line-height: 1.55; color: var(--muted);
 }
 /* Every column but the Pokemon's shrinks to its content, so the slack lands on
