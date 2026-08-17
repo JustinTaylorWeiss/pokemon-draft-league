@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { loadAbilities, loadLearnsets, loadMoves, loadPokemon, toId } from '../../data/load'
 import type { AbilityDex, LearnsetDex, MoveDex, PokemonDex, StatKey, TypeName } from '../../data/types'
-import { loadLeague, mergeDex, subscribeLeague, tierClass, type League, type LeaguePokemon } from '../../data/league'
+import { loadLeague, mergeDex, subscribeLeague, type League, type LeaguePokemon } from '../../data/league'
+import { DraftValue } from '../../components/DraftValue'
 import { STAT_LABELS, BST_ORDER } from '../../lib/stats'
 import { BATTLE_TYPES } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
@@ -101,10 +102,25 @@ export function Dex() {
     }
   }, [move, moves])
 
+  /**
+   * The league values its board one way or the other, so this filter is
+   * whichever it is: costs on a priced season, tiers on a banded one. Offering
+   * tiers on a season that has none would be filtering by a number nobody is
+   * shown.
+   */
+  const priced = useMemo(
+    () => !!dex && Object.values(dex).some((p) => p.points != null),
+    [dex],
+  )
   const tiers = useMemo(() => {
     if (!dex) return []
+    if (priced) {
+      return [...new Set(Object.values(dex).map((p) => p.points).filter((n) => n != null))]
+        .sort((a, b) => (b as number) - (a as number))
+        .map(String)
+    }
     return [...new Set(Object.values(dex).map((p) => p.draftTier ?? p.tier).filter(Boolean) as string[])]
-  }, [dex])
+  }, [dex, priced])
 
   // Only conditions that actually narrow anything count; the default HP >= 0
   // row is a placeholder, not a filter.
@@ -139,7 +155,10 @@ export function Dex() {
           if (type1 === type2 && mon.types.length < 2) return false
         }
 
-        if (tier !== ANY && (mon.draftTier ?? mon.tier) !== tier) return false
+        if (tier !== ANY) {
+          const value = priced ? (mon.points == null ? null : String(mon.points)) : (mon.draftTier ?? mon.tier)
+          if (value !== tier) return false
+        }
 
         // Every condition has to hold, so stacking rows narrows the list.
         for (const f of activeStats) {
@@ -209,7 +228,7 @@ export function Dex() {
         </label>
 
         <label className="filter">
-          <span>Tier</span>
+          <span>{priced ? 'Cost' : 'Tier'}</span>
           <select value={tier} onChange={(e) => setTier(e.target.value)}>
             <option value={ANY}>Any</option>
             {tiers.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -315,7 +334,6 @@ export function Dex() {
 }
 
 function Card({ id, mon }: { id: string; mon: LeaguePokemon }) {
-  const badge = mon.draftTier ?? mon.tier
   return (
     <li className="dex-card">
       <PokemonLink id={id} title={mon.name}>
@@ -324,7 +342,9 @@ function Card({ id, mon }: { id: string; mon: LeaguePokemon }) {
       <div>
         <div className="dex-card-head">
           <span className="name"><PokemonLink id={id}>{mon.name}</PokemonLink></span>
-          {badge && <span className={mon.draftTier ? tierClass(mon.draftTier) : 'tier'}>{badge}</span>}
+          {/* The league's price where there is one, its tier where there is
+              not, and Smogon's tier for anything the league never listed. */}
+          <DraftValue mon={mon} fallback={mon.tier} />
         </div>
         <div className="dex-types">{mon.types.map((t: TypeName) => <TypeChip key={t} type={t} />)}</div>
         <div className="dex-stats">

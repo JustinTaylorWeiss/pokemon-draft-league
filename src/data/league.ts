@@ -569,7 +569,10 @@ export interface LeaguePokemon extends Pokemon {
  *
  * Returns a dex-shaped object so every existing panel keeps working unchanged.
  */
-export function mergeDex(dex: PokemonDex, league: League | null): Record<string, LeaguePokemon> {
+/** The dex with the league's view of each Pokémon folded in. */
+export type LeagueDex = Record<string, LeaguePokemon>
+
+export function mergeDex(dex: PokemonDex, league: League | null): LeagueDex {
   const out: Record<string, LeaguePokemon> = {}
   for (const [id, mon] of Object.entries(dex)) {
     const entry = league?.board[id]

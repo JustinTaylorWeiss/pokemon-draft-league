@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react'
-import type { PokemonDex } from '../../data/types'
-import { byId, playerLabel, type League } from '../../data/league'
+import { byId, playerLabel, type League, type LeagueDex } from '../../data/league'
 import { Widget } from '../../components/Widget'
 import { TeamEditor, type Team, type TeamEntry } from './TeamEditor'
 
 type Side = 'one' | 'two'
 
 interface Props {
-  dex: PokemonDex
+  dex: LeagueDex
   league: League | null
   teamOne: Team
   teamTwo: Team

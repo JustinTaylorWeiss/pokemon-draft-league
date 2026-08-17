@@ -7,6 +7,7 @@ import { PokemonLink } from '../../components/PokemonLink'
 import { usePokemonModal } from '../pokemon/PokemonModalContext'
 import { useFitToBox } from '../../lib/useFitToBox'
 import { Sprite } from '../../components/Sprite'
+import { DraftValue } from '../../components/DraftValue'
 
 /**
  * Colors a stat relative to the neutral value: below is red, above is green.
@@ -35,6 +36,19 @@ export function DraftSummaryBody({ team, neutral }: { team: Team; neutral: numbe
     return Object.fromEntries(Object.entries(cols).map(([k, v]) => [k, summarize(v)]))
   }, [rows])
 
+  /**
+   * What the team is worth in the league's own terms — a cost where the season
+   * prices its board, a tier where it bands it. Read off the entries rather
+   * than passed in: a priced season fills in `points` and a tiered one does not.
+   *
+   * Only shown when at least one member is on the board, since a scratch team of
+   * whatever you fancy has no league value to total.
+   */
+  const priced = rows.some((r) => r.pokemon.points != null)
+  const tiered = !priced && rows.some((r) => r.pokemon.draftTier)
+  const showValue = priced || tiered
+  const spent = rows.reduce((sum, r) => sum + (r.pokemon.points ?? 0), 0)
+
   // Any part of a row opens that Pokemon, not just its name and sprite.
   const { open } = usePokemonModal()
 
@@ -52,6 +66,7 @@ export function DraftSummaryBody({ team, neutral }: { team: Team; neutral: numbe
           <thead>
             <tr>
               <th className="col-name">Name</th>
+              {showValue && <th className="col-value">{priced ? 'Pts' : 'Tier'}</th>}
               <th className="col-abil">Abilities</th>
               {BST_ORDER.map((k) => <th key={k}>{STAT_LABELS[k]}</th>)}
               <th>BST</th>
@@ -81,6 +96,9 @@ export function DraftSummaryBody({ team, neutral }: { team: Team; neutral: numbe
                       </span>
                     </span>
                   </th>
+                  {showValue && (
+                    <td className="col-value"><DraftValue mon={pokemon} /></td>
+                  )}
                   <td className="col-abil">
                     {/* Pills, and inert ones: no tooltip and nothing of their
                         own to click. The row already opens the Pokémon, and a
@@ -103,7 +121,14 @@ export function DraftSummaryBody({ team, neutral }: { team: Team; neutral: numbe
           <tfoot>
             {(['average', 'median', 'max'] as const).map((agg) => (
               <tr key={agg}>
-                <th scope="row" colSpan={2} className="agg-label">{agg}</th>
+                <th scope="row" colSpan={showValue ? 3 : 2} className="agg-label">
+                  {agg}
+                  {/* The spend belongs on one row, not repeated down three that
+                      are about stat spreads. */}
+                  {priced && agg === 'average' && (
+                    <span className="agg-spent">{spent} pts drafted</span>
+                  )}
+                </th>
                 {BST_ORDER.map((k) => (
                   <td key={k} style={{ background: heat(totals[k][agg], neutral) }}>{totals[k][agg]}</td>
                 ))}

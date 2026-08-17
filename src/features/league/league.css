@@ -1098,3 +1098,11 @@
   font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
   color: #e8615f;
 }
+
+/* The name and its Mega badge on one line, with the types on the next. The
+   cell itself is a column, so without this the badge takes a line of its own. */
+.board-table .pick-name-row {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  min-width: 0; max-width: 100%;
+}
+.board-table .pick-name-row .mega-badge { margin-left: 0; flex: none; }

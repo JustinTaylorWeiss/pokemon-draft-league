@@ -6,7 +6,8 @@ import {
 import type {
   AbilityDex, ItemDex, LearnsetDex, Move, MoveDex, PokemonDex, SetDex, TypeChart, TypeName,
 } from '../../data/types'
-import { loadLeague, mergeDex, tierClass, type League, type LeaguePokemon } from '../../data/league'
+import { loadLeague, mergeDex, type League, type LeaguePokemon } from '../../data/league'
+import { DraftValue } from '../../components/DraftValue'
 import { BATTLE_TYPES, defensiveMultiplier } from '../../lib/matchup'
 import { BST_ORDER, STAT_LABELS, statAt100 } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
@@ -237,10 +238,12 @@ export function PokemonModal() {
                     <div><dt>Egg groups</dt><dd>{mon.eggGroups.join(', ')}</dd></div>
                   ) : null}
                   <div><dt>Smogon</dt><dd>{mon.tier ?? '—'}</dd></div>
-                  {mon.draftTier && (
+                  {/* What the league says it is worth: a cost on a priced
+                      season, a tier on a banded one. */}
+                  {(mon.points != null || mon.draftTier) && (
                     <div>
-                      <dt>Draft tier</dt>
-                      <dd><span className={tierClass(mon.draftTier)}>{mon.draftTier}</span></dd>
+                      <dt>{mon.points != null ? 'Cost' : 'Draft tier'}</dt>
+                      <dd><DraftValue mon={mon} /></dd>
                     </div>
                   )}
                   {mon.onBoard && (

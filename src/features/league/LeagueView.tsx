@@ -1180,13 +1180,19 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                     <span>
                       {/* Season 5 drafts a Mega apart from what it evolves
                           from, so the board holds both. The badge carries the
-                          forme so the name does not have to say it twice. */}
-                      <PokemonLink id={id} className="pick-name">
-                        {mon ? megaParts(mon).name : entry.name}
-                      </PokemonLink>
-                      {mon && megaParts(mon).badge && (
-                        <span className="mega-badge">{megaParts(mon).badge}</span>
-                      )}
+                          forme so the name does not have to say it twice.
+
+                          Its own row, because the cell stacks its children —
+                          left alone the badge would sit on a line of its own
+                          between the name and the types. */}
+                      <span className="pick-name-row">
+                        <PokemonLink id={id} className="pick-name">
+                          {mon ? megaParts(mon).name : entry.name}
+                        </PokemonLink>
+                        {mon && megaParts(mon).badge && (
+                          <span className="mega-badge">{megaParts(mon).badge}</span>
+                        )}
+                      </span>
                       {mon && (
                         <span className="row-types">
                           {mon.types.map((t) => <TypeChip key={t} type={t} />)}

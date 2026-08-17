@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { loadCore, loadLearnsets } from '../../data/load'
 import type { AbilityDex, LearnsetDex, MoveDex, PokemonDex, TypeChart } from '../../data/types'
-import { loadLeague, mergeDex, subscribeLeague, type League } from '../../data/league'
+import { loadLeague, mergeDex, subscribeLeague, type League, type LeagueDex } from '../../data/league'
 import type { Team } from './TeamEditor'
 import { MatchupBuilder } from './MatchupBuilder'
 import { useMediaQuery } from '../../lib/useMediaQuery'
@@ -32,7 +32,7 @@ function saveTeams(one: Team, two: Team) {
   } catch { /* private browsing — not worth surfacing */ }
 }
 
-function restoreTeams(dex: PokemonDex): { one: Team; two: Team } | null {
+function restoreTeams(dex: LeagueDex): { one: Team; two: Team } | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
@@ -64,7 +64,9 @@ export function QuickMatchup() {
   useEffect(() => {
     loadCore().then((c) => {
       setCore(c)
-      const saved = restoreTeams(c.pokemon)
+      // Merged against no league: the saved ids resolve now, and the effect
+      // below re-maps them through the real league once it arrives.
+      const saved = restoreTeams(mergeDex(c.pokemon, null))
       if (!saved) return
       setTeamOne(saved.one)
       setTeamTwo(saved.two)

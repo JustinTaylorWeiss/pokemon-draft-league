@@ -1,12 +1,17 @@
 import { useMemo, useRef, useState } from 'react'
-import type { Pokemon, PokemonDex } from '../../data/types'
-import { playerLabel, type League } from '../../data/league'
+import { playerLabel, type League, type LeaguePokemon, type LeagueDex } from '../../data/league'
 import { PokemonLink } from '../../components/PokemonLink'
 import { Sprite } from '../../components/Sprite'
 
 export interface TeamEntry {
   id: string
-  pokemon: Pokemon
+  /**
+   * The merged entry, not the raw dex one. Quick Matchup builds its teams from
+   * `mergeDex`, so every member already carries what the league says about it —
+   * its tier or its cost — and the summary can show that without being handed
+   * the league a second time.
+   */
+  pokemon: LeaguePokemon
 }
 
 export interface Team {
@@ -15,7 +20,7 @@ export interface Team {
 }
 
 interface Props {
-  dex: PokemonDex
+  dex: LeagueDex
   team: Team
   onChange: (team: Team) => void
   accent: 'one' | 'two'
@@ -54,7 +59,7 @@ export function TeamEditor({ dex, team, onChange, accent, league, showRosterPick
     const q = query.trim().toLowerCase().replace(/[^a-z0-9]/g, '')
     if (!q) return []
     const taken = new Set(team.members.map((m) => m.id))
-    const scored: { id: string; pokemon: Pokemon; rank: number }[] = []
+    const scored: { id: string; pokemon: LeaguePokemon; rank: number }[] = []
     for (const [id, pokemon] of Object.entries(dex)) {
       if (taken.has(id)) continue
       const idx = id.indexOf(q)
@@ -65,7 +70,7 @@ export function TeamEditor({ dex, team, onChange, accent, league, showRosterPick
     return scored.sort((a, b) => a.rank - b.rank).slice(0, MAX_SUGGESTIONS)
   }, [query, dex, team.members])
 
-  const add = (id: string, pokemon: Pokemon) => {
+  const add = (id: string, pokemon: LeaguePokemon) => {
     onChange({ ...team, members: [...team.members, { id, pokemon }] })
     setQuery('')
     setHighlight(0)

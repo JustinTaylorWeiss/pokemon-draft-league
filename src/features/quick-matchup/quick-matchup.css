@@ -790,3 +790,7 @@ button.type-chip { cursor: pointer; }
   .speed-layout { gap: 0.4rem; }
   .speed-bases { flex-basis: 4rem; }
 }
+
+/* The league's own valuation of a drafted Pokemon — a cost or a tier. */
+.summary-table .col-value { width: 3.2rem; text-align: center; }
+.agg-spent { margin-left: 0.6rem; font-weight: 700; color: var(--fg); text-transform: none; }
