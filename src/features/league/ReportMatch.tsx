@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchReplay, replayId, type ReplayGame } from '../../lib/parseReplay'
-import { db, errorText, reportMatch, updateRow } from '../../data/supabase'
+import { currentSeasonId, db, errorText, reportMatch, updateRow } from '../../data/supabase'
 import { toId } from '../../data/load'
 import type { League } from '../../data/league'
 
@@ -57,7 +57,11 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
   // Accounts already claimed by a player fill themselves in, so the mapping is
   // asked for once per person and never again.
   useEffect(() => {
-    db.from('players').select('id, showdown_account').then(({ data }) => {
+    // This season's accounts only: the same person plays in more than one, and
+    // a replay belongs to the season being reported on.
+    db.from('players').select('id, showdown_account')
+      .eq('season_id', currentSeasonId())
+      .then(({ data }) => {
       const found: Record<string, string> = {}
       for (const row of (data ?? []) as { id: string; showdown_account: string | null }[]) {
         if (row.showdown_account) found[normalise(row.showdown_account)] = row.id

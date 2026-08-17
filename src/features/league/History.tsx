@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { db, errorText, revertEvent, unlock } from '../../data/supabase'
+import { currentSeasonId, db, errorText, revertEvent, unlock } from '../../data/supabase'
 import { DropPicker } from '../../components/DropPicker'
 import { PassphraseModal } from '../../components/PassphraseModal'
 import { LoadingBall } from '../../components/LoadingBall'
@@ -214,6 +214,7 @@ export function History({ league }: { league: League }) {
       }
       setLimit((n) => n) // keep the window
       const { data } = await db.from('events').select('*')
+        .eq('season_id', currentSeasonId())
         .not('actor', 'in', '("generated","import")')
         .order('id', { ascending: false }).limit(limit)
       setEvents((data ?? []) as EventRow[])
@@ -230,9 +231,14 @@ export function History({ league }: { league: League }) {
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
+    // This season's log. Events written before seasons existed were backfilled
+    // to the Test Season in 0019, which is where they all belong — it was the
+    // only season at the time.
+    //
     // The invented season's rows are not things anybody did, and a log of what
     // people did should not be mostly a script talking to itself.
     db.from('events').select('*')
+      .eq('season_id', currentSeasonId())
       .not('actor', 'in', '("generated","import")')
       .order('id', { ascending: false }).limit(limit)
       .then(({ data, error: err }) => {

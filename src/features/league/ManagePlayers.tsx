@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { addPlayer, db, errorText, removePlayer, restorePlayer, unlock } from '../../data/supabase'
+import {
+  addPlayer, currentSeasonId, db, errorText, removePlayer, restorePlayer, unlock,
+} from '../../data/supabase'
 import type { League } from '../../data/league'
 
 /**
@@ -49,8 +51,16 @@ export function ManagePlayers({ league, onClose, onSaved }: Props) {
 
   // Read directly rather than from the league, which by design has already
   // dropped the hidden players this screen needs to show.
+  //
+  // Scoped to the season, and it has to be: player ids are per season, so the
+  // same `nolan` exists in each one. Unscoped, this listed every season's copy
+  // and hiding one left the others visible — the same person showing up under
+  // both Players and Hidden at once, with a Remove button that never finished.
   async function loadRoster() {
-    const { data } = await db.from('players').select('id, name, team, hidden').order('seed')
+    const { data } = await db.from('players')
+      .select('id, name, team, hidden')
+      .eq('season_id', currentSeasonId())
+      .order('seed')
     setRoster((data ?? []) as Roster[])
   }
 

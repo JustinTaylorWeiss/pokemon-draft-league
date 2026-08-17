@@ -173,7 +173,18 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
   }, [totals, sort, query, dex, showing, rule])
 
   if (!matches.length) {
-    return <p className="panel-note">No match stats in the sheet yet. Re-run the import once they are filled in.</p>
+    // Two different situations wearing the same words. A spreadsheet season with
+    // no stats means the tab has not been filled in and the import needs
+    // re-running; a season edited on the site means nobody has played yet, and
+    // telling those people to re-run an import they have nothing to do with is
+    // just confusing.
+    return (
+      <p className="panel-note">
+        {currentSeason().source === 'sheet'
+          ? 'No match stats in the sheet yet. Re-run the import once they are filled in.'
+          : 'No matches played yet. Records show up here once matches are reported.'}
+      </p>
+    )
   }
 
   const conflicts = Object.entries(league.pokemonStats ?? {}).filter(([id, s]) => {
@@ -311,7 +322,13 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
 function Rules({ league }: { league: League }) {
   const rules = league.rules
   if (!rules?.sections.length) {
-    return <p className="panel-note">No rules found in the sheet. Re-run the import to pick them up.</p>
+    return (
+      <p className="panel-note">
+        {currentSeason().source === 'sheet'
+          ? 'No rules found in the sheet. Re-run the import to pick them up.'
+          : 'No rules written for this season yet.'}
+      </p>
+    )
   }
 
   return (

@@ -219,7 +219,7 @@ export interface Season {
 export const SEASONS: Season[] = [
   { id: 'season-4', label: 'Season 4', source: 'sheet' },
   { id: 'test', label: 'Test Season', source: 'database' },
-  { id: 'mega-mc', label: 'Mega Season — Reg M-C', source: 'database' },
+  { id: 'mega-mc', label: 'Season 5', source: 'database' },
 ]
 
 const SEASON_KEY = 'league:season'
