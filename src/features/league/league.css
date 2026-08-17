@@ -1070,4 +1070,31 @@
   font-size: 0.62rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
   color: var(--muted);
 }
-.board-points, .draft-col-pts { text-align: center; font-variant-numeric: tabular-nums; }
+/* `.draft-table th, td` right-aligns the whole table at two classes, so a
+   single-class override here would do nothing. Matched at the same weight. */
+.draft-table th.draft-col-pts,
+.draft-table td.draft-col-pts,
+.board-table td.board-points,
+.team-table th.team-col-pts,
+.team-table td.team-col-pts {
+  text-align: center; font-variant-numeric: tabular-nums;
+}
+/* The total reads as a sum of the column above it, not as another row. */
+.team-table tfoot td { border-top: 2px solid var(--line); color: var(--muted); font-weight: 700; }
+.team-table tfoot .team-col-name { text-align: left; font-weight: 400; }
+
+/* Where points replaced tiers, the pill in front of a name is what it costs.
+   Sized like the tier badge it stands in for, so the lists keep their rhythm. */
+.draft-cost {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 2.2rem; padding: 0.08rem 0.4rem;
+  font-size: 0.7rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  color: var(--fg); background: var(--chip);
+  border: 1px solid var(--line); border-radius: 4px;
+}
+/* Banned is the one thing the tier column still has to say on a points season:
+   it is what stops a pick, and it has no price because it cannot be bought. */
+.banned-badge {
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  color: #e8615f;
+}

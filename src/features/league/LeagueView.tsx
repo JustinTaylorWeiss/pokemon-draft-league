@@ -409,6 +409,8 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
   const totals = useMemo(() => totalsFromMatches(league.matchStats ?? []), [league.matchStats])
   /** Which player's team is open. The ranking is also the way into a roster. */
   const [team, setTeam] = useState<string | null>(null)
+  /** A cost column only means something where costs are what limit a team. */
+  const onPoints = league.meta.pointsBudget != null
   return (
     <section className="panel">
       <div className="standings-head">
@@ -497,7 +499,8 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                           <table className="team-table">
                             <thead>
                               <tr>
-                                <th>Tier</th>
+                                {!onPoints && <th>Tier</th>}
+                                {onPoints && <th className="team-col-pts">Pts</th>}
                                 <th className="team-col-name">Pokémon</th>
                                 <th className="team-col-types">Types</th>
                                 <th>Games</th>
@@ -515,14 +518,24 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                                 const t = totals[pick.pokemon]
                                 return (
                                   <tr key={pick.pokemon}>
-                                    <td>
-                                      <span className={tierClass(pick.tier)}>{pick.tier}</span>
-                                    </td>
+                                    {!onPoints && (
+                                      <td>
+                                        <span className={tierClass(pick.tier)}>{pick.tier}</span>
+                                      </td>
+                                    )}
+                                    {onPoints && (
+                                      <td className="team-col-pts">
+                                        {pick.points ?? <em className="none">—</em>}
+                                      </td>
+                                    )}
                                     <th scope="row" className="team-col-name">
                                       <PokemonLink id={pick.pokemon} title={mon.name}>
                                         <Sprite pokemon={mon} width={40} height={32} />
                                       </PokemonLink>
-                                      <PokemonLink id={pick.pokemon}>{mon.name}</PokemonLink>
+                                      <PokemonLink id={pick.pokemon}>{megaParts(mon).name}</PokemonLink>
+                                      {megaParts(mon).badge && (
+                                        <span className="mega-badge">{megaParts(mon).badge}</span>
+                                      )}
                                     </th>
                                     <td className="team-col-types">
                                       {mon.types.map((ty) => <TypeChip key={ty} type={ty} />)}
@@ -547,6 +560,23 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                                 )
                               })}
                             </tbody>
+                            {onPoints && (
+                              // The sum is the whole point of a budget, and a
+                              // column of costs without one makes the reader
+                              // add nine numbers up themselves.
+                              <tfoot>
+                                <tr>
+                                  <td />
+                                  <td className="team-col-pts">
+                                    {picks.reduce((sum, p) => sum + (p.points ?? 0), 0)}
+                                  </td>
+                                  <td className="team-col-name">
+                                    of {league.meta.pointsBudget} spent
+                                  </td>
+                                  <td colSpan={7} />
+                                </tr>
+                              </tfoot>
+                            )}
                           </table>
                         )}
                     </td>
@@ -962,8 +992,12 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
 
   /** A cost column only means something where costs are what limit a team. */
   const onPoints = league.meta.pointsBudget != null
+  // On a points season the cost is the whole ranking, so the tier goes: it is
+  // not a second opinion to weigh, it is the thing points replaced. `Banned`
+  // still lives in the column underneath — it is what stops a pick — and shows
+  // as a badge on the row instead.
   const columns = useMemo(
-    () => BOARD_COLUMNS.filter((c) => c.key !== 'points' || onPoints),
+    () => BOARD_COLUMNS.filter((c) => (c.key === 'points' ? onPoints : c.key !== 'tier' || !onPoints)),
     [onPoints],
   )
 
@@ -997,8 +1031,12 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
       .map(([id, e]) => ({ id, entry: e, mon: dex[id] }))
 
     const { key, dir } = sort
+    // Dearest first where points are the ranking; best tier first where they
+    // are not. Either way it is "strongest at the top" in that season's terms.
     const byBoardOrder = (a: typeof list[number], b: typeof list[number]) =>
-      byTier(a.entry.tier, b.entry.tier)
+      (onPoints
+        ? (b.entry.points ?? -1) - (a.entry.points ?? -1)
+        : byTier(a.entry.tier, b.entry.tier))
       || (b.mon?.bst ?? 0) - (a.mon?.bst ?? 0)
       || a.entry.name.localeCompare(b.entry.name)
     if (!dir) return list.sort(byBoardOrder)
@@ -1026,7 +1064,7 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
       }
       return ((a.mon?.baseStats[key] ?? 0) - (b.mon?.baseStats[key] ?? 0)) * dir
     })
-  }, [league.board, dex, query, tiers, avail, sort])
+  }, [league.board, dex, query, tiers, avail, sort, onPoints])
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { available: 0, drafted: 0 }
@@ -1048,19 +1086,24 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
         />
         {/* One tier at a time, or all of them. Five toggles that could be in
             any combination made a board nobody could describe; a tier is the
-            thing people actually want to look at. */}
-        <DropPicker
-          className="tier-picker"
-          ariaLabel="Filter by draft tier"
-          items={[
-            { id: '', label: 'All tiers', note: `${Object.keys(league.board).length} Pokémon` },
-            ...TIER_PILLS.map((t) => ({
-              id: t, label: t, note: `${counts[t] ?? 0} Pokémon`,
-            })),
-          ]}
-          value={[...tiers][0] ?? ''}
-          onPick={(item) => setTiers(item.id ? new Set([item.id]) : new Set())}
-        />
+            thing people actually want to look at.
+
+            Gone on a points season, which has no tiers to filter by. Sorting
+            the Pts column is what narrows the board there. */}
+        {!onPoints && (
+          <DropPicker
+            className="tier-picker"
+            ariaLabel="Filter by draft tier"
+            items={[
+              { id: '', label: 'All tiers', note: `${Object.keys(league.board).length} Pokémon` },
+              ...TIER_PILLS.map((t) => ({
+                id: t, label: t, note: `${counts[t] ?? 0} Pokémon`,
+              })),
+            ]}
+            value={[...tiers][0] ?? ''}
+            onPick={(item) => setTiers(item.id ? new Set([item.id]) : new Set())}
+          />
+        )}
         <span className="pill-divider" aria-hidden="true" />
         <div className="pill-group" role="group" aria-label="Filter by availability">
           {(['available', 'drafted'] as const).map((a) => (
@@ -1151,10 +1194,14 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                       )}
                     </span>
                   </th>
-                  <td><span className={tierClass(entry.tier)}>{entry.tier}</span></td>
+                  {!onPoints && (
+                    <td><span className={tierClass(entry.tier)}>{entry.tier}</span></td>
+                  )}
                   {onPoints && (
                     <td className="board-points">
-                      {entry.points ?? <em className="none">—</em>}
+                      {entry.tier === 'Banned'
+                        ? <span className="banned-badge">Banned</span>
+                        : entry.points ?? <em className="none">—</em>}
                     </td>
                   )}
                   <td>{mon?.bst ?? '—'}</td>

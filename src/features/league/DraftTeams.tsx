@@ -173,7 +173,7 @@ export function DraftTeams({ league, dex }: Props) {
               <table className="stat-table draft-table">
                 <thead>
                   <tr>
-                    <th>Tier</th>
+                    {budget == null && <th>Tier</th>}
                     {budget != null && <th className="draft-col-pts">Pts</th>}
                     <th className="draft-col-name">Pokémon</th>
                     <th className="draft-col-types">Types</th>
@@ -190,9 +190,11 @@ export function DraftTeams({ league, dex }: Props) {
                     const abilities = Object.entries(mon?.abilities ?? {})
                     return (
                       <tr key={pick.pokemon}>
-                        <td>
-                          <span className={tierClass(pick.tier)}>{pick.tier}</span>
-                        </td>
+                        {budget == null && (
+                          <td>
+                            <span className={tierClass(pick.tier)}>{pick.tier}</span>
+                          </td>
+                        )}
                         {budget != null && (
                           <td className="draft-col-pts">
                             {/* What was paid, which is not always what the board
@@ -283,7 +285,13 @@ export function DraftTeams({ league, dex }: Props) {
                           return msg
                         })}
                       >
-                        <span className={`${tierClass(entry.tier)} draft-tier`}>{entry.tier}</span>
+                        {budget == null
+                          ? <span className={`${tierClass(entry.tier)} draft-tier`}>{entry.tier}</span>
+                          : (
+                            <span className="draft-cost" title={`Costs ${entry.points ?? 0}`}>
+                              {entry.tier === 'Banned' ? '—' : entry.points ?? 0}
+                            </span>
+                          )}
                         {mon && <Sprite pokemon={mon} width={36} height={30} />}
                         <span className="draft-name">{mon?.name ?? entry.name}</span>
                         {why && <span className="draft-taken">{why}</span>}
@@ -319,7 +327,9 @@ export function DraftTeams({ league, dex }: Props) {
                   const mon = dex[pick.pokemon]
                   return (
                     <li key={pick.pokemon}>
-                      <span className={`${tierClass(pick.tier)} draft-tier`}>{pick.tier}</span>
+                      {budget == null
+                        ? <span className={`${tierClass(pick.tier)} draft-tier`}>{pick.tier}</span>
+                        : <span className="draft-cost">{pick.points ?? 0}</span>}
                       <PokemonLink id={pick.pokemon} title={mon?.name ?? pick.pokemon}>
                         {mon && <Sprite pokemon={mon} width={32} height={26} />}
                       </PokemonLink>
