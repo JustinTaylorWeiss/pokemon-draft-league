@@ -20,19 +20,27 @@
  * thickness. Reserving it means the contents centre in the space above the
  * line, which is the space that actually looks like the bar.
  */
+/*
+ * Both bars used to tint their bottom edge with their own colour — blue on the
+ * primary, red on the secondary. It read as a tab underline, because that is
+ * exactly what it looked like: same hue, same 2px, same place, running the full
+ * width under every tab. So the tab you had just left appeared to keep its
+ * underline, and the tab you were on had two.
+ *
+ * The edge is neutral now and the colour belongs to the active tab alone, which
+ * is the only thing that was ever meant to be saying "you are here". The 2px is
+ * still drawn inside and still reserved as padding, so the bars' contents stay
+ * centred against what you actually see.
+ */
 .topbar {
   background: var(--widget);
-  box-shadow:
-    inset 0 -1px 0 var(--line),
-    inset 0 -2px 0 rgb(74 168 255 / 22%);
+  box-shadow: inset 0 -2px 0 var(--line);
   padding-bottom: 2px;
   position: sticky; top: 0; z-index: 30;
 }
 .subbar {
   background: var(--surface);
-  box-shadow:
-    inset 0 -1px 0 var(--line),
-    inset 0 -2px 0 rgb(232 97 95 / 20%);
+  box-shadow: inset 0 -2px 0 var(--line);
   padding-bottom: 2px;
   position: sticky; top: var(--topbar-h); z-index: 29;
 }
