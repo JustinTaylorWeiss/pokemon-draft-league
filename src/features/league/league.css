@@ -961,3 +961,38 @@
 
 /* The draft switch sits with the board it opens the drafting of. */
 .board-draft { display: flex; align-items: center; gap: 0.6rem; }
+
+/* ---- the league's own awards, beside the computed ranking ---- */
+/* Wraps rather than scrolls: the titles are sentences ("That One Friend You
+   Can Always Rely On"), so a single line would truncate most of them. */
+.award-tabs {
+  display: flex; flex-wrap: wrap; gap: 0.4rem;
+  margin-bottom: 0.9rem;
+}
+.award-tabs button {
+  font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer;
+  padding: 0.34rem 0.8rem; border-radius: 999px;
+  background: var(--chip); border: 1px solid var(--line); color: var(--muted);
+  white-space: nowrap;
+}
+.award-tabs button:hover { color: var(--accent); border-color: var(--accent); }
+.award-tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.award-tabs button.is-active {
+  background: var(--accent); border-color: var(--accent); color: var(--bg);
+}
+
+.award-panel { padding-top: 1rem; }
+/* The write-up is the point of an award, so it is given reading width rather
+   than being stretched across the table below it. */
+.award-blurb {
+  max-width: 62ch; margin: 0 0 1rem; padding: 0 0.2rem;
+  font-size: 0.86rem; line-height: 1.55; color: var(--muted);
+}
+.award-table td.num, .award-table th:not(.col-name):not(.rank-col) { text-align: right; }
+.award-table .rank-col { width: 5.5rem; text-align: left; font-weight: 600; }
+/* Gold, silver and bronze down the left edge — several Pokémon can share a
+   place, so the marker is on the row rather than counted from its position. */
+.award-table tr.place-first .rank-col { color: #e3b341; }
+.award-table tr.place-second .rank-col { color: #a8b3bd; }
+.award-table tr.place-third .rank-col { color: #c8834a; }
+.award-table .mon-cell { display: flex; align-items: center; gap: 0.5rem; }

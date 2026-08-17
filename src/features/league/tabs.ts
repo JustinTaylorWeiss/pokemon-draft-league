@@ -14,6 +14,6 @@ export const LEAGUE_TABS: { key: LeagueTab; label: string }[] = [
   { key: 'my-team', label: 'My Team' },
   { key: 'standings', label: 'Players' },
   { key: 'matches', label: 'Matches' },
-  { key: 'stats', label: 'Pokémon Ranking' },
+  { key: 'stats', label: 'Pokémon Awards' },
   { key: 'board', label: 'Draft List' },
 ]

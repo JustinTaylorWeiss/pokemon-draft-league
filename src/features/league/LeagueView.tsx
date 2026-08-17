@@ -111,6 +111,16 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
       return { key, dir: first }
     })
   const [query, setQuery] = useState('')
+  /**
+   * Which board is showing: the computed ranking, or one of the league's own
+   * awards. The ranking stays first because it covers every Pokémon — an award
+   * only names its podium, so a list of awards alone could not answer "how did
+   * mine do".
+   */
+  const [award, setAward] = useState<string | null>(null)
+
+  const awards = league.awards ?? []
+  const showing = awards.find((a) => a.title === award) ?? null
 
   const matches = useMemo(() => league.matchStats ?? [], [league.matchStats])
 
@@ -158,6 +168,65 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
 
   return (
     <div className="stats-view">
+      {/* Only the spreadsheet season has awards; a database season shows the
+          ranking on its own rather than an empty row of tabs. */}
+      {awards.length > 0 && (
+        <nav className="award-tabs" aria-label="Awards">
+          <button
+            type="button" className={award === null ? 'is-active' : ''}
+            onClick={() => setAward(null)}
+          >
+            Ranking
+          </button>
+          {awards.map((a) => (
+            <button
+              key={a.title} type="button"
+              className={award === a.title ? 'is-active' : ''}
+              onClick={() => setAward(a.title)}
+            >
+              {a.title}
+            </button>
+          ))}
+        </nav>
+      )}
+
+      {showing && (
+        <section className="panel award-panel">
+          {showing.blurb && <p className="award-blurb">{showing.blurb}</p>}
+          <div className="table-scroll">
+            <table className="stat-table award-table">
+              <thead>
+                <tr>
+                  <th className="rank-col">Place</th>
+                  <th className="col-name">Pokémon</th>
+                  <th>Coach</th>
+                  {showing.columns.map((c) => <th key={c}>{c}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {showing.winners.map((w, i) => (
+                  <tr key={`${w.pokemon}-${i}`} className={`place-${w.place.toLowerCase()}`}>
+                    <td className="rank-col">{w.place}</td>
+                    <td className="col-name">
+                      <span className="mon-cell">
+                        {dex[w.pokemon] && <Sprite pokemon={dex[w.pokemon]} width={40} height={33} />}
+                        {dex[w.pokemon]?.name ?? w.pokemon}
+                      </span>
+                    </td>
+                    <td>{w.coach}</td>
+                    {w.values.map((v, j) => (
+                      <td key={showing.columns[j]} className="num">{v ?? '—'}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      {!showing && (
+      <>
       <div className="controls">
         <input
           type="search" value={query} onChange={(e) => setQuery(e.target.value)}
@@ -297,6 +366,8 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           </section>
         ))}
       </div>
+      </>
+      )}
     </div>
   )
 }

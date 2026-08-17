@@ -271,6 +271,71 @@ export function parseLeagueSheet(wb, dex) {
     }
   }
 
+  // ---- MVP Race: the league's awards --------------------------------------
+  //
+  // A ranking of every drafted Pokémon down the left, and beside it a column of
+  // hand-written awards — "Most Bloodthirsty Killer", "The Unkillable Menaces"
+  // — each with a write-up and a podium. The ranking is already derivable from
+  // the stats the site holds; the awards are not, because the league decides
+  // what they are and who wins them.
+  //
+  // Each block is laid out the same way: a title, a blank row, the write-up,
+  // then a header row starting "Placement" whose remaining columns name the
+  // numbers that justify the pick — which differ per award, since "most kills"
+  // and "best ratio" are not argued from the same figures.
+  const mvpGrid = grid('MVP Race')
+  const awards = []
+
+  for (let h = 0; h < mvpGrid.length; h++) {
+    if (clean(mvpGrid[h]?.[16]) !== 'Placement') continue
+
+    // The title and the write-up are the two prose cells above the header;
+    // anything numeric between them is a placement's points, not text.
+    const prose = []
+    for (let r = h - 1; r >= 0 && r > h - 12; r--) {
+      const v = clean(mvpGrid[r]?.[15])
+      if (!isBlank(v) && Number.isNaN(Number(v))) prose.unshift(v)
+    }
+    if (!prose.length) continue
+
+    // Whatever this particular award is argued from.
+    const columns = []
+    for (let c = 20; c < 27; c++) {
+      const label = clean(mvpGrid[h][c])
+      if (!isBlank(label)) columns.push({ label, column: c })
+    }
+
+    const winners = []
+    for (let r = h + 1; r < mvpGrid.length; r++) {
+      const place = clean(mvpGrid[r]?.[16])
+      const name = clean(mvpGrid[r]?.[18])
+      if (isBlank(place) && isBlank(name)) break
+      const id = resolve(name, `MVP Race/${prose[0]}`)
+      if (!id) continue
+      winners.push({
+        place,
+        pokemon: id,
+        // The sheet writes coaches as "Justin / Numeral" — the league name and
+        // the Showdown account. Kept as written: this is a caption, not a join.
+        coach: clean(mvpGrid[r][19]),
+        values: columns.map((col) => {
+          const v = mvpGrid[r][col.column]
+          // Ratios come out of the sheet at full float width.
+          return typeof v === 'number' ? Math.round(v * 100) / 100 : v ?? null
+        }),
+      })
+    }
+
+    if (winners.length) {
+      awards.push({
+        title: prose[0],
+        blurb: prose.length > 1 ? prose[prose.length - 1] : null,
+        columns: columns.map((c) => c.label),
+        winners,
+      })
+    }
+  }
+
   // ---- Rules -------------------------------------------------------------
   // Column B is either a numbered section heading, a rule's label, or a
   // standalone callout; column C holds the rule text when there is one.
@@ -330,6 +395,9 @@ export function parseLeagueSheet(wb, dex) {
   standings.forEach((s, i) => { s.rank = i + 1 })
 
 
-  const league = { meta, players, board, rosters, draft, schedule, standings, rules, matchStats, pokemonStats }
+  const league = {
+    meta, players, board, rosters, draft, schedule, standings, rules,
+    matchStats, pokemonStats, awards,
+  }
   return { league, warnings, statOverrides }
 }

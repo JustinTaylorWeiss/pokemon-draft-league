@@ -61,7 +61,7 @@ function main(source) {
     // All parsing lives in the shared module so the site's in-page refresh
     // produces byte-identical data to this script.
     const { league, warnings, statOverrides } = parseLeagueSheet(wb, dex)
-    const { players, board, rosters, draft, schedule, standings, rules, matchStats, pokemonStats } = league
+    const { players, board, rosters, draft, schedule, standings, rules, matchStats, pokemonStats, awards } = league
 
     await writeFile(OUT, JSON.stringify(league))
 
@@ -102,6 +102,7 @@ function main(source) {
       else conflict++
     }
     console.log(`  pokeStats  ${Object.keys(pokemonStats).length} entries — ${agree} match the game record, ${blank} still blank, ${conflict} conflict`)
+    console.log(`  awards     ${awards.length} — ${awards.reduce((a, x) => a + x.winners.length, 0)} placements`)
 
     console.log(`  ${statOverrides} board entries have stats differing from the Showdown dex (sheet wins)`)
 

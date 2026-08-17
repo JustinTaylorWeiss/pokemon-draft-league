@@ -166,6 +166,27 @@ export interface PokemonTotals {
   kd: number
 }
 
+/**
+ * One of the league's awards, as written in the sheet's MVP Race tab.
+ *
+ * The numbers behind each award differ — "most kills" and "best ratio" are not
+ * argued from the same figures — so the columns come along with the winners
+ * rather than being fixed here.
+ */
+export interface Award {
+  title: string
+  blurb: string | null
+  columns: string[]
+  winners: {
+    /** "First", "Second", "Third" — several can share a place. */
+    place: string
+    pokemon: string
+    /** As the sheet writes it: "Justin / Numeral". A caption, not a join. */
+    coach: string
+    values: (number | string | null)[]
+  }[]
+}
+
 export interface League {
   meta: LeagueMeta
   players: Player[]
@@ -177,6 +198,8 @@ export interface League {
   rules?: Rulebook
   matchStats?: MatchStat[]
   pokemonStats?: Record<string, PokemonStat>
+  /** Only ever from the spreadsheet: a league writes its own awards. */
+  awards?: Award[]
 }
 
 /**
