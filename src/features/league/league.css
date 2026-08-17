@@ -10,13 +10,18 @@
   overflow-x: auto; scrollbar-width: none;
 }
 .sub-nav::-webkit-scrollbar { display: none; }
+/* The underline itself is drawn by a pseudo-element switched on and off in
+   App.css — Safari would not repaint a border that only changed colour inside
+   these sticky, scrolling bars, and left the previous tab underlined. */
 .sub-nav button {
+  position: relative;
   background: none; border: 0; border-bottom: 2px solid transparent;
   color: var(--muted); font: inherit; font-size: 0.92rem;
   padding: 0.95rem 0.85rem; cursor: pointer; white-space: nowrap;
 }
 .sub-nav button:hover { color: var(--fg); }
-.sub-nav button.is-active { color: var(--nav-red); border-bottom-color: var(--nav-red); }
+.sub-nav button.is-active { color: var(--nav-red); }
+.sub-nav button.is-active::after { background: var(--nav-red); }
 
 /* Draft tiers use their own ramp, separate from the Smogon tier chips. */
 .tier {

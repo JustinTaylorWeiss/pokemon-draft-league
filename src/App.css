@@ -87,13 +87,35 @@
 
 .main-nav { display: flex; gap: 0.25rem; min-width: 0; overflow-x: auto; scrollbar-width: none; }
 .main-nav::-webkit-scrollbar { display: none; }
+/*
+ * The active underline is a pseudo-element that is switched on and off, not a
+ * border whose colour changes.
+ *
+ * Safari would not repaint the 2px strip when only the colour changed — these
+ * bars are `position: sticky` and the navs inside them scroll, and in that
+ * combination it skips the repaint. The tab you had just left kept its
+ * underline until something else forced the row to redraw, which is why it
+ * looked like a stuck focus state and why it never reproduced in Chrome.
+ *
+ * `display: none` to `block` is a layout change, and Safari cannot skip one.
+ * The transparent border stays for the geometry, so nothing moves.
+ */
 .main-nav button {
+  position: relative;
   background: none; border: 0; border-bottom: 2px solid transparent;
   color: var(--muted); font: inherit; font-weight: 600;
   padding: 0.9rem 0.75rem; cursor: pointer; white-space: nowrap;
 }
+.main-nav button::after,
+.sub-nav button::after {
+  content: ''; display: none;
+  position: absolute; left: 0; right: 0; bottom: -2px; height: 2px;
+}
+.main-nav button.is-active::after,
+.sub-nav button.is-active::after { display: block; }
 .main-nav button:hover { color: var(--fg); }
-.main-nav button.is-active { color: var(--fg); border-bottom-color: var(--nav-blue); }
+.main-nav button.is-active { color: var(--fg); }
+.main-nav button.is-active::after { background: var(--nav-blue); }
 
 .shell {
   max-width: var(--content-max);
