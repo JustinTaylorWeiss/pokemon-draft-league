@@ -15,7 +15,12 @@ export interface LeagueMeta {
   picksPerPlayer: number | null
   seriesLength: string | null
   /** Max picks allowed from each tier, e.g. { Top: 2, High: 2, Mid: 2, Low: 1 }. */
-  tierLimits: Partial<Record<DraftTier, number>>
+  /**
+   * How many of each a team may hold. Keyed by tier, plus `Mega` — which is not
+   * a tier and never appears in `board.tier`, but is capped the same way: a
+   * Mega carries its own tier and counts against this as well.
+   */
+  tierLimits: Partial<Record<DraftTier | 'Mega', number>>
 }
 
 export interface Player {
@@ -216,10 +221,11 @@ export interface Season {
   source: 'sheet' | 'database'
 }
 
+/** Newest league season first; the test season is scaffolding and sits last. */
 export const SEASONS: Season[] = [
   { id: 'season-4', label: 'Season 4', source: 'sheet' },
-  { id: 'test', label: 'Test Season', source: 'database' },
   { id: 'mega-mc', label: 'Season 5', source: 'database' },
+  { id: 'test', label: 'Test Season', source: 'database' },
 ]
 
 const SEASON_KEY = 'league:season'
@@ -504,6 +510,35 @@ export const byId = (players: Player[]) =>
   Object.fromEntries(players.map((p) => [p.id, p])) as Record<string, Player>
 
 /** A dex entry with the league's own tier attached. */
+/**
+ * Whether this is a Mega or Primal forme.
+ *
+ * Season 5 drafts these apart from the Pokémon they evolve from — Venusaur and
+ * Venusaur-Mega are two separate picks off the board — so a Mega carries a tier
+ * like anything else *and* a tag of its own, which is what the cap is counted
+ * against. Read off the forme rather than the name: "Meganium" and "Yanmega"
+ * both contain the word.
+ */
+export const isMega = (p: { forme?: string } | null | undefined) =>
+  /^(Mega|Primal)/.test(p?.forme ?? '')
+
+/**
+ * How a Mega reads on the board: the Pokémon it evolves from, and a badge for
+ * the forme.
+ *
+ * Showdown names them "Venusaur-Mega", so printing the full name beside a badge
+ * saying Mega says it twice. Splitting it also keeps the distinction that
+ * matters — "Charizard, Mega X" and "Charizard, Mega Y" are two different picks
+ * and both are on the board.
+ */
+export function megaParts(p: { name: string; baseSpecies?: string; forme?: string }) {
+  if (!isMega(p)) return { name: p.name, badge: null }
+  return {
+    name: p.baseSpecies ?? p.name,
+    badge: (p.forme ?? 'Mega').replace(/-/g, ' '),
+  }
+}
+
 export interface LeaguePokemon extends Pokemon {
   draftTier: DraftTier | null
   note: string | null

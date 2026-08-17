@@ -1048,3 +1048,17 @@
   margin: 0 0 0 auto;
   font-size: 0.72rem; color: var(--muted); white-space: nowrap;
 }
+/* ---- Mega, which is a tag rather than a tier ---- */
+/* Season 5 drafts a Mega apart from the Pokemon it evolves from, so the board
+   holds both and the name has to distinguish them. Deliberately not shaped like
+   a tier pill — it sits beside one, and two things that look alike but count
+   differently is worse than no badge at all. */
+.mega-badge {
+  display: inline-block; vertical-align: middle;
+  margin-left: 0.35rem; padding: 0.02rem 0.34rem;
+  font-size: 0.6rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase;
+  color: #f0abfc; background: #f0abfc1a; border: 1px solid #f0abfc55;
+  border-radius: 4px; white-space: nowrap;
+}
+/* In the limits panel it stands in for a tier pill, so it takes their width. */
+.tier-limits .mega-badge { margin-left: 0; }

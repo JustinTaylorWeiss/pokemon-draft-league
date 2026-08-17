@@ -63,23 +63,6 @@ export default function App() {
   const [me, setMeState] = useState(myPlayerId)
   useEffect(() => subscribeIdentity(setMeState), [])
 
-  /**
-   * Asked whenever the site does not know who it is talking to in the season
-   * being looked at. Every edit is stamped with it, so a season's history is
-   * only worth having if this is answered before the editing starts.
-   *
-   * Two ways not to know: nobody has said yet, or the player they said has
-   * since been removed from the league. `league.players` has hidden players
-   * filtered out already, so being absent from it is the same question either
-   * way — and the stale answer is forgotten rather than left to stamp edits
-   * with somebody who is no longer in the season.
-   */
-  const players = league?.players ?? []
-  const gone = !!me && players.length > 0 && !players.some((p) => p.id === me)
-
-  useEffect(() => { if (gone) forgetMyPlayer() }, [gone])
-
-  const askWho = (!me || gone) && players.length > 0
 
   // Rules are read-only, so a stray click costs nothing and closing on one is
   // the quickest way out. Escape does the same.
@@ -104,6 +87,28 @@ export default function App() {
   const source = SEASONS.find((s) => s.id === season)?.source
   const onDatabase = source === 'database'
   const fromSheet = source === 'sheet'
+
+  /**
+   * Asked whenever the site does not know who it is talking to in a season it
+   * can edit. Every edit is stamped with it, so a season's history is only
+   * worth having if this is answered before the editing starts.
+   *
+   * Only for a season backed by the database. The spreadsheet season is read
+   * here and written nowhere, so there is nothing to stamp and nothing to
+   * unlock — asking would be a question with no consequence attached.
+   *
+   * Two ways not to know: nobody has said yet, or the player they said has
+   * since been removed. `league.players` has hidden players filtered out
+   * already, so being absent from it is the same question either way — and the
+   * stale answer is forgotten rather than left to stamp edits with somebody the
+   * season has removed.
+   */
+  const players = league?.players ?? []
+  const gone = onDatabase && !!me && players.length > 0 && !players.some((p) => p.id === me)
+
+  useEffect(() => { if (gone) forgetMyPlayer() }, [gone])
+
+  const askWho = onDatabase && (!me || gone) && players.length > 0
 
   // The primary bar wraps to two rows on narrow screens, so the secondary bar
   // cannot assume a fixed offset to stick below.

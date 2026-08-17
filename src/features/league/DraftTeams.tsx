@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
-  byTier, currentSeason, reloadSeason, TIER_ORDER, tierClass,
+  byTier, currentSeason, isMega, megaParts, reloadSeason, TIER_ORDER, tierClass,
   type DraftTier, type League, type LeaguePokemon,
 } from '../../data/league'
 import { claimPokemon, errorText, releasePokemon } from '../../data/supabase'
@@ -56,6 +56,12 @@ export function DraftTeams({ league, dex }: Props) {
   }
 
   const mine = me ? league.rosters[me] ?? [] : []
+  /**
+   * The Mega cap, and how much of it is used. Absent for a season that does not
+   * limit them — which is every season that has none to draft.
+   */
+  const megaCap = league.meta.tierLimits?.Mega ?? null
+  const megasHeld = mine.filter((pick) => isMega(dex[pick.pokemon])).length
   /** The board names who drafted a Pokémon, not their id. */
   const myName = league.players.find((p) => p.id === me)?.name ?? ''
   const byTierThenName = (a: { pokemon: string; tier: DraftTier }, b: typeof a) =>
@@ -104,6 +110,20 @@ export function DraftTeams({ league, dex }: Props) {
                 league's limits has none — absent means unlimited rather than
                 zero, which is why it is not simply printed as a number. */}
             <dl className="tier-limits">
+              {/* Only where the season defines one. A Mega is not a tier — it
+                  carries a tier of its own — so this is a second cap counted
+                  over the same team, and a season with no Megas has no row. */}
+              {megaCap != null && (
+                <div>
+                  <dt className="mega-badge">Mega</dt>
+                  <dd
+                    className={megasHeld > megaCap ? 'is-over' : undefined}
+                    title={`Limit of ${megaCap}`}
+                  >
+                    {megasHeld}/{megaCap}
+                  </dd>
+                </div>
+              )}
               {TIER_PILLS.filter((t) => t !== 'Banned').map((t) => {
                 const cap = league.meta.tierLimits?.[t]
                 const held = mine.filter((pick) => pick.tier === t).length
@@ -158,7 +178,12 @@ export function DraftTeams({ league, dex }: Props) {
                               <Sprite pokemon={mon} width={40} height={33} />
                             )}
                           </PokemonLink>
-                          <PokemonLink id={pick.pokemon}>{mon?.name ?? pick.pokemon}</PokemonLink>
+                          <PokemonLink id={pick.pokemon}>
+                            {mon ? megaParts(mon).name : pick.pokemon}
+                          </PokemonLink>
+                          {mon && megaParts(mon).badge && (
+                            <span className="mega-badge">{megaParts(mon).badge}</span>
+                          )}
                         </th>
                         <td className="draft-col-types">
                           {mon?.types.map((t) => <TypeChip key={t} type={t} />)}

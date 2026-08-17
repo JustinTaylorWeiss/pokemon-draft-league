@@ -2,7 +2,8 @@ import { Fragment, useEffect, useMemo, useState } from 'react'
 import { loadPokemon } from '../../data/load'
 import type { PokemonDex } from '../../data/types'
 import {
-  byId, byTier, currentSeason, loadLeague, mergeDex, reloadSeason, subscribeLeague, tierClass,
+  byId, byTier, currentSeason, loadLeague, megaParts, mergeDex, reloadSeason, subscribeLeague,
+  tierClass,
   totalsFromMatches, type Standing,
   type GameLine, type League, type LeaguePokemon, type Match, type MatchStat,
   type PokemonTotals,
@@ -1117,7 +1118,15 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                       </PokemonLink>
                     )}
                     <span>
-                      <PokemonLink id={id} className="pick-name">{entry.name}</PokemonLink>
+                      {/* Season 5 drafts a Mega apart from what it evolves
+                          from, so the board holds both. The badge carries the
+                          forme so the name does not have to say it twice. */}
+                      <PokemonLink id={id} className="pick-name">
+                        {mon ? megaParts(mon).name : entry.name}
+                      </PokemonLink>
+                      {mon && megaParts(mon).badge && (
+                        <span className="mega-badge">{megaParts(mon).badge}</span>
+                      )}
                       {mon && (
                         <span className="row-types">
                           {mon.types.map((t) => <TypeChip key={t} type={t} />)}
