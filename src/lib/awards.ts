@@ -80,11 +80,6 @@ const key = (title: string) =>
 
 export const ruleFor = (award: Award): AwardRule | null => RULES[key(award.title)] ?? null
 
-/** The dex ids the league itself named, so the computed order can still show them. */
-export function namedBy(award: Award): Map<string, string> {
-  return new Map(award.winners.map((w) => [w.pokemon, w.place]))
-}
-
 /**
  * The award's full order over everything that played.
  *

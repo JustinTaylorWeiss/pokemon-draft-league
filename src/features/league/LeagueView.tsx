@@ -22,7 +22,7 @@ import { DropPicker } from '../../components/DropPicker'
 import { DraftTeams } from './DraftTeams'
 import { History } from './History'
 import { Sprite } from '../../components/Sprite'
-import { namedBy, ruleFor } from '../../lib/awards'
+import { ruleFor } from '../../lib/awards'
 
 export function LeagueView({ tab }: { tab: LeagueTab }) {
   const [league, setLeague] = useState<League | null>(null)
@@ -145,7 +145,6 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
    * exactly as it does on the Ranking tab.
    */
   const rule = showing ? ruleFor(showing) : null
-  const named = useMemo(() => (showing ? namedBy(showing) : null), [showing])
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -209,18 +208,17 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
             placeholder="Search Pokémon…" aria-label="Search stats"
           />
           <span className="count">{rows.length} Pokémon</span>
+          {/* What the order actually is, whether that is the power ranking or
+              the award whose tab is open. Dropped once a column is picked,
+              since the chain would then describe something that is not
+              happening. */}
+          {!sort.dir && (
+            <p className="sort-note">{rule ? rule.note : POWER_RANKING_NOTE}</p>
+          )}
         </div>
 
         <div className="table-scroll">
           <table className="stat-table stats-table">
-            {/* What the order actually is, whether that is the power ranking or
-                the award whose tab is open. A caption rather than a line above
-                the table, because it describes this table and nothing else.
-                Dropped once a column is picked, since the chain would then be
-                describing something that is not happening. */}
-            {!sort.dir && (
-              <caption className="sort-caption">{rule ? rule.note : POWER_RANKING_NOTE}</caption>
-            )}
             <thead>
               <tr>
                 <th className="rank-col">#</th>
@@ -268,14 +266,6 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                       )}
                       <span className="stats-name">
                         <PokemonLink id={t.pokemon}>{mon?.name ?? t.pokemon}</PokemonLink>
-                        {/* The order below is computed; this is who the league
-                            actually named. They can differ, because the sheet's
-                            awards were written against older numbers. */}
-                        {named?.has(t.pokemon) && (
-                          <span className="award-pick" title={`Named ${named.get(t.pokemon)} by the league`}>
-                            {named.get(t.pokemon)}
-                          </span>
-                        )}
                       </span>
                       {/* Each type gets its own track so the chips line up down
                           the table instead of trailing each name. */}

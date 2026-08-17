@@ -1032,28 +1032,19 @@
 .award-table tr.place-second .rank-col { color: #a8b3bd; }
 .award-table tr.place-third .rank-col { color: #c8834a; }
 
-/* Under the write-up and hard left, sitting close to the table it filters. The
-   caption below it already provides the breathing room. */
-.stats-search { margin-bottom: 0.15rem; }
 
-/* Who the league actually named, inside the order computed from the stats. The
-   two can disagree: the sheet's awards were written against older numbers, and
-   saying so is more useful than quietly showing one or the other. */
-.award-pick {
-  margin-left: 0.45rem; padding: 0.05rem 0.4rem;
-  font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
-  color: #e3b341; border: 1px solid #e3b34155; border-radius: 999px;
-  vertical-align: middle; white-space: nowrap;
+
+
+/* The order the table is in, on the same line as the search that filters it,
+   sitting on the search box's bottom edge rather than its middle.
+   `.stats-view .controls` centres this row and outranks a single class, so the
+   override has to be written at that weight or it silently does nothing. */
+.stats-view .stats-search { align-items: flex-end; margin-bottom: 0.4rem; }
+.stats-view .stats-search .count,
+.stats-view .stats-search .sort-note {
+  padding-bottom: 0; line-height: 1.2;
 }
-
-/* The order the table is in, said inside the table. Right-aligned to sit over
-   the number columns it is about, rather than over the Pokemon names. */
-.stats-table > caption {
-  caption-side: top;
-  text-align: right;
-  padding: 0 0.45rem 0.15rem;
-  /* Tighter than the body's 1.5: this is one short line between the search box
-     and the header row, and the inherited leading was most of the gap. */
-  font-size: 0.72rem; line-height: 1.2; color: var(--muted);
-  white-space: nowrap;
+.stats-view .stats-search .sort-note {
+  margin: 0 0 0 auto;
+  font-size: 0.72rem; color: var(--muted); white-space: nowrap;
 }
