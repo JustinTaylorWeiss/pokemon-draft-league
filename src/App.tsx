@@ -4,7 +4,7 @@ import { QuickMatchup } from './features/quick-matchup/QuickMatchup'
 import { LeagueView } from './features/league/LeagueView'
 import { LEAGUE_TABS, type LeagueTab } from './features/league/tabs'
 import { DropPicker } from './components/DropPicker'
-import { myPlayerId, setMyPlayer, subscribeIdentity } from './data/identity'
+import { forgetMyPlayer, myPlayerId, setMyPlayer, subscribeIdentity } from './data/identity'
 import { ReportMatch } from './features/league/ReportMatch'
 import { ManagePlayers } from './features/league/ManagePlayers'
 import {
@@ -64,11 +64,22 @@ export default function App() {
   useEffect(() => subscribeIdentity(setMeState), [])
 
   /**
-   * Asked once, the first time somebody arrives without having said who they
-   * are. Every edit is stamped with it, so a season's history is only worth
-   * having if this is answered before the editing starts.
+   * Asked whenever the site does not know who it is talking to in the season
+   * being looked at. Every edit is stamped with it, so a season's history is
+   * only worth having if this is answered before the editing starts.
+   *
+   * Two ways not to know: nobody has said yet, or the player they said has
+   * since been removed from the league. `league.players` has hidden players
+   * filtered out already, so being absent from it is the same question either
+   * way — and the stale answer is forgotten rather than left to stamp edits
+   * with somebody who is no longer in the season.
    */
-  const askWho = !me && !!league?.players.length
+  const players = league?.players ?? []
+  const gone = !!me && players.length > 0 && !players.some((p) => p.id === me)
+
+  useEffect(() => { if (gone) forgetMyPlayer() }, [gone])
+
+  const askWho = (!me || gone) && players.length > 0
 
   // Rules are read-only, so a stray click costs nothing and closing on one is
   // the quickest way out. Escape does the same.
@@ -80,6 +91,10 @@ export default function App() {
   }, [rulesOpen])
   const [dataAt, setDataAt] = useState<Date | null>(null)
   const [season, setSeasonId] = useState(() => currentSeason().id)
+
+  // Who you are is stored per season, so switching seasons means re-reading it
+  // — and usually finding nothing, which is what raises the question again.
+  useEffect(() => { setMeState(myPlayerId()) }, [season])
   /**
    * The refresh button re-reads the spreadsheet, so it only means anything for
    * a season backed by one. A database season is already the source: it is
