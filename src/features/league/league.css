@@ -1039,3 +1039,16 @@
 .award-table tr.place-first .rank-col { color: #e3b341; }
 .award-table tr.place-second .rank-col { color: #a8b3bd; }
 .award-table tr.place-third .rank-col { color: #c8834a; }
+
+/* The search sits above the tabs, so it needs the gap the strip does not. */
+.stats-search { margin-bottom: 0.85rem; }
+
+/* Who the league actually named, inside the order computed from the stats. The
+   two can disagree: the sheet's awards were written against older numbers, and
+   saying so is more useful than quietly showing one or the other. */
+.award-pick {
+  margin-left: 0.45rem; padding: 0.05rem 0.4rem;
+  font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+  color: #e3b341; border: 1px solid #e3b34155; border-radius: 999px;
+  vertical-align: middle; white-space: nowrap;
+}

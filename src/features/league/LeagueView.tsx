@@ -22,6 +22,7 @@ import { DropPicker } from '../../components/DropPicker'
 import { DraftTeams } from './DraftTeams'
 import { History } from './History'
 import { Sprite } from '../../components/Sprite'
+import { namedBy, ruleFor } from '../../lib/awards'
 
 export function LeagueView({ tab }: { tab: LeagueTab }) {
   const [league, setLeague] = useState<League | null>(null)
@@ -122,14 +123,31 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
   const awards = league.awards ?? []
   const showing = awards.find((a) => a.title === award) ?? null
 
+  const pickTab = (title: string | null) => {
+    setAward(title)
+    // Otherwise a column sorted on one tab silently overrides the next tab's
+    // own order, and the award would look like it ranked by something else.
+    setSort({ key: 'kills', dir: 0 })
+  }
+
   const matches = useMemo(() => league.matchStats ?? [], [league.matchStats])
 
   /** The whole season, always: a ranking of the season is the point. */
   const totals = useMemo(() => Object.values(totalsFromMatches(matches)), [matches])
 
+  /**
+   * An award is a ranking with a different first step, so it replaces the power
+   * ranking rather than sitting beside it: on an award tab, "no column sorted"
+   * means "in this award's order". Picking a column still works and still wins,
+   * exactly as it does on the Ranking tab.
+   */
+  const rule = showing ? ruleFor(showing) : null
+  const named = useMemo(() => (showing ? namedBy(showing) : null), [showing])
+
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return totals
+    const pool = showing && rule?.only ? totals.filter(rule.only) : totals
+    return pool
       .filter((t) => !q || dex[t.pokemon]?.name.toLowerCase().includes(q))
       // KOs per game breaks ties: two Pokémon on the same total are separated
       // by how few games it took. The tiebreak keeps its own direction so it
@@ -137,6 +155,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
       .sort((a, b) => {
         const nameA = dex[a.pokemon]?.name ?? ''
         const nameB = dex[b.pokemon]?.name ?? ''
+        if (!sort.dir && rule) return rule.compare(a, b) || nameA.localeCompare(nameB)
         if (!sort.dir) return byPowerRanking(a, b) || nameA.localeCompare(nameB)
         if (sort.key === 'name') return nameA.localeCompare(nameB) * sort.dir
         // Best tier first, not "Banned, High, Low, Mid, Top" alphabetically.
@@ -149,7 +168,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           || b.killsPerGame - a.killsPerGame
           || nameA.localeCompare(nameB)
       })
-  }, [totals, sort, query, dex])
+  }, [totals, sort, query, dex, showing, rule])
 
   if (!matches.length) {
     return <p className="panel-note">No match stats in the sheet yet. Re-run the import once they are filled in.</p>
@@ -162,13 +181,28 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
 
   return (
     <div className="stats-view">
+      {/* Above the tabs, because it filters whichever one is open. */}
+      <div className="controls stats-search">
+        <input
+          type="search" value={query} onChange={(e) => setQuery(e.target.value)}
+          placeholder="Search Pokémon…" aria-label="Search stats"
+        />
+        <span className="count">{rows.length} Pokémon</span>
+        {/* What the order actually is, whether that is the power ranking or the
+            award whose tab is open. Dropped once a column is picked, since the
+            chain would then be describing something that is not happening. */}
+        {!sort.dir && (
+          <p className="sort-note">{rule ? rule.note : POWER_RANKING_NOTE}</p>
+        )}
+      </div>
+
       {/* Only the spreadsheet season has awards; a database season shows the
           ranking on its own rather than an empty row of tabs. */}
       {awards.length > 0 && (
         <nav className="award-tabs" aria-label="Awards">
           <button
             type="button" className={award === null ? 'is-active' : ''}
-            onClick={() => setAward(null)}
+            onClick={() => pickTab(null)}
           >
             Ranking
           </button>
@@ -176,7 +210,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
             <button
               key={a.title} type="button"
               className={award === a.title ? 'is-active' : ''}
-              onClick={() => setAward(a.title)}
+              onClick={() => pickTab(a.title)}
             >
               {a.title}
             </button>
@@ -185,58 +219,8 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
       )}
 
       <section className="panel stats-panel">
-      {showing && (
-        <>
-          {showing.blurb && <p className="award-blurb">{showing.blurb}</p>}
-          <div className="table-scroll">
-            <table className="stat-table award-table">
-              <thead>
-                <tr>
-                  <th className="rank-col">Place</th>
-                  <th className="col-name">Pokémon</th>
-                  <th className="col-coach">Coach</th>
-                  {showing.columns.map((c) => <th key={c}>{c}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {showing.winners.map((w, i) => (
-                  <tr key={`${w.pokemon}-${i}`} className={`place-${w.place.toLowerCase()}`}>
-                    <td className="rank-col">{w.place}</td>
-                    <th scope="row" className="col-name">
-                      {dex[w.pokemon] && (
-                        <PokemonLink id={w.pokemon} title={dex[w.pokemon].name}>
-                          <Sprite pokemon={dex[w.pokemon]} width={40} height={32} />
-                        </PokemonLink>
-                      )}
-                      <span className="stats-name">
-                        <PokemonLink id={w.pokemon}>{dex[w.pokemon]?.name ?? w.pokemon}</PokemonLink>
-                      </span>
-                    </th>
-                    <td className="col-coach">{w.coach}</td>
-                    {w.values.map((v, j) => (
-                      <td key={showing.columns[j]} className="num">{v ?? '—'}</td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
-
-      {!showing && (
-      <>
-      <div className="controls">
-        <input
-          type="search" value={query} onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search Pokémon…" aria-label="Search stats"
-        />
-        <span className="count">{rows.length} Pokémon</span>
-        {/* Shown only while the power ranking is what is actually applied —
-            once a column is picked, that column is the order, and the chain
-            would be describing something that is no longer happening. */}
-        {!sort.dir && <p className="sort-note">{POWER_RANKING_NOTE}</p>}
-      </div>
+        {/* The award's write-up, above the ranking it describes. */}
+        {showing?.blurb && <p className="award-blurb">{showing.blurb}</p>}
 
         <div className="table-scroll">
           <table className="stat-table stats-table">
@@ -250,7 +234,11 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                    ['deaths', 'Deaths']] as [StatSort, string][]).map(([key, label]) => (
                   <th
                     key={key}
-                    className={`sortable${key === 'name' ? ' col-name' : ''}${sort.key === key && sort.dir ? ' is-sorted' : ''}`}
+                    className={`sortable${key === 'name' ? ' col-name' : ''}${
+                      sort.dir ? (sort.key === key ? ' is-sorted' : '')
+                        // With no column picked, the award's own stat is what
+                        // the order is by, so it is the one marked.
+                        : (rule?.highlight === key ? ' is-sorted' : '')}`}
                     aria-sort={sort.key === key && sort.dir
                       ? (sort.dir === 1 ? 'ascending' : 'descending') : 'none'}
                   >
@@ -283,6 +271,14 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                       )}
                       <span className="stats-name">
                         <PokemonLink id={t.pokemon}>{mon?.name ?? t.pokemon}</PokemonLink>
+                        {/* The order below is computed; this is who the league
+                            actually named. They can differ, because the sheet's
+                            awards were written against older numbers. */}
+                        {named?.has(t.pokemon) && (
+                          <span className="award-pick" title={`Named ${named.get(t.pokemon)} by the league`}>
+                            {named.get(t.pokemon)}
+                          </span>
+                        )}
                       </span>
                       {/* Each type gets its own track so the chips line up down
                           the table instead of trailing each name. */}
@@ -320,8 +316,6 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           Totalled from the match log, which is the complete record.
           {conflicts > 0 && ` The sheet's Pokémon Stats tab disagrees on ${conflicts} of these — it is still being filled in.`}
         </p>
-      </>
-      )}
       </section>
     </div>
   )
