@@ -3,7 +3,8 @@ import {
   byTier, currentSeason, isMega, megaParts, reloadSeason, TIER_ORDER, tierClass,
   type DraftTier, type League, type LeaguePokemon,
 } from '../../data/league'
-import { claimPokemon, errorText, releasePokemon } from '../../data/supabase'
+import { claimPokemon, draftState, errorText, releasePokemon, type DraftState } from '../../data/supabase'
+import { snakeDraft } from '../../lib/snakeDraft'
 import { myPlayerId, subscribeIdentity } from '../../data/identity'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
@@ -54,6 +55,22 @@ export function DraftTeams({ league, dex }: Props) {
       setBusy(false)
     }
   }
+
+  /**
+   * The order only means anything while a draft is running. After it closes the
+   * numbers are still on the players, but nobody is "up" any more.
+   */
+  const [draft, setDraft] = useState<DraftState | null>(null)
+  useEffect(() => {
+    let live = true
+    draftState().then((d) => { if (live) setDraft(d) }, () => {})
+    return () => { live = false }
+  }, [league])
+
+  const order = useMemo(
+    () => (draft?.status === 'active' ? snakeDraft(league.players, league.rosters) : null),
+    [draft, league.players, league.rosters],
+  )
 
   const mine = me ? league.rosters[me] ?? [] : []
   /**
@@ -106,6 +123,31 @@ export function DraftTeams({ league, dex }: Props) {
         <p className="panel-note">Say who you are, beside the season, to edit your team.</p>
       ) : (
         <section className="panel draft-mine">
+          {order && (
+            <div className="draft-order" aria-label={`Draft order, round ${order.round}`}>
+              <h4>
+                Draft order
+                <span className="panel-note">Round {order.round}</span>
+              </h4>
+              <ol>
+                {order.seats.map((seat) => (
+                  <li
+                    key={seat.player}
+                    className={`${seat.isUp ? 'is-up' : ''}${seat.player === me ? ' is-me' : ''}`}
+                    title={seat.isUp ? `${seat.name} is up` : undefined}
+                  >
+                    <span className="draft-order-pos">{seat.order}</span>
+                    <span className="draft-order-who">
+                      <strong>{seat.name}</strong>
+                      {/* How far along they are, which is also what decides
+                          whose turn it is. */}
+                      <em>{seat.picks} drafted</em>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          )}
           <div className="draft-head">
             <h3>
               Your team

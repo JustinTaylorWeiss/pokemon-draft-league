@@ -1106,3 +1106,41 @@
   min-width: 0; max-width: 100%;
 }
 .board-table .pick-name-row .mega-badge { margin-left: 0; flex: none; }
+
+/* ---- the snake draft order, above your team ---- */
+/* A strip rather than a list: it is glanceable state, not something to read
+   down. It scrolls sideways because a full league is twenty deep. */
+.draft-order { margin-bottom: 1rem; }
+.draft-order h4 {
+  margin: 0 0 0.5rem; font-size: 0.72rem; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+  display: flex; align-items: baseline; gap: 0.6rem;
+}
+.draft-order h4 .panel-note { text-transform: none; letter-spacing: 0; }
+.draft-order ol {
+  display: flex; gap: 0.4rem; margin: 0; padding: 0 0 0.3rem; list-style: none;
+  overflow-x: auto; scrollbar-width: thin;
+}
+.draft-order li {
+  display: flex; align-items: center; gap: 0.5rem; flex: none;
+  padding: 0.4rem 0.7rem;
+  background: var(--chip); border: 1px solid var(--line); border-radius: 8px;
+}
+.draft-order-pos {
+  font-size: 0.72rem; font-weight: 700; color: var(--muted);
+  font-variant-numeric: tabular-nums; min-width: 1.1rem; text-align: right;
+}
+.draft-order-who { display: flex; flex-direction: column; line-height: 1.25; min-width: 0; }
+.draft-order-who strong { font-size: 0.82rem; font-weight: 600; white-space: nowrap; }
+.draft-order-who em {
+  font-style: normal; font-size: 0.68rem; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+/* Whose turn it is, which is the one thing this strip exists to say. */
+.draft-order li.is-up {
+  background: #3f9d6d22; border-color: #3f9d6d;
+}
+.draft-order li.is-up .draft-order-pos,
+.draft-order li.is-up .draft-order-who strong { color: #6dc79a; }
+/* And which one is you, so a long order is still scannable. */
+.draft-order li.is-me strong { text-decoration: underline; text-underline-offset: 3px; }

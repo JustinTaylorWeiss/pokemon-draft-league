@@ -268,7 +268,10 @@ export async function loadLeagueFromSupabase(): Promise<League> {
       tierLimits: meta.data?.tier_limits ?? {},
       pointsBudget: meta.data?.points_budget ?? null,
     },
-    players: playerRows,
+    players: playerRows.map((p) => ({
+      ...p,
+      draftOrder: (p as { draft_order?: number | null }).draft_order ?? null,
+    })),
     board: Object.fromEntries(boardRows.map((b) => [b.pokemon_id, {
       name: b.name,
       tier: b.tier as never,

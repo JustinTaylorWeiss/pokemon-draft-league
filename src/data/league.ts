@@ -34,6 +34,11 @@ export interface Player {
   name: string
   /** Null when the player has not named their team yet. */
   team: string | null
+  /**
+   * Where they pick in the snake draft, drawn at random when it opened. Null
+   * before a draft has ever been opened, and on a season read from the sheet.
+   */
+  draftOrder?: number | null
 }
 
 export interface BoardEntry {
