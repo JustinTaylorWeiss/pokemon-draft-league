@@ -165,6 +165,13 @@ export default function App() {
 
   return (
     <PokemonModalProvider>
+      {/* Both bars in one sticky box. The sub-bar used to stick at
+          `top: var(--topbar-h)`, a value measured in JavaScript and written
+          after the first paint — so on load the bar moved the moment the real
+          height arrived, and Safari left the underline it had already painted
+          behind at the old offset. Stuck together they need no measurement and
+          nothing shifts. */}
+      <div className="bars">
       <header className="topbar" ref={topbarRef}>
         <div className="bar-inner">
           <span className="brand">
@@ -295,6 +302,7 @@ export default function App() {
           </div>
         </div>
       )}
+      </div>
 
       <main className="shell">
         {view === 'league' && <LeagueView tab={leagueTab} />}

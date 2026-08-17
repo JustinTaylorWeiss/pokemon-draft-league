@@ -3,7 +3,11 @@
 :root {
   --content-max: 1440px;
   /* Measured at runtime; the primary bar wraps on narrow screens. */
-  --topbar-h: 52px;
+  /* A starting guess only: the real height is measured and written over this.
+     Nothing sticky depends on it any more — the bars pin as one box — but it
+     still sizes the matchup card, so a guess near the truth (57px at the usual
+     width) avoids that resizing on load too. */
+  --topbar-h: 57px;
 }
 @media (min-width: 1800px) { :root { --content-max: 1680px; } }
 @media (min-width: 2400px) { :root { --content-max: 2040px; } }
@@ -36,14 +40,16 @@
   background: var(--widget);
   box-shadow: inset 0 -2px 0 var(--line);
   padding-bottom: 2px;
-  position: sticky; top: 0; z-index: 30;
 }
 .subbar {
   background: var(--surface);
   box-shadow: inset 0 -2px 0 var(--line);
   padding-bottom: 2px;
-  position: sticky; top: var(--topbar-h); z-index: 29;
 }
+
+/* The two bars pin as one. Neither needs to know the other's height, so
+   nothing about them depends on a measurement that lands after the paint. */
+.bars { position: sticky; top: 0; z-index: 30; }
 
 .bar-inner {
   max-width: var(--content-max); margin: 0 auto;
