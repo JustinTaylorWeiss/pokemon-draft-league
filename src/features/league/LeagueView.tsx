@@ -127,12 +127,6 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
   /** The whole season, always: a ranking of the season is the point. */
   const totals = useMemo(() => Object.values(totalsFromMatches(matches)), [matches])
 
-  /** Still grouped by week further down, where the match log is. */
-  const weeks = useMemo(
-    () => [...new Set(matches.map((m) => m.week))].sort((a, b) => a - b),
-    [matches],
-  )
-
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase()
     return totals
@@ -190,8 +184,9 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
         </nav>
       )}
 
+      <section className="panel stats-panel">
       {showing && (
-        <section className="panel award-panel">
+        <>
           {showing.blurb && <p className="award-blurb">{showing.blurb}</p>}
           <div className="table-scroll">
             <table className="stat-table award-table">
@@ -199,7 +194,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                 <tr>
                   <th className="rank-col">Place</th>
                   <th className="col-name">Pokémon</th>
-                  <th>Coach</th>
+                  <th className="col-coach">Coach</th>
                   {showing.columns.map((c) => <th key={c}>{c}</th>)}
                 </tr>
               </thead>
@@ -207,13 +202,17 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                 {showing.winners.map((w, i) => (
                   <tr key={`${w.pokemon}-${i}`} className={`place-${w.place.toLowerCase()}`}>
                     <td className="rank-col">{w.place}</td>
-                    <td className="col-name">
-                      <span className="mon-cell">
-                        {dex[w.pokemon] && <Sprite pokemon={dex[w.pokemon]} width={40} height={33} />}
-                        {dex[w.pokemon]?.name ?? w.pokemon}
+                    <th scope="row" className="col-name">
+                      {dex[w.pokemon] && (
+                        <PokemonLink id={w.pokemon} title={dex[w.pokemon].name}>
+                          <Sprite pokemon={dex[w.pokemon]} width={40} height={32} />
+                        </PokemonLink>
+                      )}
+                      <span className="stats-name">
+                        <PokemonLink id={w.pokemon}>{dex[w.pokemon]?.name ?? w.pokemon}</PokemonLink>
                       </span>
-                    </td>
-                    <td>{w.coach}</td>
+                    </th>
+                    <td className="col-coach">{w.coach}</td>
                     {w.values.map((v, j) => (
                       <td key={showing.columns[j]} className="num">{v ?? '—'}</td>
                     ))}
@@ -222,7 +221,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
               </tbody>
             </table>
           </div>
-        </section>
+        </>
       )}
 
       {!showing && (
@@ -239,7 +238,6 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
         {!sort.dir && <p className="sort-note">{POWER_RANKING_NOTE}</p>}
       </div>
 
-      <section className="panel">
         <div className="table-scroll">
           <table className="stat-table stats-table">
             <thead>
@@ -322,52 +320,9 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           Totalled from the match log, which is the complete record.
           {conflicts > 0 && ` The sheet's Pokémon Stats tab disagrees on ${conflicts} of these — it is still being filled in.`}
         </p>
-      </section>
-
-      <div className="match-log">
-        {weeks.map((w) => (
-          <section key={w} className="panel">
-            <h3>Week {w}</h3>
-            <div className="match-cards">
-              {matches.filter((m) => m.week === w && (m.a.lines.length || m.b.lines.length)).map((m, i) => (
-                <article key={i} className="match-card">
-                  <header>
-                    <span className={m.a.result === 'W' ? 'won' : m.a.result === 'L' ? 'lost' : ''}>{m.a.team}</span>
-                    <strong>{m.a.score ?? '–'} – {m.b.score ?? '–'}</strong>
-                    <span className={m.b.result === 'W' ? 'won' : m.b.result === 'L' ? 'lost' : ''}>{m.b.team}</span>
-                  </header>
-                  <div className="match-sides">
-                    {[m.a, m.b].map((side, si) => (
-                      <ul key={si}>
-                        {side.lines.map((l, li) => {
-                          const mon = dex[l.pokemon]
-                          return (
-                            <li key={li}>
-                              {mon && (
-                                <PokemonLink id={l.pokemon} title={mon.name}>
-                                  <Sprite pokemon={mon} width={32} height={26} />
-                                </PokemonLink>
-                              )}
-                              <span className="ml-name">
-                                <PokemonLink id={l.pokemon}>{mon?.name ?? l.pokemon}</PokemonLink>
-                              </span>
-                              <span className="ml-kd" title={`${l.kills} KOs, ${l.deaths} deaths`}>
-                                <em className="k">{l.kills}</em>/<em className="d">{l.deaths}</em>
-                              </span>
-                            </li>
-                          )
-                        })}
-                      </ul>
-                    ))}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
       </>
       )}
+      </section>
     </div>
   )
 }

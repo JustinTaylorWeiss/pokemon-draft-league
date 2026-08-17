@@ -236,7 +236,10 @@
 .board-table .pick-name, .board-table .col-name .mon-link { overflow: hidden; text-overflow: ellipsis; }
 
 /* ---- stats ---- */
-.stats-view { display: flex; flex-direction: column; gap: 1rem; }
+/* No gap: the tab strip and the panel below it are one surface, and a gap
+   between them would leave the active tab joined to nothing. This holds only
+   those two children now that the per-week match cards are gone. */
+.stats-view { display: flex; flex-direction: column; gap: 0; }
 .stats-view .controls input {
   height: 2.2rem; padding: 0 0.7rem; flex: 0 1 16rem;
   border: 1px solid var(--line); border-radius: 8px;
@@ -963,36 +966,76 @@
 .board-draft { display: flex; align-items: center; gap: 0.6rem; }
 
 /* ---- the league's own awards, beside the computed ranking ---- */
-/* Wraps rather than scrolls: the titles are sentences ("That One Friend You
-   Can Always Rely On"), so a single line would truncate most of them. */
+/*
+ * Real tabs: the strip's baseline is the table's top edge, and the active tab
+ * breaks through it, so the tab and the table it opens read as one surface.
+ * That is the whole trick — the strip draws a line, every tab sits on it, and
+ * the selected one paints over its own inch of it.
+ *
+ * Wraps rather than scrolls, because the titles are sentences ("That One Friend
+ * You Can Always Rely On") and a single row would truncate most of them. Each
+ * wrapped row then needs its own baseline, which is why the line is drawn under
+ * the buttons rather than under the strip.
+ */
 .award-tabs {
-  display: flex; flex-wrap: wrap; gap: 0.4rem;
-  margin-bottom: 0.9rem;
+  display: flex; flex-wrap: wrap;
+  gap: 0 0.15rem;
+  margin: 0;
+  padding: 0;
 }
 .award-tabs button {
   font: inherit; font-size: 0.78rem; font-weight: 600; cursor: pointer;
-  padding: 0.34rem 0.8rem; border-radius: 999px;
-  background: var(--chip); border: 1px solid var(--line); color: var(--muted);
+  padding: 0.45rem 0.85rem;
+  color: var(--muted); background: transparent;
+  border: 1px solid transparent;
+  border-bottom: 1px solid var(--line);
+  border-radius: 7px 7px 0 0;
   white-space: nowrap;
 }
-.award-tabs button:hover { color: var(--accent); border-color: var(--accent); }
-.award-tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.award-tabs button:hover { color: var(--accent); }
+.award-tabs button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .award-tabs button.is-active {
-  background: var(--accent); border-color: var(--accent); color: var(--bg);
+  color: var(--fg);
+  background: var(--chip);
+  border-color: var(--line);
+  /* The gap in the baseline that joins the tab to the table below it. */
+  border-bottom-color: var(--chip);
 }
 
-.award-panel { padding-top: 1rem; }
-/* The write-up is the point of an award, so it is given reading width rather
-   than being stretched across the table below it. */
+/* The surface the active tab opens onto. It has to be a surface for the join to
+   be visible at all — an unpainted panel would leave the tab connected to
+   nothing. */
+.stats-panel {
+  background: var(--chip);
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 7px 7px 7px;
+  padding: 0.9rem;
+}
+/* Without awards there are no tabs, so nothing is being joined to and the panel
+   is a plain card again. */
+.stats-view > .stats-panel:first-child { border-top: 1px solid var(--line); border-radius: 7px; }
+
+.stats-panel .controls { margin-bottom: 0.85rem; }
+
+/* The write-up is the point of an award, so it gets reading width rather than
+   being stretched the width of the table under it. */
 .award-blurb {
-  max-width: 62ch; margin: 0 0 1rem; padding: 0 0.2rem;
+  max-width: 62ch; margin: 0 0 1rem;
   font-size: 0.86rem; line-height: 1.55; color: var(--muted);
 }
+/* Every column but the Pokemon's shrinks to its content, so the slack lands on
+   the name rather than being shared out into four columns of whitespace. */
 .award-table td.num, .award-table th:not(.col-name):not(.rank-col) { text-align: right; }
-.award-table .rank-col { width: 5.5rem; text-align: left; font-weight: 600; }
-/* Gold, silver and bronze down the left edge — several Pokémon can share a
-   place, so the marker is on the row rather than counted from its position. */
+.award-table .rank-col, .award-table .col-coach,
+.award-table td.num, .award-table thead th:not(.col-name) {
+  width: 1%; white-space: nowrap;
+}
+.award-table .rank-col { text-align: left; font-weight: 600; padding-right: 1.2rem; }
+.award-table .col-coach { text-align: right; color: var(--muted); }
+/* Gold, silver and bronze down the left edge. Several Pokemon can share a place
+   in four of the six awards, so the marker comes off the row's own placement
+   rather than being counted from its position in the table. */
 .award-table tr.place-first .rank-col { color: #e3b341; }
 .award-table tr.place-second .rank-col { color: #a8b3bd; }
 .award-table tr.place-third .rank-col { color: #c8834a; }
-.award-table .mon-cell { display: flex; align-items: center; gap: 0.5rem; }
