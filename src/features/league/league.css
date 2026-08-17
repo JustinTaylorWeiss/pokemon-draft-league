@@ -1052,3 +1052,13 @@
   color: #e3b341; border: 1px solid #e3b34155; border-radius: 999px;
   vertical-align: middle; white-space: nowrap;
 }
+
+/* The order the table is in, said inside the table. Right-aligned to sit over
+   the number columns it is about, rather than over the Pokemon names. */
+.stats-table > caption {
+  caption-side: top;
+  text-align: right;
+  padding: 0 0.45rem 0.5rem;
+  font-size: 0.72rem; color: var(--muted);
+  white-space: nowrap;
+}

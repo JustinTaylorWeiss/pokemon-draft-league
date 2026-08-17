@@ -188,12 +188,6 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           placeholder="Search Pokémon…" aria-label="Search stats"
         />
         <span className="count">{rows.length} Pokémon</span>
-        {/* What the order actually is, whether that is the power ranking or the
-            award whose tab is open. Dropped once a column is picked, since the
-            chain would then be describing something that is not happening. */}
-        {!sort.dir && (
-          <p className="sort-note">{rule ? rule.note : POWER_RANKING_NOTE}</p>
-        )}
       </div>
 
       {/* Only the spreadsheet season has awards; a database season shows the
@@ -224,6 +218,14 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
 
         <div className="table-scroll">
           <table className="stat-table stats-table">
+            {/* What the order actually is, whether that is the power ranking or
+                the award whose tab is open. A caption rather than a line above
+                the table, because it describes this table and nothing else.
+                Dropped once a column is picked, since the chain would then be
+                describing something that is not happening. */}
+            {!sort.dir && (
+              <caption className="sort-caption">{rule ? rule.note : POWER_RANKING_NOTE}</caption>
+            )}
             <thead>
               <tr>
                 <th className="rank-col">#</th>
