@@ -470,6 +470,23 @@
 }
 .players-remove:hover { color: #e05563; border-color: #e05563; }
 
+/* Team names: one field per player, with the name as its label. */
+.team-names { display: flex; flex-direction: column; gap: 0.75rem; }
+.team-names .players-list li { gap: 1rem; }
+.team-names .players-name {
+  flex: 0 0 11rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.team-names input {
+  flex: 1 1 auto; min-width: 0; font: inherit; font-size: 0.85rem; color: var(--fg);
+  background: var(--chip); border: 1px solid var(--line); border-radius: 8px; padding: 0.4rem 0.55rem;
+}
+.team-names input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.team-names input:disabled { opacity: 0.6; }
+@media (max-width: 480px) {
+  .team-names .players-list li { flex-wrap: wrap; }
+  .team-names .players-name { flex-basis: 100%; }
+}
+
 /* ---- the games inside a match ---- */
 
 

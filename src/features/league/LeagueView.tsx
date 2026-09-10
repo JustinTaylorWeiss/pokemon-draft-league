@@ -16,6 +16,7 @@ import { PokemonLink } from '../../components/PokemonLink'
 import { LoadingBall } from '../../components/LoadingBall'
 import { PassphraseModal } from '../../components/PassphraseModal'
 import { ManagePlayers } from './ManagePlayers'
+import { TeamNames } from './TeamNames'
 import { DraftToggle } from './DraftToggle'
 import { draftState, type DraftState } from '../../data/supabase'
 import { errorText, removeWeek, scheduleMatch, unlock, unscheduleMatch } from '../../data/supabase'
@@ -405,6 +406,8 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
   const ranked = rankStandings(league)
   const editable = currentSeason().source === 'database'
   const [managing, setManaging] = useState(false)
+  /** Team names are open to everyone, so they get their own door. */
+  const [renaming, setRenaming] = useState(false)
   /** A Pokémon belongs to one player, so its league totals are that player's. */
   const totals = useMemo(() => totalsFromMatches(league.matchStats ?? []), [league.matchStats])
   /** Which player's team is open. The ranking is also the way into a roster. */
@@ -417,6 +420,7 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
         {editable && (
           <div className="standings-actions">
             <button type="button" onClick={() => setManaging(true)}>Add / remove players</button>
+            <button type="button" onClick={() => setRenaming(true)}>Edit team names</button>
             <span className="count">{league.players.length} players</span>
           </div>
         )}
@@ -430,6 +434,13 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
         <ManagePlayers
           league={league}
           onClose={() => setManaging(false)}
+          onSaved={() => reloadSeason(currentSeason().id)}
+        />
+      )}
+      {renaming && (
+        <TeamNames
+          league={league}
+          onClose={() => setRenaming(false)}
           onSaved={() => reloadSeason(currentSeason().id)}
         />
       )}

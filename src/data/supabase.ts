@@ -228,6 +228,18 @@ export async function addPlayer(passphrase: string, name: string, team?: string)
 }
 
 /**
+ * Renames a player's team.
+ *
+ * Not gated. A team's name changes nothing else — not the seeding, not the
+ * schedule, not a roster — and `players` kept its update policy when the
+ * structural changes went behind the passphrase, for exactly this. The change
+ * is stamped with whoever the browser says is editing, like every other.
+ */
+export async function setTeamName(playerId: string, team: string | null) {
+  return updateRow('players', { season_id: currentSeasonId(), id: playerId }, { team })
+}
+
+/**
  * Hides a player. Their row and their results stay; the site stops showing
  * them. Nothing here can delete a player outright — there is no such call.
  */
