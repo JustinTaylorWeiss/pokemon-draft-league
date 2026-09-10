@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { spriteUrl } from '../data/load'
+import { artworkUrl, spriteUrl } from '../data/load'
 import type { Pokemon } from '../data/types'
 
 /**
@@ -66,6 +66,49 @@ export function Sprite({
       height={height}
       loading="lazy"
       onError={() => setTries((n) => n + 1)}
+    />
+  )
+}
+
+/**
+ * The official artwork, with the sprite chain above standing behind it.
+ *
+ * PokeAPI has a drawing for nearly everything, filed under its own id where a
+ * forme's differs from its base's (see `artId`). Where the drawing is missing
+ * the sprite takes over — and where that is missing too, the initial — so
+ * nothing ever shows a broken image at the top of its own page.
+ */
+export function Artwork({
+  pokemon, size = 150, className,
+}: {
+  pokemon: Pokemon
+  size?: number
+  className?: string
+}) {
+  const src = artworkUrl(pokemon)
+  const [failed, setFailed] = useState(false)
+
+  // A different Pokémon in the same slot starts over.
+  useEffect(() => { setFailed(false) }, [src])
+
+  if (failed) {
+    return (
+      <Sprite
+        pokemon={pokemon}
+        width={size}
+        height={size}
+        className={className ? `${className} is-sprite` : 'is-sprite'}
+      />
+    )
+  }
+  return (
+    <img
+      className={className}
+      src={src}
+      alt=""
+      width={size}
+      height={size}
+      onError={() => setFailed(true)}
     />
   )
 }

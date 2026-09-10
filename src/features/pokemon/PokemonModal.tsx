@@ -1,12 +1,14 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  artworkUrl, loadAbilities, loadItems, loadLearnsets, loadMoves, loadPokemon, loadSets,
-  loadTypeChart, spriteUrl, toId,
+  loadAbilities, loadItems, loadLearnsets, loadMoves, loadPokemon, loadSets,
+  loadTypeChart, toId,
 } from '../../data/load'
 import type {
   AbilityDex, ItemDex, LearnsetDex, Move, MoveDex, PokemonDex, SetDex, TypeChart, TypeName,
 } from '../../data/types'
-import { loadLeague, mergeDex, type League, type LeaguePokemon } from '../../data/league'
+import {
+  isMega, loadLeague, megaParts, mergeDex, type League, type LeaguePokemon,
+} from '../../data/league'
 import { DraftValue } from '../../components/DraftValue'
 import { BATTLE_TYPES, defensiveMultiplier } from '../../lib/matchup'
 import { BST_ORDER, STAT_LABELS, statAt100 } from '../../lib/stats'
@@ -16,7 +18,7 @@ import { CommonSetCard } from './CommonSetCard'
 import { usePokemonModal } from './PokemonModalContext'
 import './pokemon-modal.css'
 import { LoadingBall } from '../../components/LoadingBall'
-import { Sprite } from '../../components/Sprite'
+import { Artwork, Sprite } from '../../components/Sprite'
 
 /** Learn-source prefixes, in the order the sheet-style tables read best. */
 const MOVE_GROUPS: { key: string; label: string; match: (s: string) => boolean }[] = [
@@ -94,6 +96,15 @@ export function PokemonModal() {
   }, [merged])
   const mon: LeaguePokemon | undefined = openId && merged ? merged[openId] : undefined
 
+  /** Megas, keyed by the id of the Pokémon each evolves from. */
+  const megasByBase = useMemo(() => {
+    const out: Record<string, string[]> = {}
+    for (const [id, m] of Object.entries(merged ?? {})) {
+      if (isMega(m) && m.baseSpecies) (out[toId(m.baseSpecies)] ??= []).push(id)
+    }
+    return out
+  }, [merged])
+
   /**
    * The whole evolution family, as stages: walk up to the root, then out
    * through every branch. `prevo`/`evos` hold display names rather than the ids
@@ -101,11 +112,29 @@ export function PokemonModal() {
    *
    * Stages rather than a flat list because families branch — Eevee's eight
    * evolutions are all one stage, not eight steps in a line.
+   *
+   * Mega Evolution is one step further on, so a Mega hangs off the forme it
+   * evolves from as a stage of its own, and opens from there like any other
+   * evolution. Showdown files it with no prevo and its base with no evo, so
+   * both hops are made here. A base the dex does not have — Absol, Golisopod,
+   * neither in Scarlet/Violet — leaves its Megas to stand together.
    */
   const family = useMemo(() => {
     if (!openId || !merged?.[openId]) return []
 
+    const baseOf = (id: string) => {
+      const m = merged[id]
+      return isMega(m) && m.baseSpecies ? toId(m.baseSpecies) : null
+    }
+
     let rootId: string = openId
+    const baseId = baseOf(openId)
+    if (baseId && !merged[baseId]) {
+      const siblings = Object.keys(merged).filter((id) => baseOf(id) === baseId)
+      return siblings.length > 1 ? [siblings] : []
+    }
+    if (baseId) rootId = baseId
+
     // Bounded: a malformed prevo cycle would otherwise spin here.
     for (let i = 0; i < 5; i++) {
       const prevo: string | undefined = merged[rootId]?.prevo
@@ -117,7 +146,7 @@ export function PokemonModal() {
     const stages: string[][] = []
     const seen = new Set<string>()
     let level = [rootId]
-    while (level.length && stages.length < 5) {
+    while (level.length && stages.length < 6) {
       stages.push(level)
       for (const id of level) seen.add(id)
       const next: string[] = []
@@ -126,11 +155,14 @@ export function PokemonModal() {
           const evoId = toId(evo)
           if (merged[evoId] && !seen.has(evoId)) next.push(evoId)
         }
+        for (const megaId of megasByBase[id] ?? []) {
+          if (!seen.has(megaId)) next.push(megaId)
+        }
       }
       level = next
     }
     return stages
-  }, [openId, merged])
+  }, [openId, merged, megasByBase])
 
   const learnset = openId && learnsets ? learnsets[openId] : undefined
 
@@ -204,8 +236,7 @@ export function PokemonModal() {
         ) : (
           <>
             <header className="modal-head">
-              <img className="modal-art" src={artworkUrl(mon.num)} alt="" width={150} height={150}
-                onError={(e) => { (e.currentTarget as HTMLImageElement).src = spriteUrl(mon) }} />
+              <Artwork pokemon={mon} size={150} className="modal-art" />
               <div className="modal-title">
                 <span className="modal-num">#{String(mon.num).padStart(4, '0')}</span>
                 <div className="modal-ident-row">
@@ -436,7 +467,8 @@ function EvoStep({ id, mon, current }: { id: string; mon: LeaguePokemon; current
       disabled={current}
     >
       <Sprite pokemon={mon} width={56} height={48} />
-      <span>{mon.name}</span>
+      {/* A Mega's step says which forme it is; the family already says whose. */}
+      <span>{isMega(mon) ? megaParts(mon).badge : mon.name}</span>
     </button>
   )
 }

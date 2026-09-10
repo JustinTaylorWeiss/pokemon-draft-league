@@ -34,6 +34,8 @@
 /* ---- header ---- */
 .modal-head { display: flex; gap: 1.25rem; align-items: flex-start; flex-wrap: wrap; }
 .modal-art { flex: none; object-fit: contain; image-rendering: auto; }
+/* The sprite standing in for missing artwork is pixel art, blown up. */
+.modal-art.is-sprite { image-rendering: pixelated; }
 .modal-title { flex: 1 1 20rem; min-width: 0; }
 .modal-num { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .modal-title h2 { margin: 0.1rem 0 0.4rem; font-size: 1.6rem; letter-spacing: -0.02em; }

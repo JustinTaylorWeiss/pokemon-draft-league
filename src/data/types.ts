@@ -17,6 +17,12 @@ export interface BaseStats {
 export interface Pokemon {
   /** National dex number. Alt formes share the number of their base species. */
   num: number
+  /**
+   * PokeAPI's id for a forme whose artwork is filed apart from its base —
+   * Venusaur-Mega is 10033 where Venusaur is 3. Absent when the number is the
+   * id, which is every base forme, and any forme PokeAPI has no drawing for.
+   */
+  artId?: number
   name: string
   types: TypeName[]
   baseStats: BaseStats

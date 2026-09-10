@@ -87,5 +87,6 @@ export const spriteUrl = (pokemon: Pokemon, animated = false) =>
     ? `https://play.pokemonshowdown.com/sprites/ani/${spriteName(pokemon)}.gif`
     : `https://play.pokemonshowdown.com/sprites/gen5/${spriteName(pokemon)}.png`
 
-export const artworkUrl = (num: number) =>
-  `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${num}.png`
+/** A forme's own drawing where PokeAPI files one; the species' otherwise. */
+export const artworkUrl = (pokemon: { num: number; artId?: number }) =>
+  `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.artId ?? pokemon.num}.png`
