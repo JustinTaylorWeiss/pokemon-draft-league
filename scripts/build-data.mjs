@@ -56,9 +56,17 @@ async function fetchScript(name) {
  * and 7 Megas) or "Future" (the ones announced for Legends Z-A) — neither of
  * which is a statement about this league. Which of them a season may actually
  * draft is decided by that season's board, not here; this only decides what the
- * site knows the stats and sprite for.
+ * site knows about them.
  */
 const isMega = (entry) => /^(Mega|Primal)/.test(entry.forme ?? '')
+
+/**
+ * The exception is only for real Megas. CAP has drawn one of its own
+ * (Crucibelle-Mega), and it is a fakemon like the rest of CAP: the mark that
+ * keeps Crucibelle out keeps its Mega out too.
+ */
+const isKeptMega = (entry) =>
+  isMega(entry) && (!entry.isNonstandard || ['Past', 'Future'].includes(entry.isNonstandard))
 
 const isCurrentGen = (entry) => !entry.isNonstandard
 
@@ -81,7 +89,7 @@ async function main() {
     // Showdown keeps CAP fakemon and retired formes in the same table. The
     // `formats` check is skipped for Megas as well as the dex one: it marks
     // them by the same rule, and it has no forme to recognise them by.
-    if (!isMega(p) && (!isCurrentGen(p) || !isCurrentGen(formats[id] ?? {}))) continue
+    if (!isKeptMega(p) && (!isCurrentGen(p) || !isCurrentGen(formats[id] ?? {}))) continue
     if (!p.num || p.num < 1) continue // MissingNo and egg placeholders use num <= 0
 
     const bs = p.baseStats
@@ -91,7 +99,12 @@ async function main() {
       types: p.types,
       baseStats: bs,
       bst: bs.hp + bs.atk + bs.def + bs.spa + bs.spd + bs.spe,
-      abilities: p.abilities,
+      // A Mega or Primal forme has exactly one ability. Legends Z-A has no
+      // abilities at all, so Showdown gives the Megas it introduced a stand-in
+      // until Pokémon Champions fixes the real one — and for some, that
+      // stand-in is both of the base forme's slots, which would show as a
+      // second ability the Mega cannot have.
+      abilities: isMega(p) ? { 0: p.abilities[0] } : p.abilities,
       heightm: p.heightm,
       weightkg: p.weightkg,
       // Showdown gives either a ratio or a single-gender/genderless marker.
@@ -168,8 +181,22 @@ async function main() {
     }
     if (Object.keys(kept).length) learnOut[id] = kept
   }
+  // A Mega learns what its base forme learns. Showdown resolves a Mega's
+  // learnset through the base and ships none under the Mega's own id, so the
+  // base's moves are copied across. Where the base is not in the dex at all
+  // (Absol and Golisopod are not in Scarlet/Violet) there is nothing to copy,
+  // and the Mega stays without moves rather than being given someone else's.
+  let inherited = 0
+  for (const [id, p] of Object.entries(pokemon)) {
+    if (!isMega(p) || learnOut[id]) continue
+    const base = learnOut[toId(p.baseSpecies)]
+    if (!base) continue
+    learnOut[id] = base
+    inherited++
+  }
   stats.learnsets = {
     kept: Object.keys(learnOut).length,
+    inheritedByMegas: inherited,
     sourcesKept,
     sourcesDropped: sourcesTotal - sourcesKept,
   }
@@ -193,9 +220,17 @@ async function main() {
   stats.types = { count: TYPES.length }
 
   // ---- Abilities -----------------------------------------------------------
+  // Showdown marks the abilities Legends Z-A gave its new Megas — Aura Guard,
+  // Dragonize, Mega Sol and the rest — "Future", by the same rule that marks
+  // the Megas themselves. An ability a kept Pokémon actually has stays
+  // regardless, or the Mega would be shown with a name and no description.
+  const held = new Set()
+  for (const p of Object.values(pokemon)) {
+    for (const name of Object.values(p.abilities)) held.add(toId(name))
+  }
   const abilitiesOut = {}
   for (const [id, a] of Object.entries(abilities)) {
-    if (!isCurrentGen(a)) continue
+    if (!isCurrentGen(a) && !held.has(id)) continue
     abilitiesOut[id] = { name: a.name, shortDesc: a.shortDesc ?? a.desc ?? '' }
   }
   stats.abilities = { kept: Object.keys(abilitiesOut).length }
@@ -285,6 +320,52 @@ async function main() {
     fromUsage: Object.values(sets).filter((s) => s.source === 'usage').length,
     ofTotal: Object.keys(pokemon).length,
   }
+
+  // ---- Artwork --------------------------------------------------------------
+  // Official artwork comes from PokeAPI's sprite repository, filed by PokeAPI's
+  // own id — which for a forme is not the dex number. Venusaur is 3 and
+  // Venusaur-Mega is 10033, and without the mapping every forme wears its
+  // base's picture. PokeAPI lists a species' formes as "varieties", named the
+  // way Showdown names them once the punctuation is folded, give or take a
+  // suffix ("tauros-paldea-aqua-breed", "indeedee-female"): an exact match
+  // wins, and the shortest name either side is a prefix of stands in for the
+  // rest. A forme that matches nothing keeps its base's artwork, which is what
+  // it showed before.
+  const POKEAPI = 'https://pokeapi.co/api/v2'
+  const formes = Object.entries(pokemon).filter(([, p]) => p.baseSpecies)
+  const speciesQueue = [...new Set(formes.map(([, p]) => p.num))]
+  const varieties = new Map()
+  await Promise.all(Array.from({ length: 6 }, async () => {
+    while (speciesQueue.length) {
+      const num = speciesQueue.shift()
+      try {
+        const res = await fetch(`${POKEAPI}/pokemon-species/${num}`)
+        if (!res.ok) continue
+        const species = await res.json()
+        varieties.set(num, species.varieties.map((v) => ({
+          key: toId(v.pokemon.name),
+          id: Number(v.pokemon.url.split('/').filter(Boolean).pop()),
+          isDefault: v.is_default,
+        })))
+      } catch {
+        // Left without: the base's drawing is the fallback, as it always was.
+      }
+    }
+  }))
+  let artMatched = 0
+  for (const [, p] of formes) {
+    const options = (varieties.get(p.num) ?? []).filter((v) => !v.isDefault)
+    const key = toId(p.name)
+    const hit = options.find((v) => v.key === key)
+      ?? options
+        .filter((v) => v.key.startsWith(key) || key.startsWith(v.key))
+        .sort((a, b) => a.key.length - b.key.length)[0]
+    if (hit && hit.id !== p.num) {
+      p.artId = hit.id
+      artMatched++
+    }
+  }
+  stats.artwork = { formes: formes.length, matched: artMatched, speciesAsked: varieties.size }
 
   // ---- Write ---------------------------------------------------------------
   await mkdir(OUT, { recursive: true })
