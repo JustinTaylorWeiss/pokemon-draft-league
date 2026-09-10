@@ -240,8 +240,10 @@ export async function setTeamName(playerId: string, team: string | null) {
 }
 
 /**
- * Hides a player. Their row and their results stay; the site stops showing
- * them. Nothing here can delete a player outright — there is no such call.
+ * Removes a player. Before a season's first match this deletes them outright —
+ * nothing refers to them yet. From then on it hides them: their row and their
+ * results stay, and the site stops showing them. The database decides which,
+ * from whether the season has a match on record.
  */
 export async function removePlayer(passphrase: string, playerId: string) {
   const { data, error } = await db.rpc('remove_player', {

@@ -16,8 +16,13 @@ import type { League } from '../../data/league'
  * passphrase in the database, which is where the check has to happen: a browser
  * can be made to show any screen it likes.
  *
- * Removing is hiding. The row and the results stay exactly where they are, so
- * removing the wrong person costs a click to undo rather than a season.
+ * What removing does depends on whether the season has started. Before its
+ * first match nothing refers to a player, so removing them deletes them — a
+ * hidden row with nothing behind it is only something to explain. Once a match
+ * is on record, removing is hiding: the row and the results stay exactly where
+ * they are, so removing the wrong person costs a click to undo rather than a
+ * season. The database makes the same call from the same fact; this only words
+ * the buttons to match, and asks once before the one that is for keeps.
  */
 
 interface Props {
@@ -42,6 +47,14 @@ export function ManagePlayers({ league, onClose, onSaved }: Props) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState<string | null>(null)
+  /** Who is being asked "for keeps?" — one row at a time. */
+  const [confirming, setConfirming] = useState<string | null>(null)
+
+  /**
+   * A season has started once it has a match on record, played or scheduled —
+   * the same test the database applies, from the same rows.
+   */
+  const started = league.schedule.length > 0
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -87,6 +100,7 @@ export function ManagePlayers({ league, onClose, onSaved }: Props) {
     setBusy(true)
     setError(null)
     setDone(null)
+    setConfirming(null)
     try {
       const said = await action()
       setDone(typeof said === 'string' ? said : 'Done.')
@@ -97,6 +111,52 @@ export function ManagePlayers({ league, onClose, onSaved }: Props) {
     } finally {
       setBusy(false)
     }
+  }
+
+  /**
+   * The remove button, or the question it turns into. Hiding is undoable and
+   * goes straight through; deleting is not, so it asks once, in place.
+   */
+  const remover = (p: Roster) => {
+    if (started) {
+      return (
+        <button
+          type="button"
+          className="players-remove"
+          disabled={busy}
+          onClick={() => run(() => removePlayer(passphrase, p.id))}
+        >
+          Remove
+        </button>
+      )
+    }
+    if (confirming === p.id) {
+      return (
+        <span className="players-confirm">
+          <button
+            type="button"
+            className="players-remove"
+            disabled={busy}
+            onClick={() => run(() => removePlayer(passphrase, p.id))}
+          >
+            Delete for good
+          </button>
+          <button type="button" disabled={busy} onClick={() => setConfirming(null)}>
+            Keep
+          </button>
+        </span>
+      )
+    }
+    return (
+      <button
+        type="button"
+        className="players-remove"
+        disabled={busy}
+        onClick={() => setConfirming(p.id)}
+      >
+        {p.hidden ? 'Delete' : 'Remove'}
+      </button>
+    )
   }
 
   // No click-away close: the backdrop is easy to hit by accident, and hitting
@@ -146,8 +206,9 @@ export function ManagePlayers({ league, onClose, onSaved }: Props) {
     <>
       <h2 className="report-title">Players</h2>
       <p className="report-lead">
-        Removing a player hides them from the site. Their row and their results
-        stay in the database, so it can be undone.
+        {started
+          ? 'Removing a player hides them from the site. Their row and their results stay in the database, so it can be undone.'
+          : 'Nothing has been played yet, so removing a player deletes them for good. Any draft picks of theirs go back on the board.'}
       </p>
 
       <div className="players-add">
@@ -183,14 +244,7 @@ export function ManagePlayers({ league, onClose, onSaved }: Props) {
           <li key={p.id}>
             <span className="players-name">{p.name}</span>
             <span className="players-team">{p.team ?? '—'}</span>
-            <button
-              type="button"
-              className="players-remove"
-              disabled={busy}
-              onClick={() => run(() => removePlayer(passphrase, p.id))}
-            >
-              Remove
-            </button>
+            {remover(p)}
           </li>
         ))}
       </ul>
@@ -198,13 +252,21 @@ export function ManagePlayers({ league, onClose, onSaved }: Props) {
       {hidden.length > 0 && (
         <>
           <h3 className="players-hidden-head">
-            Hidden <span>— not shown on the site, results still on record</span>
+            Hidden
+            <span>
+              {started
+                ? ' — not shown on the site, results still on record'
+                : ' — hidden before the season; delete them, or bring them back'}
+            </span>
           </h3>
           <ul className="players-list players-hidden">
             {hidden.map((p) => (
               <li key={p.id}>
                 <span className="players-name">{p.name}</span>
                 <span className="players-team">{p.team ?? '—'}</span>
+                {/* Before the season a hidden row is a leftover, and can go the
+                    same way a removal now goes. */}
+                {!started && remover(p)}
                 <button
                   type="button"
                   className="players-restore"
