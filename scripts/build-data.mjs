@@ -3,8 +3,13 @@
  *
  * Source is Pokemon Showdown's battle data, which is already normalized around
  * competitive play (base stats, abilities, tiers, learnsets) rather than the
- * lore-and-flavor shape PokeAPI returns. Everything predating Generation 9 is
- * dropped: no past-gen-only species, moves, or learnset sources.
+ * lore-and-flavor shape PokeAPI returns. Generation 9 is the baseline: no
+ * past-gen-only moves, and no species the current games do not have.
+ *
+ * Three sets of species are kept past that line, each because the league needs
+ * them and none because Showdown says so: Mega and Primal formes, the base
+ * forme of every Mega kept, and the species Pokemon Champions brings back that
+ * Scarlet/Violet dropped. See `isKeptMega` and `CHAMPIONS_RETURNS` below.
  *
  * Run with `npm run build:data`. Output lands in public/data/ as plain JSON so
  * the app can fetch it lazily instead of inlining it into the JS bundle.
@@ -68,6 +73,32 @@ const isMega = (entry) => /^(Mega|Primal)/.test(entry.forme ?? '')
 const isKeptMega = (entry) =>
   isMega(entry) && (!entry.isNonstandard || ['Past', 'Future'].includes(entry.isNonstandard))
 
+/**
+ * Species Pokemon Champions has that Scarlet/Violet does not.
+ *
+ * Season 5 is played in Champions, and Champions' roster is not Gen 9's: it
+ * brings back Pokemon Showdown still files as "Past" because the Switch games
+ * dropped them. The league's Regulation M-C list prices all of these, so the
+ * site has to know them or a priced Pokemon has no page, no stats and no sprite.
+ *
+ * Written out rather than derived, because nothing in Showdown's data says what
+ * Champions has — this list came from the league's own board. A later
+ * regulation that brings more back extends it.
+ *
+ * Gourgeist is here with all four sizes: the league prices them together, and
+ * the sizes are a real competitive choice (they differ in HP and Speed), not a
+ * cosmetic one like Vivillon's patterns.
+ */
+const CHAMPIONS_RETURNS = new Set([
+  'aegislash', 'aromatisse', 'aurorus', 'castform', 'cofagrigus', 'diggersby',
+  'emolga', 'farfetchd', 'floetteeternal', 'furfrou', 'garbodor',
+  'gourgeist', 'gourgeistsmall', 'gourgeistlarge', 'gourgeistsuper',
+  'grapploct', 'heliolisk', 'liepard', 'machamp', 'mrmime', 'mrrime',
+  'musharna', 'pangoro', 'roserade', 'runerigus', 'simipour', 'simisage',
+  'simisear', 'sirfetchd', 'slurpuff', 'stunfisk', 'stunfiskgalar', 'thievul',
+  'tyrantrum', 'vanilluxe', 'watchog',
+])
+
 const isCurrentGen = (entry) => !entry.isNonstandard
 
 async function main() {
@@ -84,12 +115,26 @@ async function main() {
   const stats = {}
 
   // ---- Pokemon -------------------------------------------------------------
+  /**
+   * The base forme of every Mega worth keeping, kept with it.
+   *
+   * A Mega is only half an entry on its own: the site files it one evolution on
+   * from its base, and its movepool is the base's, because Showdown ships none
+   * under a Mega's own id. Twenty-two Megas had neither — Aerodactyl, Alakazam,
+   * Kangaskhan and the rest left Scarlet/Violet and took their Megas' moves
+   * with them — so the base comes along whatever the current games think of it.
+   */
+  const megaBases = new Set(
+    Object.values(dex).filter(isKeptMega).map((p) => toId(p.baseSpecies)),
+  )
+
   const pokemon = {}
   for (const [id, p] of Object.entries(dex)) {
     // Showdown keeps CAP fakemon and retired formes in the same table. The
     // `formats` check is skipped for Megas as well as the dex one: it marks
     // them by the same rule, and it has no forme to recognise them by.
-    if (!isKeptMega(p) && (!isCurrentGen(p) || !isCurrentGen(formats[id] ?? {}))) continue
+    const kept = isKeptMega(p) || megaBases.has(id) || CHAMPIONS_RETURNS.has(id)
+    if (!kept && (!isCurrentGen(p) || !isCurrentGen(formats[id] ?? {}))) continue
     if (!p.num || p.num < 1) continue // MissingNo and egg placeholders use num <= 0
 
     const bs = p.baseStats
@@ -167,28 +212,49 @@ async function main() {
   const learnOut = {}
   let sourcesKept = 0
   let sourcesTotal = 0
+  let fromOlderGen = 0
   for (const [id, entry] of Object.entries(learnsets)) {
     if (!pokemon[id] || !entry.learnset) continue
+    /**
+     * Which generation's movepool to read.
+     *
+     * Gen 9 for anything Gen 9 has. A species it does not — the ones Champions
+     * brings back, and the Mega bases that left with them — has no Gen 9
+     * sources at all, because Gen 9 never had the Pokemon. Showdown will not
+     * know what Champions gives them back until Champions is playable there, so
+     * the newest movepool it does record stands in. It is still filtered to
+     * moves that exist in Gen 9 below, so nothing retired comes back with it.
+     */
+    const gens = new Set()
+    for (const sources of Object.values(entry.learnset)) {
+      for (const source of sources) gens.add(Number(source[0]))
+    }
+    if (!gens.size) continue
+    const gen = gens.has(CURRENT_GEN) ? CURRENT_GEN : Math.max(...gens)
+    if (gen !== CURRENT_GEN) fromOlderGen++
+
     const kept = {}
     for (const [move, sources] of Object.entries(entry.learnset)) {
       sourcesTotal += sources.length
       if (!movesOut[move]) continue
-      const current = sources.filter((s) => s.startsWith(String(CURRENT_GEN)))
+      const current = sources.filter((s) => s.startsWith(String(gen)))
       if (!current.length) continue
       sourcesKept += current.length
-      // Strip the redundant leading gen digit now that everything is Gen 9.
+      // Strip the leading gen digit: which generation a move was learned in is
+      // not something any view asks, and for these it would be misleading.
       kept[move] = current.map((s) => s.slice(1))
     }
     if (Object.keys(kept).length) learnOut[id] = kept
   }
-  // A Mega learns what its base forme learns. Showdown resolves a Mega's
-  // learnset through the base and ships none under the Mega's own id, so the
-  // base's moves are copied across. Where the base is not in the dex at all
-  // (Absol and Golisopod are not in Scarlet/Violet) there is nothing to copy,
-  // and the Mega stays without moves rather than being given someone else's.
+  // A forme learns what its base forme learns, unless Showdown gives it a
+  // learnset of its own. That is how Showdown resolves one — it ships nothing
+  // under a Mega's id at all, and nothing under Squawkabilly-Blue's or
+  // Landorus-Therian's either — so the base's moves are copied across. It is
+  // also the whole reason a Mega's base is kept even where the current games
+  // have dropped it: without it, sixty formes had no moves.
   let inherited = 0
   for (const [id, p] of Object.entries(pokemon)) {
-    if (!isMega(p) || learnOut[id]) continue
+    if (!p.baseSpecies || learnOut[id]) continue
     const base = learnOut[toId(p.baseSpecies)]
     if (!base) continue
     learnOut[id] = base
@@ -196,7 +262,8 @@ async function main() {
   }
   stats.learnsets = {
     kept: Object.keys(learnOut).length,
-    inheritedByMegas: inherited,
+    inheritedFromBase: inherited,
+    fromOlderGen,
     sourcesKept,
     sourcesDropped: sourcesTotal - sourcesKept,
   }
