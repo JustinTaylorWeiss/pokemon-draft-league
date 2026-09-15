@@ -136,10 +136,33 @@
 .modal-ident { display: flex; flex-direction: column; gap: 0.35rem; }
 .modal-ident h2 { margin: 0; }
 .modal-ident .modal-types { margin: 0; }
-/* Stages left to right; a branching family stacks within its stage, so Eevee's
-   eight evolutions are one column rather than eight steps in a line. */
-.modal-evo { display: flex; align-items: center; gap: 0.5rem; flex: none; flex-wrap: wrap; }
-.evo-stage { display: flex; flex-direction: column; gap: 0.25rem; max-height: 8.5rem; flex-wrap: wrap; }
+/*
+ * The family tree: columns are steps along a line, rows are the lines.
+ *
+ * A grid with every cell placed by row and column, because the tree has holes
+ * in it — Alolan Raichu ends where ordinary Raichu carries on into two Megas —
+ * and a flowing layout closes a hole by sliding the next thing into it, which
+ * puts a Mega under the Raichu it does not come from. Placing each cell keeps
+ * every step under its own step and leaves the gaps where they belong.
+ *
+ * It replaced a wrapping flex column, which could not do this at all: such a
+ * column has to know its own height before it can work out how many columns it
+ * needs and so how wide it is, and given only a `max-height` it measured itself
+ * narrower than the boxes it held and let the next stage be laid out on top of
+ * them.
+ *
+ * Wider than the panel on a phone for a big family, so it scrolls rather than
+ * squeezing — the same choice the move table makes.
+ */
+.modal-evo {
+  display: grid; gap: 0.5rem; justify-content: start; align-items: center;
+  grid-auto-columns: auto; grid-auto-rows: auto;
+  flex: 0 1 auto; max-width: 100%; overflow-x: auto;
+}
+/* One step of one line. Usually a single box; several where a step ends in
+   alternatives that lead nowhere further, which is Eevee's eight and a pair of
+   Megas off one Pokemon. */
+.evo-cell { display: flex; align-items: center; gap: 0.25rem; }
 .evo-line { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
 /* Built like the type chips on the defensive chart: a square, the sprite
    centred in whatever height is left, the name on the bottom edge. */

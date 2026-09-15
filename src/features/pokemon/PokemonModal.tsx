@@ -7,7 +7,7 @@ import type {
   AbilityDex, ItemDex, LearnsetDex, Move, MoveDex, PokemonDex, SetDex, TypeChart, TypeName,
 } from '../../data/types'
 import {
-  isMega, loadLeague, megaParts, mergeDex, type League, type LeaguePokemon,
+  isMega, loadLeague, megaBaseId, megaParts, mergeDex, type League, type LeaguePokemon,
 } from '../../data/league'
 import { DraftValue } from '../../components/DraftValue'
 import { BATTLE_TYPES, defensiveMultiplier } from '../../lib/matchup'
@@ -96,42 +96,57 @@ export function PokemonModal() {
   }, [merged])
   const mon: LeaguePokemon | undefined = openId && merged ? merged[openId] : undefined
 
-  /** Megas, keyed by the id of the Pokémon each evolves from. */
+  /**
+   * Megas, keyed by the id of the forme each evolves from — which for four of
+   * them is not the base species, so this goes through `megaBaseId` rather than
+   * reading `baseSpecies` directly.
+   */
   const megasByBase = useMemo(() => {
     const out: Record<string, string[]> = {}
     for (const [id, m] of Object.entries(merged ?? {})) {
-      if (isMega(m) && m.baseSpecies) (out[toId(m.baseSpecies)] ??= []).push(id)
+      const base = isMega(m) ? megaBaseId(m) : null
+      if (base) (out[base] ??= []).push(id)
     }
     return out
   }, [merged])
 
   /**
-   * The whole evolution family, as stages: walk up to the root, then out
-   * through every branch. `prevo`/`evos` hold display names rather than the ids
-   * the dex is keyed by, so each hop goes through toId.
+   * The whole evolution family, laid out as cells on a grid: walk up to the
+   * root, then out through every branch. `prevo`/`evos` hold display names
+   * rather than the ids the dex is keyed by, so each hop goes through toId.
    *
-   * Stages rather than a flat list because families branch — Eevee's eight
-   * evolutions are all one stage, not eight steps in a line.
+   * Columns are steps along the line and rows are the lines themselves. The
+   * whole tree shows on every member's page — Meowstic-F's Mega appears on
+   * Meowstic's page too — because the shape says who becomes what, so nothing
+   * has to be hidden to stay honest.
+   *
+   * A step only takes a row of its own where the branch goes on somewhere,
+   * which is what keeps what follows beside the right one: Raichu's two Megas
+   * belong on Raichu's row and not on Alolan Raichu's, and each Meowstic keeps
+   * its own Mega beside it. Where none of the branches continue they are
+   * alternatives at the end of a line rather than lines of their own, and sit
+   * together in one cell — so Eevee's eight are a row of eight, not eight rows,
+   * which is unambiguous precisely because nothing follows them.
    *
    * Mega Evolution is one step further on, so a Mega hangs off the forme it
-   * evolves from as a stage of its own, and opens from there like any other
-   * evolution. Showdown files it with no prevo and its base with no evo, so
-   * both hops are made here. A base the dex does not have — Absol, Golisopod,
-   * neither in Scarlet/Violet — leaves its Megas to stand together.
+   * evolves from. Showdown files it with no prevo and its base with no evo, so
+   * both hops are made here. A base the dex does not have leaves its Megas to
+   * stand together.
    */
   const family = useMemo(() => {
-    if (!openId || !merged?.[openId]) return []
+    const empty: { row: number; col: number; ids: string[] }[] = []
+    if (!openId || !merged?.[openId]) return empty
 
     const baseOf = (id: string) => {
       const m = merged[id]
-      return isMega(m) && m.baseSpecies ? toId(m.baseSpecies) : null
+      return isMega(m) ? megaBaseId(m) : null
     }
 
     let rootId: string = openId
     const baseId = baseOf(openId)
     if (baseId && !merged[baseId]) {
       const siblings = Object.keys(merged).filter((id) => baseOf(id) === baseId)
-      return siblings.length > 1 ? [siblings] : []
+      return siblings.length > 1 ? [{ row: 0, col: 0, ids: siblings }] : empty
     }
     if (baseId) rootId = baseId
 
@@ -143,25 +158,61 @@ export function PokemonModal() {
       rootId = prevoId
     }
 
-    const stages: string[][] = []
-    const seen = new Set<string>()
-    let level = [rootId]
-    while (level.length && stages.length < 6) {
-      stages.push(level)
-      for (const id of level) seen.add(id)
-      const next: string[] = []
-      for (const id of level) {
-        for (const evo of merged[id]?.evos ?? []) {
-          const evoId = toId(evo)
-          if (merged[evoId] && !seen.has(evoId)) next.push(evoId)
-        }
-        for (const megaId of megasByBase[id] ?? []) {
-          if (!seen.has(megaId)) next.push(megaId)
-        }
+    /**
+     * A step can converge as well as branch. Both Gimmighoul formes become
+     * Gholdengo and `prevo` names only one of them, so walking up from Gholdengo
+     * reaches Gimmighoul and loses the Roaming one entirely. Any other forme of
+     * the root's species that becomes the same thing starts a line of its own
+     * beside it. One family in the dex does this; it happens to be a priced one.
+     */
+    const rootEvos = new Set((merged[rootId]?.evos ?? []).map(toId))
+    const coRoots = Object.keys(merged).filter((id) => (
+      id !== rootId
+      && merged[id].num === merged[rootId].num
+      && (merged[id].evos ?? []).some((e) => rootEvos.has(toId(e)))
+    ))
+
+    const seen = new Set<string>([rootId, ...coRoots])
+    const childrenOf = (id: string) => [
+      ...(merged[id]?.evos ?? []).map(toId),
+      ...(megasByBase[id] ?? []),
+    ].filter((c) => merged[c] && !seen.has(c))
+
+    const cells = empty
+    let lastRow = 0
+    const place = (id: string, col: number, row: number) => {
+      lastRow = Math.max(lastRow, row)
+      cells.push({ row, col, ids: [id] })
+      if (col >= 5) return
+
+      const kids = childrenOf(id)
+      if (!kids.length) return
+      for (const k of kids) seen.add(k)
+
+      // Whether each child leads anywhere is what decides the shape. Asked
+      // before any of them are placed, so a branch is judged on what follows
+      // it rather than on what a sibling has already claimed.
+      const goesOn = new Map(kids.map((k) => [k, childrenOf(k).length > 0]))
+      const branches = kids.filter((k) => goesOn.get(k))
+      const ends = kids.filter((k) => !goesOn.get(k))
+
+      if (!branches.length) {
+        cells.push({ row, col: col + 1, ids: ends })
+        return
       }
-      level = next
+      // The first branch carries the line on; the rest start rows below
+      // everything already placed, so no two subtrees land on one row.
+      branches.forEach((k, i) => place(k, col + 1, i === 0 ? row : lastRow + 1))
+      if (ends.length) {
+        lastRow += 1
+        cells.push({ row: lastRow, col: col + 1, ids: ends })
+      }
     }
-    return stages
+    place(rootId, 0, 0)
+    // After the tree, so they sit under it: whatever they become is already
+    // placed, and this only adds where it can also be come from.
+    for (const id of coRoots) cells.push({ row: ++lastRow, col: 0, ids: [id] })
+    return cells
   }, [openId, merged, megasByBase])
 
   const learnset = openId && learnsets ? learnsets[openId] : undefined
@@ -250,9 +301,16 @@ export function PokemonModal() {
                   </div>
                   {family.length > 1 && (
                     <div className="modal-evo">
-                      {family.map((stage, i) => (
-                        <div className="evo-stage" key={i}>
-                          {stage.map((eid) => (
+                      {family.map(({ row, col, ids }) => (
+                        // Placed rather than flowed: a cell left empty by a
+                        // branch that ends early is a gap in the tree, and the
+                        // one below it still has to line up under its own step.
+                        <div
+                          className="evo-cell"
+                          key={`${row}-${col}`}
+                          style={{ gridRow: row + 1, gridColumn: col + 1 }}
+                        >
+                          {ids.map((eid) => (
                             <EvoStep key={eid} id={eid} mon={merged![eid]} current={eid === openId} />
                           ))}
                         </div>
@@ -465,6 +523,9 @@ function EvoStep({ id, mon, current }: { id: string; mon: LeaguePokemon; current
       className={`evo-step${current ? ' is-current' : ''}`}
       onClick={() => open(id)}
       disabled={current}
+      // The label is one line in a small square and long names run out of it —
+      // "Gimmighoul-Roaming" ellipsises — so the full one is always on hover.
+      title={mon.name}
     >
       <Sprite pokemon={mon} width={56} height={48} />
       {/* A Mega's step says which forme it is; the family already says whose. */}
