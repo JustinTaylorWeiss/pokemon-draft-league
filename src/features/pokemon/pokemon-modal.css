@@ -290,6 +290,12 @@
 }
 
 @media (max-width: 640px) {
+  /* A little smaller, so the common families stop needing to scroll at all —
+     five boxes is Charizard's whole line and fits a 390px phone at this size.
+     Still a comfortable target; the wide ones scroll, and the box you are on
+     is scrolled to. */
+  .evo-step { width: 3.9rem; height: 3.9rem; }
+  .evo-step img { width: 34px; height: 34px; }
   .modal-backdrop { padding: 1rem 0.5rem; }
   .modal { padding: 0.85rem; border-radius: 12px; }
   .modal-head { gap: 0.75rem; }

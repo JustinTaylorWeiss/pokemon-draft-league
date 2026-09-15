@@ -215,6 +215,26 @@ export function PokemonModal() {
     return cells
   }, [openId, merged, megasByBase])
 
+  /**
+   * Brings the Pokémon you are looking at into view in its own tree.
+   *
+   * A wide family is wider than a phone and the strip scrolls, which left the
+   * current box beyond the right edge — the one box that has to be visible,
+   * since it is what says where in the family you are.
+   *
+   * The strip's own `scrollLeft` rather than `scrollIntoView`, which walks up
+   * the ancestors and would take the modal with it.
+   */
+  const evoRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const strip = evoRef.current
+    const current = strip?.querySelector('.evo-step.is-current')
+    if (!strip || !current) return
+    const box = current.getBoundingClientRect()
+    const view = strip.getBoundingClientRect()
+    strip.scrollLeft += (box.left - view.left) - (view.width - box.width) / 2
+  }, [openId, family])
+
   const learnset = openId && learnsets ? learnsets[openId] : undefined
 
   /**
@@ -300,7 +320,7 @@ export function PokemonModal() {
                     </div>
                   </div>
                   {family.length > 1 && (
-                    <div className="modal-evo">
+                    <div className="modal-evo" ref={evoRef}>
                       {family.map(({ row, col, ids }) => (
                         // Placed rather than flowed: a cell left empty by a
                         // branch that ends early is a gap in the tree, and the
