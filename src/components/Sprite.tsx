@@ -10,21 +10,26 @@ import type { Pokemon } from '../data/types'
  * browser's broken-image glyph from then on and never tries again, which reads
  * as "this Pokémon is broken" rather than "that request failed".
  *
- * Three attempts, each for a different reason:
+ * Four attempts, each for a different reason:
  *
  *  0. the still sprite, which is what almost everything has;
  *  1. the same URL cache-busted, which covers a dropped connection — a failed
  *     response can be cached, and a plain retry never leaves the browser;
  *  2. the animated one, which covers a Pokémon Showdown has drawn but has no
  *     still for. That is not hypothetical: of the 93 Mega and Primal formes,
- *     21 have no still sprite, and 11 of those do have an animated one. They
+ *     16 have no still sprite, and 11 of those do have an animated one. They
  *     are the Megas announced for Legends Z-A, which nobody has drawn in the
- *     older style yet.
+ *     older style yet;
+ *  3. the official artwork, for the five Megas — Heatran, Darkrai, Zygarde,
+ *     Magearna and Zeraora — Showdown has not drawn in either style. PokeAPI
+ *     has each of them, so a real picture of the right Pokémon exists and only
+ *     this component was not looking at it.
  *
- * After that it falls back to the Pokémon's initial, which is quiet and says
- * nothing false. Ten of the Legends Z-A Megas have no sprite at all anywhere,
- * and inventing one — the base forme's artwork, say — would show the wrong
- * Pokémon rather than admit to a gap.
+ * That last one is taken ONLY where the drawing is the Pokémon's own. Thirty-one
+ * formes have no artwork of their own and wear their base's: every Arceus plate,
+ * Vivillon's patterns, the Tera Ogerpons. Showing one of those here would be
+ * showing the wrong Pokémon, which is worse than admitting to a gap — so they
+ * fall through to the initial, which is quiet and says nothing false.
  */
 export function Sprite({
   pokemon, width = 40, height = 33, className,
@@ -40,7 +45,13 @@ export function Sprite({
   // A different Pokémon in the same slot starts over.
   useEffect(() => { setTries(0) }, [still])
 
-  if (tries > 2) {
+  /**
+   * Whether the artwork is this Pokémon's and not its base's. A species is
+   * always its own; a forme only where the build found it one of its own.
+   */
+  const ownArtwork = !pokemon.baseSpecies || pokemon.artId != null
+
+  if (tries > (ownArtwork ? 3 : 2)) {
     return (
       <span
         className={`sprite-missing${className ? ` ${className}` : ''}`}
@@ -55,11 +66,14 @@ export function Sprite({
 
   const src = tries === 0 ? still
     : tries === 1 ? `${still}?retry=1`
-      : spriteUrl(pokemon, true)
+      : tries === 2 ? spriteUrl(pokemon, true)
+        : artworkUrl(pokemon)
 
   return (
     <img
-      className={className}
+      // Artwork is a large square and a sprite box usually is not, so it is
+      // fitted rather than stretched into one.
+      className={`${className ?? ''}${tries === 3 ? ' is-artwork' : ''}`.trim() || undefined}
       src={src}
       alt=""
       width={width}
