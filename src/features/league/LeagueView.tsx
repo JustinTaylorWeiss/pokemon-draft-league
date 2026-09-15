@@ -991,6 +991,16 @@ const TIER_PILLS = ['Top', 'High', 'Mid', 'Low', 'Banned'] as const
 const isLegalOnly = (legality: Set<'legal' | 'banned'>) =>
   legality.size === 1 && legality.has('legal')
 
+/**
+ * How many rows the board mounts at once.
+ *
+ * A cap rather than paging: past a few hundred rows the table is being scanned
+ * or searched, not read, and the filters above it are the way through. 500
+ * clears the 344 a points season can actually draft, so the whole legal board
+ * is on the page with nothing cut off.
+ */
+const BOARD_ROWS = 500
+
 function Board({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
   const [query, setQuery] = useState('')
   const editable = currentSeason().source === 'database'
@@ -1243,7 +1253,7 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
               </tr>
             </thead>
             <tbody>
-              {rows.slice(0, 300).map(({ id, entry, mon }) => (
+              {rows.slice(0, BOARD_ROWS).map(({ id, entry, mon }) => (
                 <tr key={id} className={entry.draftedBy ? 'row-taken' : 'row-open'}>
                   <th scope="row" className="col-name">
                     {mon && (
@@ -1293,8 +1303,10 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
             </tbody>
           </table>
         </div>
-        {rows.length > 300 && (
-          <p className="panel-note">Showing the first 300 of {rows.length}. Narrow your search to see more.</p>
+        {rows.length > BOARD_ROWS && (
+          <p className="panel-note">
+            Showing the first {BOARD_ROWS} of {rows.length}. Narrow your search to see more.
+          </p>
         )}
       </section>
     </>
