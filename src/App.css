@@ -285,16 +285,74 @@
   margin-left: auto; flex: none; min-width: 0;
 }
 @media (max-width: 700px) {
-  /* Only once it truly cannot fit. The nav scrolls before this, which keeps
-     the season and the name beside it — dropped to a second line they stop
-     looking centred against the nav they belong to. */
-  .nav-tail { margin-left: 0; width: 100%; justify-content: flex-end; padding-bottom: 0.5rem; }
+  /*
+   * The brand and the controls share the top line and the nav takes the one
+   * below it.
+   *
+   * The controls used to be given the whole of a third line to themselves and
+   * pushed to its right end, which spent a third of a phone screen on chrome
+   * before any content and left them floating against nothing. Beside the
+   * brand they have something to sit against, and the nav — the widest of the
+   * three and the one that most wants a full line — gets one.
+   */
+  .main-nav { order: 2; flex-basis: 100%; }
+  .nav-tail { margin-left: auto; }
   .refresh-stamp { max-width: 9rem; }
+  /* Tighter, so the wordmark and the controls fit the one line together: at
+     390px they were 27px over. The nav loses height too — three rows of bar
+     before any content is most of what a phone has. */
+  /*
+   * The bars scroll away on a phone rather than pinning.
+   *
+   * Stacked they are 240px tall — 28% of a 390x844 screen — and pinned that is
+   * 28% of every screenful spent on navigation you are not using. They are
+   * still the first thing on the page, which is where you go for them anyway.
+   * They stay pinned from 700px up, where they are one row and cost 56px.
+   */
+  .bars { position: static; }
+  .bar-inner { gap: 0.6rem; }
+  .brand { font-size: 1.05rem; }
+  .main-nav button { padding: 0.7rem 0.6rem; }
+  /* A name is whatever someone typed — "Lennart / Pr3dixtion" is a real one —
+     and the top line cannot be left depending on it being short. */
+  .who-picker .drop-label { max-width: 5rem; }
+  /*
+   * Small enough for the top line to hold it beside the brand. It is set in
+   * display sizing for a desktop bar it has a whole row to itself in, and a
+   * phone does not have that to give.
+   *
+   * This used to be written against a `select`, which the picker stopped being
+   * when it became a DropPicker, so it had quietly matched nothing since.
+   */
+  .season-picker .drop-current { font-size: 1.1rem; padding: 0.25rem 0.45rem; }
+  .season-picker .drop-caret { font-size: 0.8rem; }
+  /* The tabs wrap rather than scroll: a scrolling row hid the last two behind
+     an edge with nothing to say they were there, and on the League tab those
+     two are the draft board. */
+  .sub-nav { flex-wrap: wrap; overflow-x: visible; }
+  .sub-nav button { padding: 0.7rem 0.55rem; font-size: 0.85rem; }
+  /* Under the tabs and lined up with them. Held to the right it sat on a line
+     of its own against nothing, which is the same thing the controls were
+     doing above it. The selector carries the bar to outrank the `margin-left:
+     auto` that sets it, which is written later in this file. */
+  .subbar .sub-actions { margin-left: 0; padding-bottom: 0.5rem; }
+}
+@media (max-width: 480px) {
+  /*
+   * The mark alone, and the controls beside it.
+   *
+   * Below this the wordmark and the controls cannot reliably share the top
+   * line — not at any type size that stays readable, and not once the name in
+   * the middle belongs to somebody with a long one. The alternative is the
+   * wordmark taking a line of its own and the controls another, which is two
+   * rows of chrome to say what one row says. The mark keeps the identity where
+   * the name will not fit.
+   */
+  .brand-text { display: none; }
 }
 @media (max-width: 480px) {
   .refresh-label { display: none; }
   .refresh-btn { padding: 0.35rem 0.5rem; }
-  .season-picker select { font-size: 1.15rem; }
 }
 .refresh-stamp {
   font-size: 0.7rem; color: var(--muted); text-align: right;
