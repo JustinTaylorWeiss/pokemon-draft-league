@@ -42,6 +42,12 @@ export interface Pokemon {
   doublesTier: string | null
   baseSpecies?: string
   forme?: string
+  /**
+   * For a Mega that evolves from a forme rather than from the base species, the
+   * id of that forme. Absent on the eighty-nine whose parent is the species.
+   * Set by scripts/build-data.mjs; read through `megaBaseId`.
+   */
+  megaBase?: string
   otherFormes?: string[]
   prevo?: string
   evos?: string[]

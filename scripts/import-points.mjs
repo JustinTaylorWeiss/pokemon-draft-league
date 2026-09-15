@@ -82,6 +82,11 @@ const SEVERAL = {
   'Squawkabilly (Green/Blue)': ['squawkabilly', 'squawkabillyblue'],
   'Squawkabilly (Yellow/White)': ['squawkabillyyellow', 'squawkabillywhite'],
   Gourgeist: ['gourgeist', 'gourgeistsmall', 'gourgeistlarge', 'gourgeistsuper'],
+  // There are two, and the list prices them as one the way it does Gourgeist.
+  // Meowstic Mega Evolves from either sex and Showdown keeps both, so both go
+  // on at the same cost — even though the list prices the two base formes
+  // apart, at 11 and 2.
+  'Mega Meowstic': ['meowsticmmega', 'meowsticfmega'],
 }
 const ONE = {
   'Paldean Tauros': 'taurospaldeacombat',

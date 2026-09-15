@@ -1,4 +1,5 @@
 /** Shapes produced by scripts/import-league.mjs from the master spreadsheet. */
+import { toId } from './load'
 import { setDbSeason } from './supabase'
 import type { BaseStats, Pokemon, PokemonDex } from './types'
 
@@ -532,12 +533,27 @@ export const byId = (players: Player[]) =>
  *
  * Season 5 drafts these apart from the Pokémon they evolve from — Venusaur and
  * Venusaur-Mega are two separate picks off the board — so a Mega carries a tier
- * like anything else *and* a tag of its own, which is what the cap is counted
- * against. Read off the forme rather than the name: "Meganium" and "Yanmega"
- * both contain the word.
+ * like anything else *and* a tag of its own. Read off the forme rather than the
+ * name: "Meganium" and "Yanmega" both contain the word.
+ *
+ * Matched as a whole segment anywhere in the forme rather than as a prefix. Six
+ * Megas evolve from a forme rather than from a species and are named for both —
+ * Meowstic's "M-Mega" and "F-Mega", Tatsugiri's "Curly-Mega" and its siblings,
+ * Magearna's "Original-Mega" — and an anchored test called none of them a Mega.
  */
 export const isMega = (p: { forme?: string } | null | undefined) =>
-  /^(Mega|Primal)/.test(p?.forme ?? '')
+  /(^|-)(Mega|Primal)(-|$)/.test(p?.forme ?? '')
+
+/**
+ * The id of the forme a Mega evolves from.
+ *
+ * Usually the base species, and for four of them not: Meowstic-F-Mega comes
+ * from Meowstic-F and Meowstic-M-Mega from plain Meowstic, who is the male, and
+ * both say only "Meowstic" in `baseSpecies`. Worked out at build time and read
+ * back here, so the rule for it lives in one place.
+ */
+export const megaBaseId = (p: { baseSpecies?: string; megaBase?: string }) =>
+  p.megaBase ?? (p.baseSpecies ? toId(p.baseSpecies) : null)
 
 /**
  * How a Mega reads on the board: the Pokémon it evolves from, and a badge for

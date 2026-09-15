@@ -62,8 +62,16 @@ async function fetchScript(name) {
  * which is a statement about this league. Which of them a season may actually
  * draft is decided by that season's board, not here; this only decides what the
  * site knows about them.
+ *
+ * "Mega" is matched as a whole segment of the forme, anywhere in it, and not
+ * as a prefix. Six of them Mega Evolve from a forme rather than from a species
+ * and are named for both — "M-Mega" and "F-Mega" for the two Meowstics,
+ * "Curly-Mega" and its siblings for the three Tatsugiri, "Original-Mega" for
+ * Magearna — and anchoring to the start dropped every one of them. It is still
+ * read off the forme and by segment rather than off the name, because
+ * "Meganium" and "Yanmega" both contain the word.
  */
-const isMega = (entry) => /^(Mega|Primal)/.test(entry.forme ?? '')
+const isMega = (entry) => /(^|-)(Mega|Primal)(-|$)/.test(entry.forme ?? '')
 
 /**
  * The exception is only for real Megas. CAP has drawn one of its own
@@ -99,6 +107,27 @@ const CHAMPIONS_RETURNS = new Set([
   'tyrantrum', 'vanilluxe', 'watchog',
 ])
 
+/**
+ * The forme a Mega evolves from, which is not always the base species.
+ *
+ * Six Megas evolve from a forme and are named for it — "M-Mega", "F-Mega",
+ * "Curly-Mega" — so strip the Mega off the end and what is left names the
+ * parent: Meowstic-F-Mega comes from Meowstic-F, not from Meowstic, which is
+ * the male. That matters beyond tidiness, because a Mega has no movepool of its
+ * own and takes its parent's, and the two Meowstics do not share one — she gets
+ * Extrasensory, Future Sight and Magical Leaf, he gets Imprison, Mean Look,
+ * Misty Terrain and Quick Guard.
+ *
+ * Where nothing is left, or what is left is not a forme Showdown files apart,
+ * it is the base species: plain "Mega", and "M-Mega" and "Curly-Mega", whose
+ * parents are the default formes and so have no id of their own.
+ */
+const megaEvolvesFrom = (entry, exists) => {
+  const from = (entry.forme ?? '').replace(/(^|-)(Mega|Primal)(-.*)?$/, '')
+  const forme = from && toId(`${entry.baseSpecies}-${from}`)
+  return forme && exists(forme) ? forme : toId(entry.baseSpecies)
+}
+
 const isCurrentGen = (entry) => !entry.isNonstandard
 
 async function main() {
@@ -125,7 +154,10 @@ async function main() {
    * with them — so the base comes along whatever the current games think of it.
    */
   const megaBases = new Set(
-    Object.values(dex).filter(isKeptMega).map((p) => toId(p.baseSpecies)),
+    Object.values(dex).filter(isKeptMega).flatMap((p) => [
+      toId(p.baseSpecies),
+      megaEvolvesFrom(p, (id) => id in dex),
+    ]),
   )
 
   const pokemon = {}
@@ -166,6 +198,15 @@ async function main() {
       ...(p.eggGroups && { eggGroups: p.eggGroups }),
     }
   }
+  // Recorded on the entry rather than worked out again in the browser, so the
+  // rule lives in one place. Only where it is not simply the base species,
+  // which is all but two of the ninety-three.
+  for (const p of Object.values(pokemon)) {
+    if (!isMega(p)) continue
+    const from = megaEvolvesFrom(p, (id) => id in pokemon)
+    if (from !== toId(p.baseSpecies)) p.megaBase = from
+  }
+
   stats.pokemon = { kept: Object.keys(pokemon).length, dropped: Object.keys(dex).length - Object.keys(pokemon).length }
 
   // ---- Moves ---------------------------------------------------------------
@@ -246,16 +287,20 @@ async function main() {
     }
     if (Object.keys(kept).length) learnOut[id] = kept
   }
-  // A forme learns what its base forme learns, unless Showdown gives it a
+  // A forme learns what its parent forme learns, unless Showdown gives it a
   // learnset of its own. That is how Showdown resolves one — it ships nothing
   // under a Mega's id at all, and nothing under Squawkabilly-Blue's or
-  // Landorus-Therian's either — so the base's moves are copied across. It is
+  // Landorus-Therian's either — so the parent's moves are copied across. It is
   // also the whole reason a Mega's base is kept even where the current games
   // have dropped it: without it, sixty formes had no moves.
+  //
+  // `megaBase` where there is one, because a Mega that evolves from a forme
+  // inherits from that forme: Meowstic-F-Mega learns what Meowstic-F learns,
+  // and copying the male's movepool onto her was wrong in seven moves.
   let inherited = 0
   for (const [id, p] of Object.entries(pokemon)) {
     if (!p.baseSpecies || learnOut[id]) continue
-    const base = learnOut[toId(p.baseSpecies)]
+    const base = learnOut[p.megaBase ?? toId(p.baseSpecies)]
     if (!base) continue
     learnOut[id] = base
     inherited++
@@ -419,14 +464,28 @@ async function main() {
       }
     }
   }))
+  // Showdown abbreviates a sex inside a forme and PokeAPI spells it out, which
+  // no amount of prefix matching bridges in the middle of a name: "M-Mega" is
+  // PokeAPI's "male-mega". Trailing ones came out in the wash already, because
+  // "meowstic-female" starts with "meowsticf" — the two Meowstic Megas did not,
+  // and wore plain Meowstic's drawing. M and F are the only one- and
+  // two-letter forme segments in the dex besides Mega's X, Y and Z, and every
+  // one of them is a sex.
+  const SEX = { m: 'male', f: 'female' }
+  const spelledOut = (p) => toId([
+    p.baseSpecies,
+    ...p.forme.split('-').map((part) => SEX[part.toLowerCase()] ?? part),
+  ].join('-'))
+
   let artMatched = 0
   for (const [, p] of formes) {
     const options = (varieties.get(p.num) ?? []).filter((v) => !v.isDefault)
-    const key = toId(p.name)
-    const hit = options.find((v) => v.key === key)
+    const keys = [...new Set([toId(p.name), p.forme ? spelledOut(p) : null].filter(Boolean))]
+    const hit = keys.reduce((found, key) => found
+      ?? options.find((v) => v.key === key)
       ?? options
         .filter((v) => v.key.startsWith(key) || key.startsWith(v.key))
-        .sort((a, b) => a.key.length - b.key.length)[0]
+        .sort((a, b) => a.key.length - b.key.length)[0], undefined)
     if (hit && hit.id !== p.num) {
       p.artId = hit.id
       artMatched++
