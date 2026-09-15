@@ -987,6 +987,10 @@ type SortKey = (typeof BOARD_COLUMNS)[number]['key']
 /** Draft-board order, best first — matches how the sheet groups its sections. */
 const TIER_PILLS = ['Top', 'High', 'Mid', 'Low', 'Banned'] as const
 
+/** The board's resting state: what you can draft, and nothing you cannot. */
+const isLegalOnly = (legality: Set<'legal' | 'banned'>) =>
+  legality.size === 1 && legality.has('legal')
+
 function Board({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
   const [query, setQuery] = useState('')
   const editable = currentSeason().source === 'database'
@@ -1011,6 +1015,19 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
   // complete and each pill narrows it.
   const [tiers, setTiers] = useState<Set<string>>(new Set())
   const [avail, setAvail] = useState<Set<'available' | 'drafted'>>(new Set())
+  /**
+   * The one filter that does not start empty.
+   *
+   * Most of a board can be banned — Season 5 bans 570 of its 914 rows, because
+   * the league's list is the pool and everything it does not name comes off —
+   * and a board that opens on mostly-unpickable rows answers the wrong
+   * question. What people come here to see is what they can draft, so that is
+   * what it opens on, and the Banned pill puts the rest back.
+   *
+   * Both pills on means the same as neither, the way Available and Drafted
+   * already work: two halves selected is the whole board.
+   */
+  const [legality, setLegality] = useState<Set<'legal' | 'banned'>>(() => new Set(['legal']))
   // dir 0 is the board's own order — best tier first, strongest within it —
   // rather than "unsorted". It is what the board looks like before anyone
   // touches a column, so no column is marked as doing it.
@@ -1050,6 +1067,7 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
     const list = Object.entries(league.board)
       .filter(([id, e]) => {
         if (tiers.size && !tiers.has(e.tier)) return false
+        if (legality.size && !legality.has(e.tier === 'Banned' ? 'banned' : 'legal')) return false
         if (avail.size && !avail.has(e.draftedBy ? 'drafted' : 'available')) return false
         if (!q) return true
         return e.name.toLowerCase().includes(q) || dex[id]?.types.some((t) => t.toLowerCase() === q)
@@ -1090,13 +1108,15 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
       }
       return ((a.mon?.baseStats[key] ?? 0) - (b.mon?.baseStats[key] ?? 0)) * dir
     })
-  }, [league.board, dex, query, tiers, avail, sort, onPoints])
+  }, [league.board, dex, query, tiers, legality, avail, sort, onPoints])
 
   const counts = useMemo(() => {
-    const c: Record<string, number> = { available: 0, drafted: 0 }
+    const c: Record<string, number> = { available: 0, drafted: 0, legal: 0, banned: 0 }
     for (const e of Object.values(league.board)) {
       c[e.tier] = (c[e.tier] ?? 0) + 1
       c[e.draftedBy ? 'drafted' : 'available']++
+      // Lower-case keys, so they cannot collide with the `Banned` tier's own.
+      c[e.tier === 'Banned' ? 'banned' : 'legal']++
     }
     return c
   }, [league.board])
@@ -1131,6 +1151,29 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           />
         )}
         <span className="pill-divider" aria-hidden="true" />
+        {/* What you may draft, against what the league has taken off the table.
+            A banned row is kept on the board rather than removed so a search
+            for it answers "you cannot have that" instead of returning nothing,
+            and this is the same answer given up front for the whole board.
+
+            On a season that still has tiers this overlaps the tier picker,
+            which lists Banned among the five. It is not the same question: the
+            picker can show one tier, and this can show the four that are not
+            Banned. Asking for the Banned tier while Legal is on shows nothing,
+            which is what it says on both pills. */}
+        <div className="pill-group" role="group" aria-label="Filter by whether it can be drafted">
+          {(['legal', 'banned'] as const).map((l) => (
+            <button
+              key={l} type="button"
+              className={`pill pill-${l}${legality.has(l) ? ' is-active' : ''}`}
+              aria-pressed={legality.has(l)}
+              onClick={() => toggleIn(setLegality, l)}
+            >
+              {l === 'legal' ? 'Legal' : 'Banned'}<em>{counts[l]}</em>
+            </button>
+          ))}
+        </div>
+        <span className="pill-divider" aria-hidden="true" />
         <div className="pill-group" role="group" aria-label="Filter by availability">
           {(['available', 'drafted'] as const).map((a) => (
             <button
@@ -1143,10 +1186,15 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
             </button>
           ))}
         </div>
-        {(tiers.size > 0 || avail.size > 0) && (
+        {/* Clear puts the board back to how it opens rather than to nothing
+            filtered: legal-only is the resting state, not something chosen, so
+            it is neither a reason to offer Clear nor something Clear undoes. */}
+        {(tiers.size > 0 || avail.size > 0 || !isLegalOnly(legality)) && (
           <button
             type="button" className="pill pill-clear"
-            onClick={() => { setTiers(new Set()); setAvail(new Set()) }}
+            onClick={() => {
+              setTiers(new Set()); setAvail(new Set()); setLegality(new Set(['legal']))
+            }}
           >
             Clear
           </button>
