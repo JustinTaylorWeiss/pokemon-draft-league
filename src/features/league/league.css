@@ -348,7 +348,10 @@
   .match-card header strong { justify-self: start; }
   .match-list li { grid-template-columns: 1fr; gap: 0.25rem; }
   .match-list .side:last-child { text-align: left; justify-content: flex-start; }
-  .pill { font-size: 0.7rem; padding: 0.2rem 0.5rem; }
+  /* Narrower but taller. The smaller type is what fits four of them and a
+     Clear across a phone, so that stays; the height does not have to come down
+     with it, and 25px is comfortable for a cursor and mean for a thumb. */
+  .pill { font-size: 0.7rem; padding: 0.45rem 0.5rem; }
 }
 
 /* ---- reporting a match, and managing players ---- */
@@ -485,6 +488,10 @@
 @media (max-width: 480px) {
   .team-names .players-list li { flex-wrap: wrap; }
   .team-names .players-name { flex-basis: 100%; }
+  /* The tiebreak order runs to 414px and was held to one line, which is wider
+     than the phone it was on — the only thing making the Players tab scroll
+     sideways. Above 480px it fits on its line, so it keeps it. */
+  .sort-note { white-space: normal; margin-left: 0; }
 }
 
 /* ---- the games inside a match ---- */

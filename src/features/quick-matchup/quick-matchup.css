@@ -423,6 +423,11 @@ button.type-chip { cursor: pointer; }
 .move-learners img { image-rendering: pixelated; object-fit: contain; }
 
 @media (max-width: 700px) {
+  /* Let the row grow to hold them. The cap keeps every row the same height
+     while the column is wide enough for two abilities a line; narrowed to a
+     phone each one takes a line of its own, and a third was sliced through the
+     middle — half a word of "Mold Breaker" under a whole one. */
+  .summary-table .col-abil .ability-lines { max-height: none; }
   .coverage-mon, .coverage-result { flex-basis: 100%; }
   .rosters { flex-direction: column; }
 }
