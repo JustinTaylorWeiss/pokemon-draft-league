@@ -2,7 +2,7 @@ import { Fragment, useEffect, useMemo, useState } from 'react'
 import { loadPokemon } from '../../data/load'
 import type { PokemonDex } from '../../data/types'
 import {
-  byId, byTier, currentSeason, loadLeague, megaParts, mergeDex, reloadSeason, subscribeLeague,
+  byId, byTier, currentSeason, isMega, loadLeague, megaParts, mergeDex, reloadSeason, subscribeLeague,
   tierClass,
   totalsFromMatches, type Standing,
   type GameLine, type League, type LeaguePokemon, type Match, type MatchStat,
@@ -1038,6 +1038,15 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
    * already work: two halves selected is the whole board.
    */
   const [legality, setLegality] = useState<Set<'legal' | 'banned'>>(() => new Set(['legal']))
+  /**
+   * Megas against everything else.
+   *
+   * Season 5 drafts a Mega apart from the Pokémon it evolves from, so they are
+   * 93 entries of their own spread through the board rather than a tier you can
+   * sort to. Empty is no filter, the way Available and Drafted work — this one
+   * is a question you ask, not the shape the board rests in.
+   */
+  const [megas, setMegas] = useState<Set<'mega' | 'plain'>>(new Set())
   // dir 0 is the board's own order — best tier first, strongest within it —
   // rather than "unsorted". It is what the board looks like before anyone
   // touches a column, so no column is marked as doing it.
@@ -1078,6 +1087,7 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
       .filter(([id, e]) => {
         if (tiers.size && !tiers.has(e.tier)) return false
         if (legality.size && !legality.has(e.tier === 'Banned' ? 'banned' : 'legal')) return false
+        if (megas.size && !megas.has(isMega(dex[id]) ? 'mega' : 'plain')) return false
         if (avail.size && !avail.has(e.draftedBy ? 'drafted' : 'available')) return false
         if (!q) return true
         return e.name.toLowerCase().includes(q) || dex[id]?.types.some((t) => t.toLowerCase() === q)
@@ -1118,18 +1128,21 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
       }
       return ((a.mon?.baseStats[key] ?? 0) - (b.mon?.baseStats[key] ?? 0)) * dir
     })
-  }, [league.board, dex, query, tiers, legality, avail, sort, onPoints])
+  }, [league.board, dex, query, tiers, legality, megas, avail, sort, onPoints])
 
   const counts = useMemo(() => {
-    const c: Record<string, number> = { available: 0, drafted: 0, legal: 0, banned: 0 }
-    for (const e of Object.values(league.board)) {
+    const c: Record<string, number> = {
+      available: 0, drafted: 0, legal: 0, banned: 0, mega: 0, plain: 0,
+    }
+    for (const [id, e] of Object.entries(league.board)) {
       c[e.tier] = (c[e.tier] ?? 0) + 1
       c[e.draftedBy ? 'drafted' : 'available']++
       // Lower-case keys, so they cannot collide with the `Banned` tier's own.
       c[e.tier === 'Banned' ? 'banned' : 'legal']++
+      c[isMega(dex[id]) ? 'mega' : 'plain']++
     }
     return c
-  }, [league.board])
+  }, [league.board, dex])
 
   return (
     <>
@@ -1184,6 +1197,21 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           ))}
         </div>
         <span className="pill-divider" aria-hidden="true" />
+        {/* A Mega is not a tier and never appears in `board.tier`, so nothing
+            else on this row can single them out. */}
+        <div className="pill-group" role="group" aria-label="Filter by Mega">
+          {(['mega', 'plain'] as const).map((m) => (
+            <button
+              key={m} type="button"
+              className={`pill pill-${m}${megas.has(m) ? ' is-active' : ''}`}
+              aria-pressed={megas.has(m)}
+              onClick={() => toggleIn(setMegas, m)}
+            >
+              {m === 'mega' ? 'Megas' : 'Non-Megas'}<em>{counts[m]}</em>
+            </button>
+          ))}
+        </div>
+        <span className="pill-divider" aria-hidden="true" />
         <div className="pill-group" role="group" aria-label="Filter by availability">
           {(['available', 'drafted'] as const).map((a) => (
             <button
@@ -1199,11 +1227,12 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
         {/* Clear puts the board back to how it opens rather than to nothing
             filtered: legal-only is the resting state, not something chosen, so
             it is neither a reason to offer Clear nor something Clear undoes. */}
-        {(tiers.size > 0 || avail.size > 0 || !isLegalOnly(legality)) && (
+        {(tiers.size > 0 || avail.size > 0 || megas.size > 0 || !isLegalOnly(legality)) && (
           <button
             type="button" className="pill pill-clear"
             onClick={() => {
-              setTiers(new Set()); setAvail(new Set()); setLegality(new Set(['legal']))
+              setTiers(new Set()); setAvail(new Set()); setMegas(new Set())
+              setLegality(new Set(['legal']))
             }}
           >
             Clear

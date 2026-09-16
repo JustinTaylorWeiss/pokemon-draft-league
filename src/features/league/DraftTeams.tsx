@@ -3,7 +3,9 @@ import {
   byTier, currentSeason, isMega, megaParts, reloadSeason, TIER_ORDER, tierClass,
   type DraftTier, type League, type LeaguePokemon,
 } from '../../data/league'
-import { claimPokemon, draftState, errorText, releasePokemon, type DraftState } from '../../data/supabase'
+import {
+  claimPokemon, currentSeasonId, db, draftState, errorText, releasePokemon, type DraftState,
+} from '../../data/supabase'
 import { snakeDraft } from '../../lib/snakeDraft'
 import { myPlayerId, subscribeIdentity } from '../../data/identity'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
@@ -71,6 +73,54 @@ export function DraftTeams({ league, dex }: Props) {
     () => (draft?.status === 'active' ? snakeDraft(league.players, league.rosters) : null),
     [draft, league.players, league.rosters],
   )
+
+  /**
+   * What each coach has taken, in the order they took it.
+   *
+   * Nothing stores a draft as a sequence. `snakeDraft` works the round out from
+   * how many Pokémon people are holding, deliberately — a stored pointer drifts
+   * the moment anybody releases a pick or a player is restored halfway through,
+   * where a count cannot. `draft_picks` exists and would say it outright, but
+   * `claim_pokemon` has never written to it, so for a season drafted on the
+   * site it is empty.
+   *
+   * The event log does say it. Every roster insert is recorded there with the
+   * time it happened, by a trigger, so the order can be read without anything
+   * new being written and without a second copy to fall out of step. Filtered
+   * to what is still held, so a pick that was released and replaced shows the
+   * replacement rather than something that has left the team.
+   */
+  const [takenInOrder, setTakenInOrder] = useState<Record<string, string[]>>({})
+  useEffect(() => {
+    let live = true
+    db.from('events')
+      .select('after')
+      .eq('season_id', currentSeasonId())
+      .eq('table_name', 'rosters')
+      .eq('action', 'insert')
+      .order('id', { ascending: true })
+      .then(({ data }) => {
+        if (!live) return
+        const rows = (data ?? []) as { after: { player_id?: string; pokemon_id?: string } | null }[]
+        const out: Record<string, string[]> = {}
+        for (const row of rows) {
+          const player = row.after?.player_id
+          const mon = row.after?.pokemon_id
+          if (!player || !mon) continue
+          if (!league.rosters[player]?.some((pick) => pick.pokemon === mon)) continue
+          const taken = (out[player] ??= [])
+          // A Pokémon can be inserted more than once — released and taken
+          // again, or an import that ran twice — and each one is logged. The
+          // latest is when it was actually acquired, so earlier ones give way
+          // rather than the same pick appearing at two places in the order.
+          const earlier = taken.indexOf(mon)
+          if (earlier >= 0) taken.splice(earlier, 1)
+          taken.push(mon)
+        }
+        setTakenInOrder(out)
+      }, () => {})
+    return () => { live = false }
+  }, [league])
 
   const mine = me ? league.rosters[me] ?? [] : []
   /**
@@ -143,6 +193,25 @@ export function DraftTeams({ league, dex }: Props) {
                           whose turn it is. */}
                       <em>{seat.picks} drafted</em>
                     </span>
+                    {/* What they took this round, for the seats that have been.
+                        The ones still to come show nothing rather than a dash:
+                        the gap is the point, and it is where the strip is
+                        waiting. */}
+                    {(() => {
+                      const id = takenInOrder[seat.player]?.[order.round - 1]
+                      const mon = id ? dex[id] : null
+                      if (!mon) return null
+                      return (
+                        <span className="draft-order-pick" title={mon.name}>
+                          {/* The sprite alone. The strip is a row of chips read
+                              at a glance for who is up, and a name on each one
+                              is wider than the name of the person who took it.
+                              The title says which, and the team below spells it
+                              out. */}
+                          <Sprite pokemon={mon} width={34} height={28} />
+                        </span>
+                      )
+                    })()}
                   </li>
                 ))}
               </ol>

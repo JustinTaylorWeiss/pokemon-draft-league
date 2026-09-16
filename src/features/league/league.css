@@ -168,6 +168,9 @@
 .pill-banned.is-active { background: #4a4d57; border-color: #4a4d57; color: #fff; }
 .pill-available.is-active { background: #4fb573; border-color: #4fb573; }
 .pill-drafted.is-active   { background: #b8474f; border-color: #b8474f; color: #fff; }
+/* The Mega badge's own colour, so the pill reads as the thing it filters to. */
+.pill-mega.is-active { background: #a78bfa; border-color: #a78bfa; color: #16112b; }
+.pill-plain.is-active { background: #6b7280; border-color: #6b7280; color: #fff; }
 .pill-clear { border-color: transparent; text-decoration: underline; }
 
 /* ---- board ---- */
@@ -1164,6 +1167,11 @@
 .draft-order-who em {
   font-style: normal; font-size: 0.68rem; color: var(--muted);
   font-variant-numeric: tabular-nums;
+}
+/* What they took this round, beside the name that took it. */
+.draft-order-pick {
+  display: flex; align-items: center; flex: none;
+  padding-left: 0.45rem; margin-left: 0.1rem; border-left: 1px solid var(--line);
 }
 /* Whose turn it is, which is the one thing this strip exists to say. */
 .draft-order li.is-up {
