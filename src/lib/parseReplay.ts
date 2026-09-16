@@ -119,6 +119,8 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
   const brought: Record<string, Set<number>> = { p1: new Set(), p2: new Set() }
   /** Last attacker to damage each Pokémon, which is who gets the KO. */
   const lastHitBy: Record<string, { side: string; index: number } | null> = {}
+  /** What a slot's `detailschange` said it became, until something says why. */
+  const becoming: Record<string, string> = {}
 
   let winner: string | null = null
 
@@ -156,6 +158,33 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
           if (slot.trim()) lastHitBy[slot.trim()] = attacker
         }
       }
+
+    } else if (kind === 'detailschange') {
+      // Says what a Pokémon turned into but not why, and most of the reasons
+      // are not a different Pokémon: Aegislash drawing its blade, Mimikyu's
+      // busted disguise, Palafin in hero form. Held until a line says which.
+      const who = parseIdent(parts[2] ?? '')
+      if (who) becoming[(parts[2] ?? '').split(':')[0].trim()] = speciesOf(parts[3] ?? '')
+
+    } else if (kind === '-mega' || kind === '-primal') {
+      /*
+       * Mega Evolution renames the Pokémon, and for this league that is a
+       * different draft pick.
+       *
+       * Team preview shows a Mega as the thing it evolves from — the log reads
+       * `|poke|p2|Gyarados, F|item` and only becomes Gyarados-Mega on the turn
+       * it evolves. Season 5 drafts the two apart, so Gyarados-Mega is a
+       * 14-point entry and plain Gyarados is banned; left as previewed, every
+       * knockout it scored would be filed against a Pokémon nobody drafted.
+       *
+       * Only the name changes. The slot, and so the kills and deaths counted
+       * against it, is the one it has had since the preview.
+       */
+      const who = parseIdent(parts[2] ?? '')
+      const slot = (parts[2] ?? '').split(':')[0].trim()
+      const species = becoming[slot]
+      const index = active[slot]
+      if (who && species && index != null) teams[who.side][index] = species
 
     } else if (kind === '-damage') {
       // Damage from weather, status or an item has no attacker to credit.

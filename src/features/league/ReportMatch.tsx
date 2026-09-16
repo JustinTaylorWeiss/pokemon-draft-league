@@ -41,6 +41,21 @@ const listOf = (items: string[]) =>
 /** `Urshifu-Rapid-Strike` and `Urshifu-*` share a base, so they are one Pokémon. */
 const baseName = (mon: string) => mon.split('-')[0].trim().toLowerCase()
 
+const megaForme = (mon: string) => /-(Mega|Primal)(-|$)/i.test(mon)
+
+/**
+ * Whether a name seen in a later game says more than the one already held.
+ *
+ * Two ways a game can under-name a Pokémon. Team preview masks some formes, so
+ * it reads `Urshifu-*` in a game it sat out. And a Mega is previewed as the
+ * Pokémon it evolves from, so a game where it never evolved reads `Gyarados`
+ * where the next one reads `Gyarados-Mega`. Either way the fuller name is the
+ * one that was drafted, and a series has to settle on one.
+ */
+const isFullerName = (held: string, seen: string) =>
+  (held.includes('*') && !seen.includes('*'))
+  || (megaForme(seen) && !megaForme(held))
+
 export function ReportMatch({ league, onClose, onSaved }: Props) {
   const [week, setWeek] = useState(() => nextWeek(league))
   const [links, setLinks] = useState(['', '', ''])
@@ -356,9 +371,11 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
  * Merged on the base name rather than the exact one. Team preview masks some
  * formes, so the same Pokémon can be `Urshifu-*` in a game it sat out and
  * `Urshifu-Rapid-Strike` in one it played — two rows, and two different ids,
- * for one team slot. The concrete name wins, since that is the one that was
- * drafted. Species clause means a base name cannot belong to two Pokémon on
- * the same team, so this cannot merge two that are genuinely different.
+ * for one team slot. A Mega does the same across a series: previewed as its
+ * base, it only names itself in the games it actually evolved in. The fuller
+ * name wins either way, since that is the one that was drafted. Species clause
+ * means a base name cannot belong to two Pokémon on the same team, so this
+ * cannot merge two that are genuinely different.
  */
 function totals(games: AlignedGame[]) {
   const acc = new Map<string, { side: 'a' | 'b'; pokemon: string; kills: number; deaths: number }>()
@@ -367,7 +384,7 @@ function totals(games: AlignedGame[]) {
       for (const line of g[side].lines) {
         const key = `${side}-${baseName(line.pokemon)}`
         const row = acc.get(key) ?? { side, pokemon: line.pokemon, kills: 0, deaths: 0 }
-        if (row.pokemon.includes('*') && !line.pokemon.includes('*')) row.pokemon = line.pokemon
+        if (isFullerName(row.pokemon, line.pokemon)) row.pokemon = line.pokemon
         row.kills += line.kills
         row.deaths += line.deaths
         acc.set(key, row)
