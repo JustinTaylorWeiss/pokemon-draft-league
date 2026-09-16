@@ -8,6 +8,7 @@ import {
   type GameLine, type League, type LeaguePokemon, type Match, type MatchStat,
   type PokemonTotals,
 } from '../../data/league'
+import { isSpectator, myPlayerId, subscribeIdentity } from '../../data/identity'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
 import type { LeagueTab } from './tabs'
@@ -405,6 +406,10 @@ function rankStandings(league: League): Standing[] {
 function Standings({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
   const ranked = rankStandings(league)
   const editable = currentSeason().source === 'database'
+  /** Somebody watching does not get the changes a player gets without asking. */
+  const [identity, setIdentity] = useState(myPlayerId)
+  useEffect(() => subscribeIdentity(setIdentity), [])
+  const watching = isSpectator(identity)
   const [managing, setManaging] = useState(false)
   /** Team names are open to everyone, so they get their own door. */
   const [renaming, setRenaming] = useState(false)
@@ -419,8 +424,13 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
       <div className="standings-head">
         {editable && (
           <div className="standings-actions">
+            {/* Adding and removing asks for the passphrase itself, so the button
+                is safe to leave out where renaming is not: a team name is open
+                to any player, and somebody watching has not said they are one. */}
             <button type="button" onClick={() => setManaging(true)}>Add / remove players</button>
-            <button type="button" onClick={() => setRenaming(true)}>Edit team names</button>
+            {!watching && (
+              <button type="button" onClick={() => setRenaming(true)}>Edit team names</button>
+            )}
             <span className="count">{league.players.length} players</span>
           </div>
         )}

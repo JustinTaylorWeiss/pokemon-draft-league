@@ -15,6 +15,26 @@ import { setActor } from './supabase'
  */
 
 /**
+ * Watching, rather than being one of the players.
+ *
+ * The site asks who you are before it will let you past, because every change
+ * is stamped with a name and the draft screen has to know whose roster is
+ * yours. That is the wrong question for most of the people who open it — the
+ * league is public, and somebody reading the board is not any of the coaches
+ * and should not have to pick one of them to look at it.
+ *
+ * Stored like any other answer, so it sticks and the question stops being
+ * asked. It is deliberately not a row in `players`: a season's players are its
+ * standings, its schedule and its draft order, and a spectator is in none of
+ * those. Adding one would put an 0-0 team in the table and a seat in the order
+ * that never picks.
+ */
+export const SPECTATOR = 'spectator'
+
+/** Whether this identity is watching rather than playing. */
+export const isSpectator = (id: string) => id === SPECTATOR
+
+/**
  * Kept per season, because who you are is a fact about a season and not about
  * you. The same person is a different player in each one — a different roster
  * to edit, a different set of matches — and the ids do not settle it, since a

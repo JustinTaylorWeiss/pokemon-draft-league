@@ -7,7 +7,7 @@ import {
   claimPokemon, currentSeasonId, db, draftState, errorText, releasePokemon, type DraftState,
 } from '../../data/supabase'
 import { snakeDraft } from '../../lib/snakeDraft'
-import { myPlayerId, subscribeIdentity } from '../../data/identity'
+import { isSpectator, myPlayerId, subscribeIdentity } from '../../data/identity'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
 import { PokemonLink } from '../../components/PokemonLink'
@@ -35,8 +35,15 @@ interface Props {
 }
 
 export function DraftTeams({ league, dex }: Props) {
-  const [me, setMe] = useState(myPlayerId)
-  useEffect(() => subscribeIdentity(setMe), [])
+  const [identity, setIdentity] = useState(myPlayerId)
+  useEffect(() => subscribeIdentity(setIdentity), [])
+  /**
+   * The player whose roster this screen may edit. Somebody watching is not one
+   * of them, so they have no team here and the screen reads like it does for
+   * anyone who has not said who they are — everyone's teams, none of them
+   * yours.
+   */
+  const me = isSpectator(identity) ? '' : identity
   const [query, setQuery] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -170,7 +177,11 @@ export function DraftTeams({ league, dex }: Props) {
   return (
     <div className="draft-teams">
       {!me ? (
-        <p className="panel-note">Say who you are, beside the season, to edit your team.</p>
+        <p className="panel-note">
+          {isSpectator(identity)
+            ? 'You are watching. Choose your name beside the season to edit a team.'
+            : 'Say who you are, beside the season, to edit your team.'}
+        </p>
       ) : (
         <section className="panel draft-mine">
           {order && (

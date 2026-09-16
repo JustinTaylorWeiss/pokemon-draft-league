@@ -4,7 +4,9 @@ import { QuickMatchup } from './features/quick-matchup/QuickMatchup'
 import { LeagueView } from './features/league/LeagueView'
 import { LEAGUE_TABS, type LeagueTab } from './features/league/tabs'
 import { DropPicker } from './components/DropPicker'
-import { forgetMyPlayer, myPlayerId, setMyPlayer, subscribeIdentity } from './data/identity'
+import {
+  forgetMyPlayer, isSpectator, myPlayerId, setMyPlayer, SPECTATOR, subscribeIdentity,
+} from './data/identity'
 import { ReportMatch } from './features/league/ReportMatch'
 import { ManagePlayers } from './features/league/ManagePlayers'
 import {
@@ -104,7 +106,19 @@ export default function App() {
    * season has removed.
    */
   const players = league?.players ?? []
-  const gone = onDatabase && !!me && players.length > 0 && !players.some((p) => p.id === me)
+  /**
+   * The player you said you were is not in the league any more, so the question
+   * has to be asked again. A spectator is not a player and never will be in
+   * this list, which is not the same thing as having been removed from it.
+   */
+  const gone = onDatabase && !!me && !isSpectator(me)
+    && players.length > 0 && !players.some((p) => p.id === me)
+  /**
+   * Whether this browser may change anything without a passphrase. Recording a
+   * match and renaming a team are open to any player, which is the league
+   * trusting itself; somebody watching has not said they are part of it.
+   */
+  const canEdit = onDatabase && !isSpectator(me)
 
   useEffect(() => { if (gone) forgetMyPlayer() }, [gone])
 
@@ -208,7 +222,10 @@ export default function App() {
               <DropPicker
                 className="who-picker"
                 ariaLabel="Which player you are"
-                items={league.players.map((p) => ({ id: p.id, label: p.name, note: p.team }))}
+                items={[
+                  ...league.players.map((p) => ({ id: p.id, label: p.name, note: p.team })),
+                  { id: SPECTATOR, label: 'Spectator', note: 'Watching, not playing' },
+                ]}
                 value={me}
                 onPick={(p) => setMyPlayer(p.id, p.label)}
               />
@@ -296,7 +313,9 @@ export default function App() {
                     Draft mode enabled
                   </span>
                 )}
-                <button type="button" onClick={() => setEditing('match')}>Record a match</button>
+                {canEdit && (
+                  <button type="button" onClick={() => setEditing('match')}>Record a match</button>
+                )}
               </div>
             )}
           </div>
@@ -331,6 +350,16 @@ export default function App() {
                 </button>
               ))}
             </div>
+            {/* The way past without claiming to be one of them. Set apart from
+                the names rather than listed among them, because it is not a
+                nineteenth coach — it is the answer "none of these". */}
+            <button
+              type="button" className="who-spectate"
+              onClick={() => setMyPlayer(SPECTATOR, 'Spectator')}
+            >
+              I am just watching
+              <em>See everything, change nothing</em>
+            </button>
           </div>
         </div>
       )}
