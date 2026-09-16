@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Copies of the live league, taken before anything that writes to it.
+# Real data, and large: kept locally and in the `checkpoints` table, not in git.
+snapshots

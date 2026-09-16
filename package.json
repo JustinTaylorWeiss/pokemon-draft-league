@@ -9,7 +9,8 @@
     "build:data": "node scripts/build-data.mjs",
     "lint": "oxlint",
     "preview": "vite preview",
-    "import:league": "node scripts/import-league.mjs"
+    "import:league": "node scripts/import-league.mjs",
+    "snapshot": "node scripts/snapshot.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",

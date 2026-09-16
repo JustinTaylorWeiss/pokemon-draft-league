@@ -69,6 +69,31 @@ This is the same posture as the sheet link that already ships in the bundle.
 The **service_role** key must never go in the repo or the browser. It bypasses
 every access rule. Nothing here needs it.
 
+## Taking a copy before you change anything
+
+```bash
+npm run snapshot                       # before a deploy, or any script that writes
+npm run snapshot -- --label "before repricing"
+npm run snapshot -- --check            # has anything moved since the last one?
+```
+
+The site is live and the data is real. Code is safe — every deploy is a commit
+and going back is a revert — but the database is not in git, so a script that
+prices a board has nothing behind it. `scripts/snapshot.mjs` writes two copies,
+because they fail differently: a file under `snapshots/` survives the database
+being wrong, and a row in `checkpoints` survives the laptop. That table takes
+inserts and allows no update or delete, so a snapshot in it cannot be altered
+or removed afterwards.
+
+It is read-only apart from appending that one row, and there is no restore —
+see below for why nothing here resets anything. Putting data back is a
+deliberate, manual act: the snapshot is plain JSON, and `events` holds the
+before-value of every change ever made, which is what `0016` rebuilt a whole
+season from.
+
+`--check` compares the live league to the last snapshot row by row and names
+what differs. Run it after a deploy to be told nothing moved.
+
 ## What exists, and what deliberately doesn't
 
 Single-row corrections are supported everywhere and every one is revertible.
