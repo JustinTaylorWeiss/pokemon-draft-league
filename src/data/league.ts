@@ -128,11 +128,20 @@ export interface Standing {
   monDiff: number
   points: number
   /**
-   * Seasons won. Only the all-time table has one — a single season's table is
-   * already about the season it would be counting.
+   * Podium finishes across every season. Only the all-time table has any — a
+   * single season's table is already about the season it would be counting.
    */
-  titles?: number
+  medals?: Medals
 }
+
+export interface Medals {
+  gold: number
+  silver: number
+  bronze: number
+}
+
+export const medalCount = (m: Medals | undefined) =>
+  (m ? m.gold + m.silver + m.bronze : 0)
 
 export interface RuleSection {
   heading: string
@@ -592,6 +601,67 @@ export function mergeDex(dex: PokemonDex, league: League | null): LeagueDex {
  * tab: that tab is still being filled in, so most of its rows read zero even
  * where the games were recorded.
  */
+/**
+ * A season's coaches in the order its own columns put them: match win rate,
+ * game wins, fewest game losses, differential, then head-to-head.
+ *
+ * Gold before any of it, which is a no-op inside a season — nobody has a medal
+ * there — and the whole point of the all-time table, where the medals are the
+ * ranking and the record only separates coaches level on them.
+ */
+export function rankByRecord(league: League): Standing[] {
+  const headToHead = (a: Standing, b: Standing) => {
+    let wins = 0
+    for (const m of league.schedule) {
+      if (m.scoreA === null || m.scoreB === null) continue
+      const aOnA = m.a.includes(a.player), bOnB = m.b.includes(b.player)
+      const aOnB = m.b.includes(a.player), bOnA = m.a.includes(b.player)
+      if (aOnA && bOnB) wins += m.scoreA > m.scoreB ? 1 : m.scoreA < m.scoreB ? -1 : 0
+      else if (aOnB && bOnA) wins += m.scoreB > m.scoreA ? 1 : m.scoreB < m.scoreA ? -1 : 0
+    }
+    return wins
+  }
+  const rate = (won: number, total: number) => (total ? won / total : 0)
+  const medal = (s: Standing, key: keyof Medals) => s.medals?.[key] ?? 0
+
+  return [...league.standings]
+    .sort((a, b) =>
+      medal(b, 'gold') - medal(a, 'gold')
+      || medal(b, 'silver') - medal(a, 'silver')
+      || medal(b, 'bronze') - medal(a, 'bronze')
+      || rate(b.wins, b.wins + b.losses) - rate(a.wins, a.wins + a.losses)
+      || b.gamesWon - a.gamesWon
+      || a.gamesLost - b.gamesLost
+      || b.monDiff - a.monDiff
+      || headToHead(b, a)
+      || a.name.localeCompare(b.name))
+    .map((s, i) => ({ ...s, rank: i + 1 }))
+}
+
+/**
+ * Where everyone finished, best first.
+ *
+ * How far they got in the bracket comes first, which is what a postseason is
+ * for. A bracket cannot separate two coaches who both went out in the
+ * semi-finals and no third-place match was ever played, so those are level on
+ * the archive's own evidence and the tie goes to the regular season — in
+ * Season 3 that is Sean's 13-2 over Bray's 8-7. Everyone the bracket never saw
+ * follows in the order their record puts them.
+ *
+ * Season 1 is the whole thing in miniature: no playoffs at all, a champion the
+ * archive simply names, and a finishing order that is therefore its regular
+ * season. It still has a first, second and third.
+ */
+export function finishingOrder(league: League, ranked: Standing[]): Map<string, number> {
+  const placement = league.postseason?.placement ?? {}
+  const byRecord = new Map(ranked.map((s) => [s.player, s.rank]))
+  const placed = Object.keys(placement).sort((a, b) =>
+    placement[a] - placement[b]
+    || (byRecord.get(a) ?? Infinity) - (byRecord.get(b) ?? Infinity))
+  const rest = ranked.map((s) => s.player).filter((id) => !(id in placement))
+  return new Map([...placed, ...rest].map((id, i) => [id, i + 1]))
+}
+
 export function totalsFromMatches(matches: MatchStat[]): Record<string, PokemonTotals> {
   const out: Record<string, PokemonTotals> = {}
   for (const match of matches) {

@@ -88,13 +88,27 @@
   list-style: none; margin: 0 0 1rem; padding: 0;
   display: flex; gap: 0.6rem; align-items: flex-start;
 }
+/* The whole step wears its metal, so the three read as a podium before a word
+   of them is. Mixed into the page rather than laid over it, so the sprites and
+   the names keep their contrast in either theme. */
 .podium-step {
   flex: 1 1 0; min-width: 0;
   border: 1px solid var(--line); border-radius: 8px; padding: 0.5rem 0.6rem;
 }
-.podium-step.place-1 { border-color: color-mix(in srgb, gold 55%, var(--line)); }
-.podium-step.place-2 { margin-top: 0.9rem; }
-.podium-step.place-3 { margin-top: 1.6rem; }
+.podium-step.place-1 {
+  background: color-mix(in srgb, gold 16%, transparent);
+  border-color: color-mix(in srgb, gold 60%, var(--line));
+}
+.podium-step.place-2 {
+  background: color-mix(in srgb, silver 14%, transparent);
+  border-color: color-mix(in srgb, silver 55%, var(--line));
+  margin-top: 0.9rem;
+}
+.podium-step.place-3 {
+  background: color-mix(in srgb, #cd7f32 16%, transparent);
+  border-color: color-mix(in srgb, #cd7f32 55%, var(--line));
+  margin-top: 1.6rem;
+}
 .podium-who { display: flex; align-items: baseline; gap: 0.4rem; flex-wrap: wrap; }
 .podium-who .medal { font-size: 1.1rem; }
 .podium-name { font-weight: 700; font-size: 0.9rem; }
@@ -202,9 +216,10 @@
  * right rows.
  */
 .standings-table tr.to-playoffs > *:first-child { box-shadow: inset 2px 0 0 var(--accent); }
-/* Trophies rather than a number: one, two or three of them reads at a glance
-   where "2" has to be looked up against the column heading. */
-.titles { white-space: nowrap; letter-spacing: -0.05em; }
+/* The medals themselves rather than three numbers: a row of them reads as a
+   medal table at a glance, and the cell's title spells out the count. */
+.medals { white-space: nowrap; letter-spacing: -0.06em; }
+.medals span + span { margin-left: 0.15rem; }
 .medal { font-size: 1.05rem; line-height: 1; }
 
 /* A tinted left edge so the podium reads even when the emoji is small. */

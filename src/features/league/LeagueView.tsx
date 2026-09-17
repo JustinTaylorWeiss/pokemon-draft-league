@@ -4,9 +4,9 @@ import type { PokemonDex } from '../../data/types'
 import {
   byId, byTier, currentSeason, isMega, loadLeague, megaParts, mergeDex, reloadSeason, subscribeLeague,
   tierClass,
-  totalsFromMatches, type Standing,
+  finishingOrder, medalCount, rankByRecord, totalsFromMatches,
   type GameLine, type League, type LeaguePokemon, type Match, type MatchStat,
-  type PokemonTotals, type Postseason,
+  type Medals, type PokemonTotals, type Postseason,
 } from '../../data/league'
 import { isSpectator, myPlayerId, subscribeIdentity } from '../../data/identity'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
@@ -146,6 +146,17 @@ function Podium({ league, dex, finish }: {
   finish: Map<string, number>
 }) {
   const people = byId(league.players)
+  /**
+   * Only once a season is over.
+   *
+   * A finishing order exists for any season — an unfinished one just orders
+   * by the record so far — and putting three coaches on a podium in week three
+   * of Season 5 would be calling a result nobody has played for. The archived
+   * seasons each carry a `postseason`, written when their record was frozen,
+   * and that is the thing that says a season has an answer. All Time has none
+   * either: it is a medal table, not a season with a winner.
+   */
+  if (!league.postseason) return null
   const top = [1, 2, 3].map((place) => {
     const id = [...finish].find(([, rank]) => rank === place)?.[0]
     return id ? { place, id } : null
@@ -171,7 +182,7 @@ function Podium({ league, dex, finish }: {
                   if (!mon) return null
                   return (
                     <PokemonLink key={pick.pokemon} id={pick.pokemon} title={mon.name}>
-                      <Sprite pokemon={mon} width={40} height={33} />
+                      <Sprite pokemon={mon} width={56} height={46} />
                     </PokemonLink>
                   )
                 })}
@@ -194,34 +205,9 @@ const PODIUM_ORDER: Record<number, number> = { 1: 2, 2: 1, 3: 3 }
  * the question the table raises: the order is the postseason finish and the
  * columns are the regular season, and this is what happened in between.
  */
-function Bracket({ league, ranked, dex }: {
-  league: League
-  ranked: Standing[]
-  dex: Record<string, LeaguePokemon>
-}) {
+function Bracket({ league, finish }: { league: League; finish: Map<string, number> }) {
   const post = league.postseason
   const people = useMemo(() => byId(league.players), [league.players])
-  /**
-   * Where each coach finished the season.
-   *
-   * How far they got in the bracket first, which is what a postseason is for.
-   * But a bracket cannot separate two coaches who both went out in the
-   * semi-finals, and no third-place match was ever played — so those are level
-   * on the archive's own evidence, and the tie goes to the regular season,
-   * ranked the way the table beneath ranks it. In Season 3 that is Sean's 13-2
-   * over Bray's 8-7.
-   *
-   * It has to be decided somewhere. Left to the order the archive happens to
-   * list matches in, it gave the bronze to Bray.
-   */
-  const finish = useMemo(() => {
-    const placement = post?.placement ?? {}
-    const byRecord = new Map(ranked.map((s) => [s.player, s.rank]))
-    const order = Object.keys(placement).sort((a, b) =>
-      placement[a] - placement[b]
-      || (byRecord.get(a) ?? Infinity) - (byRecord.get(b) ?? Infinity))
-    return new Map(order.map((id, i) => [id, i + 1]))
-  }, [post, ranked])
   const { columns, lastPlayed } = useMemo(() => {
     const matches = post?.matches ?? []
     if (!matches.length) return { columns: [], lastPlayed: new Map<string, string>() }
@@ -257,7 +243,6 @@ function Bracket({ league, ranked, dex }: {
   return (
     <section className="bracket" aria-label="Playoff bracket">
       <h3 className="bracket-title">Playoffs</h3>
-      <Podium league={league} dex={dex} finish={finish} />
       <div className="bracket-rounds">
         {columns.map((round, col) => (
           <div className="bracket-round" key={round.name}>
@@ -305,6 +290,17 @@ function Bracket({ league, ranked, dex }: {
       )}
     </section>
   )
+}
+
+const MEDAL_ICON = { gold: '\u{1F947}', silver: '\u{1F948}', bronze: '\u{1F949}' } as const
+
+/** "1 gold, 1 silver, 1 bronze" — because a row of emoji is not countable. */
+function medalTitle(m: Medals | undefined) {
+  if (!m || !medalCount(m)) return 'No podium finishes'
+  return (['gold', 'silver', 'bronze'] as const)
+    .filter((metal) => m[metal])
+    .map((metal) => `${m[metal]} ${metal}`)
+    .join(', ')
 }
 
 /** Podium markers for the top three, keyed by rank. */
@@ -725,58 +721,8 @@ function Rules({ league }: { league: League }) {
  * else, so it is resolved from the schedule rather than stored: whoever won
  * more of the series they played against each other.
  */
-function rankStandings(league: League): Standing[] {
-  const headToHead = (a: Standing, b: Standing) => {
-    let wins = 0
-    for (const m of league.schedule) {
-      if (m.scoreA === null || m.scoreB === null) continue
-      const aOnA = m.a.includes(a.player), bOnB = m.b.includes(b.player)
-      const aOnB = m.b.includes(a.player), bOnA = m.a.includes(b.player)
-      if (aOnA && bOnB) wins += m.scoreA > m.scoreB ? 1 : m.scoreA < m.scoreB ? -1 : 0
-      else if (aOnB && bOnA) wins += m.scoreB > m.scoreA ? 1 : m.scoreB < m.scoreA ? -1 : 0
-    }
-    return wins
-  }
-
-  const rate = (won: number, total: number) => (total ? won / total : 0)
-
-  const byRecord = [...league.standings]
-    .sort((a, b) =>
-      // Seasons won come before anything a record can say, and only the
-      // all-time table has any — within a season every row is undefined here
-      // and this step decides nothing.
-      (b.titles ?? 0) - (a.titles ?? 0)
-      || rate(b.wins, b.wins + b.losses) - rate(a.wins, a.wins + a.losses)
-      || b.gamesWon - a.gamesWon
-      || a.gamesLost - b.gamesLost
-      || b.monDiff - a.monDiff
-      || headToHead(b, a)
-      || a.name.localeCompare(b.name))
-
-  /**
-   * The regular season, ranked the way the regular season ranks.
-   *
-   * The playoffs are not folded in here. They are drawn above the table, and
-   * a table that said it was one thing while being ordered by another was the
-   * hardest part of it to read.
-   */
-  return byRecord.map((s, i) => ({ ...s, rank: i + 1 }))
-}
-
 function Standings({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
-  const ranked = rankStandings(league)
-  /** The bracket, where a season played one. Season 1 named a champion only. */
-  const bracket = league.postseason?.matches ?? []
-  /**
-   * Who got out of the regular season.
-   *
-   * The table's numbers stop at the end of it, so the reason Aadi is eighth on
-   * an 8-0 record is not in any column — it is in the bracket above. These
-   * rows are marked so the two read as one thing.
-   */
-  const advanced = new Set(bracket.flatMap((m) => [m.a, m.b]).filter(Boolean) as string[])
-
-  const editable = currentSeason().source === 'database'
+  const ranked = rankByRecord(league)
   /**
    * The all-time table has no team behind a row to open.
    *
@@ -787,6 +733,33 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
    * names the seasons instead, which is the thing the row actually has.
    */
   const allTime = currentSeason().source === 'all-time'
+  /** The bracket, where a season played one. Season 1 named a champion only. */
+  const bracket = league.postseason?.matches ?? []
+  const finish = useMemo(() => finishingOrder(league, ranked), [league, ranked])
+  /**
+   * Whether the rank column carries a medal.
+   *
+   * Only Season 1, which named a champion and played no playoffs to find one:
+   * its regular season is the whole season, so this table is the finishing
+   * order and the medals belong on it.
+   *
+   * Nowhere else. A season with a bracket has its podium drawn above, and a
+   * second one ranked on the regular season is how gold came to sit beside
+   * Sean in a season Bargus won. All Time has a medals column of its own, and
+   * the same three medals in the number column beside it would be counting
+   * them twice.
+   */
+  const podiumHere = Boolean(league.postseason && !bracket.length)
+  /**
+   * Who got out of the regular season.
+   *
+   * The table's numbers stop at the end of it, so the reason Aadi is eighth on
+   * an 8-0 record is not in any column — it is in the bracket above. These
+   * rows are marked so the two read as one thing.
+   */
+  const advanced = new Set(bracket.flatMap((m) => [m.a, m.b]).filter(Boolean) as string[])
+
+  const editable = currentSeason().source === 'database'
   /** Somebody watching does not get the changes a player gets without asking. */
   const [identity, setIdentity] = useState(myPlayerId)
   useEffect(() => subscribeIdentity(setIdentity), [])
@@ -802,7 +775,8 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
   const onPoints = league.meta.pointsBudget != null
   return (
     <>
-    <Bracket league={league} ranked={ranked} dex={dex} />
+    <Podium league={league} dex={dex} finish={finish} />
+    <Bracket league={league} finish={finish} />
     <section className="panel">
       <div className="standings-head">
         {editable && (
@@ -835,7 +809,7 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
         </p>
         <p className="sort-note">
           <span>
-            {allTime && 'Championships → '}
+            {allTime && 'Gold → Silver → Bronze → '}
             Match Win % → Game Wins → Fewest Game Losses → Diff → Head-to-head
           </span>
         </p>
@@ -863,7 +837,7 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                   from the schedule. */}
               <th>#</th><th className="col-name">Player</th>
               <th className="col-abil">{allTime ? 'Seasons' : 'Team'}</th>
-              {allTime && <th title="Seasons won">Titles</th>}
+              {allTime && <th title="First, second and third places across every season">Medals</th>}
               <th title="Matches won">W</th><th title="Matches lost">L</th>
               <th title="Series won as a share of series played">Match Win %</th>
               <th title="Games won">GW</th><th title="Games lost">GL</th>
@@ -873,6 +847,7 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
           <tbody>
             {ranked.map((s) => {
               const played = s.wins + s.losses
+              const medal = podiumHere ? MEDALS[s.rank] : undefined
               const showing = team === s.player
               const picks = [...(league.rosters[s.player] ?? [])].sort(
                 (a, b) => byTier(a.tier, b.tier)
@@ -882,7 +857,8 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
               return (
                 <Fragment key={s.player}>
                 <tr
-                  className={`${showing ? 'is-open ' : ''}${
+                  className={`${medal ? `medal-row medal-${s.rank} ` : ''}${
+                    showing ? 'is-open ' : ''}${
                     allTime ? '' : 'clickable '}${advanced.has(s.player) ? 'to-playoffs' : ''}`}
                   onClick={allTime ? undefined : () => setTeam(showing ? null : s.player)}
                   // The whole row is the target, which a <tr> cannot be on its
@@ -896,11 +872,9 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                   }}
                   aria-expanded={allTime ? undefined : showing}
                 >
-                  {/* The number and nothing else. A podium here would be a
-                      second one: the season's is drawn in the bracket above,
-                      and this table is ranked on the regular season, so gold
-                      beside Sean in Season 3 sat opposite gold beside Bargus. */}
-                  <td className="rank-cell">{s.rank}</td>
+                  <td className="rank-cell">
+                    {medal ? <span className="medal" title={medal.label}>{medal.icon}</span> : s.rank}
+                  </td>
                   <th scope="row" className="col-name">
                     {!allTime && (
                       <span className="player-caret" aria-hidden="true">{showing ? '▾' : '▸'}</span>
@@ -909,9 +883,11 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                   </th>
                   <td className="col-abil">{s.team ?? <em className="none">TBD</em>}</td>
                   {allTime && (
-                    <td className="titles">
-                      {s.titles
-                        ? '\u{1F3C6}'.repeat(s.titles)
+                    <td className="medals" title={medalTitle(s.medals)}>
+                      {medalCount(s.medals)
+                        ? (['gold', 'silver', 'bronze'] as const).map((metal) => (
+                          <span key={metal}>{MEDAL_ICON[metal].repeat(s.medals![metal])}</span>
+                        ))
                         : <em className="none">{'\u2014'}</em>}
                     </td>
                   )}

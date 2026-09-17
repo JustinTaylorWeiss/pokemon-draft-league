@@ -11,7 +11,8 @@
  * file, so Season 5 counts the moment a match is reported rather than the next
  * time someone runs a script.
  */
-import type { League, Match, MatchStat, Player, Standing } from './league'
+import { finishingOrder, rankByRecord } from './league'
+import type { League, Match, MatchStat, Medals, Player, Standing } from './league'
 
 /**
  * The same person, season after season, under whatever handle they used then.
@@ -62,8 +63,8 @@ interface Tally {
   name: string
   /** The seasons they turned up in, oldest first — shown in place of a team. */
   seasons: string[]
-  /** Seasons won, which is the first thing the all-time table is sorted by. */
-  titles: number
+  /** Podium finishes, which is what the all-time table is sorted by. */
+  medals: Medals
   wins: number
   losses: number
   gamesWon: number
@@ -104,7 +105,7 @@ export function combineSeasons(parts: SeasonPart[]): League {
       const id = coachId(row.player)
       if (NOT_A_COACH.has(id)) continue
       const own = coaches.get(id) ?? {
-        id, name: row.name, seasons: [], titles: 0,
+        id, name: row.name, seasons: [], medals: { gold: 0, silver: 0, bronze: 0 },
         wins: 0, losses: 0, gamesWon: 0, gamesLost: 0, monDiff: 0, points: 0,
       }
       own.name = row.name
@@ -114,15 +115,28 @@ export function combineSeasons(parts: SeasonPart[]): League {
     }
 
     /**
-     * The champion is the season's own word for it, read out of the archive
-     * rather than worked out from the table — Season 1 had no playoffs at all
-     * and still has one. Counted here so it survives the coach's handle
-     * changing: Sean won Season 2 as `swjf`.
+     * The season's podium, worked out the same way the season's own page works
+     * it out — the bracket first, ties to the regular season. Counted here so
+     * it survives a coach's handle changing: Sean won Season 2 as `swjf`.
+     *
+     * Only for a season that has one. Every season has a finishing order, an
+     * unfinished one being simply the record so far, and counting that handed
+     * Season 5 medals in the middle of its draft: gold to Aadi, silver to
+     * Arune, for a season nobody has played a match of. `postseason` is
+     * written when a season's record is frozen, so it is the thing that says
+     * there is a result to count. Guarded around the tally and not by leaving
+     * the loop: the matches below still belong in the all-time totals, played
+     * season or finished one.
      */
-    const won = league.postseason?.champion
-    if (won) {
-      const tally = coaches.get(coachId(won))
-      if (tally) tally.titles++
+    if (league.postseason) {
+      const podium = finishingOrder(league, rankByRecord(league))
+      const METALS = ['gold', 'silver', 'bronze'] as const
+      for (const [id, place] of podium) {
+        const metal = METALS[place - 1]
+        if (!metal) continue
+        const tally = coaches.get(coachId(id))
+        if (tally) tally.medals[metal]++
+      }
     }
 
     // The ids come along canonicalised, so the head-to-head tiebreak can see
@@ -147,7 +161,7 @@ export function combineSeasons(parts: SeasonPart[]): League {
     // No coach has one team across five seasons, so the column that would hold
     // one holds what they do have in common instead: the seasons they played.
     team: c.seasons.join(' '),
-    titles: c.titles,
+    medals: c.medals,
     wins: c.wins,
     losses: c.losses,
     gamesWon: c.gamesWon,
