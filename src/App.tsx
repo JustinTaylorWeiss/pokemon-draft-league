@@ -10,8 +10,7 @@ import {
 import { ReportMatch } from './features/league/ReportMatch'
 import { ManagePlayers } from './features/league/ManagePlayers'
 import {
-  currentSeason, isSheetBusy, leagueTimestamp, loadLeague, refreshLeagueFromSheet,
-  reloadSeason, revalidateLeague, SEASONS, setSeason, subscribeLeague, subscribeSheetBusy,
+  currentSeason, loadLeague, reloadSeason, SEASONS, setSeason, subscribeLeague,
   type League,
 } from './data/league'
 import { draftState, type DraftState } from './data/supabase'
@@ -19,15 +18,6 @@ import { Dex } from './features/dex/Dex'
 import { PokemonModalProvider } from './features/pokemon/PokemonModalContext'
 import { PokemonModal } from './features/pokemon/PokemonModal'
 import './App.css'
-
-/**
- * The league's master sheet, exported as xlsx.
- *
- * READ-ONLY. The share link grants edit access; nothing in this app may use
- * it. The refresh below performs a single GET. See CLAUDE.md.
- */
-const LEAGUE_SHEET_URL =
-  'https://docs.google.com/spreadsheets/d/1xnKp-XtR9o-zJy1BNS78PxXy891zv_n4rawKto6rlyE/export?format=xlsx'
 
 /** "Draft League Season 4 VGC Reg F" -> "Season 4". */
 type View = 'league' | 'matchup' | 'dex' | 'history'
@@ -47,10 +37,7 @@ export default function App() {
   // Loaded here too so the secondary nav can name the season; the loader caches,
   // so this shares one fetch with the views below.
   const [league, setLeague] = useState<League | null>(null)
-  // Driven by the data layer, so the button also animates through the read the
-  // page starts on load — not only the one the button starts itself.
-  const [refreshing, setRefreshing] = useState(isSheetBusy)
-  const [refreshError, setRefreshError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   /**
    * Whether a draft is open, read here rather than on the Draft List tab.
    *
@@ -74,21 +61,13 @@ export default function App() {
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [rulesOpen])
-  const [dataAt, setDataAt] = useState<Date | null>(null)
   const [season, setSeasonId] = useState(() => currentSeason().id)
 
   // Who you are is stored per season, so switching seasons means re-reading it
   // — and usually finding nothing, which is what raises the question again.
   useEffect(() => { setMeState(myPlayerId()) }, [season])
-  /**
-   * The refresh button re-reads the spreadsheet, so it only means anything for
-   * a season backed by one. A database season is already the source: it is
-   * read on load and re-read after every edit, and there is no older copy for a
-   * refresh to replace.
-   */
   const source = SEASONS.find((s) => s.id === season)?.source
   const onDatabase = source === 'database'
-  const fromSheet = source === 'sheet'
 
   /**
    * Asked whenever the site does not know who it is talking to in a season it
@@ -132,15 +111,9 @@ export default function App() {
   }, [topbarHeight])
 
   useEffect(() => {
-    loadLeague().then((l) => { setLeague(l); setDataAt(leagueTimestamp()) }, () => {})
-    // Then read the sheet itself, which is always the newest source there is —
-    // but only for the season that comes from it. A database season is already
-    // reading its source directly.
-    if (currentSeason().source === 'sheet') revalidateLeague(LEAGUE_SHEET_URL)
-    const stopBusy = subscribeSheetBusy(setRefreshing)
-    // A refresh republishes the league, and every view listens for it.
-    const stopLeague = subscribeLeague((l) => { setLeague(l); setDataAt(leagueTimestamp()) })
-    return () => { stopBusy(); stopLeague() }
+    loadLeague().then(setLeague, () => {})
+    // Republished when the season changes, and every view listens for it.
+    return subscribeLeague(setLeague)
   }, [])
 
   // Re-read when the season changes, and whenever the league republishes —
@@ -152,28 +125,13 @@ export default function App() {
     return () => { live = false }
   }, [onDatabase, season, league])
 
-  /** Re-reads the sheet in the browser. Read-only: a GET, nothing more. */
-  const refresh = async () => {
-    // The busy state comes from the data layer, which the read below sets, so
-    // there is nothing to toggle here beyond clearing the last error.
-    setRefreshError(null)
-    try {
-      // Refresh means "re-read this season's source", which is the database for
-      // a database season and the spreadsheet for the other.
-      if (onDatabase) await reloadSeason(season)
-      else await refreshLeagueFromSheet(LEAGUE_SHEET_URL)
-    } catch (err) {
-      setRefreshError(err instanceof Error ? err.message : 'Refresh failed')
-    }
-  }
-
   const changeSeason = async (id: string) => {
     setSeasonId(id)
-    setRefreshError(null)
+    setLoadError(null)
     try {
       await setSeason(id)
     } catch (err) {
-      setRefreshError(err instanceof Error ? err.message : 'Could not load that season')
+      setLoadError(err instanceof Error ? err.message : 'Could not load that season')
     }
   }
 
@@ -218,7 +176,10 @@ export default function App() {
             >
               ?
             </button>
-            {league && league.players.length > 0 && (
+            {/* Only where a name means something. Season 4 is a finished
+                record that cannot be edited, so there is nothing to stamp and
+                no team of yours to single out. */}
+            {onDatabase && league && league.players.length > 0 && (
               <DropPicker
                 className="who-picker"
                 ariaLabel="Which player you are"
@@ -231,41 +192,9 @@ export default function App() {
               />
             )}
 
-            {fromSheet && (
-            <span className={`refresh-stamp${refreshError ? ' is-error' : ''}`}>
-              {refreshError
-                ? refreshError
-                : dataAt
-                  ? `Updated ${dataAt.toLocaleString(undefined, {
-                      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-                    })}`
-                  : ''}
-            </span>
-            )}
-
-            {/* Re-reads the master sheet. This only ever GETs — the sheet is
-                read-only, see CLAUDE.md. */}
-            {fromSheet && (
-            <button
-            type="button"
-            className={`refresh-btn${refreshing ? ' is-busy' : ''}`}
-            onClick={refresh}
-            disabled={refreshing}
-            title={refreshError ?? 'Fetch the latest data from the league sheet'}
-            aria-label="Refresh league data from the sheet"
-          >
-            {refreshing ? (
-              <span className="wave" aria-hidden="true">
-                <i /><i /><i /><i /><i />
-              </span>
-            ) : (
-              <span className="refresh-icon" aria-hidden="true">⟳</span>
-            )}
-              <span className="refresh-label">
-                {refreshing ? 'Refreshing…' : refreshError ? 'Retry' : 'Refresh'}
-              </span>
-            </button>
-            )}
+            {/* Switching seasons is the only thing left here that can fail, and
+                it failing silently would leave the wrong season on screen. */}
+            {loadError && <span className="refresh-stamp is-error">{loadError}</span>}
 
             {/* One season for now; this is where other seasons or leagues will
                 be chosen once there is more than one to import. */}
@@ -293,7 +222,10 @@ export default function App() {
         <div className="subbar">
           <div className="bar-inner">
             <nav className="sub-nav">
-              {LEAGUE_TABS.map((t) => (
+              {LEAGUE_TABS.map((t) => ({
+                ...t,
+                label: t.key === 'my-team' && !onDatabase ? 'Teams' : t.label,
+              })).map((t) => (
                 <button
                   key={t.key} type="button"
                   className={leagueTab === t.key ? 'is-active' : ''}

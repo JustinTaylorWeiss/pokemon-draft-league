@@ -38,12 +38,19 @@ export function DraftTeams({ league, dex }: Props) {
   const [identity, setIdentity] = useState(myPlayerId)
   useEffect(() => subscribeIdentity(setIdentity), [])
   /**
-   * The player whose roster this screen may edit. Somebody watching is not one
-   * of them, so they have no team here and the screen reads like it does for
-   * anyone who has not said who they are — everyone's teams, none of them
-   * yours.
+   * Whether this season can be edited at all. Season 4 is a finished record
+   * read from a file — it has no rows in the database, and a write aimed at it
+   * would land on whichever season the fallback names, which is somebody
+   * else's. Nothing here offers to write to it.
    */
-  const me = isSpectator(identity) ? '' : identity
+  const editable = currentSeason().source === 'database'
+  /**
+   * The player whose roster this screen may edit. Nobody, on a season that
+   * cannot be edited or to somebody watching — in both cases the screen reads
+   * the way it does for anyone who has not said who they are: everyone's teams,
+   * none of them yours.
+   */
+  const me = editable && !isSpectator(identity) ? identity : ''
   const [query, setQuery] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -172,7 +179,8 @@ export function DraftTeams({ league, dex }: Props) {
       .slice(0, 24)
   }, [league.board, dex, query])
 
-  const others = league.players.filter((p) => p.id !== me)
+  // Everyone, where none of them is you — a finished season has no "else".
+  const others = me ? league.players.filter((p) => p.id !== me) : league.players
 
   return (
     <div className="draft-teams">
@@ -227,11 +235,13 @@ export function DraftTeams({ league, dex }: Props) {
       )}
 
       {!me ? (
-        <p className="panel-note">
-          {isSpectator(identity)
-            ? 'You are watching. Choose your name beside the season to edit a team.'
-            : 'Say who you are, beside the season, to edit your team.'}
-        </p>
+        editable && (
+          <p className="panel-note">
+            {isSpectator(identity)
+              ? 'You are watching. Choose your name beside the season to edit a team.'
+              : 'Say who you are, beside the season, to edit your team.'}
+          </p>
+        )
       ) : (
         <section className="panel draft-mine">
           <div className="draft-head">
@@ -439,7 +449,7 @@ export function DraftTeams({ league, dex }: Props) {
         </section>
       )}
 
-      <h3 className="draft-others-head">Everyone else</h3>
+      <h3 className="draft-others-head">{me ? 'Everyone else' : 'Teams'}</h3>
       <div className="draft-others">
         {others.map((p) => {
           const picks = [...(league.rosters[p.id] ?? [])].sort(byTierThenName)

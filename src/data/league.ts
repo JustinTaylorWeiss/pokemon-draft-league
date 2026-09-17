@@ -309,56 +309,31 @@ let dataTimestamp: Date | null = null
 export const leagueTimestamp = () => dataTimestamp
 
 /**
- * Where an in-page refresh is kept so it survives a reload.
- *
- * Refreshing used to only replace the copy in memory, so the next page load
- * went back to the file the site was built with and the refresh looked like it
- * had been undone.
+ * A refresh saved by an older build, left behind in browsers that visited
+ * before Season 4 was frozen. Nothing writes one now and nothing reads one, so
+ * the only thing left to do with it is stop it sitting there — it is a whole
+ * league's JSON, and a big one against a 5MB quota.
  */
-const REFRESH_KEY = 'league:refreshed'
-
-interface CachedLeague { at: number; league: League }
-
-function readRefreshed(): CachedLeague | null {
-  try {
-    const raw = localStorage.getItem(REFRESH_KEY)
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as CachedLeague
-    return parsed?.league && typeof parsed.at === 'number' ? parsed : null
-  } catch {
-    return null
-  }
+function dropStaleRefresh() {
+  try { localStorage.removeItem('league:refreshed') } catch { /* nothing to clean up */ }
 }
 
-function writeRefreshed(league: League) {
-  try {
-    localStorage.setItem(REFRESH_KEY, JSON.stringify({ at: Date.now(), league }))
-  } catch {
-    // Private browsing, or the 5MB quota. The refresh still applies to this
-    // page; it just will not outlive it.
-  }
-}
-
-/** The JSON built from the spreadsheet, or a newer refresh saved over it. */
+/**
+ * Season 4, as it finished.
+ *
+ * It used to be the spreadsheet's latest word: read live on every visit, with a
+ * copy of the last read saved over the file the site shipped with. The season
+ * is over, so there is no later word to wait for. The record is the JSON in the
+ * build, it does not change, and nothing reaches out to Google to ask whether
+ * it has.
+ */
 async function loadShipped(): Promise<League> {
+  dropStaleRefresh()
   const res = await fetch(`${import.meta.env.BASE_URL}data/league.json`)
   if (!res.ok) throw new Error(`Failed to load league.json: HTTP ${res.status}`)
   const modified = res.headers.get('last-modified')
   const builtAt = modified ? new Date(modified) : null
   if (builtAt && !Number.isNaN(builtAt.getTime())) dataTimestamp = builtAt
-
-  // A saved refresh wins only while it is newer than the deployed file. The
-  // hourly sync commits straight into the build, so once that lands the shipped
-  // copy is the better one and the saved refresh is dropped.
-  const saved = readRefreshed()
-  if (saved) {
-    const shipped = builtAt && !Number.isNaN(builtAt.getTime()) ? builtAt.getTime() : 0
-    if (saved.at > shipped) {
-      dataTimestamp = new Date(saved.at)
-      return saved.league
-    }
-    try { localStorage.removeItem(REFRESH_KEY) } catch { /* nothing to clean up */ }
-  }
   return res.json() as Promise<League>
 }
 
@@ -368,29 +343,6 @@ export function loadLeague(): Promise<League> {
     pending.catch(() => { pending = null })
   }
   return pending
-}
-
-/**
- * Whether a read of the sheet is in flight, from whatever started it.
- *
- * The button is not the only thing that reads the sheet any more — every page
- * load does — so the busy state belongs here rather than in the button's own
- * component, which would otherwise sit idle through the fetch it triggered.
- */
-let sheetBusy = false
-const busyListeners = new Set<(busy: boolean) => void>()
-
-export const isSheetBusy = () => sheetBusy
-
-export function subscribeSheetBusy(fn: (busy: boolean) => void): () => void {
-  busyListeners.add(fn)
-  return () => { busyListeners.delete(fn) }
-}
-
-function setSheetBusy(busy: boolean) {
-  if (sheetBusy === busy) return
-  sheetBusy = busy
-  for (const fn of busyListeners) fn(busy)
 }
 
 async function loadFromDatabase(): Promise<League> {
@@ -414,7 +366,6 @@ export async function setSeason(id: string): Promise<void> {
   try { localStorage.setItem(SEASON_KEY, next.id) } catch { /* private browsing */ }
 
   pending = null
-  setSheetBusy(true)
   try {
     const league = next.source === 'database'
       ? await loadFromDatabase()
@@ -422,7 +373,6 @@ export async function setSeason(id: string): Promise<void> {
     pending = Promise.resolve(league)
     for (const fn of listeners) fn(league)
   } finally {
-    setSheetBusy(false)
   }
 }
 
@@ -431,110 +381,18 @@ export async function reloadSeason(id: string): Promise<void> {
   const target = SEASONS.find((s) => s.id === id)
   if (!target) return
   tellDatabase(target)
-  setSheetBusy(true)
   try {
     const league = target.source === 'database' ? await loadFromDatabase() : await loadShipped()
     pending = Promise.resolve(league)
     for (const fn of listeners) fn(league)
   } finally {
-    setSheetBusy(false)
   }
 }
 
-/** Notified when a refresh replaces the data, so views re-render in place. */
+/** Notified when the league is replaced — a season change — so views re-render. */
 export function subscribeLeague(fn: (l: League) => void): () => void {
   listeners.add(fn)
   return () => { listeners.delete(fn) }
-}
-
-/** Replaces the cached league after an in-page refresh from the sheet. */
-export function publishLeague(next: League) {
-  pending = Promise.resolve(next)
-  dataTimestamp = new Date()
-  writeRefreshed(next)
-  for (const fn of listeners) fn(next)
-}
-
-/**
- * Re-reads the master sheet in the browser and republishes the result.
- *
- * READ-ONLY: this is a single GET of the export URL. Nothing here writes to
- * the sheet, and nothing may be added that does — see CLAUDE.md. SheetJS and
- * the parser load on demand so the initial bundle does not carry them.
- */
-export async function refreshLeagueFromSheet(sheetUrl: string): Promise<League> {
-  setSheetBusy(true)
-  try {
-    return await readSheet(sheetUrl)
-  } finally {
-    setSheetBusy(false)
-  }
-}
-
-async function readSheet(sheetUrl: string): Promise<League> {
-  const [{ read }, { parseLeagueSheet }, dexRes, sheetRes] = await Promise.all([
-    import('xlsx'),
-    import('../lib/parseLeagueSheet.js'),
-    fetch(`${import.meta.env.BASE_URL}data/pokemon.json`),
-    // no-store or the browser replays the previous refresh's copy and the
-    // button appears to do nothing.
-    fetch(sheetUrl, { method: 'GET', cache: 'no-store' }),
-  ])
-  if (!sheetRes.ok) throw new Error(`Could not reach the sheet (HTTP ${sheetRes.status})`)
-  const bytes = new Uint8Array(await sheetRes.arrayBuffer())
-  // An xlsx is a zip; anything else means a sign-in page came back instead.
-  if (bytes[0] !== 0x50 || bytes[1] !== 0x4b) {
-    throw new Error('The sheet link did not return a spreadsheet — check it is shared for reading.')
-  }
-  const wb = read(bytes, { type: 'array' })
-  const { league } = parseLeagueSheet(wb, await dexRes.json())
-  publishLeague(league as League)
-  return league as League
-}
-
-let revalidateStarted = false
-
-/**
- * Reads the sheet once per page load, in the background.
- *
- * The sheet is the league's source of truth and it is read live, so it is by
- * definition the freshest thing available — fresher than the JSON the site was
- * built with and fresher than any refresh saved from an earlier visit. Everyone
- * therefore sees an edit on their next visit without anyone pressing anything.
- *
- * Deferred to idle because it pulls in the spreadsheet parser, which is the
- * largest chunk in the bundle and has no business delaying first paint. If the
- * sheet cannot be reached the page keeps whatever it already had, which is why
- * the failure is swallowed rather than surfaced — only the button reports
- * errors, because only the button was asked for.
- */
-/**
- * How stale the copy in hand has to be before the sheet is read again.
- *
- * Reading it takes between four and twelve seconds — it is a spreadsheet
- * export, not an API — and doing that on every single page load meant the
- * refresh button spun for most of a visit and the numbers changed underneath
- * whoever was reading them, almost always to the same numbers. The hourly sync
- * commits the sheet into the build anyway, so a copy from ten minutes ago is
- * not meaningfully behind.
- */
-const REVALIDATE_AFTER = 10 * 60 * 1000
-
-export function revalidateLeague(sheetUrl: string) {
-  if (revalidateStarted || typeof window === 'undefined') return
-  revalidateStarted = true
-
-  const saved = readRefreshed()
-  const shipped = dataTimestamp?.getTime() ?? 0
-  const freshest = Math.max(saved?.at ?? 0, shipped)
-  if (freshest && Date.now() - freshest < REVALIDATE_AFTER) return
-
-  const run = () => { refreshLeagueFromSheet(sheetUrl).catch(() => {}) }
-  if (typeof window.requestIdleCallback === 'function') {
-    window.requestIdleCallback(run, { timeout: 3000 })
-  } else {
-    setTimeout(run, 1200)
-  }
 }
 
 export const playerLabel = (p: Player) => (p.team ? `${p.name} — ${p.team}` : p.name)

@@ -351,47 +351,14 @@
   .brand-text { display: none; }
 }
 @media (max-width: 480px) {
-  .refresh-label { display: none; }
-  .refresh-btn { padding: 0.35rem 0.5rem; }
 }
+/* All that is left of the refresh row: what to say when switching season
+   fails, which is the only thing up here that still can. */
 .refresh-stamp {
   font-size: 0.7rem; color: var(--muted); text-align: right;
   max-width: 14rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .refresh-stamp.is-error { color: var(--nav-red); }
-
-.refresh-btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem; flex: none;
-  padding: 0.35rem 0.7rem;
-  background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
-  color: var(--fg); font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer;
-}
-.refresh-btn:hover:not(:disabled) { border-color: var(--nav-blue); color: var(--nav-blue); }
-.refresh-btn:disabled { opacity: 0.7; cursor: progress; }
-.refresh-icon { font-size: 0.95rem; line-height: 1; }
-
-/* A little waveform for the read of the sheet. Each bar runs the same bounce
-   on a stagger, so the peak travels along the row; `alternate` sends it back
-   the way it came instead of snapping to the start, which is what makes it
-   read as bouncing rather than as a repeating sweep. */
-.wave {
-  display: inline-flex; align-items: center; gap: 2px;
-  height: 0.95rem; width: 1.1rem; justify-content: center;
-}
-.wave i {
-  width: 2px; height: 20%; border-radius: 1px; background: currentColor;
-  animation: wave-bounce 0.62s ease-in-out infinite alternate;
-}
-.wave i:nth-child(2) { animation-delay: 0.1s; }
-.wave i:nth-child(3) { animation-delay: 0.2s; }
-.wave i:nth-child(4) { animation-delay: 0.3s; }
-.wave i:nth-child(5) { animation-delay: 0.4s; }
-
-@keyframes wave-bounce { from { height: 20%; } to { height: 100%; } }
-
-@media (prefers-reduced-motion: reduce) {
-  .wave i { animation: none; height: 60%; }
-}
 
 /* The rules live behind a question mark beside the season: a reference you
    reach for, not a place you go. */

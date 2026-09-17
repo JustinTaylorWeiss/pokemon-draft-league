@@ -35,8 +35,17 @@ it does not — say so and stop.
 
 ## How the data flows
 
-The sheet is the source of truth for the league. Where it and the Showdown
-dataset disagree, the sheet wins — see `mergeDex()` in `src/data/league.ts`.
+The sheet was the source of truth for Season 4, which is finished. The site no
+longer reads it — not on a button, not on page load, not on a schedule — and
+serves that season from `public/data/league.json`, frozen as it ended. Season 5
+is edited on the site and lives in Supabase.
+
+`import-league.mjs` remains, and the read-only rule above remains in force for
+it: if a future season starts on a sheet, that is still the only thing allowed
+to touch one, and still only to GET.
+
+Where the sheet and the Showdown dataset disagree, the sheet wins — see
+`mergeDex()` in `src/data/league.ts`.
 
 - `npm run import:league -- <file-or-url>` → `public/data/league.json`
 - `npm run build:data` → the Pokémon dataset in `public/data/`
