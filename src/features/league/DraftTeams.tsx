@@ -14,6 +14,46 @@ import { PokemonLink } from '../../components/PokemonLink'
 import { Sprite } from '../../components/Sprite'
 
 /**
+ * How long ago something was, in the largest two units that say anything.
+ *
+ * A draft runs over days and a pick over hours, so one format has to carry
+ * both — and seconds only earn their place in the minute after a pick lands,
+ * which is the one time anybody is watching them.
+ */
+function since(from: number, now: number): string {
+  const total = Math.max(0, Math.floor((now - from) / 1000))
+  const days = Math.floor(total / 86400)
+  const hours = Math.floor(total / 3600) % 24
+  const mins = Math.floor(total / 60) % 60
+  const secs = total % 60
+  if (days) return `${days}d ${hours}h`
+  if (hours) return `${hours}h ${String(mins).padStart(2, '0')}m`
+  if (mins) return `${mins}m ${String(secs).padStart(2, '0')}s`
+  return `${secs}s`
+}
+
+/**
+ * A clock counting up from a moment.
+ *
+ * Its own component with its own state, because it ticks every second and the
+ * screen around it is twenty seats and everybody's rosters. Re-rendering that
+ * once a second to move one digit would be the most expensive thing on the page.
+ */
+function Elapsed({ from, label }: { from: number; label: string }) {
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [])
+  return (
+    <span className="draft-clock" title={`Since ${new Date(from).toLocaleString()}`}>
+      <em>{label}</em>
+      <strong>{since(from, now)}</strong>
+    </span>
+  )
+}
+
+/**
  * Drafting, from one player's side of it.
  *
  * You say who you are and then edit only that roster; everyone else's is shown
@@ -105,17 +145,23 @@ export function DraftTeams({ league, dex }: Props) {
    * replacement rather than something that has left the team.
    */
   const [takenInOrder, setTakenInOrder] = useState<Record<string, string[]>>({})
+  /** When each pick landed, for the clock on whoever is up. */
+  const [pickTimes, setPickTimes] = useState<string[]>([])
   useEffect(() => {
     let live = true
     db.from('events')
-      .select('after')
+      .select('at,after')
       .eq('season_id', currentSeasonId())
       .eq('table_name', 'rosters')
       .eq('action', 'insert')
       .order('id', { ascending: true })
       .then(({ data }) => {
         if (!live) return
-        const rows = (data ?? []) as { after: { player_id?: string; pokemon_id?: string } | null }[]
+        const rows = (data ?? []) as {
+          at: string
+          after: { player_id?: string; pokemon_id?: string } | null
+        }[]
+        setPickTimes(rows.map((row) => row.at))
         const out: Record<string, string[]> = {}
         for (const row of rows) {
           const player = row.after?.player_id
@@ -135,6 +181,24 @@ export function DraftTeams({ league, dex }: Props) {
       }, () => {})
     return () => { live = false }
   }, [league])
+
+  /**
+   * When the coach who is up went on the clock: the last pick to land, or the
+   * moment the draft opened if none has.
+   *
+   * Anything before the draft opened is ignored. A roster can be edited outside
+   * one — this season had a pick the day before it started, since released —
+   * and counting that would run the clock from before there was anything to be
+   * on the clock for.
+   */
+  const onClockSince = useMemo(() => {
+    const opened = draft?.started_at ? new Date(draft.started_at).getTime() : null
+    if (opened == null || Number.isNaN(opened)) return null
+    return pickTimes
+      .map((at) => new Date(at).getTime())
+      .filter((t) => !Number.isNaN(t) && t >= opened)
+      .reduce((a, b) => Math.max(a, b), opened)
+  }, [draft, pickTimes])
 
   const mine = me ? league.rosters[me] ?? [] : []
   /**
@@ -193,6 +257,10 @@ export function DraftTeams({ league, dex }: Props) {
             <h4>
               Draft order
               <span className="panel-note">Round {order.round}</span>
+              {onClockSince != null && <Elapsed from={onClockSince} label="Current pick:" />}
+              {draft?.started_at && (
+                <Elapsed from={new Date(draft.started_at).getTime()} label="Entire draft:" />
+              )}
             </h4>
             <ol>
               {order.seats.map((seat) => (

@@ -344,6 +344,9 @@
 }
 
 @media (max-width: 620px) {
+  /* Wrapped onto their own line, the clocks read left to right like everything
+     else; held right they would sit alone against the far edge. */
+  .draft-order h4 .panel-note { margin-right: 0; }
   .league-meta { padding: 0.75rem; }
   .match-sides { grid-template-columns: 1fr; gap: 0.75rem; }
   .match-card header { grid-template-columns: 1fr; gap: 0.2rem; text-align: left; }
@@ -1150,9 +1153,31 @@
 .draft-order h4 {
   margin: 0 0 0.5rem; font-size: 0.72rem; font-weight: 700;
   letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
-  display: flex; align-items: baseline; gap: 0.6rem;
+  /* Wraps where four things do not fit one line, which is a phone. */
+  display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap;
+  row-gap: 0.3rem;
 }
 .draft-order h4 .panel-note { text-transform: none; letter-spacing: 0; }
+/* The clocks sit at the far end of the heading, away from the round. Pushed
+   there by the note before them rather than by a margin on the first of
+   themselves — `:first-of-type` counts spans, and the note is one. */
+.draft-order h4 .panel-note { margin-right: auto; }
+.draft-clock {
+  display: inline-flex; align-items: baseline; gap: 0.3rem;
+  /* The heading is set in small caps; a duration read that way is a mess. */
+  text-transform: none; letter-spacing: 0;
+  /* One phrase. Squeezed, it was breaking into "On the / clock". */
+  white-space: nowrap;
+}
+.draft-clock em { font-style: normal; font-weight: 600; color: var(--muted); }
+.draft-clock strong {
+  font-weight: 700; color: var(--fg);
+  /* Tabular figures are what keep a ticking digit from shuffling the heading,
+     so the time needs no reserved width — which was holding it a long way from
+     the label it belongs to. The width only moves when the format does, going
+     from minutes to hours to days, which is three times in a draft. */
+  font-variant-numeric: tabular-nums;
+}
 .draft-order ol {
   display: flex; gap: 0.4rem; margin: 0; padding: 0 0 0.3rem; list-style: none;
   overflow-x: auto; scrollbar-width: thin;
