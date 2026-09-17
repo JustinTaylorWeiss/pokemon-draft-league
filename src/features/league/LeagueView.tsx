@@ -12,6 +12,7 @@ import { isSpectator, myPlayerId, subscribeIdentity } from '../../data/identity'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
 import type { LeagueTab } from './tabs'
+import { useAdvanced } from '../dex/advanced'
 import './league.css'
 import { PokemonLink } from '../../components/PokemonLink'
 import { LoadingBall } from '../../components/LoadingBall'
@@ -1499,6 +1500,19 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
    * is a question you ask, not the shape the board rests in.
    */
   const [megas, setMegas] = useState<Set<'mega' | 'plain'>>(new Set())
+  /**
+   * The dex's own search, over this board.
+   *
+   * Types, ability, move and stats — the questions the bar above cannot ask.
+   * Behind a toggle because they are a second row of controls on a bar that is
+   * already pinned to the top of a nine-hundred-row board, and most visits
+   * want the search box and the pills and nothing else.
+   *
+   * Shared with the dex rather than rebuilt: one filter, asked of all 1,379
+   * Pokemon there and of one season's board here.
+   */
+  const [advanced, setAdvanced] = useState(false)
+  const adv = useAdvanced('board')
   // dir 0 is the board's own order — best tier first, strongest within it —
   // rather than "unsorted". It is what the board looks like before anyone
   // touches a column, so no column is marked as doing it.
@@ -1541,6 +1555,11 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
         if (legality.size && !legality.has(e.tier === 'Banned' ? 'banned' : 'legal')) return false
         if (megas.size && !megas.has(isMega(dex[id]) ? 'mega' : 'plain')) return false
         if (avail.size && !avail.has(e.draftedBy ? 'drafted' : 'available')) return false
+        // Whether or not the row is open. Folding it away is about screen
+        // space, not about the search — a board that silently widened when you
+        // collapsed the panel would be a different answer to the same question.
+        // The ON beside the toggle is what says a closed row is still working.
+        if (dex[id] && !adv.matches(id, dex[id])) return false
         if (!q) return true
         return e.name.toLowerCase().includes(q) || dex[id]?.types.some((t) => t.toLowerCase() === q)
       })
@@ -1580,7 +1599,7 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
       }
       return ((a.mon?.baseStats[key] ?? 0) - (b.mon?.baseStats[key] ?? 0)) * dir
     })
-  }, [league.board, dex, query, tiers, legality, megas, avail, sort, onPoints])
+  }, [league.board, dex, query, tiers, legality, megas, avail, sort, onPoints, adv])
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {
@@ -1598,6 +1617,17 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
 
   return (
     <>
+      {/* Above the pinned bar rather than inside it: it is a row of nine
+          controls, and carrying that down the page would leave a third of the
+          screen pinned over a board people are scrolling. */}
+      {advanced && (
+        <div className="filters board-advanced">
+          {adv.controls}
+          {adv.pending.length > 0 && (
+            <p className="panel-note">Loading {adv.pending.join(', ')}…</p>
+          )}
+        </div>
+      )}
       {/* Search and its filters share one row, so the whole control set reads
           left to right instead of stacking. */}
       <div className="board-controls">
@@ -1676,15 +1706,29 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
             </button>
           ))}
         </div>
+        <span className="pill-divider" aria-hidden="true" />
+        {/* The dex's questions, folded away until they are asked. Marked when
+            something in there is narrowing the board, because the row can be
+            closed over a filter that is still on. */}
+        <button
+          type="button"
+          className={`pill pill-advanced${advanced ? ' is-active' : ''}`}
+          aria-pressed={advanced}
+          aria-expanded={advanced}
+          onClick={() => setAdvanced((v) => !v)}
+        >
+          Advanced search{adv.active && <em>on</em>}
+        </button>
         {/* Clear puts the board back to how it opens rather than to nothing
             filtered: legal-only is the resting state, not something chosen, so
             it is neither a reason to offer Clear nor something Clear undoes. */}
-        {(tiers.size > 0 || avail.size > 0 || megas.size > 0 || !isLegalOnly(legality)) && (
+        {(tiers.size > 0 || avail.size > 0 || megas.size > 0 || !isLegalOnly(legality) || adv.active) && (
           <button
             type="button" className="pill pill-clear"
             onClick={() => {
               setTiers(new Set()); setAvail(new Set()); setMegas(new Set())
               setLegality(new Set(['legal']))
+              adv.reset()
             }}
           >
             Clear

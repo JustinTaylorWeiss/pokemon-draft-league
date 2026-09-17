@@ -1,106 +1,59 @@
 import { useEffect, useMemo, useState } from 'react'
-import { loadAbilities, loadLearnsets, loadMoves, loadPokemon, toId } from '../../data/load'
-import type { AbilityDex, LearnsetDex, MoveDex, PokemonDex, StatKey, TypeName } from '../../data/types'
-import { loadLeague, mergeDex, subscribeLeague, type League, type LeaguePokemon } from '../../data/league'
+import { loadPokemon, toId } from '../../data/load'
+import type { PokemonDex, TypeName } from '../../data/types'
+import {
+  isMega, loadLeague, mergeDex, subscribeLeague, type League, type LeaguePokemon,
+} from '../../data/league'
+import { ANY, useAdvanced } from './advanced'
 import { DraftValue } from '../../components/DraftValue'
-import { STAT_LABELS, BST_ORDER } from '../../lib/stats'
-import { BATTLE_TYPES } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
+import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { PokemonLink } from '../../components/PokemonLink'
 import { LoadingBall } from '../../components/LoadingBall'
 import { Sprite } from '../../components/Sprite'
 
 const PAGE = 200
 
-/** "any" is the do-nothing value for every dropdown. */
-const ANY = 'any'
-/** Type 2 only: matches Pokémon with a single type. */
-const NONE = 'none'
 
-type StatField = StatKey | 'bst'
-type Comparator = 'gte' | 'lte' | 'eq'
+/**
+ * Whether a Pokemon can be drafted this season.
+ *
+ * `legal` is the one the dex opens on. It is a dex of 1,379 Pokemon and a
+ * season's board is a few hundred of them, so without this the first answer to
+ * any search is mostly Pokemon nobody can have — and the thing a coach is
+ * usually asking is "what can I take".
+ *
+ * `banned` is everything that is not: the rows a board marks Banned, and the
+ * Pokemon a board never listed at all. They are one answer to the coach's
+ * question even though they are two facts about the board.
+ */
+const LEGAL = 'legal'
+const BANNED = 'banned'
 
-const STAT_FIELDS: { key: StatField; label: string }[] = [
-  ...BST_ORDER.map((k) => ({ key: k as StatField, label: STAT_LABELS[k] })),
-  { key: 'bst', label: 'BST' },
-]
-
-const COMPARATORS: { key: Comparator; label: string }[] = [
-  { key: 'gte', label: '≥' },
-  { key: 'lte', label: '≤' },
-  { key: 'eq', label: '=' },
-]
-
-const statValue = (mon: LeaguePokemon, field: StatField) =>
-  field === 'bst' ? mon.bst : mon.baseStats[field]
-
-interface StatFilter {
-  field: StatField
-  comparator: Comparator
-  value: string
-}
-
-/** HP ≥ 0 matches everything, so a fresh row never changes the results. */
-const newStatFilter = (): StatFilter => ({ field: 'hp', comparator: 'gte', value: '0' })
+/** Mega and Primal formes, against everything else. */
+const MEGA = 'mega'
+const PLAIN = 'plain'
 
 export function Dex() {
   const [rawDex, setRawDex] = useState<PokemonDex | null>(null)
   const [league, setLeague] = useState<League | null>(null)
-  const [abilities, setAbilities] = useState<AbilityDex | null>(null)
-  const [moves, setMoves] = useState<MoveDex | null>(null)
-  const [learnsets, setLearnsets] = useState<LearnsetDex | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const [name, setName] = useState('')
-  const [type1, setType1] = useState<string>(ANY)
-  const [type2, setType2] = useState<string>(ANY)
   const [tier, setTier] = useState<string>(ANY)
-  const [statFilters, setStatFilters] = useState<StatFilter[]>([newStatFilter()])
-  const [ability, setAbility] = useState('')
-  const [move, setMove] = useState('')
+  const [legality, setLegality] = useState<string>(LEGAL)
+  const [megas, setMegas] = useState<string>(ANY)
+  /** Types, ability, move and stats — shared with the draft list's own search. */
+  const adv = useAdvanced('dex')
 
   useEffect(() => { loadPokemon().then(setRawDex, (e: Error) => setError(e.message)) }, [])
   useEffect(() => {
     loadLeague().then(setLeague, () => {})
     return subscribeLeague(setLeague)
   }, [])
-  // Only the ability and move filters need these, so they stream in behind the
-  // Pokémon list rather than blocking it.
-  useEffect(() => { loadAbilities().then(setAbilities, () => {}) }, [])
-  useEffect(() => { loadMoves().then(setMoves, () => {}) }, [])
-  useEffect(() => { loadLearnsets().then(setLearnsets, () => {}) }, [])
 
   /** Sheet values win over the Showdown dataset wherever they overlap. */
   const dex = useMemo(() => (rawDex ? mergeDex(rawDex, league) : null), [rawDex, league])
-
-  const abilityNames = useMemo(
-    () => (abilities ? [...new Set(Object.values(abilities).map((a) => a.name))].sort() : []),
-    [abilities],
-  )
-  const moveNames = useMemo(
-    () => (moves ? [...new Set(Object.values(moves).map((m) => m.name))].sort() : []),
-    [moves],
-  )
-
-  /**
-   * Move ids matching the typed text. An exact name wins outright; otherwise
-   * every partial match counts, so "swords" finds Swords Dance without needing
-   * the full name.
-   */
-  const moveIds = useMemo(() => {
-    const q = move.trim()
-    if (!q || !moves) return null
-    const key = toId(q)
-    const exact = Object.entries(moves).find(([, m]) => toId(m.name) === key)
-    if (exact) return { ids: new Set([exact[0]]), label: exact[1].name }
-    const lower = q.toLowerCase()
-    const partial = Object.entries(moves).filter(([, m]) => m.name.toLowerCase().includes(lower))
-    if (!partial.length) return { ids: new Set<string>(), label: q }
-    return {
-      ids: new Set(partial.map(([id]) => id)),
-      label: partial.length === 1 ? partial[0][1].name : `${partial.length} moves matching “${q}”`,
-    }
-  }, [move, moves])
 
   /**
    * The league values its board one way or the other, so this filter is
@@ -110,6 +63,17 @@ export function Dex() {
    */
   const priced = useMemo(
     () => !!dex && Object.values(dex).some((p) => p.points != null),
+    [dex],
+  )
+  /**
+   * Whether there is a board to be legal against.
+   *
+   * Without this the dex is empty for the moment before the league loads, and
+   * empty for good on All Time, which has no board of its own — every Pokemon
+   * would read as illegal because nothing had said otherwise yet.
+   */
+  const hasBoard = useMemo(
+    () => !!dex && Object.values(dex).some((p) => p.onBoard),
     [dex],
   )
   const tiers = useMemo(() => {
@@ -122,82 +86,52 @@ export function Dex() {
     return [...new Set(Object.values(dex).map((p) => p.draftTier ?? p.tier).filter(Boolean) as string[])]
   }, [dex, priced])
 
-  // Only conditions that actually narrow anything count; the default HP >= 0
-  // row is a placeholder, not a filter.
-  const activeStats = useMemo(
-    () => statFilters.filter((f) => {
-      const n = Number(f.value)
-      if (f.value.trim() === '' || !Number.isFinite(n)) return false
-      return !(f.field === 'hp' && f.comparator === 'gte' && n === 0)
-    }),
-    [statFilters],
-  )
-
   const results = useMemo(() => {
     if (!dex) return []
     const nameQuery = name.trim().toLowerCase()
     const nameKey = toId(name)
-    const abilityQuery = ability.trim().toLowerCase()
 
     return Object.entries(dex)
       .filter(([id, mon]) => {
         if (nameQuery && !mon.name.toLowerCase().includes(nameQuery) && !id.includes(nameKey)) return false
 
-        // The two type dropdowns describe a combination, not slots — order in
-        // the dex is arbitrary, so Fire + Flying must find Charizard either way.
-        if (type1 !== ANY && !mon.types.includes(type1 as TypeName)) return false
-        if (type2 === NONE) {
-          if (mon.types.length !== 1) return false
-        } else if (type2 !== ANY) {
-          if (!mon.types.includes(type2 as TypeName)) return false
-          // Both dropdowns set to the same type would otherwise match any
-          // Pokémon carrying it once.
-          if (type1 === type2 && mon.types.length < 2) return false
+        if (hasBoard && legality !== ANY) {
+          const legal = mon.onBoard && mon.draftTier !== 'Banned'
+          if (legal !== (legality === LEGAL)) return false
         }
+
+        if (megas !== ANY && isMega(mon) !== (megas === MEGA)) return false
 
         if (tier !== ANY) {
           const value = priced ? (mon.points == null ? null : String(mon.points)) : (mon.draftTier ?? mon.tier)
           if (value !== tier) return false
         }
 
-        // Every condition has to hold, so stacking rows narrows the list.
-        for (const f of activeStats) {
-          const v = statValue(mon, f.field)
-          const n = Number(f.value)
-          if (f.comparator === 'gte' && v < n) return false
-          if (f.comparator === 'lte' && v > n) return false
-          if (f.comparator === 'eq' && v !== n) return false
-        }
-
-        if (abilityQuery
-          && !Object.values(mon.abilities).some((a) => a.toLowerCase().includes(abilityQuery))) return false
-
-        if (moveIds) {
-          const learnset = learnsets?.[id]
-          if (!learnset) return false
-          if (![...moveIds.ids].some((mid) => learnset[mid])) return false
-        }
-
-        return true
+        return adv.matches(id, mon)
       })
       .map(([id, mon]) => ({ id, mon }))
-      .sort((a, b) => b.mon.bst - a.mon.bst)
-  }, [dex, name, type1, type2, tier, activeStats, ability, moveIds, learnsets])
+      // What it costs, dearest first: on a board priced one to twenty, that is
+      // the question the list is usually being read to answer. Base stat total
+      // breaks the ties, which is the order this list used to be in, and an
+      // unpriced season falls back to it whole. Unpriced sorts last rather
+      // than as zero — a Pokemon off the board has no cost, not a free one.
+      .sort((a, b) => (b.mon.points ?? -1) - (a.mon.points ?? -1) || b.mon.bst - a.mon.bst)
+  }, [dex, name, tier, legality, megas, hasBoard, priced, adv])
 
+  // Back to how the dex opens, which is legal-only — not to no filters at all.
   const reset = () => {
-    setName(''); setType1(ANY); setType2(ANY); setTier(ANY)
-    setStatFilters([newStatFilter()])
-    setAbility(''); setMove('')
+    setName(''); setTier(ANY); setLegality(LEGAL); setMegas(ANY)
+    adv.reset()
   }
 
   const anyFilterActive = Boolean(
-    name.trim() || type1 !== ANY || type2 !== ANY || tier !== ANY || activeStats.length || ability.trim() || move.trim(),
+    name.trim() || tier !== ANY || legality !== LEGAL || megas !== ANY || adv.active,
   )
 
   if (error) return <p className="error">Could not load data: {error}</p>
   if (!dex) return <LoadingBall label="Loading dex…" />
 
-  const pending = [!abilities && 'abilities', !moves && 'moves', !learnsets && 'learnsets'].filter(Boolean)
+  const pending = adv.pending
 
   return (
     <div className="dex">
@@ -210,20 +144,26 @@ export function Dex() {
           />
         </label>
 
-        <label className="filter filter-type">
-          <span>Type 1</span>
-          <select value={type1} onChange={(e) => setType1(e.target.value)}>
-            <option value={ANY}>Any</option>
-            {BATTLE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
-        </label>
+        {hasBoard && (
+          <label className="filter">
+            <span>Legality</span>
+            <select
+              value={legality} onChange={(e) => setLegality(e.target.value)}
+              title="Banned covers both the rows the board marks Banned and the Pokémon it never listed"
+            >
+              <option value={LEGAL}>Legal</option>
+              <option value={BANNED}>Banned</option>
+              <option value={ANY}>Any</option>
+            </select>
+          </label>
+        )}
 
-        <label className="filter filter-type">
-          <span>Type 2</span>
-          <select value={type2} onChange={(e) => setType2(e.target.value)}>
+        <label className="filter">
+          <span>Mega</span>
+          <select value={megas} onChange={(e) => setMegas(e.target.value)}>
             <option value={ANY}>Any</option>
-            <option value={NONE}>None</option>
-            {BATTLE_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+            <option value={MEGA}>Megas</option>
+            <option value={PLAIN}>Non-Megas</option>
           </select>
         </label>
 
@@ -235,74 +175,7 @@ export function Dex() {
           </select>
         </label>
 
-        <label className="filter filter-narrow">
-          <span>Ability</span>
-          <input
-            type="search" value={ability} onChange={(e) => setAbility(e.target.value)}
-            placeholder="Any" list="ability-options"
-          />
-          <datalist id="ability-options">
-            {abilityNames.map((a) => <option key={a} value={a} />)}
-          </datalist>
-        </label>
-
-        <label className="filter filter-narrow">
-          <span>Move</span>
-          <input
-            type="search" value={move} onChange={(e) => setMove(e.target.value)}
-            placeholder="Any" list="move-options"
-          />
-          <datalist id="move-options">
-            {moveNames.map((m) => <option key={m} value={m} />)}
-          </datalist>
-        </label>
-
-        <div className="filter filter-stat">
-          <span>Stat</span>
-          {statFilters.map((f, i) => {
-            const update = (patch: Partial<StatFilter>) =>
-              setStatFilters((prev) => prev.map((x, j) => (j === i ? { ...x, ...patch } : x)))
-            return (
-              <div className="stat-row" key={i}>
-                <select
-                  value={f.field} onChange={(e) => update({ field: e.target.value as StatField })}
-                  aria-label={`Stat ${i + 1}`}
-                >
-                  {STAT_FIELDS.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
-                </select>
-                <select
-                  value={f.comparator} onChange={(e) => update({ comparator: e.target.value as Comparator })}
-                  aria-label={`Comparison ${i + 1}`}
-                >
-                  {COMPARATORS.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
-                </select>
-                <input
-                  type="number" value={f.value} min={0}
-                  onChange={(e) => update({ value: e.target.value })}
-                  aria-label={`Stat value ${i + 1}`}
-                />
-                {/* The first row adds; every row after it closes itself. */}
-                {i === 0 ? (
-                  <button
-                    type="button" className="stat-step"
-                    onClick={() => setStatFilters((f) => [...f, newStatFilter()])}
-                    aria-label="Add another stat condition" title="Add a stat condition"
-                  >
-                    +
-                  </button>
-                ) : (
-                  <button
-                    type="button" className="stat-step"
-                    onClick={() => setStatFilters((prev) => prev.filter((_, j) => j !== i))}
-                    aria-label={`Remove stat condition ${i + 1}`} title="Remove this condition"
-                  >
-                    −
-                  </button>
-                )}
-              </div>
-            )
-          })}
-        </div>
+        {adv.controls}
 
         <div className="filter filter-actions">
           {/* Empty label row so the count lands on the controls' baseline
@@ -318,9 +191,6 @@ export function Dex() {
       </div>
 
       {pending.length > 0 && <p className="panel-note">Loading {pending.join(', ')}…</p>}
-      {move.trim() && moveIds && (
-        <p className="panel-note">Filtering by {moveIds.label}.</p>
-      )}
 
       <ul className="dex-grid">
         {results.slice(0, PAGE).map(({ id, mon }) => <Card key={id} id={id} mon={mon} />)}

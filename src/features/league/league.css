@@ -287,6 +287,21 @@
 }
 .schedule-picker { max-width: 32rem; }
 
+/*
+ * The dex's search, on the board.
+ *
+ * Reuses `.filters` so the controls are the dex's controls and not a second
+ * set that drifts from them. Sits above the pinned bar and scrolls away with
+ * the page: it is nine controls tall, and pinning it would hold a third of the
+ * screen over a board people came here to scroll.
+ */
+.board-advanced { margin-bottom: 0.75rem; }
+/* Says the row is doing something while it is folded away. */
+.pill-advanced em {
+  font-style: normal; font-weight: 700; margin-left: 0.3rem;
+  text-transform: uppercase; font-size: 0.6rem; letter-spacing: 0.04em;
+}
+
 /* ---- pill filters ---- */
 /*
  * The search and the filters stay put while the board scrolls under them.
