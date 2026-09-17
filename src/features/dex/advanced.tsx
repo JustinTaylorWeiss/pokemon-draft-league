@@ -43,8 +43,14 @@ const COMPARATORS: { key: Comparator; label: string }[] = [
   { key: 'eq', label: '=' },
 ]
 
-/** HP ≥ 0 matches everything, so a fresh row never changes the results. */
-const newStatFilter = (): StatFilter => ({ field: 'hp', comparator: 'gte', value: '0' })
+/**
+ * BST ≥ 0 matches everything, so a fresh row never changes the results.
+ *
+ * Total rather than a single stat, because a row opened by hand is nearly
+ * always opened to say "nothing under 500" — and a reader who wants one stat
+ * changes one dropdown either way.
+ */
+const newStatFilter = (): StatFilter => ({ field: 'bst', comparator: 'gte', value: '0' })
 
 const statValue = (mon: Pokemon, field: StatField) =>
   (field === 'bst' ? mon.bst : mon.baseStats[field])
@@ -118,13 +124,13 @@ export function useAdvanced(idPrefix = 'adv'): Advanced {
       .map(([id]) => id))
   }, [state.move, moves])
 
-  // Only conditions that actually narrow anything count; the default HP >= 0
+  // Only conditions that actually narrow anything count; the default BST >= 0
   // row is a placeholder, not a filter.
   const activeStats = useMemo(
     () => state.stats.filter((f) => {
       const n = Number(f.value)
       if (f.value.trim() === '' || !Number.isFinite(n)) return false
-      return !(f.field === 'hp' && f.comparator === 'gte' && n === 0)
+      return !(f.field === 'bst' && f.comparator === 'gte' && n === 0)
     }),
     [state.stats],
   )

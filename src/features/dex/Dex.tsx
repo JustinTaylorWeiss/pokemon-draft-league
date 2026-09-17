@@ -40,7 +40,6 @@ export function Dex() {
   const [error, setError] = useState<string | null>(null)
 
   const [name, setName] = useState('')
-  const [tier, setTier] = useState<string>(ANY)
   const [legality, setLegality] = useState<string>(LEGAL)
   const [megas, setMegas] = useState<string>(ANY)
   /** Types, ability, move and stats — shared with the draft list's own search. */
@@ -56,16 +55,6 @@ export function Dex() {
   const dex = useMemo(() => (rawDex ? mergeDex(rawDex, league) : null), [rawDex, league])
 
   /**
-   * The league values its board one way or the other, so this filter is
-   * whichever it is: costs on a priced season, tiers on a banded one. Offering
-   * tiers on a season that has none would be filtering by a number nobody is
-   * shown.
-   */
-  const priced = useMemo(
-    () => !!dex && Object.values(dex).some((p) => p.points != null),
-    [dex],
-  )
-  /**
    * Whether there is a board to be legal against.
    *
    * Without this the dex is empty for the moment before the league loads, and
@@ -76,16 +65,6 @@ export function Dex() {
     () => !!dex && Object.values(dex).some((p) => p.onBoard),
     [dex],
   )
-  const tiers = useMemo(() => {
-    if (!dex) return []
-    if (priced) {
-      return [...new Set(Object.values(dex).map((p) => p.points).filter((n) => n != null))]
-        .sort((a, b) => (b as number) - (a as number))
-        .map(String)
-    }
-    return [...new Set(Object.values(dex).map((p) => p.draftTier ?? p.tier).filter(Boolean) as string[])]
-  }, [dex, priced])
-
   const results = useMemo(() => {
     if (!dex) return []
     const nameQuery = name.trim().toLowerCase()
@@ -102,11 +81,6 @@ export function Dex() {
 
         if (megas !== ANY && isMega(mon) !== (megas === MEGA)) return false
 
-        if (tier !== ANY) {
-          const value = priced ? (mon.points == null ? null : String(mon.points)) : (mon.draftTier ?? mon.tier)
-          if (value !== tier) return false
-        }
-
         return adv.matches(id, mon)
       })
       .map(([id, mon]) => ({ id, mon }))
@@ -116,16 +90,16 @@ export function Dex() {
       // unpriced season falls back to it whole. Unpriced sorts last rather
       // than as zero — a Pokemon off the board has no cost, not a free one.
       .sort((a, b) => (b.mon.points ?? -1) - (a.mon.points ?? -1) || b.mon.bst - a.mon.bst)
-  }, [dex, name, tier, legality, megas, hasBoard, priced, adv])
+  }, [dex, name, legality, megas, hasBoard, adv])
 
   // Back to how the dex opens, which is legal-only — not to no filters at all.
   const reset = () => {
-    setName(''); setTier(ANY); setLegality(LEGAL); setMegas(ANY)
+    setName(''); setLegality(LEGAL); setMegas(ANY)
     adv.reset()
   }
 
   const anyFilterActive = Boolean(
-    name.trim() || tier !== ANY || legality !== LEGAL || megas !== ANY || adv.active,
+    name.trim() || legality !== LEGAL || megas !== ANY || adv.active,
   )
 
   if (error) return <p className="error">Could not load data: {error}</p>
@@ -164,14 +138,6 @@ export function Dex() {
             <option value={ANY}>Any</option>
             <option value={MEGA}>Megas</option>
             <option value={PLAIN}>Non-Megas</option>
-          </select>
-        </label>
-
-        <label className="filter">
-          <span>{priced ? 'Cost' : 'Tier'}</span>
-          <select value={tier} onChange={(e) => setTier(e.target.value)}>
-            <option value={ANY}>Any</option>
-            {tiers.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </label>
 

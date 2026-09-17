@@ -296,11 +296,44 @@
  * screen over a board people came here to scroll.
  */
 .board-advanced { margin-bottom: 0.75rem; }
-/* Says the row is doing something while it is folded away. */
-.pill-advanced em {
-  font-style: normal; font-weight: 700; margin-left: 0.3rem;
-  text-transform: uppercase; font-size: 0.6rem; letter-spacing: 0.04em;
+/*
+ * The button that opens it, beside the search box it extends.
+ *
+ * Deliberately not a pill. The pills each hold a value and say what it is;
+ * this one opens a panel, and wearing their shape made it read as a fourth
+ * filter stuck on "Advanced". Square, quieter, with a caret that says it
+ * unfolds.
+ */
+.board-advanced-toggle {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  height: 2.2rem; padding: 0 0.7rem;
+  font: inherit; font-size: 0.78rem; font-weight: 600;
+  border: 1px dashed var(--line); border-radius: 8px;
+  background: none; color: var(--muted); cursor: pointer;
 }
+.board-advanced-toggle:hover { color: var(--fg); border-color: var(--fg); }
+.board-advanced-toggle .chev { font-size: 0.6rem; line-height: 1; }
+/* Open, and doing something while closed, are different facts. */
+.board-advanced-toggle.is-open { border-style: solid; color: var(--fg); }
+.board-advanced-toggle.is-on { border-color: var(--accent); color: var(--accent); }
+.board-advanced-toggle em {
+  font-style: normal; font-weight: 700; font-size: 0.6rem;
+  letter-spacing: 0.04em; text-transform: uppercase;
+}
+
+/*
+ * One filter, one pill, under a label saying what it filters.
+ *
+ * The label carries the noun so the pill only has to carry the answer, which
+ * is what lets "Megas only / Non-Megas / All" fit where two pills stood.
+ */
+.mode-filter { display: flex; flex-direction: column; gap: 0.25rem; align-items: center; }
+.mode-label {
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--muted); text-align: center;
+}
+/* Sized to its widest mode, so cycling does not shuffle the row along. */
+.mode-pill { justify-content: center; min-width: 7.25rem; height: 1.85rem; }
 
 /* ---- pill filters ---- */
 /*
@@ -315,7 +348,9 @@
  * that the shell would have given it above.
  */
 .board-controls {
-  display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;
+  /* Bottom-aligned, so the labels above the filters rise clear of a row that
+     still lines up along one edge. */
+  display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;
   position: sticky; top: var(--bars-h); z-index: 20;
   background: var(--bg); padding: 0.75rem 0; margin-top: -0.75rem;
 }

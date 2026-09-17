@@ -19,8 +19,6 @@ import { LoadingBall } from '../../components/LoadingBall'
 import { PassphraseModal } from '../../components/PassphraseModal'
 import { ManagePlayers } from './ManagePlayers'
 import { TeamNames } from './TeamNames'
-import { DraftToggle } from './DraftToggle'
-import { draftState, type DraftState } from '../../data/supabase'
 import { errorText, removeWeek, scheduleMatch, unlock, unscheduleMatch } from '../../data/supabase'
 import { DropPicker } from '../../components/DropPicker'
 import { DraftTeams } from './DraftTeams'
@@ -1441,8 +1439,41 @@ type SortKey = (typeof BOARD_COLUMNS)[number]['key']
 const TIER_PILLS = ['Top', 'High', 'Mid', 'Low', 'Banned'] as const
 
 /** The board's resting state: what you can draft, and nothing you cannot. */
-const isLegalOnly = (legality: Set<'legal' | 'banned'>) =>
-  legality.size === 1 && legality.has('legal')
+/**
+ * One filter, one pill: it says what it is showing and a click moves it on.
+ *
+ * Four pairs of independent toggles could be in sixteen combinations, most of
+ * which nobody wants and several of which show nothing at all — Legal and
+ * Banned both off was an empty board with two pills lit. A cycle cannot reach
+ * those states, takes half the room, and reads as an answer rather than as two
+ * questions: the label above says what is being filtered and the pill says
+ * what the filter is set to.
+ *
+ * The first mode is the resting one, so only the others mark themselves.
+ */
+function ModePill<T extends string>({ label, modes, value, onChange }: {
+  label: string
+  modes: { key: T; label: string; count?: number }[]
+  value: T
+  onChange: (value: T) => void
+}) {
+  const at = Math.max(0, modes.findIndex((m) => m.key === value))
+  const now = modes[at]
+  const next = modes[(at + 1) % modes.length]
+  return (
+    <div className="mode-filter">
+      <span className="mode-label">{label}</span>
+      <button
+        type="button"
+        className={`pill mode-pill${at > 0 ? ' is-active' : ''}`}
+        onClick={() => onChange(next.key)}
+        title={`Showing ${now.label}. Click for ${next.label}.`}
+      >
+        {now.label}{now.count != null && <em>{now.count}</em>}
+      </button>
+    </div>
+  )
+}
 
 /**
  * How many rows the board mounts at once.
@@ -1456,28 +1487,10 @@ const BOARD_ROWS = 500
 
 function Board({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
   const [query, setQuery] = useState('')
-  const editable = currentSeason().source === 'database'
-  /**
-   * Whether this season's draft is open, which is what the button offers to do
-   * next. Re-read whenever the league changes, and that includes changing
-   * season: both seasons are editable, so watching `editable` alone never
-   * noticed the switch and the button went on offering to open a draft that
-   * the season it had moved to already had open.
-   *
-   * The in-flight read is dropped if the season changes under it, so a slow
-   * answer for the season you left cannot overwrite the one you are on.
-   */
-  const [draft, setDraft] = useState<DraftState | null>(null)
-  useEffect(() => {
-    if (!editable) { setDraft(null); return }
-    let live = true
-    draftState().then((d) => { if (live) setDraft(d) }, () => {})
-    return () => { live = false }
-  }, [editable, league])
   // Empty set means "no filter" rather than "show nothing", so the board starts
   // complete and each pill narrows it.
   const [tiers, setTiers] = useState<Set<string>>(new Set())
-  const [avail, setAvail] = useState<Set<'available' | 'drafted'>>(new Set())
+  const [avail, setAvail] = useState<'all' | 'available' | 'drafted'>('all')
   /**
    * The one filter that does not start empty.
    *
@@ -1490,7 +1503,7 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
    * Both pills on means the same as neither, the way Available and Drafted
    * already work: two halves selected is the whole board.
    */
-  const [legality, setLegality] = useState<Set<'legal' | 'banned'>>(() => new Set(['legal']))
+  const [legality, setLegality] = useState<'legal' | 'banned' | 'all'>('legal')
   /**
    * Megas against everything else.
    *
@@ -1499,7 +1512,7 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
    * sort to. Empty is no filter, the way Available and Drafted work — this one
    * is a question you ask, not the shape the board rests in.
    */
-  const [megas, setMegas] = useState<Set<'mega' | 'plain'>>(new Set())
+  const [megas, setMegas] = useState<'all' | 'mega' | 'plain'>('all')
   /**
    * The dex's own search, over this board.
    *
@@ -1529,14 +1542,6 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
     [onPoints],
   )
 
-  const toggleIn = <T,>(setter: (fn: (prev: Set<T>) => Set<T>) => void, value: T) =>
-    setter((prev) => {
-      const next = new Set(prev)
-      if (next.has(value)) next.delete(value)
-      else next.add(value)
-      return next
-    })
-
   const toggleSort = (key: SortKey) =>
     setSort((prev) => {
       // Numbers are most useful highest-first; text reads better A–Z.
@@ -1552,9 +1557,9 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
     const list = Object.entries(league.board)
       .filter(([id, e]) => {
         if (tiers.size && !tiers.has(e.tier)) return false
-        if (legality.size && !legality.has(e.tier === 'Banned' ? 'banned' : 'legal')) return false
-        if (megas.size && !megas.has(isMega(dex[id]) ? 'mega' : 'plain')) return false
-        if (avail.size && !avail.has(e.draftedBy ? 'drafted' : 'available')) return false
+        if (legality !== 'all' && (e.tier === 'Banned' ? 'banned' : 'legal') !== legality) return false
+        if (megas !== 'all' && (isMega(dex[id]) ? 'mega' : 'plain') !== megas) return false
+        if (avail !== 'all' && (e.draftedBy ? 'drafted' : 'available') !== avail) return false
         // Whether or not the row is open. Folding it away is about screen
         // space, not about the search — a board that silently widened when you
         // collapsed the panel would be a different answer to the same question.
@@ -1635,6 +1640,23 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           type="search" value={query} onChange={(e) => setQuery(e.target.value)}
           placeholder="Search the board…" aria-label="Search draft board"
         />
+        {/* Beside the search it extends, rather than out among the filters:
+            it is more of the same question, and the filters are a different
+            one. Styled apart from them for the same reason — it opens a panel
+            where they each set a value. Marked when something in there is
+            narrowing the board, because the row can be closed over a filter
+            that is still on. */}
+        <button
+          type="button"
+          className={`board-advanced-toggle${advanced ? ' is-open' : ''}${adv.active ? ' is-on' : ''}`}
+          aria-pressed={advanced}
+          aria-expanded={advanced}
+          onClick={() => setAdvanced((v) => !v)}
+        >
+          <span className="chev" aria-hidden="true">{advanced ? '▾' : '▸'}</span>
+          Advanced{adv.active && <em>on</em>}
+        </button>
+        <span className="pill-divider" aria-hidden="true" />
         {/* One tier at a time, or all of them. Five toggles that could be in
             any combination made a board nobody could describe; a tier is the
             thing people actually want to look at.
@@ -1642,92 +1664,64 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
             Gone on a points season, which has no tiers to filter by. Sorting
             the Pts column is what narrows the board there. */}
         {!onPoints && (
-          <DropPicker
-            className="tier-picker"
-            ariaLabel="Filter by draft tier"
-            items={[
-              { id: '', label: 'All tiers', note: `${Object.keys(league.board).length} Pokémon` },
-              ...TIER_PILLS.map((t) => ({
-                id: t, label: t, note: `${counts[t] ?? 0} Pokémon`,
-              })),
-            ]}
-            value={[...tiers][0] ?? ''}
-            onPick={(item) => setTiers(item.id ? new Set([item.id]) : new Set())}
-          />
+          <div className="mode-filter">
+            <span className="mode-label">Tier</span>
+            <DropPicker
+              className="tier-picker"
+              ariaLabel="Filter by draft tier"
+              items={[
+                { id: '', label: 'All tiers', note: `${Object.keys(league.board).length} Pokémon` },
+                ...TIER_PILLS.map((t) => ({
+                  id: t, label: t, note: `${counts[t] ?? 0} Pokémon`,
+                })),
+              ]}
+              value={[...tiers][0] ?? ''}
+              onPick={(item) => setTiers(item.id ? new Set([item.id]) : new Set())}
+            />
+          </div>
         )}
-        <span className="pill-divider" aria-hidden="true" />
         {/* What you may draft, against what the league has taken off the table.
             A banned row is kept on the board rather than removed so a search
             for it answers "you cannot have that" instead of returning nothing,
             and this is the same answer given up front for the whole board.
 
-            On a season that still has tiers this overlaps the tier picker,
-            which lists Banned among the five. It is not the same question: the
-            picker can show one tier, and this can show the four that are not
-            Banned. Asking for the Banned tier while Legal is on shows nothing,
-            which is what it says on both pills. */}
-        <div className="pill-group" role="group" aria-label="Filter by whether it can be drafted">
-          {(['legal', 'banned'] as const).map((l) => (
-            <button
-              key={l} type="button"
-              className={`pill pill-${l}${legality.has(l) ? ' is-active' : ''}`}
-              aria-pressed={legality.has(l)}
-              onClick={() => toggleIn(setLegality, l)}
-            >
-              {l === 'legal' ? 'Legal' : 'Banned'}<em>{counts[l]}</em>
-            </button>
-          ))}
-        </div>
-        <span className="pill-divider" aria-hidden="true" />
+            Legal first, and not All, because most of a board can be banned —
+            Season 5 bans 570 of its 914 rows — and a board that opens on
+            mostly-unpickable rows answers the wrong question. */}
+        <ModePill
+          label="Legality" value={legality} onChange={setLegality}
+          modes={[
+            { key: 'legal', label: 'Legal', count: counts.legal },
+            { key: 'banned', label: 'Banned', count: counts.banned },
+            { key: 'all', label: 'All', count: counts.legal + counts.banned },
+          ]}
+        />
         {/* A Mega is not a tier and never appears in `board.tier`, so nothing
             else on this row can single them out. */}
-        <div className="pill-group" role="group" aria-label="Filter by Mega">
-          {(['mega', 'plain'] as const).map((m) => (
-            <button
-              key={m} type="button"
-              className={`pill pill-${m}${megas.has(m) ? ' is-active' : ''}`}
-              aria-pressed={megas.has(m)}
-              onClick={() => toggleIn(setMegas, m)}
-            >
-              {m === 'mega' ? 'Megas' : 'Non-Megas'}<em>{counts[m]}</em>
-            </button>
-          ))}
-        </div>
-        <span className="pill-divider" aria-hidden="true" />
-        <div className="pill-group" role="group" aria-label="Filter by availability">
-          {(['available', 'drafted'] as const).map((a) => (
-            <button
-              key={a} type="button"
-              className={`pill pill-${a}${avail.has(a) ? ' is-active' : ''}`}
-              aria-pressed={avail.has(a)}
-              onClick={() => toggleIn(setAvail, a)}
-            >
-              {a === 'available' ? 'Available' : 'Drafted'}<em>{counts[a]}</em>
-            </button>
-          ))}
-        </div>
-        <span className="pill-divider" aria-hidden="true" />
-        {/* The dex's questions, folded away until they are asked. Marked when
-            something in there is narrowing the board, because the row can be
-            closed over a filter that is still on. */}
-        <button
-          type="button"
-          className={`pill pill-advanced${advanced ? ' is-active' : ''}`}
-          aria-pressed={advanced}
-          aria-expanded={advanced}
-          onClick={() => setAdvanced((v) => !v)}
-        >
-          Advanced search{adv.active && <em>on</em>}
-        </button>
+        <ModePill
+          label="Megas" value={megas} onChange={setMegas}
+          modes={[
+            { key: 'all', label: 'All' },
+            { key: 'mega', label: 'Megas only', count: counts.mega },
+            { key: 'plain', label: 'Non-Megas', count: counts.plain },
+          ]}
+        />
+        <ModePill
+          label="Status" value={avail} onChange={setAvail}
+          modes={[
+            { key: 'all', label: 'All' },
+            { key: 'available', label: 'Available', count: counts.available },
+            { key: 'drafted', label: 'Drafted', count: counts.drafted },
+          ]}
+        />
         {/* Clear puts the board back to how it opens rather than to nothing
             filtered: legal-only is the resting state, not something chosen, so
             it is neither a reason to offer Clear nor something Clear undoes. */}
-        {(tiers.size > 0 || avail.size > 0 || megas.size > 0 || !isLegalOnly(legality) || adv.active) && (
+        {(tiers.size > 0 || avail !== 'all' || megas !== 'all' || legality !== 'legal' || adv.active) && (
           <button
             type="button" className="pill pill-clear"
             onClick={() => {
-              setTiers(new Set()); setAvail(new Set()); setMegas(new Set())
-              setLegality(new Set(['legal']))
+              setTiers(new Set()); setAvail('all'); setMegas('all'); setLegality('legal')
               adv.reset()
             }}
           >
@@ -1740,19 +1734,9 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           <div><dt className="swatch-taken" /><dd>taken</dd></div>
         </dl>
         <span className="count">{rows.length} shown</span>
-        {/* The "draft mode enabled" indicator used to sit here. It says
-            something about the whole League section rather than this tab, so it
-            lives in the bar above now. The button that opens the draft stays
-            with the board it acts on. */}
-        {editable && (
-          <div className="board-draft">
-            <DraftToggle
-              state={draft}
-              setState={setDraft}
-              onChanged={() => reloadSeason(currentSeason().id)}
-            />
-          </div>
-        )}
+        {/* Opening and closing the draft used to sit here too. It belongs
+            beside the "draft mode enabled" marker in the bar above, which is
+            the thing it turns on and off — and this row is filters. */}
       </div>
 
       <section className="panel">

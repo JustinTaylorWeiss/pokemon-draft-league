@@ -8,6 +8,7 @@ import {
   forgetMyPlayer, isSpectator, myPlayerId, setMyPlayer, SPECTATOR, subscribeIdentity,
 } from './data/identity'
 import { ReportMatch } from './features/league/ReportMatch'
+import { DraftToggle } from './features/league/DraftToggle'
 import { ManagePlayers } from './features/league/ManagePlayers'
 import {
   currentSeason, loadLeague, reloadSeason, SEASONS, setSeason, subscribeLeague,
@@ -270,6 +271,14 @@ export default function App() {
                     Draft mode enabled
                   </span>
                 )}
+                {/* Beside the marker it controls. It was on the draft list,
+                    which is where a draft is done but not where it is opened,
+                    and that put a passphrase button in a row of filters. */}
+                <DraftToggle
+                  state={draft}
+                  setState={setDraft}
+                  onChanged={() => reloadSeason(currentSeason().id)}
+                />
                 {canEdit && (
                   <button type="button" onClick={() => setEditing('match')}>Record a match</button>
                 )}
