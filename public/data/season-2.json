@@ -17387,50 +17387,6 @@
    "ferlo": 5,
    "nick": 6
   },
-  "records": {
-   "hunter": {
-    "wins": 1,
-    "losses": 1,
-    "gamesWon": 2,
-    "gamesLost": 3,
-    "monDiff": -2
-   },
-   "swjf": {
-    "wins": 3,
-    "losses": 0,
-    "gamesWon": 6,
-    "gamesLost": 1,
-    "monDiff": 8
-   },
-   "nick": {
-    "wins": 0,
-    "losses": 2,
-    "gamesWon": 2,
-    "gamesLost": 4,
-    "monDiff": -3
-   },
-   "bikeytomato": {
-    "wins": 2,
-    "losses": 1,
-    "gamesWon": 4,
-    "gamesLost": 3,
-    "monDiff": 4
-   },
-   "jeremy": {
-    "wins": 0,
-    "losses": 1,
-    "gamesWon": 1,
-    "gamesLost": 3,
-    "monDiff": -4
-   },
-   "ferlo": {
-    "wins": 0,
-    "losses": 1,
-    "gamesWon": 2,
-    "gamesLost": 3,
-    "monDiff": -3
-   }
-  },
   "matchStats": [
    {
     "week": 0,

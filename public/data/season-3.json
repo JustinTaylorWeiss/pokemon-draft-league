@@ -19021,64 +19021,6 @@
    "bikey": 7,
    "phillip": 8
   },
-  "records": {
-   "bray": {
-    "wins": 1,
-    "losses": 1,
-    "gamesWon": 3,
-    "gamesLost": 3,
-    "monDiff": 0
-   },
-   "max": {
-    "wins": 0,
-    "losses": 1,
-    "gamesWon": 1,
-    "gamesLost": 2,
-    "monDiff": -1
-   },
-   "jeremy": {
-    "wins": 2,
-    "losses": 1,
-    "gamesWon": 5,
-    "gamesLost": 3,
-    "monDiff": 5
-   },
-   "mieles": {
-    "wins": 0,
-    "losses": 1,
-    "gamesWon": 0,
-    "gamesLost": 2,
-    "monDiff": -5
-   },
-   "bikey": {
-    "wins": 0,
-    "losses": 1,
-    "gamesWon": 1,
-    "gamesLost": 2,
-    "monDiff": 0
-   },
-   "bargus": {
-    "wins": 3,
-    "losses": 0,
-    "gamesWon": 6,
-    "gamesLost": 3,
-    "monDiff": 2
-   },
-   "sean": {
-    "wins": 1,
-    "losses": 1,
-    "gamesWon": 3,
-    "gamesLost": 3,
-    "monDiff": 3
-   },
-   "phillip": {
-    "wins": 0,
-    "losses": 1,
-    "gamesWon": 1,
-    "gamesLost": 2,
-    "monDiff": -4
-   }
-  },
   "matchStats": [
    {
     "week": 0,

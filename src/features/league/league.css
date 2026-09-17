@@ -63,6 +63,87 @@
   font-weight: 600; letter-spacing: 0.01em;
 }
 .rank-cell { font-variant-numeric: tabular-nums; }
+
+/* ---- the playoffs, drawn ---- */
+/*
+ * Above the standings, because it answers the question they raise: the order
+ * is the postseason finish and the columns are the regular season, so this is
+ * what happened in between.
+ *
+ * A row of rounds that scrolls sideways rather than a true bracket with
+ * connecting lines. Three of the four brackets are eight coaches wide and one
+ * is a group stage that never had the shape at all, and lines drawn between
+ * boxes that are not a binary tree mislead more than they show.
+ */
+.bracket { margin: 0 0 1rem; }
+.bracket-title {
+  margin: 0 0 0.5rem; font-size: 0.78rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--muted);
+}
+.bracket-rounds {
+  display: flex; gap: 0.75rem; align-items: flex-start;
+  overflow-x: auto; padding-bottom: 0.25rem;
+}
+.bracket-round { flex: 1 1 0; min-width: 11rem; display: flex; flex-direction: column; gap: 0.4rem; }
+.bracket-round h4 {
+  margin: 0 0 0.1rem; font-size: 0.7rem; font-weight: 600; color: var(--muted);
+  text-align: center;
+}
+/* One series: both coaches, the games each took. */
+.bout {
+  border: 1px solid var(--line); border-radius: 6px; overflow: hidden;
+  background: var(--panel, transparent);
+}
+.bout-side {
+  display: flex; align-items: center; gap: 0.35rem;
+  padding: 0.28rem 0.45rem; font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+.bout-side + .bout-side { border-top: 1px solid var(--line); }
+.bout-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bout-score { font-weight: 700; }
+/* The winner carries the round; the loser is done. Said with weight and colour
+   rather than with a tick, so a column reads top to bottom at a glance. */
+.bout-side.won { font-weight: 700; }
+.bout-side.lost { color: var(--muted); }
+.bout-side.medal-1 { background: color-mix(in srgb, gold 14%, transparent); }
+.bout-side.medal-2 { background: color-mix(in srgb, silver 12%, transparent); }
+.bout-side.medal-3 { background: color-mix(in srgb, #cd7f32 14%, transparent); }
+.bout-side .medal { font-size: 0.85rem; }
+/* Neither side carried it, because the archive's links for this series do not
+   settle it. Dashed, so it does not read as a match still to be played. */
+.bout.undecided { border-style: dashed; }
+
+@media (max-width: 700px) {
+  /* Rounds keep their width and the row scrolls, rather than four columns
+     squeezing a name into three letters. */
+  .bracket-round { flex: 0 0 9.5rem; min-width: 9.5rem; }
+}
+
+/* ---- what the standings table is counting ---- */
+.table-label {
+  margin: 0; font-size: 0.72rem; font-weight: 600; color: var(--fg);
+  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+}
+.table-legend {
+  font-weight: 400; color: var(--muted);
+  display: inline-flex; align-items: center; gap: 0.3rem;
+}
+.table-legend .swatch {
+  width: 1.1rem; height: 0.75rem; border-radius: 3px;
+  border: 1px solid var(--accent); box-shadow: inset 2px 0 0 var(--accent);
+}
+/* Reached the playoffs. The table's own numbers stop before them, so the mark
+   is the only thing in the row saying why it is ranked where it is. */
+.standings-table tr.to-playoffs > * { border-top-color: var(--accent); border-bottom-color: var(--accent); }
+.standings-table tr.to-playoffs > *:first-child { border-left: 2px solid var(--accent); }
+.standings-table tr.to-playoffs > *:last-child { border-right: 1px solid var(--accent); }
+.made-playoffs {
+  margin-left: 0.4rem; padding: 0.02rem 0.3rem; border-radius: 999px;
+  border: 1px solid var(--accent); color: var(--accent);
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em;
+  text-transform: uppercase; vertical-align: middle; white-space: nowrap;
+}
 /* Trophies rather than a number: one, two or three of them reads at a glance
    where "2" has to be looked up against the column heading. */
 .titles { white-space: nowrap; letter-spacing: -0.05em; }

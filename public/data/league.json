@@ -18405,64 +18405,6 @@
    "arune": 7,
    "aadi": 8
   },
-  "records": {
-   "bikey": {
-    "wins": 3,
-    "losses": 0,
-    "gamesWon": 6,
-    "gamesLost": 1,
-    "monDiff": 10
-   },
-   "nolan": {
-    "wins": 0,
-    "losses": 1,
-    "gamesWon": 0,
-    "gamesLost": 2,
-    "monDiff": -4
-   },
-   "max": {
-    "wins": 0,
-    "losses": 1,
-    "gamesWon": 1,
-    "gamesLost": 2,
-    "monDiff": -6
-   },
-   "uezu": {
-    "wins": 1,
-    "losses": 1,
-    "gamesWon": 3,
-    "gamesLost": 3,
-    "monDiff": 3
-   },
-   "arune": {
-    "wins": 0,
-    "losses": 1,
-    "gamesWon": 0,
-    "gamesLost": 2,
-    "monDiff": -4
-   },
-   "jeremy": {
-    "wins": 2,
-    "losses": 1,
-    "gamesWon": 4,
-    "gamesLost": 2,
-    "monDiff": 8
-   },
-   "aadi": {
-    "wins": 0,
-    "losses": 1,
-    "gamesWon": 1,
-    "gamesLost": 2,
-    "monDiff": -2
-   },
-   "tiarnan": {
-    "wins": 1,
-    "losses": 1,
-    "gamesWon": 2,
-    "gamesLost": 3,
-    "monDiff": -5
-   }
-  },
   "matchStats": [
    {
     "week": 0,

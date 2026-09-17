@@ -141,9 +141,6 @@ async function readReplay(url) {
   }
 }
 
-/** Pokemon a side still had standing: what it brought, less what it lost. */
-const survivorsOf = (side) =>
-  side.lines.filter((l) => l.brought).length - side.lines.reduce((n, l) => n + l.deaths, 0)
 
 // ---- names ------------------------------------------------------------------
 
@@ -353,7 +350,6 @@ for (const b of brackets) {
     // games — the same shape a regular-season match keeps, so the stats tab
     // can add the two together without knowing which is which.
     const lines = { [m.playerA]: new Map(), [m.playerB]: new Map() }
-    const diff = { [m.playerA]: 0, [m.playerB]: 0 }
     for (const g of m.games) {
       if (g.error || !g.winner) continue
       const one = byAccount.get(slug(g.a))
@@ -381,17 +377,11 @@ for (const b of brackets) {
           mine.set(mon, had)
         }
       }
-      // Pokemon left standing, mine against theirs — the differential the
-      // standings column shows, game by game.
-      const left = { [one]: survivorsOf(g.sides.a), [two]: survivorsOf(g.sides.b) }
-      diff[one] += left[one] - left[two]
-      diff[two] += left[two] - left[one]
     }
     m.scoreA = a
     m.scoreB = b_
     m.winner = a > b_ ? m.playerA : b_ > a ? m.playerB : null
     m.lines = lines
-    m.diff = diff
     const stated = m.stated ? playerIn(leagues[b.id], m.stated) : null
     if (stated && m.winner !== stated) {
       throw new Error(`${b.id}: the document says ${m.stated} won ${m.a} v ${m.b},`
@@ -415,31 +405,6 @@ for (const b of brackets) {
   const league = leagues[b.id]
   const named = Object.fromEntries(league.players.map((p) => [p.id, p.name]))
   
-  /**
-   * What the postseason adds to a coach's record, for the tables that offer to
-   * count it. Kept apart from the season's own totals rather than folded in,
-   * because both answers are wanted: the regular season is what the sheet
-   * recorded, and the playoffs are what happened after it.
-   */
-  const records = {}
-  const add = (id) => (records[id] ??= {
-    wins: 0, losses: 0, gamesWon: 0, gamesLost: 0, monDiff: 0,
-  })
-  for (const m of b.matches) {
-    if (!m.playerA || !m.playerB) continue
-    const one = add(m.playerA)
-    const two = add(m.playerB)
-    one.gamesWon += m.scoreA; one.gamesLost += m.scoreB
-    two.gamesWon += m.scoreB; two.gamesLost += m.scoreA
-    one.monDiff += m.diff[m.playerA] ?? 0
-    two.monDiff += m.diff[m.playerB] ?? 0
-    // A series the replays do not settle is not a win for anybody, and not a
-    // loss either — its games still count, the series does not.
-    if (!m.winner) continue
-    if (m.winner === m.playerA) { one.wins++; two.losses++ }
-    else { two.wins++; one.losses++ }
-  }
-
   league.postseason = {
     champion: b.championId,
     matches: b.matches.map((m) => ({
@@ -448,7 +413,6 @@ for (const b of brackets) {
       winner: m.winner, replays: m.replays,
     })),
     placement,
-    records,
     // One entry per series, in the shape `totalsFromMatches` already reads, so
     // counting the playoffs is concatenating two lists. Week 0: a playoff match
     // belongs to no week of the season.

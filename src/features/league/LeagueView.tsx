@@ -4,9 +4,9 @@ import type { PokemonDex } from '../../data/types'
 import {
   byId, byTier, currentSeason, isMega, loadLeague, megaParts, mergeDex, reloadSeason, subscribeLeague,
   tierClass,
-  standingsWith, totalsFromMatches, type Standing,
+  totalsFromMatches, type Standing,
   type GameLine, type League, type LeaguePokemon, type Match, type MatchStat,
-  type PokemonTotals,
+  type PokemonTotals, type Postseason,
 } from '../../data/league'
 import { isSpectator, myPlayerId, subscribeIdentity } from '../../data/identity'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
@@ -31,12 +31,6 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
   const [league, setLeague] = useState<League | null>(null)
   const [rawDex, setRawDex] = useState<PokemonDex | null>(null)
   const [error, setError] = useState<string | null>(null)
-  /**
-   * Whether the playoffs are being counted. Held here rather than in either
-   * tab so the answer survives moving between them: a reader who has asked for
-   * the playoffs in the coaches' table means it for the Pokemon's too.
-   */
-  const [playoffs, setPlayoffs] = useState(false)
 
   useEffect(() => {
     Promise.all([loadLeague(), loadPokemon()]).then(
@@ -64,43 +58,133 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
 
   return (
     <div className="league">
-      {tab === 'standings' && (
-        <Standings league={league} dex={dex} playoffs={playoffs} onPlayoffs={setPlayoffs} />
-      )}
+      {tab === 'standings' && <Standings league={league} dex={dex} />}
       {tab === 'matches' && <Matches league={league} dex={dex} />}
       {tab === 'board' && <Board league={league} dex={dex} />}
       {tab === 'my-team' && <DraftTeams league={league} dex={dex} />}
       {tab === 'history' && <History league={league} />}
-      {tab === 'stats' && (
-        <Stats league={league} dex={dex} playoffs={playoffs} onPlayoffs={setPlayoffs} />
-      )}
+      {tab === 'stats' && <Stats league={league} dex={dex} />}
       {tab === 'rules' && <Rules league={league} />}
     </div>
   )
 }
 
 /**
- * Count the playoffs, or do not.
+ * The rounds a bracket was played in, worked out from who played whom.
  *
- * Only offered where there were any. The regular season is what the league's
- * sheet recorded and is what the tables have always shown, so it is the side
- * that is on to begin with; the playoffs are a handful of matches that can
- * move a coach several places and are worth being able to see either way.
+ * Nothing in the archive says "semi-final"; it is a list of fixtures in order.
+ * But a coach cannot be in two matches of the same round, so each match goes
+ * in the first round where neither of its players is already — which sorts
+ * four quarter-finals into one column and the two semi-finals into the next.
  */
-function PlayoffToggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
+function roundsOf(matches: Postseason['matches']): Postseason['matches'][] {
+  const rounds: Postseason['matches'][] = []
+  for (const m of matches) {
+    let i = 0
+    const playing = (r: Postseason['matches']) =>
+      r.some((x) => x.a === m.a || x.b === m.a || x.a === m.b || x.b === m.b)
+    while (rounds[i] && playing(rounds[i])) i++
+    ;(rounds[i] ??= []).push(m)
+  }
+  return rounds
+}
+
+/**
+ * Whether losing put you out.
+ *
+ * Seasons 3 and 4 were straight knock-outs. Season 2 was two groups of three
+ * and then a final, where Hunter lost to Sean and played again anyway — so
+ * calling its columns quarter- and semi-finals would be wrong, and it gets one
+ * "Group stage" column instead of three rounds of a bracket it never was.
+ */
+function isKnockout(rounds: Postseason['matches'][]): boolean {
+  const out = new Set<string>()
+  for (const round of rounds) {
+    for (const m of round) if ((m.a && out.has(m.a)) || (m.b && out.has(m.b))) return false
+    for (const m of round) {
+      if (!m.winner) continue
+      const loser = m.winner === m.a ? m.b : m.a
+      if (loser) out.add(loser)
+    }
+  }
+  return true
+}
+
+/** Named from the end, because that is the round every bracket has. */
+const KNOCKOUT_ROUNDS = ['Final', 'Semi-finals', 'Quarter-finals', 'Round of 16']
+
+/**
+ * The playoffs, drawn.
+ *
+ * Above the table rather than on a tab of its own, because it is the answer to
+ * the question the table raises: the order is the postseason finish and the
+ * columns are the regular season, and this is what happened in between.
+ */
+function Bracket({ league }: { league: League }) {
+  const post = league.postseason
+  const people = useMemo(() => byId(league.players), [league.players])
+  const columns = useMemo(() => {
+    const matches = post?.matches ?? []
+    if (!matches.length) return []
+    const final = matches.filter((m) => m.round === 'Final')
+    const before = matches.filter((m) => m.round !== 'Final')
+    const rounds = roundsOf(before)
+    const knockout = isKnockout([...rounds, final])
+    const shape = knockout ? [...rounds, final] : [before, final]
+    return shape.filter((r) => r.length).map((r, i, all) => ({
+      matches: r,
+      name: knockout
+        ? KNOCKOUT_ROUNDS[all.length - 1 - i] ?? `Round ${i + 1}`
+        : i === all.length - 1 ? 'Final' : 'Group stage',
+    }))
+  }, [post])
+
+  if (!columns.length) return null
+  const placement = post?.placement ?? {}
+  const name = (id: string | null) => (id ? people[id]?.name ?? id : 'TBD')
+
   return (
-    <div className="pill-group" role="group" aria-label="Whether to count the playoffs">
-      {([false, true] as const).map((v) => (
-        <button
-          key={String(v)} type="button"
-          className={`pill${on === v ? ' is-active' : ''}`}
-          aria-pressed={on === v}
-          onClick={() => onChange(v)}
-        >
-          {v ? 'With playoffs' : 'Regular season'}
-        </button>
-      ))}
-    </div>
+    <section className="bracket" aria-label="Playoff bracket">
+      <h3 className="bracket-title">Playoffs</h3>
+      <div className="bracket-rounds">
+        {columns.map((round) => (
+          <div className="bracket-round" key={round.name}>
+            <h4>{round.name}</h4>
+            {round.matches.map((m, i) => (
+              <div
+                className={`bout${m.winner ? '' : ' undecided'}`}
+                key={`${m.a}-${m.b}-${i}`}
+                // One Season 2 group match has three links of which one belongs
+                // to another match, so the two that are left split it.
+                title={m.winner ? undefined : 'No result: the replays for this series do not settle it'}
+              >
+                {([[m.a, m.scoreA], [m.b, m.scoreB]] as const).map(([id, score], side) => {
+                  const medal = id ? MEDALS[placement[id]] : undefined
+                  return (
+                    <div
+                      key={side}
+                      className={`bout-side${m.winner && m.winner === id ? ' won' : ''}${
+                        m.winner && m.winner !== id ? ' lost' : ''}${medal ? ` medal-${placement[id!]}` : ''}`}
+                    >
+                      {medal && <span className="medal" title={medal.label}>{medal.icon}</span>}
+                      <span className="bout-name">{name(id)}</span>
+                      <span className="bout-score">{score}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+      {/* No third-place match was ever played, so third is where the finishing
+          order puts the better of the two who went out in the semi-finals. */}
+      <p className="panel-note">
+        Gold, silver and bronze are the season&rsquo;s first, second and third.
+        {columns.some((r) => r.matches.some((m) => !m.winner))
+          && ' A series shown without a winner is one the archive\u2019s replays do not settle.'}
+      </p>
+    </section>
   )
 }
 
@@ -229,12 +313,7 @@ const ALL_TIME_COLUMNS: StatColumn[] =
 
 type StatSort = 'kills' | 'deaths' | 'diff' | 'gamesPlayed' | 'killsPerGame' | 'kd' | 'name' | 'tier'
 
-function Stats({ league, dex, playoffs, onPlayoffs }: {
-  league: League
-  dex: Record<string, LeaguePokemon>
-  playoffs: boolean
-  onPlayoffs: (v: boolean) => void
-}) {
+function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
   // dir 0 is the power ranking above; a column cycles through both directions
   // and back to it.
   const [sort, setSort] = useState<{ key: StatSort; dir: 1 | -1 | 0 }>({ key: 'kills', dir: 0 })
@@ -270,16 +349,19 @@ function Stats({ league, dex, playoffs, onPlayoffs }: {
     setSort({ key: 'kills', dir: 0 })
   }
 
-  const extra = league.postseason?.matchStats
-  const hadPlayoffs = Boolean(extra?.length)
   /**
-   * A playoff game's kills are kills, so with the playoffs counted they are
-   * simply more matches — and without them the board is the regular season
-   * exactly as it was.
+   * The playoffs always count here.
+   *
+   * A knockout in a final is a knockout, and a board of what every Pokemon did
+   * has no reason to stop at the last week of the regular season. This is the
+   * one place the two halves of a season are added together — the coaches'
+   * table keeps them apart, because a coach's record is the season they played
+   * to reach the playoffs with.
    */
+  const extra = league.postseason?.matchStats
   const matches = useMemo(
-    () => (playoffs && extra ? [...(league.matchStats ?? []), ...extra] : league.matchStats ?? []),
-    [league.matchStats, extra, playoffs],
+    () => (extra?.length ? [...(league.matchStats ?? []), ...extra] : league.matchStats ?? []),
+    [league.matchStats, extra],
   )
   const allTime = currentSeason().source === 'all-time'
   /** One everywhere else: every Pokemon that played at all is on the board. */
@@ -374,7 +456,6 @@ function Stats({ league, dex, playoffs, onPlayoffs }: {
             placeholder="Search Pokémon…" aria-label="Search stats"
           />
           <span className="count">{rows.length} Pokémon</span>
-          {hadPlayoffs && <PlayoffToggle on={playoffs} onChange={onPlayoffs} />}
           {/* What the order actually is, whether that is the power ranking or
               the award whose tab is open. Dropped once a column is picked,
               since the chain would then describe something that is not
@@ -525,7 +606,7 @@ function Rules({ league }: { league: League }) {
  * else, so it is resolved from the schedule rather than stored: whoever won
  * more of the series they played against each other.
  */
-function rankStandings(league: League, playoffs: boolean): Standing[] {
+function rankStandings(league: League): Standing[] {
   const headToHead = (a: Standing, b: Standing) => {
     let wins = 0
     for (const m of league.schedule) {
@@ -540,8 +621,7 @@ function rankStandings(league: League, playoffs: boolean): Standing[] {
 
   const rate = (won: number, total: number) => (total ? won / total : 0)
 
-  const byRecord = standingsWith(league, playoffs)
-    .slice()
+  const byRecord = [...league.standings]
     .sort((a, b) =>
       // Seasons won come before anything a record can say, and only the
       // all-time table has any — within a season every row is undefined here
@@ -575,15 +655,18 @@ function rankStandings(league: League, playoffs: boolean): Standing[] {
   ].map((s, i) => ({ ...s, rank: i + 1 }))
 }
 
-function Standings({ league, dex, playoffs, onPlayoffs }: {
-  league: League
-  dex: Record<string, LeaguePokemon>
-  playoffs: boolean
-  onPlayoffs: (v: boolean) => void
-}) {
-  const hadPlayoffs = Boolean(league.postseason?.records
-    && Object.keys(league.postseason.records).length)
-  const ranked = rankStandings(league, playoffs && hadPlayoffs)
+function Standings({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
+  const ranked = rankStandings(league)
+  /** The bracket, where a season played one. Season 1 named a champion only. */
+  const bracket = league.postseason?.matches ?? []
+  /**
+   * Who got out of the regular season.
+   *
+   * The table's numbers stop at the end of it, so the reason Aadi is eighth on
+   * an 8-0 record is not in any column — it is in the bracket above. These
+   * rows are marked so the two read as one thing.
+   */
+  const advanced = new Set(bracket.flatMap((m) => [m.a, m.b]).filter(Boolean) as string[])
   const editable = currentSeason().source === 'database'
   /**
    * The all-time table has no team behind a row to open.
@@ -609,6 +692,8 @@ function Standings({ league, dex, playoffs, onPlayoffs }: {
   /** A cost column only means something where costs are what limit a team. */
   const onPoints = league.meta.pointsBudget != null
   return (
+    <>
+    <Bracket league={league} />
     <section className="panel">
       <div className="standings-head">
         {editable && (
@@ -625,14 +710,26 @@ function Standings({ league, dex, playoffs, onPlayoffs }: {
         )}
         {/* The tiebreaks in the order they apply, sitting where the columns they
             refer to are — one line, so it reads as a caption and not a paragraph. */}
-        {hadPlayoffs && <PlayoffToggle on={playoffs} onChange={onPlayoffs} />}
+        {/* What the numbers are, since the order is something else: the columns
+            stop at the last week of the regular season and the ranking does
+            not. Said plainly rather than left to be worked out from a row that
+            reads 8-0 and eighth. */}
+        <p className="table-label">
+          Regular season stats
+          {advanced.size > 0 && (
+            <span className="table-legend">
+              <span className="swatch" aria-hidden="true" />
+              outlined rows reached the playoffs
+            </span>
+          )}
+        </p>
         <p className="sort-note">
           {Boolean(league.postseason?.placement
             && Object.keys(league.postseason.placement).length) && (
             // Season 1 had no bracket at all — the archive simply names its
             // champion — so there is no postseason finish to order by there,
             // only a winner to put first.
-            hadPlayoffs ? (
+            advanced.size > 0 ? (
               <span className="qualifier" title="The coaches who reached the playoffs are in the order they went out; the rest follow on their regular-season record.">
                 Postseason finish
               </span>
@@ -691,7 +788,8 @@ function Standings({ league, dex, playoffs, onPlayoffs }: {
               return (
                 <Fragment key={s.player}>
                 <tr
-                  className={`${medal ? `medal-row medal-${s.rank}` : ''}${showing ? ' is-open' : ''}${allTime ? '' : ' clickable'}`}
+                  className={`${medal ? `medal-row medal-${s.rank}` : ''}${showing ? ' is-open' : ''}${
+                    allTime ? '' : ' clickable'}${advanced.has(s.player) ? ' to-playoffs' : ''}`}
                   onClick={allTime ? undefined : () => setTeam(showing ? null : s.player)}
                   // The whole row is the target, which a <tr> cannot be on its
                   // own — so it takes focus and answers the keys a button would.
@@ -712,6 +810,9 @@ function Standings({ league, dex, playoffs, onPlayoffs }: {
                       <span className="player-caret" aria-hidden="true">{showing ? '▾' : '▸'}</span>
                     )}
                     <span>{s.name}</span>
+                    {advanced.has(s.player) && (
+                      <span className="made-playoffs" title="Reached the playoffs">Playoffs</span>
+                    )}
                   </th>
                   <td className="col-abil">{s.team ?? <em className="none">TBD</em>}</td>
                   {allTime && (
@@ -831,6 +932,7 @@ function Standings({ league, dex, playoffs, onPlayoffs }: {
         </table>
       </div>
     </section>
+    </>
   )
 }
 
