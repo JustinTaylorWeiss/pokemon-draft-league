@@ -1,4 +1,6 @@
 /** Kept out of LeagueView so the app shell can render the secondary nav. */
+import type { Season } from '../../data/league'
+
 export type LeagueTab =
   | 'standings' | 'matches' | 'stats' | 'my-team' | 'board' | 'history' | 'rules'
 
@@ -17,3 +19,20 @@ export const LEAGUE_TABS: { key: LeagueTab; label: string }[] = [
   { key: 'stats', label: 'Pokémon Awards' },
   { key: 'board', label: 'Draft List' },
 ]
+
+/**
+ * All Time is a record of coaches and Pokémon and nothing besides.
+ *
+ * It was never drafted and never scheduled: there is no board behind it, no
+ * fixture that belongs to it rather than to the season that played it, and no
+ * team behind a coach — their row is four or five seasons of different teams
+ * added up. The tabs that would open onto nothing are not offered rather than
+ * offered empty.
+ */
+const ALL_TIME: LeagueTab[] = ['standings', 'stats']
+
+/** The tabs this season has. */
+export const tabsFor = (season: Season) =>
+  (season.source === 'all-time'
+    ? LEAGUE_TABS.filter((t) => ALL_TIME.includes(t.key))
+    : LEAGUE_TABS)

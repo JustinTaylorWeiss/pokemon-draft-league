@@ -137,6 +137,13 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
   }
 
   const matches = useMemo(() => league.matchStats ?? [], [league.matchStats])
+  /**
+   * A tier is a season's opinion of a Pokemon, written on that season's board.
+   * Across all of them there is no such opinion — Season 3 priced Omanyte for
+   * Little Cup and Season 4 never listed it — so the column would be a rule
+   * of dashes and a sort by nothing. Left out rather than left empty.
+   */
+  const tiered = currentSeason().source !== 'all-time'
 
   /** The whole season, always: a ranking of the season is the point. */
   const totals = useMemo(() => Object.values(totalsFromMatches(matches)), [matches])
@@ -236,9 +243,10 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                 <th className="rank-col">#</th>
                 {/* Left to right in the order the power ranking applies them:
                     every column past the tier is one of its steps. */}
-                {([['name', 'Pokémon'], ['tier', 'Tier'], ['diff', 'Diff'], ['kd', 'K/D'],
-                   ['killsPerGame', 'KOs/Game'], ['kills', 'KOs'], ['gamesPlayed', 'Games'],
-                   ['deaths', 'Deaths']] as [StatSort, string][]).map(([key, label]) => (
+                {(([['name', 'Pokémon'], ['tier', 'Tier'], ['diff', 'Diff'], ['kd', 'K/D'],
+                    ['killsPerGame', 'KOs/Game'], ['kills', 'KOs'], ['gamesPlayed', 'Games'],
+                    ['deaths', 'Deaths']] as [StatSort, string][])
+                  .filter(([key]) => tiered || key !== 'tier')).map(([key, label]) => (
                   <th
                     key={key}
                     className={`sortable${key === 'name' ? ' col-name' : ''}${
@@ -288,11 +296,13 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                         {mon?.types[1] && <TypeChip type={mon.types[1]} />}
                       </span>
                     </th>
-                    <td>
-                      {mon?.draftTier
-                        ? <span className={tierClass(mon.draftTier)}>{mon.draftTier}</span>
-                        : <em className="none">—</em>}
-                    </td>
+                    {tiered && (
+                      <td>
+                        {mon?.draftTier
+                          ? <span className={tierClass(mon.draftTier)}>{mon.draftTier}</span>
+                          : <em className="none">—</em>}
+                      </td>
+                    )}
                     <td className={t.diff > 0 ? 'pos' : t.diff < 0 ? 'neg' : ''}>
                       {t.diff > 0 ? `+${t.diff}` : t.diff}
                     </td>
@@ -325,9 +335,11 @@ function Rules({ league }: { league: League }) {
   if (!rules?.sections.length) {
     return (
       <p className="panel-note">
-        {currentSeason().source === 'sheet'
-          ? 'No rules were kept with this season\u2019s archive.'
-          : 'No rules written for this season yet.'}
+        {currentSeason().source === 'all-time'
+          ? 'Every season was played under its own rules. They are on its own page.'
+          : currentSeason().source === 'sheet'
+            ? 'No rules were kept with this season\u2019s archive.'
+            : 'No rules written for this season yet.'}
       </p>
     )
   }
@@ -404,6 +416,16 @@ function rankStandings(league: League): Standing[] {
 function Standings({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
   const ranked = rankStandings(league)
   const editable = currentSeason().source === 'database'
+  /**
+   * The all-time table has no team behind a row to open.
+   *
+   * A coach's all-time record is four or five seasons of different teams added
+   * together, so there is no one roster it could show — those live on the
+   * seasons that drafted them. The rows say so by not inviting the click: no
+   * caret, no focus, nothing to expand. The column that would name a team
+   * names the seasons instead, which is the thing the row actually has.
+   */
+  const allTime = currentSeason().source === 'all-time'
   /** Somebody watching does not get the changes a player gets without asking. */
   const [identity, setIdentity] = useState(myPlayerId)
   useEffect(() => subscribeIdentity(setIdentity), [])
@@ -459,7 +481,8 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
               {/* The record first, then the columns the sort applies, in the
                   order it applies them. Head-to-head has no column — it is read
                   from the schedule. */}
-              <th>#</th><th className="col-name">Player</th><th className="col-abil">Team</th>
+              <th>#</th><th className="col-name">Player</th>
+              <th className="col-abil">{allTime ? 'Seasons' : 'Team'}</th>
               <th title="Matches won">W</th><th title="Matches lost">L</th>
               <th title="Series won as a share of series played">Match Win %</th>
               <th title="Games won">GW</th><th title="Games lost">GL</th>
@@ -479,24 +502,26 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
               return (
                 <Fragment key={s.player}>
                 <tr
-                  className={`${medal ? `medal-row medal-${s.rank}` : ''}${showing ? ' is-open' : ''} clickable`}
-                  onClick={() => setTeam(showing ? null : s.player)}
+                  className={`${medal ? `medal-row medal-${s.rank}` : ''}${showing ? ' is-open' : ''}${allTime ? '' : ' clickable'}`}
+                  onClick={allTime ? undefined : () => setTeam(showing ? null : s.player)}
                   // The whole row is the target, which a <tr> cannot be on its
                   // own — so it takes focus and answers the keys a button would.
-                  tabIndex={0}
-                  onKeyDown={(e) => {
+                  tabIndex={allTime ? undefined : 0}
+                  onKeyDown={allTime ? undefined : (e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault()
                       setTeam(showing ? null : s.player)
                     }
                   }}
-                  aria-expanded={showing}
+                  aria-expanded={allTime ? undefined : showing}
                 >
                   <td className="rank-cell">
                     {medal ? <span className="medal" title={medal.label}>{medal.icon}</span> : s.rank}
                   </td>
                   <th scope="row" className="col-name">
-                    <span className="player-caret" aria-hidden="true">{showing ? '▾' : '▸'}</span>
+                    {!allTime && (
+                      <span className="player-caret" aria-hidden="true">{showing ? '▾' : '▸'}</span>
+                    )}
                     <span>{s.name}</span>
                   </th>
                   <td className="col-abil">{s.team ?? <em className="none">TBD</em>}</td>

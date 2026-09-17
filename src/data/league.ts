@@ -236,7 +236,12 @@ export interface League {
 export interface Season {
   id: string
   label: string
-  source: 'sheet' | 'database'
+  /**
+   * Where the season is read from. `sheet` is a file in the build, `database`
+   * is Supabase, and `all-time` is neither — it is every other season added
+   * together, read from wherever each of them lives.
+   */
+  source: 'sheet' | 'database' | 'all-time'
   /**
    * The file in the build this season is served from, for the ones that are
    * records rather than live. Season 4's is `league.json` because it was the
@@ -266,7 +271,11 @@ export const SEASONS: Season[] = [
   { id: 'season-3', label: 'Season 3', source: 'sheet', file: 'season-3.json' },
   { id: 'season-2', label: 'Season 2', source: 'sheet', file: 'season-2.json' },
   { id: 'season-1', label: 'Season 1', source: 'sheet', file: 'season-1.json' },
+  { id: 'all-time', label: 'All Time', source: 'all-time' },
 ]
+
+/** How a season is written in the all-time table's Seasons column. */
+const shortLabel = (s: Season) => s.label.replace(/^Season (\d+)$/, 'S$1')
 
 const SEASON_KEY = 'league:season'
 
@@ -347,17 +356,45 @@ async function loadShipped(from: Season): Promise<League> {
   return res.json() as Promise<League>
 }
 
+/**
+ * Every other season, added together.
+ *
+ * Read the same way each of them is read on its own — the archives from their
+ * files, Season 5 from the database — rather than generated into a file of its
+ * own, so a match reported this afternoon is in the all-time table this
+ * afternoon. Four of the five are static files the browser has usually cached
+ * already, and the fifth is the round trip any season costs.
+ */
+async function loadAllTime(): Promise<League> {
+  const { combineSeasons } = await import('./allTime')
+  const parts = await Promise.all(
+    SEASONS.filter((s) => s.source !== 'all-time').map(async (s) => ({
+      label: shortLabel(s),
+      league: s.source === 'database' ? await loadFromDatabase(s.id) : await loadShipped(s),
+    })),
+  )
+  dataTimestamp = new Date()
+  return combineSeasons(parts)
+}
+
+const loadFor = (s: Season): Promise<League> =>
+  s.source === 'database' ? loadFromDatabase(s.id)
+    : s.source === 'all-time' ? loadAllTime()
+      : loadShipped(s)
+
 export function loadLeague(): Promise<League> {
   if (!pending) {
-    pending = season.source === 'database' ? loadFromDatabase() : loadShipped(season)
+    pending = loadFor(season)
     pending.catch(() => { pending = null })
   }
   return pending
 }
 
-async function loadFromDatabase(): Promise<League> {
+/** Named rather than assumed, so the all-time table can read Season 5 from a
+ *  season that is not it. */
+async function loadFromDatabase(seasonId?: string): Promise<League> {
   const { loadLeagueFromSupabase } = await import('./leagueFromSupabase')
-  const league = await loadLeagueFromSupabase()
+  const league = await loadLeagueFromSupabase(seasonId)
   dataTimestamp = new Date()
   return league
 }
@@ -377,9 +414,7 @@ export async function setSeason(id: string): Promise<void> {
 
   pending = null
   try {
-    const league = next.source === 'database'
-      ? await loadFromDatabase()
-      : await loadShipped(next)
+    const league = await loadFor(next)
     pending = Promise.resolve(league)
     for (const fn of listeners) fn(league)
   } finally {
@@ -392,7 +427,7 @@ export async function reloadSeason(id: string): Promise<void> {
   if (!target) return
   tellDatabase(target)
   try {
-    const league = target.source === 'database' ? await loadFromDatabase() : await loadShipped(target)
+    const league = await loadFor(target)
     pending = Promise.resolve(league)
     for (const fn of listeners) fn(league)
   } finally {

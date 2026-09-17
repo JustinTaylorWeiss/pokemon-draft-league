@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useElementHeight } from './lib/useElementHeight'
 import { QuickMatchup } from './features/quick-matchup/QuickMatchup'
 import { LeagueView } from './features/league/LeagueView'
-import { LEAGUE_TABS, type LeagueTab } from './features/league/tabs'
+import { tabsFor, type LeagueTab } from './features/league/tabs'
 import { DropPicker } from './components/DropPicker'
 import {
   forgetMyPlayer, isSpectator, myPlayerId, setMyPlayer, SPECTATOR, subscribeIdentity,
@@ -68,6 +68,20 @@ export default function App() {
   useEffect(() => { setMeState(myPlayerId()) }, [season])
   const source = SEASONS.find((s) => s.id === season)?.source
   const onDatabase = source === 'database'
+  /**
+   * Not every season has every tab: All Time has no board and no fixtures of
+   * its own. Read from the season rather than fixed, and the tab in hand is
+   * put back to the first one the new season does have — switching to All Time
+   * from the Draft List otherwise leaves a tab selected that is no longer on
+   * the bar, and the page under it blank.
+   */
+  const tabs = useMemo(
+    () => tabsFor(SEASONS.find((s) => s.id === season) ?? SEASONS[0]),
+    [season],
+  )
+  useEffect(() => {
+    setLeagueTab((tab) => (tabs.some((t) => t.key === tab) ? tab : tabs[0].key))
+  }, [tabs])
 
   /**
    * Asked whenever the site does not know who it is talking to in a season it
@@ -233,7 +247,7 @@ export default function App() {
         <div className="subbar">
           <div className="bar-inner">
             <nav className="sub-nav">
-              {LEAGUE_TABS.map((t) => ({
+              {tabs.map((t) => ({
                 ...t,
                 label: t.key === 'my-team' && !onDatabase ? 'Teams' : t.label,
               })).map((t) => (

@@ -80,8 +80,8 @@ interface StandingRow {
 const PAGE = 1000
 
 /** Reads one season's worth of a table, whole. */
-async function readAll(table: string, ...order: string[]) {
-  return readWhere(table, { eq: ['season_id', currentSeasonId()] }, order)
+async function readAll(season: string, table: string, ...order: string[]) {
+  return readWhere(table, { eq: ['season_id', season] }, order)
 }
 
 /**
@@ -129,19 +129,27 @@ async function readWhere(table: string, where: Where, order: string[]) {
   }
 }
 
-/** Every table in one round trip each, in parallel. */
-export async function loadLeagueFromSupabase(): Promise<League> {
-  const season = currentSeasonId()
+/**
+ * Every table in one round trip each, in parallel.
+ *
+ * Reads the season the site is showing unless told otherwise. It is told
+ * otherwise by the all-time table, which reads Season 5 while sitting on a
+ * season of its own — passing the id beats setting the shared one and putting
+ * it back, which would be a season's worth of reads aimed by a variable
+ * anything else could move underneath them.
+ */
+export async function loadLeagueFromSupabase(seasonId?: string): Promise<League> {
+  const season = seasonId ?? currentSeasonId()
 
   const [meta, players, board, rosters, matches, standings, rules] =
     await Promise.all([
       db.from('league_meta').select('*').eq('season_id', season).maybeSingle(),
-      readAll('players', 'seed'),
-      readAll('board'),
-      readAll('rosters'),
-      readAll('matches', 'week', 'id'),
-      readAll('standings'),
-      readAll('rules_sections', 'position'),
+      readAll(season, 'players', 'seed'),
+      readAll(season, 'board'),
+      readAll(season, 'rosters'),
+      readAll(season, 'matches', 'week', 'id'),
+      readAll(season, 'standings'),
+      readAll(season, 'rules_sections', 'position'),
     ])
 
   const firstError = [meta, players, board, rosters, matches, standings, rules]
