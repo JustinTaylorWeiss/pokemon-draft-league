@@ -237,6 +237,12 @@ export interface Season {
   id: string
   label: string
   source: 'sheet' | 'database'
+  /**
+   * The file in the build this season is served from, for the ones that are
+   * records rather than live. Season 4's is `league.json` because it was the
+   * only one when it was written.
+   */
+  file?: string
 }
 
 /**
@@ -256,7 +262,10 @@ export interface Season {
  */
 export const SEASONS: Season[] = [
   { id: 'mega-mc', label: 'Season 5', source: 'database' },
-  { id: 'season-4', label: 'Season 4', source: 'sheet' },
+  { id: 'season-4', label: 'Season 4', source: 'sheet', file: 'league.json' },
+  { id: 'season-3', label: 'Season 3', source: 'sheet', file: 'season-3.json' },
+  { id: 'season-2', label: 'Season 2', source: 'sheet', file: 'season-2.json' },
+  { id: 'season-1', label: 'Season 1', source: 'sheet', file: 'season-1.json' },
 ]
 
 const SEASON_KEY = 'league:season'
@@ -327,10 +336,11 @@ function dropStaleRefresh() {
  * build, it does not change, and nothing reaches out to Google to ask whether
  * it has.
  */
-async function loadShipped(): Promise<League> {
+async function loadShipped(from: Season): Promise<League> {
   dropStaleRefresh()
-  const res = await fetch(`${import.meta.env.BASE_URL}data/league.json`)
-  if (!res.ok) throw new Error(`Failed to load league.json: HTTP ${res.status}`)
+  const file = from.file ?? 'league.json'
+  const res = await fetch(`${import.meta.env.BASE_URL}data/${file}`)
+  if (!res.ok) throw new Error(`Failed to load ${file}: HTTP ${res.status}`)
   const modified = res.headers.get('last-modified')
   const builtAt = modified ? new Date(modified) : null
   if (builtAt && !Number.isNaN(builtAt.getTime())) dataTimestamp = builtAt
@@ -339,7 +349,7 @@ async function loadShipped(): Promise<League> {
 
 export function loadLeague(): Promise<League> {
   if (!pending) {
-    pending = season.source === 'database' ? loadFromDatabase() : loadShipped()
+    pending = season.source === 'database' ? loadFromDatabase() : loadShipped(season)
     pending.catch(() => { pending = null })
   }
   return pending
@@ -369,7 +379,7 @@ export async function setSeason(id: string): Promise<void> {
   try {
     const league = next.source === 'database'
       ? await loadFromDatabase()
-      : await loadShipped()
+      : await loadShipped(next)
     pending = Promise.resolve(league)
     for (const fn of listeners) fn(league)
   } finally {
@@ -382,7 +392,7 @@ export async function reloadSeason(id: string): Promise<void> {
   if (!target) return
   tellDatabase(target)
   try {
-    const league = target.source === 'database' ? await loadFromDatabase() : await loadShipped()
+    const league = target.source === 'database' ? await loadFromDatabase() : await loadShipped(target)
     pending = Promise.resolve(league)
     for (const fn of listeners) fn(league)
   } finally {

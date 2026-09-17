@@ -219,7 +219,7 @@ export default function App() {
                 items={SEASONS.map((x) => ({
                   id: x.id,
                   label: x.label,
-                  note: x.source === 'database' ? 'Edited on the site' : 'From the spreadsheet',
+                  note: x.source === 'database' ? 'Live season' : 'Archive',
                 }))}
                 value={season}
                 onPick={(x) => changeSeason(x.id)}

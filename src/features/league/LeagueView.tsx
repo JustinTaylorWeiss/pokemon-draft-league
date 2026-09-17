@@ -176,15 +176,13 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
   }, [totals, sort, query, dex, showing, rule])
 
   if (!matches.length) {
-    // Two different situations wearing the same words. A spreadsheet season with
-    // no stats means the tab has not been filled in and the import needs
-    // re-running; a season edited on the site means nobody has played yet, and
-    // telling those people to re-run an import they have nothing to do with is
-    // just confusing.
+    // Two different situations wearing the same words. An archived season with
+    // no stats is a season whose record was never kept, and nothing will change
+    // that; a season edited on the site means nobody has played yet.
     return (
       <p className="panel-note">
         {currentSeason().source === 'sheet'
-          ? 'No match stats in the sheet yet. Re-run the import once they are filled in.'
+          ? 'No match stats were recorded for this season.'
           : 'No matches played yet. Records show up here once matches are reported.'}
       </p>
     )
@@ -328,7 +326,7 @@ function Rules({ league }: { league: League }) {
     return (
       <p className="panel-note">
         {currentSeason().source === 'sheet'
-          ? 'No rules found in the sheet. Re-run the import to pick them up.'
+          ? 'No rules were kept with this season\u2019s archive.'
           : 'No rules written for this season yet.'}
       </p>
     )
@@ -843,8 +841,31 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
                 return `side ${won ? 'won' : 'lost'}`
               }
               const games = m.games ? [...m.games].sort((x, y) => x.number - y.number) : []
+              /*
+               * Whether the games are worth a row each.
+               *
+               * A match reported from a replay knows who knocked out what in
+               * each game. An archived one knows the link to each game and the
+               * totals for the match, and nothing in between — so its games
+               * are a set of links rather than three rows of empty boxes.
+               */
+              const perGame = games.some((g) => g.a.length + g.b.length > 0)
+              const series = perGame ? null : seriesLines(statsFor.get(m))
+              /*
+               * An archive is a finished record, so a fixture with no replay
+               * link is a link nobody kept, not a match nobody played — and
+               * most of them have none: fifteen of Season 1's twenty-four, and
+               * every one of Season 4's. Saying so is the point. A fixture
+               * whose sheet row was never filled in rendered nothing at all
+               * here, which read as "this never happened" even when its
+               * replays were sitting in the archive unlinked.
+               *
+               * A season still being played says nothing, because there the
+               * missing link really can mean the match is still to come.
+               */
+              const archived = !editable
               return (
-                <li key={i} className={`match-card${games.length ? ' has-games' : ''}`}>
+                <li key={i} className={`match-card${perGame ? ' has-games' : ''}`}>
                   <h4 className="match-title">
                     Match {i + 1}
                     {editing && m.id != null && (
@@ -863,7 +884,7 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
                     <span className={cls(false)}>{label(m.b)}</span>
                   </div>
 
-                  {games.map((g) => (
+                  {perGame && games.map((g) => (
                     <div key={g.number} className="game-row">
                       <GameTeam lines={g.a} dex={dex} align="left" won={g.winner === 'a'} />
                       <span className="game-label">
@@ -885,25 +906,52 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
                     </div>
                   ))}
 
-                  {/* No games recorded, but the match's own totals are known. */}
-                  {games.length === 0 && seriesLines(statsFor.get(m)) && (
-                    <div className="game-row">
-                      <GameTeam
-                        lines={seriesLines(statsFor.get(m))!.a} dex={dex} align="left"
-                        won={m.scoreA !== null && m.scoreB !== null && m.scoreA > m.scoreB}
-                      />
+                  {/* No game-by-game record, but the match's own totals are
+                      known — and for an archived season, so are the links to
+                      the games themselves. Without either, the row is just the
+                      replays, or the word that there are none. */}
+                  {!perGame && (series || archived) && (
+                    <div className={`game-row${series ? '' : ' is-bare'}`}>
+                      {series && (
+                        <GameTeam
+                          lines={series.a} dex={dex} align="left"
+                          won={m.scoreA !== null && m.scoreB !== null && m.scoreA > m.scoreB}
+                        />
+                      )}
                       <span className="game-label">
-                        <span
-                          className="game-pill is-plain"
-                          title="Totals for the whole match; the games were not recorded separately"
-                        >
-                          Match
-                        </span>
+                        {games.length ? games.map((g) => (
+                          <a
+                            key={g.number}
+                            className="game-pill"
+                            href={g.replayUrl ?? undefined}
+                            target="_blank"
+                            rel="noreferrer"
+                            title="Watch this game on Pokémon Showdown"
+                          >
+                            Game {g.number} ↗
+                          </a>
+                        )) : archived ? (
+                          <span
+                            className="game-pill is-plain"
+                            title="This match has no replay in the league's archive. The totals beside it are what was recorded."
+                          >
+                            No replay found
+                          </span>
+                        ) : (
+                          <span
+                            className="game-pill is-plain"
+                            title="Totals for the whole match; the games were not recorded separately"
+                          >
+                            Match
+                          </span>
+                        )}
                       </span>
-                      <GameTeam
-                        lines={seriesLines(statsFor.get(m))!.b} dex={dex} align="right"
-                        won={m.scoreA !== null && m.scoreB !== null && m.scoreB > m.scoreA}
-                      />
+                      {series && (
+                        <GameTeam
+                          lines={series.b} dex={dex} align="right"
+                          won={m.scoreA !== null && m.scoreB !== null && m.scoreB > m.scoreA}
+                        />
+                      )}
                     </div>
                   )}
                 </li>

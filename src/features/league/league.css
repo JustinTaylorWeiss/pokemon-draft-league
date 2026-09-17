@@ -660,11 +660,24 @@
    the player who brought it. Sized so six sprites a side fit the card at two
    columns — they overflowed it before, and the far team was clipped. */
 .game-row {
-  display: grid; grid-template-columns: 1fr 5.2rem 1fr; gap: 0.25rem;
+  /* The middle takes what its links need — one "Match" pill on a reported
+     season, up to three game links on an archived one — and the sides share
+     what is left. */
+  display: grid; grid-template-columns: 1fr minmax(5.2rem, max-content) 1fr;
+  gap: 0.35rem;
   align-items: center; padding: 0.08rem 0; min-width: 0;
 }
 .game-row > * { min-width: 0; }
-.game-label { display: flex; justify-content: center; }
+/* Nothing either side to balance it: an archived fixture whose sheet row was
+   never filled in has no totals to show, only its replays or the word that
+   there are none. Centred on its own rather than sitting in the left column. */
+.game-row.is-bare { grid-template-columns: 1fr; }
+/* Stacked, because an archived match puts every game's link in this one
+   column — three of them side by side is wider than the 5.2rem the row gives
+   it, and they were overlapping the Pokémon either side. */
+.game-label {
+  display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
+}
 /* The link out to the replay, and the only thing in the row that leads
    anywhere — so it looks like it does. */
 .game-pill {
@@ -682,7 +695,12 @@
 
 .game-team { display: flex; align-items: center; gap: 0.3rem; padding: 0 0.2rem; }
 .game-team.right { flex-direction: row-reverse; }
-.game-brought, .game-bench { display: flex; align-items: center; }
+/* Wraps rather than running on. An archived match shows a whole roster a side
+   — six or seven — where a reported game shows the four that were brought, and
+   the extra ones were pushing out of the column and under the links. */
+.game-brought, .game-bench { display: flex; align-items: center; flex-wrap: wrap; }
+.game-team { min-width: 0; }
+.game-team.right .game-brought, .game-team.right .game-bench { justify-content: flex-end; }
 .game-team.right .game-brought, .game-team.right .game-bench { flex-direction: row-reverse; }
 /* The ones that played, boxed as the team that was actually fielded, in the
    colour of that game's result. */
