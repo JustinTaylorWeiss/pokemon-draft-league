@@ -125,25 +125,15 @@
   margin: 0; font-size: 0.72rem; font-weight: 600; color: var(--fg);
   display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
 }
-.table-legend {
-  font-weight: 400; color: var(--muted);
-  display: inline-flex; align-items: center; gap: 0.3rem;
-}
-.table-legend .swatch {
-  width: 1.1rem; height: 0.75rem; border-radius: 3px;
-  border: 1px solid var(--accent); box-shadow: inset 2px 0 0 var(--accent);
-}
-/* Reached the playoffs. The table's own numbers stop before them, so the mark
-   is the only thing in the row saying why it is ranked where it is. */
-.standings-table tr.to-playoffs > * { border-top-color: var(--accent); border-bottom-color: var(--accent); }
-.standings-table tr.to-playoffs > *:first-child { border-left: 2px solid var(--accent); }
-.standings-table tr.to-playoffs > *:last-child { border-right: 1px solid var(--accent); }
-.made-playoffs {
-  margin-left: 0.4rem; padding: 0.02rem 0.3rem; border-radius: 999px;
-  border: 1px solid var(--accent); color: var(--accent);
-  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.04em;
-  text-transform: uppercase; vertical-align: middle; white-space: nowrap;
-}
+/*
+ * How far down the table the playoffs reached.
+ *
+ * The rows themselves are left alone. The ranking already puts everyone who
+ * got out above everyone who did not, so a count says the same thing a box
+ * around eight rows would and says it in one line — and the table keeps its
+ * own rules instead of carrying a second set drawn over the top.
+ */
+.advanced-note { color: var(--accent); font-weight: 600; }
 /* Trophies rather than a number: one, two or three of them reads at a glance
    where "2" has to be looked up against the column heading. */
 .titles { white-space: nowrap; letter-spacing: -0.05em; }

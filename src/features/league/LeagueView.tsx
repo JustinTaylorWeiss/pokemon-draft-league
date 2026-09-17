@@ -123,20 +123,33 @@ const KNOCKOUT_ROUNDS = ['Final', 'Semi-finals', 'Quarter-finals', 'Round of 16'
 function Bracket({ league }: { league: League }) {
   const post = league.postseason
   const people = useMemo(() => byId(league.players), [league.players])
-  const columns = useMemo(() => {
+  const { columns, lastPlayed } = useMemo(() => {
     const matches = post?.matches ?? []
-    if (!matches.length) return []
+    if (!matches.length) return { columns: [], lastPlayed: new Map<string, string>() }
     const final = matches.filter((m) => m.round === 'Final')
     const before = matches.filter((m) => m.round !== 'Final')
     const rounds = roundsOf(before)
     const knockout = isKnockout([...rounds, final])
     const shape = knockout ? [...rounds, final] : [before, final]
-    return shape.filter((r) => r.length).map((r, i, all) => ({
+    const built = shape.filter((r) => r.length).map((r, i, all) => ({
       matches: r,
       name: knockout
         ? KNOCKOUT_ROUNDS[all.length - 1 - i] ?? `Round ${i + 1}`
         : i === all.length - 1 ? 'Final' : 'Group stage',
     }))
+    /**
+     * Where each coach's run ended.
+     *
+     * A medal belongs on the match a coach went out in, not on every match
+     * they played: bronze beside Uezu in the quarter-final says they finished
+     * third in the quarter-final, which is not a thing. Recorded last-wins
+     * while walking the rounds in order.
+     */
+    const lastPlayed = new Map<string, string>()
+    built.forEach((round, col) => round.matches.forEach((m, row) => {
+      for (const id of [m.a, m.b]) if (id) lastPlayed.set(id, `${col}:${row}`)
+    }))
+    return { columns: built, lastPlayed }
   }, [post])
 
   if (!columns.length) return null
@@ -147,7 +160,7 @@ function Bracket({ league }: { league: League }) {
     <section className="bracket" aria-label="Playoff bracket">
       <h3 className="bracket-title">Playoffs</h3>
       <div className="bracket-rounds">
-        {columns.map((round) => (
+        {columns.map((round, col) => (
           <div className="bracket-round" key={round.name}>
             <h4>{round.name}</h4>
             {round.matches.map((m, i) => (
@@ -159,7 +172,10 @@ function Bracket({ league }: { league: League }) {
                 title={m.winner ? undefined : 'No result: the replays for this series do not settle it'}
               >
                 {([[m.a, m.scoreA], [m.b, m.scoreB]] as const).map(([id, score], side) => {
-                  const medal = id ? MEDALS[placement[id]] : undefined
+                  // Only where their run ended, so the podium is read off the
+                  // bracket once each rather than three times over.
+                  const medal = id && lastPlayed.get(id) === `${col}:${i}`
+                    ? MEDALS[placement[id]] : undefined
                   return (
                     <div
                       key={side}
@@ -716,11 +732,11 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
             reads 8-0 and eighth. */}
         <p className="table-label">
           Regular season stats
+          {/* Where the table stops mattering. The ranking puts everyone who
+              reached the playoffs above everyone who did not, so how many got
+              out is also where the line across the table falls. */}
           {advanced.size > 0 && (
-            <span className="table-legend">
-              <span className="swatch" aria-hidden="true" />
-              outlined rows reached the playoffs
-            </span>
+            <span className="advanced-note">Top {advanced.size} advanced to playoffs</span>
           )}
         </p>
         <p className="sort-note">
@@ -789,7 +805,7 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                 <Fragment key={s.player}>
                 <tr
                   className={`${medal ? `medal-row medal-${s.rank}` : ''}${showing ? ' is-open' : ''}${
-                    allTime ? '' : ' clickable'}${advanced.has(s.player) ? ' to-playoffs' : ''}`}
+                    allTime ? '' : ' clickable'}`}
                   onClick={allTime ? undefined : () => setTeam(showing ? null : s.player)}
                   // The whole row is the target, which a <tr> cannot be on its
                   // own — so it takes focus and answers the keys a button would.
@@ -810,9 +826,6 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                       <span className="player-caret" aria-hidden="true">{showing ? '▾' : '▸'}</span>
                     )}
                     <span>{s.name}</span>
-                    {advanced.has(s.player) && (
-                      <span className="made-playoffs" title="Reached the playoffs">Playoffs</span>
-                    )}
                   </th>
                   <td className="col-abil">{s.team ?? <em className="none">TBD</em>}</td>
                   {allTime && (
