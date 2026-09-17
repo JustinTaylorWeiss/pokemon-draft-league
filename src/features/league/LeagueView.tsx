@@ -133,13 +133,72 @@ function isKnockout(rounds: Postseason['matches'][]): boolean {
 const KNOCKOUT_ROUNDS = ['Final', 'Semi-finals', 'Quarter-finals', 'Round of 16']
 
 /**
+ * The three who finished on it, and what they drafted to get there.
+ *
+ * Laid out second, first, third the way a podium is, and stacked back into
+ * 1-2-3 on a narrow screen, where side by side stops meaning anything. The
+ * roster is sprites and no names: it is the shape of a team at a glance, and
+ * twelve names in a card would be a list rather than a team.
+ */
+function Podium({ league, dex, finish }: {
+  league: League
+  dex: Record<string, LeaguePokemon>
+  finish: Map<string, number>
+}) {
+  const people = byId(league.players)
+  const top = [1, 2, 3].map((place) => {
+    const id = [...finish].find(([, rank]) => rank === place)?.[0]
+    return id ? { place, id } : null
+  }).filter(Boolean) as { place: number; id: string }[]
+  if (!top.length) return null
+
+  return (
+    <ol className="podium">
+      {top.map(({ place, id }) => {
+        const medal = MEDALS[place]
+        const roster = league.rosters[id] ?? []
+        return (
+          <li key={id} className={`podium-step place-${place}`} style={{ order: PODIUM_ORDER[place] }}>
+            <div className="podium-who">
+              <span className="medal" title={medal.label}>{medal.icon}</span>
+              <span className="podium-name">{people[id]?.name ?? id}</span>
+              {people[id]?.team && <span className="podium-team">{people[id].team}</span>}
+            </div>
+            {roster.length > 0 && (
+              <div className="podium-roster">
+                {roster.map((pick) => {
+                  const mon = dex[pick.pokemon]
+                  if (!mon) return null
+                  return (
+                    <PokemonLink key={pick.pokemon} id={pick.pokemon} title={mon.name}>
+                      <Sprite pokemon={mon} width={40} height={33} />
+                    </PokemonLink>
+                  )
+                })}
+              </div>
+            )}
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
+
+/** Second, first, third — a podium, not a list. */
+const PODIUM_ORDER: Record<number, number> = { 1: 2, 2: 1, 3: 3 }
+
+/**
  * The playoffs, drawn.
  *
  * Above the table rather than on a tab of its own, because it is the answer to
  * the question the table raises: the order is the postseason finish and the
  * columns are the regular season, and this is what happened in between.
  */
-function Bracket({ league, ranked }: { league: League; ranked: Standing[] }) {
+function Bracket({ league, ranked, dex }: {
+  league: League
+  ranked: Standing[]
+  dex: Record<string, LeaguePokemon>
+}) {
   const post = league.postseason
   const people = useMemo(() => byId(league.players), [league.players])
   /**
@@ -198,6 +257,7 @@ function Bracket({ league, ranked }: { league: League; ranked: Standing[] }) {
   return (
     <section className="bracket" aria-label="Playoff bracket">
       <h3 className="bracket-title">Playoffs</h3>
+      <Podium league={league} dex={dex} finish={finish} />
       <div className="bracket-rounds">
         {columns.map((round, col) => (
           <div className="bracket-round" key={round.name}>
@@ -236,13 +296,13 @@ function Bracket({ league, ranked }: { league: League; ranked: Standing[] }) {
           </div>
         ))}
       </div>
-      {/* No third-place match was ever played, so third is where the finishing
-          order puts the better of the two who went out in the semi-finals. */}
-      <p className="panel-note">
-        Gold, silver and bronze are the season&rsquo;s first, second and third.
-        {columns.some((r) => r.matches.some((m) => !m.winner))
-          && ' A series shown without a winner is one the archive\u2019s replays do not settle.'}
-      </p>
+      {/* The medals say what they are. The one thing the bracket cannot show on
+          its own is a series it could not settle. */}
+      {columns.some((r) => r.matches.some((m) => !m.winner)) && (
+        <p className="panel-note">
+          A series shown without a winner is one the archive&rsquo;s replays do not settle.
+        </p>
+      )}
     </section>
   )
 }
@@ -742,7 +802,7 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
   const onPoints = league.meta.pointsBudget != null
   return (
     <>
-    <Bracket league={league} ranked={ranked} />
+    <Bracket league={league} ranked={ranked} dex={dex} />
     <section className="panel">
       <div className="standings-head">
         {editable && (
@@ -813,7 +873,6 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
           <tbody>
             {ranked.map((s) => {
               const played = s.wins + s.losses
-              const medal = MEDALS[s.rank]
               const showing = team === s.player
               const picks = [...(league.rosters[s.player] ?? [])].sort(
                 (a, b) => byTier(a.tier, b.tier)
@@ -823,8 +882,8 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
               return (
                 <Fragment key={s.player}>
                 <tr
-                  className={`${medal ? `medal-row medal-${s.rank}` : ''}${showing ? ' is-open' : ''}${
-                    allTime ? '' : ' clickable'}${advanced.has(s.player) ? ' to-playoffs' : ''}`}
+                  className={`${showing ? 'is-open ' : ''}${
+                    allTime ? '' : 'clickable '}${advanced.has(s.player) ? 'to-playoffs' : ''}`}
                   onClick={allTime ? undefined : () => setTeam(showing ? null : s.player)}
                   // The whole row is the target, which a <tr> cannot be on its
                   // own — so it takes focus and answers the keys a button would.
@@ -837,9 +896,11 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                   }}
                   aria-expanded={allTime ? undefined : showing}
                 >
-                  <td className="rank-cell">
-                    {medal ? <span className="medal" title={medal.label}>{medal.icon}</span> : s.rank}
-                  </td>
+                  {/* The number and nothing else. A podium here would be a
+                      second one: the season's is drawn in the bracket above,
+                      and this table is ranked on the regular season, so gold
+                      beside Sean in Season 3 sat opposite gold beside Bargus. */}
+                  <td className="rank-cell">{s.rank}</td>
                   <th scope="row" className="col-name">
                     {!allTime && (
                       <span className="player-caret" aria-hidden="true">{showing ? '▾' : '▸'}</span>

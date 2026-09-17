@@ -76,6 +76,42 @@
  * boxes that are not a binary tree mislead more than they show.
  */
 .bracket { margin: 0 0 1rem; }
+/*
+ * The podium: second, first, third, with the winner raised.
+ *
+ * `order` does the arranging and the markup stays in finishing order, so a
+ * screen reader and a phone both get 1-2-3 while a wide screen gets the shape.
+ * The steps differ by how far each is pushed down rather than by height, since
+ * a card is as tall as the roster inside it and rosters are the same size.
+ */
+.podium {
+  list-style: none; margin: 0 0 1rem; padding: 0;
+  display: flex; gap: 0.6rem; align-items: flex-start;
+}
+.podium-step {
+  flex: 1 1 0; min-width: 0;
+  border: 1px solid var(--line); border-radius: 8px; padding: 0.5rem 0.6rem;
+}
+.podium-step.place-1 { border-color: color-mix(in srgb, gold 55%, var(--line)); }
+.podium-step.place-2 { margin-top: 0.9rem; }
+.podium-step.place-3 { margin-top: 1.6rem; }
+.podium-who { display: flex; align-items: baseline; gap: 0.4rem; flex-wrap: wrap; }
+.podium-who .medal { font-size: 1.1rem; }
+.podium-name { font-weight: 700; font-size: 0.9rem; }
+.podium-team { color: var(--muted); font-size: 0.75rem; min-width: 0; }
+/* Sprites and no names: the shape of a team at a glance. */
+.podium-roster {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.1rem;
+  margin-top: 0.35rem;
+}
+.podium-roster a { display: inline-flex; }
+
+@media (max-width: 700px) {
+  /* Side by side stops meaning anything, so they stack in finishing order. */
+  .podium { flex-direction: column; }
+  .podium-step { order: 0 !important; margin-top: 0; }
+}
+
 .bracket-title {
   margin: 0 0 0.5rem; font-size: 0.78rem; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--muted);
