@@ -47,6 +47,20 @@
 .sort-note {
   margin: 0 0 0 auto; font-size: 0.72rem; color: var(--muted);
   white-space: nowrap; font-variant-numeric: tabular-nums;
+  display: flex; align-items: center; gap: 0.5rem;
+}
+/*
+ * The bar to be on the board at all, beside the order the board is in.
+ *
+ * Boxed rather than said in the same grey as the sort chain next to it: one is
+ * a description of what the reader is looking at and the other is the reason
+ * something they expected to find is missing, and those should not read as one
+ * sentence. Wraps with the note on a narrow screen, where they stack.
+ */
+.qualifier {
+  padding: 0.1rem 0.45rem; border-radius: 999px;
+  border: 1px solid var(--line); color: var(--fg);
+  font-weight: 600; letter-spacing: 0.01em;
 }
 .rank-cell { font-variant-numeric: tabular-nums; }
 .medal { font-size: 1.05rem; line-height: 1; }
@@ -514,7 +528,7 @@
   /* The tiebreak order runs to 414px and was held to one line, which is wider
      than the phone it was on — the only thing making the Players tab scroll
      sideways. Above 480px it fits on its line, so it keeps it. */
-  .sort-note { white-space: normal; margin-left: 0; }
+  .sort-note { white-space: normal; margin-left: 0; flex-wrap: wrap; }
 }
 
 /* ---- the games inside a match ---- */

@@ -98,6 +98,36 @@ const byPowerRanking = (a: PokemonTotals, b: PokemonTotals) =>
 /** The same order, said in words, for the header. */
 const POWER_RANKING_NOTE = 'Diff → K/D → KOs/game → KOs → games → fewest deaths'
 
+/**
+ * The all-time board leads with the rate rather than the total.
+ *
+ * Over one season every Pokemon has had roughly the same chance to score, so a
+ * differential compares them fairly. Over five it does not: one drafted every
+ * year has five seasons of games to pile up a total that one drafted once
+ * cannot reach however well it played. Asking how it did per game is the
+ * question that survives the difference, with the totals kept as the steps
+ * that break the ties underneath it.
+ */
+const byAllTimeRanking = (a: PokemonTotals, b: PokemonTotals) =>
+  b.killsPerGame - a.killsPerGame
+  || finite(b.kd) - finite(a.kd)
+  || b.gamesPlayed - a.gamesPlayed
+  || b.diff - a.diff
+  || b.kills - a.kills
+  || a.deaths - b.deaths
+
+const ALL_TIME_NOTE = 'KOs/game → K/D → games → Diff → KOs → fewest deaths'
+
+/**
+ * Games a Pokemon has to have played to be on the all-time board.
+ *
+ * A rate ranking rewards a small sample: something brought once, which took
+ * three kills and never fainted, reads as the best Pokemon in league history
+ * on every column that matters. Four games is the line between a record and
+ * an afternoon.
+ */
+const ALL_TIME_MINIMUM = 4
+
 type StatSort = 'kills' | 'deaths' | 'diff' | 'gamesPlayed' | 'killsPerGame' | 'kd' | 'name' | 'tier'
 
 function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
@@ -137,13 +167,16 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
   }
 
   const matches = useMemo(() => league.matchStats ?? [], [league.matchStats])
+  const allTime = currentSeason().source === 'all-time'
   /**
    * A tier is a season's opinion of a Pokemon, written on that season's board.
    * Across all of them there is no such opinion — Season 3 priced Omanyte for
    * Little Cup and Season 4 never listed it — so the column would be a rule
    * of dashes and a sort by nothing. Left out rather than left empty.
    */
-  const tiered = currentSeason().source !== 'all-time'
+  const tiered = !allTime
+  /** One everywhere else: every Pokemon that played at all is on the board. */
+  const minGames = allTime ? ALL_TIME_MINIMUM : 1
 
   /** The whole season, always: a ranking of the season is the point. */
   const totals = useMemo(() => Object.values(totalsFromMatches(matches)), [matches])
@@ -160,6 +193,10 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
     const q = query.trim().toLowerCase()
     const pool = showing && rule?.only ? totals.filter(rule.only) : totals
     return pool
+      // Not a filter the reader chose, so it comes before the search rather
+      // than after it: a Pokemon short of the minimum is not on this board,
+      // and looking it up by name should not put it there.
+      .filter((t) => t.gamesPlayed >= minGames)
       .filter((t) => !q || dex[t.pokemon]?.name.toLowerCase().includes(q))
       // KOs per game breaks ties: two Pokémon on the same total are separated
       // by how few games it took. The tiebreak keeps its own direction so it
@@ -168,7 +205,9 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
         const nameA = dex[a.pokemon]?.name ?? ''
         const nameB = dex[b.pokemon]?.name ?? ''
         if (!sort.dir && rule) return rule.compare(a, b) || nameA.localeCompare(nameB)
-        if (!sort.dir) return byPowerRanking(a, b) || nameA.localeCompare(nameB)
+        if (!sort.dir) {
+          return (allTime ? byAllTimeRanking : byPowerRanking)(a, b) || nameA.localeCompare(nameB)
+        }
         if (sort.key === 'name') return nameA.localeCompare(nameB) * sort.dir
         // Best tier first, not "Banned, High, Low, Mid, Top" alphabetically.
         if (sort.key === 'tier') {
@@ -180,7 +219,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           || b.killsPerGame - a.killsPerGame
           || nameA.localeCompare(nameB)
       })
-  }, [totals, sort, query, dex, showing, rule])
+  }, [totals, sort, query, dex, showing, rule, allTime, minGames])
 
   if (!matches.length) {
     // Two different situations wearing the same words. An archived season with
@@ -230,9 +269,19 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           {/* What the order actually is, whether that is the power ranking or
               the award whose tab is open. Dropped once a column is picked,
               since the chain would then describe something that is not
-              happening. */}
-          {!sort.dir && (
-            <p className="sort-note">{rule ? rule.note : POWER_RANKING_NOTE}</p>
+              happening — unlike the minimum, which is what the board is made
+              of and holds however it is sorted. */}
+          {(allTime || !sort.dir) && (
+            <p className="sort-note">
+              {allTime && (
+                <span className="qualifier" title={`Played in fewer than ${minGames} games, and it is not ranked here.`}>
+                  {minGames}+ games to qualify
+                </span>
+              )}
+              {!sort.dir && (
+                <span>{rule ? rule.note : allTime ? ALL_TIME_NOTE : POWER_RANKING_NOTE}</span>
+              )}
+            </p>
           )}
         </div>
 
