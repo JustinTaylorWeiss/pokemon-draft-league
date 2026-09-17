@@ -102,12 +102,12 @@
 .podium-step.place-2 {
   background: color-mix(in srgb, silver 14%, transparent);
   border-color: color-mix(in srgb, silver 55%, var(--line));
-  margin-top: 0.9rem;
+  margin-top: 2.1rem;
 }
 .podium-step.place-3 {
   background: color-mix(in srgb, #cd7f32 16%, transparent);
   border-color: color-mix(in srgb, #cd7f32 55%, var(--line));
-  margin-top: 1.6rem;
+  margin-top: 4rem;
 }
 .podium-who { display: flex; align-items: baseline; gap: 0.4rem; flex-wrap: wrap; }
 .podium-who .medal { font-size: 1.1rem; }
