@@ -155,14 +155,15 @@
  */
 .advanced-note { color: var(--accent); font-weight: 600; }
 /*
- * And drawn round them, as one box: a hairline, because it is a note about
- * where the table stops mattering and not a second grid over the top of the
- * one the table already has.
+ * And marked row by row, with an edge rather than a box.
+ *
+ * It cannot be a single line across the table any more: the table is ranked on
+ * the regular season and Season 3's playoff field was not its best eight
+ * records, so the coaches who played on are not one block of rows to draw
+ * under. One edge each, which is the least a mark can be and still be on the
+ * right rows.
  */
-.standings-table tr.to-playoffs > *:first-child { border-left-color: var(--accent); }
-.standings-table tr.to-playoffs > *:last-child { border-right-color: var(--accent); }
-.standings-table tr.box-top > * { border-top-color: var(--accent); }
-.standings-table tr.box-end > * { border-bottom-color: var(--accent); }
+.standings-table tr.to-playoffs > *:first-child { box-shadow: inset 2px 0 0 var(--accent); }
 /* Trophies rather than a number: one, two or three of them reads at a glance
    where "2" has to be looked up against the column heading. */
 .titles { white-space: nowrap; letter-spacing: -0.05em; }

@@ -139,9 +139,30 @@ const KNOCKOUT_ROUNDS = ['Final', 'Semi-finals', 'Quarter-finals', 'Round of 16'
  * the question the table raises: the order is the postseason finish and the
  * columns are the regular season, and this is what happened in between.
  */
-function Bracket({ league }: { league: League }) {
+function Bracket({ league, ranked }: { league: League; ranked: Standing[] }) {
   const post = league.postseason
   const people = useMemo(() => byId(league.players), [league.players])
+  /**
+   * Where each coach finished the season.
+   *
+   * How far they got in the bracket first, which is what a postseason is for.
+   * But a bracket cannot separate two coaches who both went out in the
+   * semi-finals, and no third-place match was ever played — so those are level
+   * on the archive's own evidence, and the tie goes to the regular season,
+   * ranked the way the table beneath ranks it. In Season 3 that is Sean's 13-2
+   * over Bray's 8-7.
+   *
+   * It has to be decided somewhere. Left to the order the archive happens to
+   * list matches in, it gave the bronze to Bray.
+   */
+  const finish = useMemo(() => {
+    const placement = post?.placement ?? {}
+    const byRecord = new Map(ranked.map((s) => [s.player, s.rank]))
+    const order = Object.keys(placement).sort((a, b) =>
+      placement[a] - placement[b]
+      || (byRecord.get(a) ?? Infinity) - (byRecord.get(b) ?? Infinity))
+    return new Map(order.map((id, i) => [id, i + 1]))
+  }, [post, ranked])
   const { columns, lastPlayed } = useMemo(() => {
     const matches = post?.matches ?? []
     if (!matches.length) return { columns: [], lastPlayed: new Map<string, string>() }
@@ -172,7 +193,6 @@ function Bracket({ league }: { league: League }) {
   }, [post])
 
   if (!columns.length) return null
-  const placement = post?.placement ?? {}
   const name = (id: string | null) => (id ? people[id]?.name ?? id : 'TBD')
 
   return (
@@ -195,12 +215,13 @@ function Bracket({ league }: { league: League }) {
                   // Only where their run ended, so the podium is read off the
                   // bracket once each rather than three times over.
                   const medal = id && lastPlayed.get(id) === `${col}:${i}`
-                    ? MEDALS[placement[id]] : undefined
+                    ? MEDALS[finish.get(id) ?? 0] : undefined
                   return (
                     <div
                       key={side}
                       className={`bout-side${m.winner && m.winner === id ? ' won' : ''}${
-                        m.winner && m.winner !== id ? ' lost' : ''}${medal ? ` medal-${placement[id!]}` : ''}`}
+                        m.winner && m.winner !== id ? ' lost' : ''}${
+                        medal ? ` medal-${finish.get(id!)}` : ''}`}
                     >
                       {medal && <span className="medal" title={medal.label}>{medal.icon}</span>}
                       <span className="bout-name">{name(id)}</span>
@@ -673,24 +694,13 @@ function rankStandings(league: League): Standing[] {
       || a.name.localeCompare(b.name))
 
   /**
-   * A season that ended in a playoff ended where the playoff put people.
+   * The regular season, ranked the way the regular season ranks.
    *
-   * The record above is how the regular season went, and for four of five
-   * seasons that is not how the season finished: Season 2's best record was
-   * Hunter's and the champion was Sean. So the coaches who reached the
-   * postseason are ordered by how far they got, and everyone else keeps their
-   * place underneath in the order the record gives — a coach who missed the
-   * playoffs has nothing in the bracket to be ranked by.
+   * The playoffs are not folded in here. They are drawn above the table, and
+   * a table that said it was one thing while being ordered by another was the
+   * hardest part of it to read.
    */
-  const placed = league.postseason?.placement
-  if (!placed || !Object.keys(placed).length) {
-    return byRecord.map((s, i) => ({ ...s, rank: i + 1 }))
-  }
-  return [
-    ...byRecord.filter((s) => placed[s.player] != null)
-      .sort((a, b) => placed[a.player] - placed[b.player]),
-    ...byRecord.filter((s) => placed[s.player] == null),
-  ].map((s, i) => ({ ...s, rank: i + 1 }))
+  return byRecord.map((s, i) => ({ ...s, rank: i + 1 }))
 }
 
 function Standings({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
@@ -705,16 +715,7 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
    * rows are marked so the two read as one thing.
    */
   const advanced = new Set(bracket.flatMap((m) => [m.a, m.b]).filter(Boolean) as string[])
-  /**
-   * The rows to run the outline around, as one box rather than one each.
-   *
-   * They are always the top of the table — the ranking puts everyone who
-   * reached the playoffs above everyone who did not — so the box is a lid on
-   * the first of them, a floor under the last, and sides down the middle.
-   */
-  const inBox = ranked.filter((s) => advanced.has(s.player)).map((s) => s.rank)
-  const boxTop = inBox.length ? Math.min(...inBox) : 0
-  const boxEnd = inBox.length ? Math.max(...inBox) : 0
+
   const editable = currentSeason().source === 'database'
   /**
    * The all-time table has no team behind a row to open.
@@ -741,7 +742,7 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
   const onPoints = league.meta.pointsBudget != null
   return (
     <>
-    <Bracket league={league} />
+    <Bracket league={league} ranked={ranked} />
     <section className="panel">
       <div className="standings-head">
         {editable && (
@@ -764,29 +765,15 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
             reads 8-0 and eighth. */}
         <p className="table-label">
           Regular season stats
-          {/* Where the table stops mattering. The ranking puts everyone who
-              reached the playoffs above everyone who did not, so how many got
-              out is also where the line across the table falls. */}
+          {/* Not "the top N": Season 3's playoff field was not its best eight
+              records. Hunter finished fifth on 9-6 and did not play, Phillip
+              tenth on 7-8 and did, so the marked rows are the answer and a
+              count of them is all the heading can say. */}
           {advanced.size > 0 && (
-            <span className="advanced-note">Top {advanced.size} advanced to playoffs</span>
+            <span className="advanced-note">{advanced.size} advanced to playoffs</span>
           )}
         </p>
         <p className="sort-note">
-          {Boolean(league.postseason?.placement
-            && Object.keys(league.postseason.placement).length) && (
-            // Season 1 had no bracket at all — the archive simply names its
-            // champion — so there is no postseason finish to order by there,
-            // only a winner to put first.
-            advanced.size > 0 ? (
-              <span className="qualifier" title="The coaches who reached the playoffs are in the order they went out; the rest follow on their regular-season record.">
-                Postseason finish
-              </span>
-            ) : (
-              <span className="qualifier" title="This season had no playoffs. The archive names its champion, and the rest follow on their regular-season record.">
-                Champion first
-              </span>
-            )
-          )}
           <span>
             {allTime && 'Championships → '}
             Match Win % → Game Wins → Fewest Game Losses → Diff → Head-to-head
@@ -837,8 +824,7 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                 <Fragment key={s.player}>
                 <tr
                   className={`${medal ? `medal-row medal-${s.rank}` : ''}${showing ? ' is-open' : ''}${
-                    allTime ? '' : ' clickable'}${advanced.has(s.player) ? ' to-playoffs' : ''}${
-                    s.rank === boxTop ? ' box-top' : ''}${s.rank === boxEnd ? ' box-end' : ''}`}
+                    allTime ? '' : ' clickable'}${advanced.has(s.player) ? ' to-playoffs' : ''}`}
                   onClick={allTime ? undefined : () => setTeam(showing ? null : s.player)}
                   // The whole row is the target, which a <tr> cannot be on its
                   // own — so it takes focus and answers the keys a button would.

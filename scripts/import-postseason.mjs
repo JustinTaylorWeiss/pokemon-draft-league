@@ -241,7 +241,14 @@ function resolveAccounts(matches) {
  * Under the champion it is how far they got: postseason wins first, then fewest
  * postseason losses, which separates a coach who went out in the semi-final
  * from one who went out in the first round, and puts a group stage's 1-1 above
- * its 0-2. Anything still level is left to the regular season to break.
+ * its 0-2.
+ *
+ * That is as far as a bracket can answer. Two coaches who both went out in the
+ * semi-finals are level in it, and no third-place match was ever played to
+ * separate them — so they are given the same number here and the site breaks
+ * the tie on the regular season, where Sean's 13-2 stands above Bray's 8-7.
+ * Deciding it here instead would have meant deciding it by the order the
+ * archive happens to list the matches in, which is how Bray had the bronze.
  */
 function placements(matches, champion) {
   const record = new Map()
@@ -255,14 +262,22 @@ function placements(matches, champion) {
     if (loser) of(loser).losses++
   }
   if (champion) of(champion)
-  const order = [...record.keys()].sort((a, b) => {
+  const further = (a, b) => {
     if (a === champion) return -1
     if (b === champion) return 1
     return record.get(b).wins - record.get(a).wins
       || record.get(a).losses - record.get(b).losses
+  }
+  const order = [...record.keys()].sort(further)
+  // Competition ranking: everyone level shares the place, and the next one
+  // down skips past all of them. Ties are deliberate — see above.
+  const placement = {}
+  order.forEach((id, i) => {
+    const level = i > 0 && further(order[i - 1], id) === 0
+    placement[id] = level ? placement[order[i - 1]] : i + 1
   })
   return {
-    placement: Object.fromEntries(order.map((id, i) => [id, i + 1])),
+    placement,
     record: Object.fromEntries([...record].map(([id, r]) => [id, r])),
   }
 }
