@@ -80,11 +80,31 @@
   margin: 0 0 0.5rem; font-size: 0.78rem; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--muted);
 }
+/*
+ * Stretched, not top-aligned, so every round is the height of the fullest one
+ * and a later round has room to spread across it.
+ */
 .bracket-rounds {
-  display: flex; gap: 0.75rem; align-items: flex-start;
+  display: flex; gap: 0.75rem; align-items: stretch;
   overflow-x: auto; padding-bottom: 0.25rem;
 }
 .bracket-round { flex: 1 1 0; min-width: 11rem; display: flex; flex-direction: column; gap: 0.4rem; }
+/*
+ * A match sits level with the two it came from.
+ *
+ * Each round divides its height into one slot per match and centres the match
+ * in its slot, which is all the alignment a bracket needs: four quarter-finals
+ * take a quarter each and sit at 1/8, 3/8, 5/8, 7/8; the two semi-finals take
+ * a half each and sit at 1/4 and 3/4, which are exactly the midpoints of the
+ * pairs above them; the final takes the lot and sits at 1/2, between the two
+ * semi-finals. It falls out of the arithmetic rather than being positioned,
+ * so it holds for a bracket of any depth and for Season 2's group stage, where
+ * the final simply centres against the group.
+ */
+/* The gap costs the arithmetic nothing: a column of four slots carries three
+   gaps and one of two carries one, and the centres still line up. */
+.bracket-bouts { flex: 1; display: flex; flex-direction: column; gap: 0.4rem; }
+.bout-slot { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; }
 .bracket-round h4 {
   margin: 0 0 0.1rem; font-size: 0.7rem; font-weight: 600; color: var(--muted);
   text-align: center;
@@ -134,6 +154,15 @@
  * own rules instead of carrying a second set drawn over the top.
  */
 .advanced-note { color: var(--accent); font-weight: 600; }
+/*
+ * And drawn round them, as one box: a hairline, because it is a note about
+ * where the table stops mattering and not a second grid over the top of the
+ * one the table already has.
+ */
+.standings-table tr.to-playoffs > *:first-child { border-left-color: var(--accent); }
+.standings-table tr.to-playoffs > *:last-child { border-right-color: var(--accent); }
+.standings-table tr.box-top > * { border-top-color: var(--accent); }
+.standings-table tr.box-end > * { border-bottom-color: var(--accent); }
 /* Trophies rather than a number: one, two or three of them reads at a glance
    where "2" has to be looked up against the column heading. */
 .titles { white-space: nowrap; letter-spacing: -0.05em; }

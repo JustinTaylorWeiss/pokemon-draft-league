@@ -86,6 +86,25 @@ function roundsOf(matches: Postseason['matches']): Postseason['matches'][] {
     while (rounds[i] && playing(rounds[i])) i++
     ;(rounds[i] ??= []).push(m)
   }
+  /**
+   * Each round put in the order of the matches that produced it, so a bout can
+   * be drawn level with the two it came from.
+   *
+   * Whoever is in a semi-final came out of a quarter-final, so the semi-final
+   * belongs beside that quarter-final and not wherever the archive happened to
+   * list it. Ordering by the earlier of its two feeders is enough: the two
+   * quarter-finals that feed one semi-final are adjacent once every semi-final
+   * is sorted this way.
+   */
+  for (let r = 1; r < rounds.length; r++) {
+    const before = rounds[r - 1]
+    const cameFrom = (m: Postseason['matches'][number]) => {
+      const at = before.findIndex((x) =>
+        x.a === m.a || x.b === m.a || x.a === m.b || x.b === m.b)
+      return at < 0 ? Number.MAX_SAFE_INTEGER : at
+    }
+    rounds[r].sort((x, y) => cameFrom(x) - cameFrom(y))
+  }
   return rounds
 }
 
@@ -163,10 +182,11 @@ function Bracket({ league }: { league: League }) {
         {columns.map((round, col) => (
           <div className="bracket-round" key={round.name}>
             <h4>{round.name}</h4>
+            <div className="bracket-bouts">
             {round.matches.map((m, i) => (
+              <div className="bout-slot" key={`${m.a}-${m.b}-${i}`}>
               <div
                 className={`bout${m.winner ? '' : ' undecided'}`}
-                key={`${m.a}-${m.b}-${i}`}
                 // One Season 2 group match has three links of which one belongs
                 // to another match, so the two that are left split it.
                 title={m.winner ? undefined : 'No result: the replays for this series do not settle it'}
@@ -189,7 +209,9 @@ function Bracket({ league }: { league: League }) {
                   )
                 })}
               </div>
+              </div>
             ))}
+            </div>
           </div>
         ))}
       </div>
@@ -683,6 +705,16 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
    * rows are marked so the two read as one thing.
    */
   const advanced = new Set(bracket.flatMap((m) => [m.a, m.b]).filter(Boolean) as string[])
+  /**
+   * The rows to run the outline around, as one box rather than one each.
+   *
+   * They are always the top of the table — the ranking puts everyone who
+   * reached the playoffs above everyone who did not — so the box is a lid on
+   * the first of them, a floor under the last, and sides down the middle.
+   */
+  const inBox = ranked.filter((s) => advanced.has(s.player)).map((s) => s.rank)
+  const boxTop = inBox.length ? Math.min(...inBox) : 0
+  const boxEnd = inBox.length ? Math.max(...inBox) : 0
   const editable = currentSeason().source === 'database'
   /**
    * The all-time table has no team behind a row to open.
@@ -805,7 +837,8 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                 <Fragment key={s.player}>
                 <tr
                   className={`${medal ? `medal-row medal-${s.rank}` : ''}${showing ? ' is-open' : ''}${
-                    allTime ? '' : ' clickable'}`}
+                    allTime ? '' : ' clickable'}${advanced.has(s.player) ? ' to-playoffs' : ''}${
+                    s.rank === boxTop ? ' box-top' : ''}${s.rank === boxEnd ? ' box-end' : ''}`}
                   onClick={allTime ? undefined : () => setTeam(showing ? null : s.player)}
                   // The whole row is the target, which a <tr> cannot be on its
                   // own — so it takes focus and answers the keys a button would.
