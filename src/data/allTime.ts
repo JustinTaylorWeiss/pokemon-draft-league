@@ -62,6 +62,8 @@ interface Tally {
   name: string
   /** The seasons they turned up in, oldest first — shown in place of a team. */
   seasons: string[]
+  /** Seasons won, which is the first thing the all-time table is sorted by. */
+  titles: number
   wins: number
   losses: number
   gamesWon: number
@@ -102,13 +104,25 @@ export function combineSeasons(parts: SeasonPart[]): League {
       const id = coachId(row.player)
       if (NOT_A_COACH.has(id)) continue
       const own = coaches.get(id) ?? {
-        id, name: row.name, seasons: [],
+        id, name: row.name, seasons: [], titles: 0,
         wins: 0, losses: 0, gamesWon: 0, gamesLost: 0, monDiff: 0, points: 0,
       }
       own.name = row.name
       if (!own.seasons.includes(label)) own.seasons.push(label)
       for (const field of ADDED) own[field] += row[field]
       coaches.set(id, own)
+    }
+
+    /**
+     * The champion is the season's own word for it, read out of the archive
+     * rather than worked out from the table — Season 1 had no playoffs at all
+     * and still has one. Counted here so it survives the coach's handle
+     * changing: Sean won Season 2 as `swjf`.
+     */
+    const won = league.postseason?.champion
+    if (won) {
+      const tally = coaches.get(coachId(won))
+      if (tally) tally.titles++
     }
 
     // The ids come along canonicalised, so the head-to-head tiebreak can see
@@ -130,6 +144,7 @@ export function combineSeasons(parts: SeasonPart[]): League {
     // No coach has one team across five seasons, so the column that would hold
     // one holds what they do have in common instead: the seasons they played.
     team: c.seasons.join(' '),
+    titles: c.titles,
     wins: c.wins,
     losses: c.losses,
     gamesWon: c.gamesWon,

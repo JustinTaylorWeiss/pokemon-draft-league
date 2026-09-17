@@ -1,4245 +1,4252 @@
 {
-  "meta": {
-    "name": "Season 1",
-    "regulation": null,
-    "format": null,
-    "weeks": 8,
-    "picksPerPlayer": 11,
-    "seriesLength": null,
-    "tierLimits": {},
-    "pointsBudget": 110
+ "meta": {
+  "name": "Season 1",
+  "regulation": null,
+  "format": null,
+  "weeks": 8,
+  "picksPerPlayer": 11,
+  "seriesLength": null,
+  "tierLimits": {},
+  "pointsBudget": 110
+ },
+ "players": [
+  {
+   "id": "hunter",
+   "seed": 1,
+   "name": "Hunter",
+   "team": "Dapper Decidueye"
   },
-  "players": [
-    {
-      "id": "hunter",
-      "seed": 1,
-      "name": "Hunter",
-      "team": "Dapper Decidueye"
-    },
-    {
-      "id": "philip",
-      "seed": 2,
-      "name": "Philip",
-      "team": "Violent Victini's"
-    },
-    {
-      "id": "bikey",
-      "seed": 3,
-      "name": "Bikey",
-      "team": "Bikey's Tomatoes"
-    },
-    {
-      "id": "max",
-      "seed": 4,
-      "name": "Max",
-      "team": "Pokemans"
-    },
-    {
-      "id": "gabe",
-      "seed": 5,
-      "name": "Gabe",
-      "team": "Mantine's Revenge"
-    },
-    {
-      "id": "sean",
-      "seed": 6,
-      "name": "Sean",
-      "team": "Team Wet"
-    },
-    {
-      "id": "julian-chirashi",
-      "seed": 7,
-      "name": "Julian / Chirashi",
-      "team": "Gassy Equalizer"
-    }
-  ],
-  "board": {
-    "ursalunabloodmoon": {
-      "name": "Ursaluna-Bloodmoon",
-      "tier": "Top",
-      "note": null,
-      "draftedBy": "Hunter",
-      "points": 23,
-      "baseStats": {
-        "hp": 113,
-        "atk": 70,
-        "def": 120,
-        "spa": 135,
-        "spd": 65,
-        "spe": 52
-      },
-      "bst": 555
-    },
-    "annihilape": {
-      "name": "Annihilape",
-      "tier": "Top",
-      "note": null,
-      "draftedBy": "Philip",
-      "points": 19,
-      "baseStats": {
-        "hp": 110,
-        "atk": 115,
-        "def": 80,
-        "spa": 50,
-        "spd": 90,
-        "spe": 90
-      },
-      "bst": 535
-    },
-    "ursaluna": {
-      "name": "Ursaluna",
-      "tier": "Top",
-      "note": null,
-      "draftedBy": "Bikey",
-      "points": 20,
-      "baseStats": {
-        "hp": 130,
-        "atk": 140,
-        "def": 105,
-        "spa": 45,
-        "spd": 80,
-        "spe": 50
-      },
-      "bst": 550
-    },
-    "indeedeef": {
-      "name": "Indeedee-F",
-      "tier": "Top",
-      "note": null,
-      "draftedBy": "Max",
-      "points": 19,
-      "baseStats": {
-        "hp": 70,
-        "atk": 55,
-        "def": 65,
-        "spa": 95,
-        "spd": 105,
-        "spe": 85
-      },
-      "bst": 475
-    },
-    "torkoal": {
-      "name": "Torkoal",
-      "tier": "Top",
-      "note": null,
-      "draftedBy": "Gabe",
-      "points": 19,
-      "baseStats": {
-        "hp": 70,
-        "atk": 85,
-        "def": 140,
-        "spa": 85,
-        "spd": 70,
-        "spe": 20
-      },
-      "bst": 470
-    },
-    "archaludon": {
-      "name": "Archaludon",
-      "tier": "Top",
-      "note": null,
-      "draftedBy": "Sean",
-      "points": 20,
-      "baseStats": {
-        "hp": 90,
-        "atk": 105,
-        "def": 130,
-        "spa": 125,
-        "spd": 65,
-        "spe": 85
-      },
-      "bst": 600
-    },
-    "weezing": {
-      "name": "Weezing",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Julian / Chirashi",
-      "points": 12,
-      "baseStats": {
-        "hp": 65,
-        "atk": 90,
-        "def": 120,
-        "spa": 85,
-        "spd": 70,
-        "spe": 60
-      },
-      "bst": 490
-    },
-    "typhlosionhisui": {
-      "name": "Typhlosion-Hisui",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Hunter",
-      "points": 13,
-      "baseStats": {
-        "hp": 73,
-        "atk": 84,
-        "def": 78,
-        "spa": 119,
-        "spd": 85,
-        "spe": 95
-      },
-      "bst": 534
-    },
-    "glimmora": {
-      "name": "Glimmora",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Philip",
-      "points": 13,
-      "baseStats": {
-        "hp": 83,
-        "atk": 55,
-        "def": 90,
-        "spa": 130,
-        "spd": 81,
-        "spe": 86
-      },
-      "bst": 525
-    },
-    "arcaninehisui": {
-      "name": "Arcanine-Hisui",
-      "tier": "Top",
-      "note": null,
-      "draftedBy": "Bikey",
-      "points": 17,
-      "baseStats": {
-        "hp": 95,
-        "atk": 115,
-        "def": 80,
-        "spa": 95,
-        "spd": 80,
-        "spe": 90
-      },
-      "bst": 555
-    },
-    "armarouge": {
-      "name": "Armarouge",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Max",
-      "points": 15,
-      "baseStats": {
-        "hp": 85,
-        "atk": 60,
-        "def": 100,
-        "spa": 125,
-        "spd": 80,
-        "spe": 75
-      },
-      "bst": 525
-    },
-    "talonflame": {
-      "name": "Talonflame",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Gabe",
-      "points": 16,
-      "baseStats": {
-        "hp": 78,
-        "atk": 81,
-        "def": 71,
-        "spa": 74,
-        "spd": 69,
-        "spe": 126
-      },
-      "bst": 499
-    },
-    "pelipper": {
-      "name": "Pelipper",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Sean",
-      "points": 15,
-      "baseStats": {
-        "hp": 60,
-        "atk": 50,
-        "def": 100,
-        "spa": 95,
-        "spd": 70,
-        "spe": 65
-      },
-      "bst": 440
-    },
-    "mimikyu": {
-      "name": "Mimikyu",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Julian / Chirashi",
-      "points": 13,
-      "baseStats": {
-        "hp": 55,
-        "atk": 90,
-        "def": 80,
-        "spa": 50,
-        "spd": 105,
-        "spe": 96
-      },
-      "bst": 476
-    },
-    "illumise": {
-      "name": "Illumise",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Hunter",
-      "points": 14,
-      "baseStats": {
-        "hp": 65,
-        "atk": 47,
-        "def": 75,
-        "spa": 73,
-        "spd": 85,
-        "spe": 85
-      },
-      "bst": 430
-    },
-    "chesnaught": {
-      "name": "Chesnaught",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Philip",
-      "points": 8,
-      "baseStats": {
-        "hp": 88,
-        "atk": 107,
-        "def": 122,
-        "spa": 74,
-        "spd": 75,
-        "spe": 64
-      },
-      "bst": 530
-    },
-    "hippowdon": {
-      "name": "Hippowdon",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Bikey",
-      "points": 9,
-      "baseStats": {
-        "hp": 108,
-        "atk": 112,
-        "def": 118,
-        "spa": 68,
-        "spd": 72,
-        "spe": 47
-      },
-      "bst": 525
-    },
-    "sneasel": {
-      "name": "Sneasel",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Max",
-      "points": 8,
-      "baseStats": {
-        "hp": 55,
-        "atk": 95,
-        "def": 55,
-        "spa": 35,
-        "spd": 75,
-        "spe": 115
-      },
-      "bst": 430
-    },
-    "clefairy": {
-      "name": "Clefairy",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Gabe",
-      "points": 15,
-      "baseStats": {
-        "hp": 70,
-        "atk": 45,
-        "def": 48,
-        "spa": 60,
-        "spd": 65,
-        "spe": 35
-      },
-      "bst": 323
-    },
-    "basculegion": {
-      "name": "Basculegion",
-      "tier": "Top",
-      "note": null,
-      "draftedBy": "Sean",
-      "points": 17,
-      "baseStats": {
-        "hp": 120,
-        "atk": 112,
-        "def": 65,
-        "spa": 80,
-        "spd": 75,
-        "spe": 78
-      },
-      "bst": 530
-    },
-    "slaking": {
-      "name": "Slaking",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Julian / Chirashi",
-      "points": 10,
-      "baseStats": {
-        "hp": 150,
-        "atk": 160,
-        "def": 100,
-        "spa": 95,
-        "spd": 65,
-        "spe": 100
-      },
-      "bst": 670
-    },
-    "torracat": {
-      "name": "Torracat",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Hunter",
-      "points": 10,
-      "baseStats": {
-        "hp": 65,
-        "atk": 85,
-        "def": 50,
-        "spa": 80,
-        "spd": 50,
-        "spe": 90
-      },
-      "bst": 420
-    },
-    "magmar": {
-      "name": "Magmar",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Philip",
-      "points": 12,
-      "baseStats": {
-        "hp": 65,
-        "atk": 95,
-        "def": 57,
-        "spa": 100,
-        "spd": 85,
-        "spe": 93
-      },
-      "bst": 495
-    },
-    "rillaboom": {
-      "name": "Rillaboom",
-      "tier": "Top",
-      "note": null,
-      "draftedBy": "Bikey",
-      "points": 20,
-      "baseStats": {
-        "hp": 100,
-        "atk": 125,
-        "def": 90,
-        "spa": 60,
-        "spd": 70,
-        "spe": 85
-      },
-      "bst": 530
-    },
-    "hydrapple": {
-      "name": "Hydrapple",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Max",
-      "points": 10,
-      "baseStats": {
-        "hp": 106,
-        "atk": 80,
-        "def": 110,
-        "spa": 120,
-        "spd": 80,
-        "spe": 44
-      },
-      "bst": 540
-    },
-    "slowkinggalar": {
-      "name": "Slowking-Galar",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Gabe",
-      "points": 10,
-      "baseStats": {
-        "hp": 95,
-        "atk": 65,
-        "def": 80,
-        "spa": 110,
-        "spd": 110,
-        "spe": 30
-      },
-      "bst": 490
-    },
-    "kingdra": {
-      "name": "Kingdra",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Sean",
-      "points": 12,
-      "baseStats": {
-        "hp": 75,
-        "atk": 95,
-        "def": 95,
-        "spa": 95,
-        "spd": 95,
-        "spe": 85
-      },
-      "bst": 540
-    },
-    "toedscruel": {
-      "name": "Toedscruel",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Julian / Chirashi",
-      "points": 10,
-      "baseStats": {
-        "hp": 80,
-        "atk": 70,
-        "def": 65,
-        "spa": 80,
-        "spd": 120,
-        "spe": 100
-      },
-      "bst": 515
-    },
-    "meowscarada": {
-      "name": "Meowscarada",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Hunter",
-      "points": 13,
-      "baseStats": {
-        "hp": 76,
-        "atk": 110,
-        "def": 70,
-        "spa": 81,
-        "spd": 70,
-        "spe": 123
-      },
-      "bst": 530
-    },
-    "ninetalesalola": {
-      "name": "Ninetales-Alola",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Philip",
-      "points": 16,
-      "baseStats": {
-        "hp": 73,
-        "atk": 67,
-        "def": 75,
-        "spa": 81,
-        "spd": 100,
-        "spe": 109
-      },
-      "bst": 505
-    },
-    "gyarados": {
-      "name": "Gyarados",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Bikey",
-      "points": 14,
-      "baseStats": {
-        "hp": 95,
-        "atk": 125,
-        "def": 79,
-        "spa": 60,
-        "spd": 100,
-        "spe": 81
-      },
-      "bst": 540
-    },
-    "quaquaval": {
-      "name": "Quaquaval",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Max",
-      "points": 11,
-      "baseStats": {
-        "hp": 85,
-        "atk": 120,
-        "def": 80,
-        "spa": 85,
-        "spd": 75,
-        "spe": 85
-      },
-      "bst": 530
-    },
-    "gastrodon": {
-      "name": "Gastrodon",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Gabe",
-      "points": 12,
-      "baseStats": {
-        "hp": 111,
-        "atk": 83,
-        "def": 68,
-        "spa": 92,
-        "spd": 82,
-        "spe": 39
-      },
-      "bst": 475
-    },
-    "hitmontop": {
-      "name": "Hitmontop",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Sean",
-      "points": 14,
-      "baseStats": {
-        "hp": 50,
-        "atk": 95,
-        "def": 95,
-        "spa": 35,
-        "spd": 110,
-        "spe": 70
-      },
-      "bst": 455
-    },
-    "weezinggalar": {
-      "name": "Weezing-Galar",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Julian / Chirashi",
-      "points": 13,
-      "baseStats": {
-        "hp": 65,
-        "atk": 90,
-        "def": 120,
-        "spa": 85,
-        "spd": 70,
-        "spe": 60
-      },
-      "bst": 490
-    },
-    "oranguru": {
-      "name": "Oranguru",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Hunter",
-      "points": 15,
-      "baseStats": {
-        "hp": 90,
-        "atk": 60,
-        "def": 80,
-        "spa": 90,
-        "spd": 110,
-        "spe": 60
-      },
-      "bst": 490
-    },
-    "frosmoth": {
-      "name": "Frosmoth",
-      "tier": "Low",
-      "note": null,
-      "draftedBy": "Philip",
-      "points": 5,
-      "baseStats": {
-        "hp": 70,
-        "atk": 65,
-        "def": 60,
-        "spa": 125,
-        "spd": 90,
-        "spe": 65
-      },
-      "bst": 475
-    },
-    "pawmot": {
-      "name": "Pawmot",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Bikey",
-      "points": 10,
-      "baseStats": {
-        "hp": 70,
-        "atk": 115,
-        "def": 70,
-        "spa": 70,
-        "spd": 60,
-        "spe": 105
-      },
-      "bst": 490
-    },
-    "murkrow": {
-      "name": "Murkrow",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Max",
-      "points": 14,
-      "baseStats": {
-        "hp": 60,
-        "atk": 85,
-        "def": 42,
-        "spa": 85,
-        "spd": 42,
-        "spe": 91
-      },
-      "bst": 405
-    },
-    "toxtricity": {
-      "name": "Toxtricity",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Gabe",
-      "points": 9,
-      "baseStats": {
-        "hp": 75,
-        "atk": 98,
-        "def": 70,
-        "spa": 114,
-        "spd": 70,
-        "spe": 75
-      },
-      "bst": 502
-    },
-    "ludicolo": {
-      "name": "Ludicolo",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Sean",
-      "points": 11,
-      "baseStats": {
-        "hp": 80,
-        "atk": 70,
-        "def": 70,
-        "spa": 90,
-        "spd": 100,
-        "spe": 70
-      },
-      "bst": 480
-    },
-    "greninja": {
-      "name": "Greninja",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Julian / Chirashi",
-      "points": 11,
-      "baseStats": {
-        "hp": 72,
-        "atk": 95,
-        "def": 67,
-        "spa": 103,
-        "spd": 71,
-        "spe": 122
-      },
-      "bst": 530
-    },
-    "exeggutor": {
-      "name": "Exeggutor",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Hunter",
-      "points": 8,
-      "baseStats": {
-        "hp": 95,
-        "atk": 95,
-        "def": 85,
-        "spa": 125,
-        "spd": 75,
-        "spe": 55
-      },
-      "bst": 530
-    },
-    "duraludon": {
-      "name": "Duraludon",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Philip",
-      "points": 10,
-      "baseStats": {
-        "hp": 70,
-        "atk": 95,
-        "def": 115,
-        "spa": 120,
-        "spd": 50,
-        "spe": 85
-      },
-      "bst": 535
-    },
-    "carbink": {
-      "name": "Carbink",
-      "tier": "Low",
-      "note": null,
-      "draftedBy": "Bikey",
-      "points": 5,
-      "baseStats": {
-        "hp": 50,
-        "atk": 50,
-        "def": 150,
-        "spa": 50,
-        "spd": 150,
-        "spe": 50
-      },
-      "bst": 500
-    },
-    "skarmory": {
-      "name": "Skarmory",
-      "tier": "Low",
-      "note": null,
-      "draftedBy": "Max",
-      "points": 5,
-      "baseStats": {
-        "hp": 65,
-        "atk": 80,
-        "def": 140,
-        "spa": 40,
-        "spd": 70,
-        "spe": 70
-      },
-      "bst": 465
-    },
-    "lilliganthisui": {
-      "name": "Lilligant-Hisui",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Gabe",
-      "points": 12,
-      "baseStats": {
-        "hp": 70,
-        "atk": 105,
-        "def": 75,
-        "spa": 50,
-        "spd": 75,
-        "spe": 105
-      },
-      "bst": 480
-    },
-    "raichu": {
-      "name": "Raichu",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Sean",
-      "points": 9,
-      "baseStats": {
-        "hp": 60,
-        "atk": 90,
-        "def": 55,
-        "spa": 90,
-        "spd": 80,
-        "spe": 110
-      },
-      "bst": 485
-    },
-    "typhlosion": {
-      "name": "Typhlosion",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Julian / Chirashi",
-      "points": 10,
-      "baseStats": {
-        "hp": 78,
-        "atk": 84,
-        "def": 78,
-        "spa": 109,
-        "spd": 85,
-        "spe": 100
-      },
-      "bst": 534
-    },
-    "sneaselhisui": {
-      "name": "Sneasel-Hisui",
-      "tier": "Low",
-      "note": null,
-      "draftedBy": "Hunter",
-      "points": 7,
-      "baseStats": {
-        "hp": 55,
-        "atk": 95,
-        "def": 55,
-        "spa": 35,
-        "spd": 75,
-        "spe": 115
-      },
-      "bst": 430
-    },
-    "dragapult": {
-      "name": "Dragapult",
-      "tier": "Top",
-      "note": null,
-      "draftedBy": "Philip",
-      "points": 18,
-      "baseStats": {
-        "hp": 88,
-        "atk": 120,
-        "def": 75,
-        "spa": 100,
-        "spd": 75,
-        "spe": 142
-      },
-      "bst": 600
-    },
-    "hawlucha": {
-      "name": "Hawlucha",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Bikey",
-      "points": 8,
-      "baseStats": {
-        "hp": 78,
-        "atk": 92,
-        "def": 75,
-        "spa": 74,
-        "spd": 63,
-        "spe": 118
-      },
-      "bst": 500
-    },
-    "sneasler": {
-      "name": "Sneasler",
-      "tier": "Top",
-      "note": null,
-      "draftedBy": "Max",
-      "points": 21,
-      "baseStats": {
-        "hp": 80,
-        "atk": 130,
-        "def": 60,
-        "spa": 40,
-        "spd": 80,
-        "spe": 120
-      },
-      "bst": 510
-    },
-    "dondozo": {
-      "name": "Dondozo",
-      "tier": "High",
-      "note": null,
-      "draftedBy": "Gabe",
-      "points": 14,
-      "baseStats": {
-        "hp": 150,
-        "atk": 100,
-        "def": 115,
-        "spa": 65,
-        "spd": 65,
-        "spe": 35
-      },
-      "bst": 530
-    },
-    "ditto": {
-      "name": "Ditto",
-      "tier": "Low",
-      "note": null,
-      "draftedBy": "Sean",
-      "points": 6,
-      "baseStats": {
-        "hp": 48,
-        "atk": 48,
-        "def": 48,
-        "spa": 48,
-        "spd": 48,
-        "spe": 48
-      },
-      "bst": 288
-    },
-    "jolteon": {
-      "name": "Jolteon",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Julian / Chirashi",
-      "points": 10,
-      "baseStats": {
-        "hp": 65,
-        "atk": 65,
-        "def": 60,
-        "spa": 110,
-        "spd": 95,
-        "spe": 130
-      },
-      "bst": 525
-    },
-    "cloyster": {
-      "name": "Cloyster",
-      "tier": "Low",
-      "note": null,
-      "draftedBy": "Hunter",
-      "points": 6,
-      "baseStats": {
-        "hp": 50,
-        "atk": 95,
-        "def": 180,
-        "spa": 85,
-        "spd": 45,
-        "spe": 70
-      },
-      "bst": 525
-    },
-    "bellibolt": {
-      "name": "Bellibolt",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Philip",
-      "points": 8,
-      "baseStats": {
-        "hp": 109,
-        "atk": 64,
-        "def": 91,
-        "spa": 103,
-        "spd": 83,
-        "spe": 45
-      },
-      "bst": 495
-    },
-    "espeon": {
-      "name": "Espeon",
-      "tier": "Low",
-      "note": null,
-      "draftedBy": "Bikey",
-      "points": 7,
-      "baseStats": {
-        "hp": 65,
-        "atk": 65,
-        "def": 60,
-        "spa": 130,
-        "spd": 95,
-        "spe": 110
-      },
-      "bst": 525
-    },
-    "toxapex": {
-      "name": "Toxapex",
-      "tier": "Low",
-      "note": null,
-      "draftedBy": "Max",
-      "points": 3,
-      "baseStats": {
-        "hp": 50,
-        "atk": 63,
-        "def": 152,
-        "spa": 53,
-        "spd": 142,
-        "spe": 35
-      },
-      "bst": 495
-    },
-    "golduck": {
-      "name": "Golduck",
-      "tier": "Low",
-      "note": null,
-      "draftedBy": "Gabe",
-      "points": 3,
-      "baseStats": {
-        "hp": 80,
-        "atk": 82,
-        "def": 78,
-        "spa": 95,
-        "spd": 80,
-        "spe": 85
-      },
-      "bst": 500
-    },
-    "toxicroak": {
-      "name": "Toxicroak",
-      "tier": "Low",
-      "note": null,
-      "draftedBy": "Sean",
-      "points": 6,
-      "baseStats": {
-        "hp": 83,
-        "atk": 106,
-        "def": 65,
-        "spa": 86,
-        "spd": 65,
-        "spe": 85
-      },
-      "bst": 490
-    },
-    "furret": {
-      "name": "Furret",
-      "tier": "Low",
-      "note": null,
-      "draftedBy": "Julian / Chirashi",
-      "points": 6,
-      "baseStats": {
-        "hp": 85,
-        "atk": 76,
-        "def": 64,
-        "spa": 45,
-        "spd": 55,
-        "spe": 90
-      },
-      "bst": 415
-    },
-    "gimmighoul": {
-      "name": "Gimmighoul",
-      "tier": "Low",
-      "note": null,
-      "draftedBy": "Hunter",
-      "points": 1,
-      "baseStats": {
-        "hp": 45,
-        "atk": 30,
-        "def": 70,
-        "spa": 75,
-        "spd": 70,
-        "spe": 10
-      },
-      "bst": 300
-    },
-    "kricketune": {
-      "name": "Kricketune",
-      "tier": "Low",
-      "note": null,
-      "draftedBy": "Philip",
-      "points": 1,
-      "baseStats": {
-        "hp": 77,
-        "atk": 85,
-        "def": 51,
-        "spa": 55,
-        "spd": 51,
-        "spe": 65
-      },
-      "bst": 384
-    },
-    "koffing": {
-      "name": "Koffing",
-      "tier": "Low",
-      "note": null,
-      "draftedBy": "Max",
-      "points": 3,
-      "baseStats": {
-        "hp": 40,
-        "atk": 65,
-        "def": 95,
-        "spa": 60,
-        "spd": 45,
-        "spe": 35
-      },
-      "bst": 340
-    },
-    "grafaiai": {
-      "name": "Grafaiai",
-      "tier": "Mid",
-      "note": null,
-      "draftedBy": "Julian / Chirashi",
-      "points": 10,
-      "baseStats": {
-        "hp": 63,
-        "atk": 95,
-        "def": 65,
-        "spa": 80,
-        "spd": 72,
-        "spe": 110
-      },
-      "bst": 485
-    },
-    "yanma": {
-      "name": "Yanma",
-      "tier": "Low",
-      "note": null,
-      "draftedBy": "Max",
-      "points": 1,
-      "baseStats": {
-        "hp": 65,
-        "atk": 65,
-        "def": 45,
-        "spa": 75,
-        "spd": 45,
-        "spe": 95
-      },
-      "bst": 390
-    },
-    "cyclizar": {
-      "name": "Cyclizar",
-      "tier": "Low",
-      "note": null,
-      "draftedBy": "Julian / Chirashi",
-      "points": 5,
-      "baseStats": {
-        "hp": 70,
-        "atk": 95,
-        "def": 65,
-        "spa": 85,
-        "spd": 65,
-        "spe": 121
-      },
-      "bst": 501
-    }
+  {
+   "id": "philip",
+   "seed": 2,
+   "name": "Philip",
+   "team": "Violent Victini's"
   },
-  "rosters": {
-    "hunter": [
-      {
-        "pokemon": "ursalunabloodmoon",
-        "tier": "Low",
-        "points": 23
-      },
-      {
-        "pokemon": "typhlosionhisui",
-        "tier": "Low",
-        "points": 13
-      },
-      {
-        "pokemon": "illumise",
-        "tier": "Low",
-        "points": 14
-      },
-      {
-        "pokemon": "torracat",
-        "tier": "Low",
-        "points": 10
-      },
-      {
-        "pokemon": "meowscarada",
-        "tier": "Low",
-        "points": 13
-      },
-      {
-        "pokemon": "oranguru",
-        "tier": "Low",
-        "points": 15
-      },
-      {
-        "pokemon": "exeggutor",
-        "tier": "Low",
-        "points": 8
-      },
-      {
-        "pokemon": "sneaselhisui",
-        "tier": "Low",
-        "points": 7
-      },
-      {
-        "pokemon": "cloyster",
-        "tier": "Low",
-        "points": 6
-      },
-      {
-        "pokemon": "gimmighoul",
-        "tier": "Low",
-        "points": 1
-      }
-    ],
-    "philip": [
-      {
-        "pokemon": "annihilape",
-        "tier": "Low",
-        "points": 19
-      },
-      {
-        "pokemon": "glimmora",
-        "tier": "Low",
-        "points": 13
-      },
-      {
-        "pokemon": "chesnaught",
-        "tier": "Low",
-        "points": 8
-      },
-      {
-        "pokemon": "magmar",
-        "tier": "Low",
-        "points": 12
-      },
-      {
-        "pokemon": "ninetalesalola",
-        "tier": "Low",
-        "points": 16
-      },
-      {
-        "pokemon": "frosmoth",
-        "tier": "Low",
-        "points": 5
-      },
-      {
-        "pokemon": "duraludon",
-        "tier": "Low",
-        "points": 10
-      },
-      {
-        "pokemon": "dragapult",
-        "tier": "Low",
-        "points": 18
-      },
-      {
-        "pokemon": "bellibolt",
-        "tier": "Low",
-        "points": 8
-      },
-      {
-        "pokemon": "kricketune",
-        "tier": "Low",
-        "points": 1
-      }
-    ],
-    "bikey": [
-      {
-        "pokemon": "ursaluna",
-        "tier": "Low",
-        "points": 20
-      },
-      {
-        "pokemon": "arcaninehisui",
-        "tier": "Low",
-        "points": 17
-      },
-      {
-        "pokemon": "hippowdon",
-        "tier": "Low",
-        "points": 9
-      },
-      {
-        "pokemon": "rillaboom",
-        "tier": "Low",
-        "points": 20
-      },
-      {
-        "pokemon": "gyarados",
-        "tier": "Low",
-        "points": 14
-      },
-      {
-        "pokemon": "pawmot",
-        "tier": "Low",
-        "points": 10
-      },
-      {
-        "pokemon": "carbink",
-        "tier": "Low",
-        "points": 5
-      },
-      {
-        "pokemon": "hawlucha",
-        "tier": "Low",
-        "points": 8
-      },
-      {
-        "pokemon": "espeon",
-        "tier": "Low",
-        "points": 7
-      }
-    ],
-    "max": [
-      {
-        "pokemon": "indeedeef",
-        "tier": "Low",
-        "points": 19
-      },
-      {
-        "pokemon": "armarouge",
-        "tier": "Low",
-        "points": 15
-      },
-      {
-        "pokemon": "sneasel",
-        "tier": "Low",
-        "points": 8
-      },
-      {
-        "pokemon": "hydrapple",
-        "tier": "Low",
-        "points": 10
-      },
-      {
-        "pokemon": "quaquaval",
-        "tier": "Low",
-        "points": 11
-      },
-      {
-        "pokemon": "murkrow",
-        "tier": "Low",
-        "points": 14
-      },
-      {
-        "pokemon": "skarmory",
-        "tier": "Low",
-        "points": 5
-      },
-      {
-        "pokemon": "sneasler",
-        "tier": "Low",
-        "points": 21
-      },
-      {
-        "pokemon": "toxapex",
-        "tier": "Low",
-        "points": 3
-      },
-      {
-        "pokemon": "koffing",
-        "tier": "Low",
-        "points": 3
-      },
-      {
-        "pokemon": "yanma",
-        "tier": "Low",
-        "points": 1
-      }
-    ],
-    "gabe": [
-      {
-        "pokemon": "torkoal",
-        "tier": "Low",
-        "points": 19
-      },
-      {
-        "pokemon": "talonflame",
-        "tier": "Low",
-        "points": 16
-      },
-      {
-        "pokemon": "clefairy",
-        "tier": "Low",
-        "points": 15
-      },
-      {
-        "pokemon": "slowkinggalar",
-        "tier": "Low",
-        "points": 10
-      },
-      {
-        "pokemon": "gastrodon",
-        "tier": "Low",
-        "points": 12
-      },
-      {
-        "pokemon": "toxtricity",
-        "tier": "Low",
-        "points": 9
-      },
-      {
-        "pokemon": "lilliganthisui",
-        "tier": "Low",
-        "points": 12
-      },
-      {
-        "pokemon": "dondozo",
-        "tier": "Low",
-        "points": 14
-      },
-      {
-        "pokemon": "golduck",
-        "tier": "Low",
-        "points": 3
-      }
-    ],
-    "sean": [
-      {
-        "pokemon": "archaludon",
-        "tier": "Low",
-        "points": 20
-      },
-      {
-        "pokemon": "pelipper",
-        "tier": "Low",
-        "points": 15
-      },
-      {
-        "pokemon": "basculegion",
-        "tier": "Low",
-        "points": 17
-      },
-      {
-        "pokemon": "kingdra",
-        "tier": "Low",
-        "points": 12
-      },
-      {
-        "pokemon": "hitmontop",
-        "tier": "Low",
-        "points": 14
-      },
-      {
-        "pokemon": "ludicolo",
-        "tier": "Low",
-        "points": 11
-      },
-      {
-        "pokemon": "raichu",
-        "tier": "Low",
-        "points": 9
-      },
-      {
-        "pokemon": "ditto",
-        "tier": "Low",
-        "points": 6
-      },
-      {
-        "pokemon": "toxicroak",
-        "tier": "Low",
-        "points": 6
-      }
-    ],
-    "julian-chirashi": [
-      {
-        "pokemon": "weezing",
-        "tier": "Low",
-        "points": 12
-      },
-      {
-        "pokemon": "mimikyu",
-        "tier": "Low",
-        "points": 13
-      },
-      {
-        "pokemon": "slaking",
-        "tier": "Low",
-        "points": 10
-      },
-      {
-        "pokemon": "toedscruel",
-        "tier": "Low",
-        "points": 10
-      },
-      {
-        "pokemon": "weezinggalar",
-        "tier": "Low",
-        "points": 13
-      },
-      {
-        "pokemon": "greninja",
-        "tier": "Low",
-        "points": 11
-      },
-      {
-        "pokemon": "typhlosion",
-        "tier": "Low",
-        "points": 10
-      },
-      {
-        "pokemon": "jolteon",
-        "tier": "Low",
-        "points": 10
-      },
-      {
-        "pokemon": "furret",
-        "tier": "Low",
-        "points": 6
-      },
-      {
-        "pokemon": "grafaiai",
-        "tier": "Low",
-        "points": 10
-      },
-      {
-        "pokemon": "cyclizar",
-        "tier": "Low",
-        "points": 5
-      }
-    ]
+  {
+   "id": "bikey",
+   "seed": 3,
+   "name": "Bikey",
+   "team": "Bikey's Tomatoes"
   },
-  "draft": [
-    {
-      "round": 1,
-      "pick": 1,
-      "player": "hunter",
-      "pokemon": "ursalunabloodmoon",
-      "tier": "Low",
-      "points": 23
-    },
-    {
-      "round": 1,
-      "pick": 2,
-      "player": "philip",
-      "pokemon": "annihilape",
-      "tier": "Low",
-      "points": 19
-    },
-    {
-      "round": 1,
-      "pick": 3,
-      "player": "bikey",
-      "pokemon": "ursaluna",
-      "tier": "Low",
-      "points": 20
-    },
-    {
-      "round": 1,
-      "pick": 4,
-      "player": "max",
-      "pokemon": "indeedeef",
-      "tier": "Low",
-      "points": 19
-    },
-    {
-      "round": 1,
-      "pick": 5,
-      "player": "gabe",
-      "pokemon": "torkoal",
-      "tier": "Low",
-      "points": 19
-    },
-    {
-      "round": 1,
-      "pick": 6,
-      "player": "sean",
-      "pokemon": "archaludon",
-      "tier": "Low",
-      "points": 20
-    },
-    {
-      "round": 1,
-      "pick": 7,
-      "player": "julian-chirashi",
-      "pokemon": "weezing",
-      "tier": "Low",
-      "points": 12
-    },
-    {
-      "round": 2,
-      "pick": 1,
-      "player": "hunter",
-      "pokemon": "typhlosionhisui",
-      "tier": "Low",
-      "points": 13
-    },
-    {
-      "round": 2,
-      "pick": 2,
-      "player": "philip",
-      "pokemon": "glimmora",
-      "tier": "Low",
-      "points": 13
-    },
-    {
-      "round": 2,
-      "pick": 3,
-      "player": "bikey",
-      "pokemon": "arcaninehisui",
-      "tier": "Low",
-      "points": 17
-    },
-    {
-      "round": 2,
-      "pick": 4,
-      "player": "max",
-      "pokemon": "armarouge",
-      "tier": "Low",
-      "points": 15
-    },
-    {
-      "round": 2,
-      "pick": 5,
-      "player": "gabe",
-      "pokemon": "talonflame",
-      "tier": "Low",
-      "points": 16
-    },
-    {
-      "round": 2,
-      "pick": 6,
-      "player": "sean",
-      "pokemon": "pelipper",
-      "tier": "Low",
-      "points": 15
-    },
-    {
-      "round": 2,
-      "pick": 7,
-      "player": "julian-chirashi",
-      "pokemon": "mimikyu",
-      "tier": "Low",
-      "points": 13
-    },
-    {
-      "round": 3,
-      "pick": 1,
-      "player": "hunter",
-      "pokemon": "illumise",
-      "tier": "Low",
-      "points": 14
-    },
-    {
-      "round": 3,
-      "pick": 2,
-      "player": "philip",
-      "pokemon": "chesnaught",
-      "tier": "Low",
-      "points": 8
-    },
-    {
-      "round": 3,
-      "pick": 3,
-      "player": "bikey",
-      "pokemon": "hippowdon",
-      "tier": "Low",
-      "points": 9
-    },
-    {
-      "round": 3,
-      "pick": 4,
-      "player": "max",
-      "pokemon": "sneasel",
-      "tier": "Low",
-      "points": 8
-    },
-    {
-      "round": 3,
-      "pick": 5,
-      "player": "gabe",
-      "pokemon": "clefairy",
-      "tier": "Low",
-      "points": 15
-    },
-    {
-      "round": 3,
-      "pick": 6,
-      "player": "sean",
-      "pokemon": "basculegion",
-      "tier": "Low",
-      "points": 17
-    },
-    {
-      "round": 3,
-      "pick": 7,
-      "player": "julian-chirashi",
-      "pokemon": "slaking",
-      "tier": "Low",
-      "points": 10
-    },
-    {
-      "round": 4,
-      "pick": 1,
-      "player": "hunter",
-      "pokemon": "torracat",
-      "tier": "Low",
-      "points": 10
-    },
-    {
-      "round": 4,
-      "pick": 2,
-      "player": "philip",
-      "pokemon": "magmar",
-      "tier": "Low",
-      "points": 12
-    },
-    {
-      "round": 4,
-      "pick": 3,
-      "player": "bikey",
-      "pokemon": "rillaboom",
-      "tier": "Low",
-      "points": 20
-    },
-    {
-      "round": 4,
-      "pick": 4,
-      "player": "max",
-      "pokemon": "hydrapple",
-      "tier": "Low",
-      "points": 10
-    },
-    {
-      "round": 4,
-      "pick": 5,
-      "player": "gabe",
-      "pokemon": "slowkinggalar",
-      "tier": "Low",
-      "points": 10
-    },
-    {
-      "round": 4,
-      "pick": 6,
-      "player": "sean",
-      "pokemon": "kingdra",
-      "tier": "Low",
-      "points": 12
-    },
-    {
-      "round": 4,
-      "pick": 7,
-      "player": "julian-chirashi",
-      "pokemon": "toedscruel",
-      "tier": "Low",
-      "points": 10
-    },
-    {
-      "round": 5,
-      "pick": 1,
-      "player": "hunter",
-      "pokemon": "meowscarada",
-      "tier": "Low",
-      "points": 13
-    },
-    {
-      "round": 5,
-      "pick": 2,
-      "player": "philip",
-      "pokemon": "ninetalesalola",
-      "tier": "Low",
-      "points": 16
-    },
-    {
-      "round": 5,
-      "pick": 3,
-      "player": "bikey",
-      "pokemon": "gyarados",
-      "tier": "Low",
-      "points": 14
-    },
-    {
-      "round": 5,
-      "pick": 4,
-      "player": "max",
-      "pokemon": "quaquaval",
-      "tier": "Low",
-      "points": 11
-    },
-    {
-      "round": 5,
-      "pick": 5,
-      "player": "gabe",
-      "pokemon": "gastrodon",
-      "tier": "Low",
-      "points": 12
-    },
-    {
-      "round": 5,
-      "pick": 6,
-      "player": "sean",
-      "pokemon": "hitmontop",
-      "tier": "Low",
-      "points": 14
-    },
-    {
-      "round": 5,
-      "pick": 7,
-      "player": "julian-chirashi",
-      "pokemon": "weezinggalar",
-      "tier": "Low",
-      "points": 13
-    },
-    {
-      "round": 6,
-      "pick": 1,
-      "player": "hunter",
-      "pokemon": "oranguru",
-      "tier": "Low",
-      "points": 15
-    },
-    {
-      "round": 6,
-      "pick": 2,
-      "player": "philip",
-      "pokemon": "frosmoth",
-      "tier": "Low",
-      "points": 5
-    },
-    {
-      "round": 6,
-      "pick": 3,
-      "player": "bikey",
-      "pokemon": "pawmot",
-      "tier": "Low",
-      "points": 10
-    },
-    {
-      "round": 6,
-      "pick": 4,
-      "player": "max",
-      "pokemon": "murkrow",
-      "tier": "Low",
-      "points": 14
-    },
-    {
-      "round": 6,
-      "pick": 5,
-      "player": "gabe",
-      "pokemon": "toxtricity",
-      "tier": "Low",
-      "points": 9
-    },
-    {
-      "round": 6,
-      "pick": 6,
-      "player": "sean",
-      "pokemon": "ludicolo",
-      "tier": "Low",
-      "points": 11
-    },
-    {
-      "round": 6,
-      "pick": 7,
-      "player": "julian-chirashi",
-      "pokemon": "greninja",
-      "tier": "Low",
-      "points": 11
-    },
-    {
-      "round": 7,
-      "pick": 1,
-      "player": "hunter",
-      "pokemon": "exeggutor",
-      "tier": "Low",
-      "points": 8
-    },
-    {
-      "round": 7,
-      "pick": 2,
-      "player": "philip",
-      "pokemon": "duraludon",
-      "tier": "Low",
-      "points": 10
-    },
-    {
-      "round": 7,
-      "pick": 3,
-      "player": "bikey",
-      "pokemon": "carbink",
-      "tier": "Low",
-      "points": 5
-    },
-    {
-      "round": 7,
-      "pick": 4,
-      "player": "max",
-      "pokemon": "skarmory",
-      "tier": "Low",
-      "points": 5
-    },
-    {
-      "round": 7,
-      "pick": 5,
-      "player": "gabe",
-      "pokemon": "lilliganthisui",
-      "tier": "Low",
-      "points": 12
-    },
-    {
-      "round": 7,
-      "pick": 6,
-      "player": "sean",
-      "pokemon": "raichu",
-      "tier": "Low",
-      "points": 9
-    },
-    {
-      "round": 7,
-      "pick": 7,
-      "player": "julian-chirashi",
-      "pokemon": "typhlosion",
-      "tier": "Low",
-      "points": 10
-    },
-    {
-      "round": 8,
-      "pick": 1,
-      "player": "hunter",
-      "pokemon": "sneaselhisui",
-      "tier": "Low",
-      "points": 7
-    },
-    {
-      "round": 8,
-      "pick": 2,
-      "player": "philip",
-      "pokemon": "dragapult",
-      "tier": "Low",
-      "points": 18
-    },
-    {
-      "round": 8,
-      "pick": 3,
-      "player": "bikey",
-      "pokemon": "hawlucha",
-      "tier": "Low",
-      "points": 8
-    },
-    {
-      "round": 8,
-      "pick": 4,
-      "player": "max",
-      "pokemon": "sneasler",
-      "tier": "Low",
-      "points": 21
-    },
-    {
-      "round": 8,
-      "pick": 5,
-      "player": "gabe",
-      "pokemon": "dondozo",
-      "tier": "Low",
-      "points": 14
-    },
-    {
-      "round": 8,
-      "pick": 6,
-      "player": "sean",
-      "pokemon": "ditto",
-      "tier": "Low",
-      "points": 6
-    },
-    {
-      "round": 8,
-      "pick": 7,
-      "player": "julian-chirashi",
-      "pokemon": "jolteon",
-      "tier": "Low",
-      "points": 10
-    },
-    {
-      "round": 9,
-      "pick": 1,
-      "player": "hunter",
-      "pokemon": "cloyster",
-      "tier": "Low",
-      "points": 6
-    },
-    {
-      "round": 9,
-      "pick": 2,
-      "player": "philip",
-      "pokemon": "bellibolt",
-      "tier": "Low",
-      "points": 8
-    },
-    {
-      "round": 9,
-      "pick": 3,
-      "player": "bikey",
-      "pokemon": "espeon",
-      "tier": "Low",
-      "points": 7
-    },
-    {
-      "round": 9,
-      "pick": 4,
-      "player": "max",
-      "pokemon": "toxapex",
-      "tier": "Low",
-      "points": 3
-    },
-    {
-      "round": 9,
-      "pick": 5,
-      "player": "gabe",
-      "pokemon": "golduck",
-      "tier": "Low",
-      "points": 3
-    },
-    {
-      "round": 9,
-      "pick": 6,
-      "player": "sean",
-      "pokemon": "toxicroak",
-      "tier": "Low",
-      "points": 6
-    },
-    {
-      "round": 9,
-      "pick": 7,
-      "player": "julian-chirashi",
-      "pokemon": "furret",
-      "tier": "Low",
-      "points": 6
-    },
-    {
-      "round": 10,
-      "pick": 1,
-      "player": "hunter",
-      "pokemon": "gimmighoul",
-      "tier": "Low",
-      "points": 1
-    },
-    {
-      "round": 10,
-      "pick": 2,
-      "player": "philip",
-      "pokemon": "kricketune",
-      "tier": "Low",
-      "points": 1
-    },
-    {
-      "round": 10,
-      "pick": 4,
-      "player": "max",
-      "pokemon": "koffing",
-      "tier": "Low",
-      "points": 3
-    },
-    {
-      "round": 10,
-      "pick": 7,
-      "player": "julian-chirashi",
-      "pokemon": "grafaiai",
-      "tier": "Low",
-      "points": 10
-    },
-    {
-      "round": 11,
-      "pick": 4,
-      "player": "max",
-      "pokemon": "yanma",
-      "tier": "Low",
-      "points": 1
-    },
-    {
-      "round": 11,
-      "pick": 7,
-      "player": "julian-chirashi",
-      "pokemon": "cyclizar",
-      "tier": "Low",
-      "points": 5
-    }
-  ],
-  "schedule": [
-    {
-      "week": 1,
-      "match": 1,
-      "a": [
-        "hunter"
-      ],
-      "b": [
-        "philip"
-      ],
-      "scoreA": 5,
-      "scoreB": 0
-    },
-    {
-      "week": 1,
-      "match": 2,
-      "a": [
-        "bikey"
-      ],
-      "b": [
-        "max"
-      ],
-      "scoreA": 0,
-      "scoreB": 2,
-      "games": [
-        {
-          "number": 1,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regg-2348512978",
-          "survivors": null,
-          "a": [],
-          "b": []
-        },
-        {
-          "number": 2,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regg-2348519202",
-          "survivors": null,
-          "a": [],
-          "b": []
-        }
-      ]
-    },
-    {
-      "week": 1,
-      "match": 3,
-      "a": [
-        "gabe"
-      ],
-      "b": [
-        "sean"
-      ],
-      "scoreA": 0,
-      "scoreB": 5,
-      "games": [
-        {
-          "number": 1,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025reggbo3-2348306004-a0g1bldlq6p7o2uiev416duh8fkuqvmpw",
-          "survivors": null,
-          "a": [],
-          "b": []
-        },
-        {
-          "number": 2,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025reggbo3-2348318162-ofj1nnpufmmgujuaevavbwqh0ojtwunpw",
-          "survivors": null,
-          "a": [],
-          "b": []
-        }
-      ]
-    },
-    {
-      "week": 2,
-      "match": 1,
-      "a": [
-        "hunter"
-      ],
-      "b": [
-        "bikey"
-      ],
-      "scoreA": 7,
-      "scoreB": 0,
-      "games": [
-        {
-          "number": 1,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regg-2350133458-jfwhmfpdwg7jvw2nm3mn637tgm6t9sbpw",
-          "survivors": null,
-          "a": [],
-          "b": []
-        },
-        {
-          "number": 2,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regg-2350137254-bgag8t7hdxxd8mg6r35gg8mphgs2uvgpw",
-          "survivors": null,
-          "a": [],
-          "b": []
-        }
-      ]
-    },
-    {
-      "week": 2,
-      "match": 2,
-      "a": [
-        "gabe"
-      ],
-      "b": [
-        "philip"
-      ],
-      "scoreA": 1,
-      "scoreB": 4
-    },
-    {
-      "week": 2,
-      "match": 3,
-      "a": [
-        "julian-chirashi"
-      ],
-      "b": [
-        "max"
-      ],
-      "scoreA": 3,
-      "scoreB": 4
-    },
-    {
-      "week": 3,
-      "match": 1,
-      "a": [
-        "hunter"
-      ],
-      "b": [
-        "gabe"
-      ],
-      "scoreA": 6,
-      "scoreB": 0,
-      "games": [
-        {
-          "number": 1,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regg-2353567147-muipk42fpgg6j2re0swnx951d0wr33ppw",
-          "survivors": null,
-          "a": [],
-          "b": []
-        },
-        {
-          "number": 2,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regg-2353572469-0g9b7nxlcbbs9f55r8mle6upgsoewxdpw",
-          "survivors": null,
-          "a": [],
-          "b": []
-        }
-      ]
-    },
-    {
-      "week": 3,
-      "match": 2,
-      "a": [
-        "julian-chirashi"
-      ],
-      "b": [
-        "bikey"
-      ],
-      "scoreA": 0,
-      "scoreB": 5
-    },
-    {
-      "week": 3,
-      "match": 3,
-      "a": [
-        "sean"
-      ],
-      "b": [
-        "max"
-      ],
-      "scoreA": 4,
-      "scoreB": 0,
-      "games": [
-        {
-          "number": 1,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2024regg-2354846081",
-          "survivors": null,
-          "a": [],
-          "b": []
-        },
-        {
-          "number": 2,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2024regg-2354864934",
-          "survivors": null,
-          "a": [],
-          "b": []
-        }
-      ]
-    },
-    {
-      "week": 4,
-      "match": 1,
-      "a": [
-        "hunter"
-      ],
-      "b": [
-        "julian-chirashi"
-      ],
-      "scoreA": 4,
-      "scoreB": 0
-    },
-    {
-      "week": 4,
-      "match": 2,
-      "a": [
-        "sean"
-      ],
-      "b": [
-        "bikey"
-      ],
-      "scoreA": 3,
-      "scoreB": 6,
-      "games": [
-        {
-          "number": 1,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regi-2358412243",
-          "survivors": null,
-          "a": [],
-          "b": []
-        },
-        {
-          "number": 2,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regi-2358418196",
-          "survivors": null,
-          "a": [],
-          "b": []
-        },
-        {
-          "number": 3,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regi-2358423229",
-          "survivors": null,
-          "a": [],
-          "b": []
-        }
-      ]
-    },
-    {
-      "week": 4,
-      "match": 3,
-      "a": [
-        "max"
-      ],
-      "b": [
-        "philip"
-      ],
-      "scoreA": 3,
-      "scoreB": 0
-    },
-    {
-      "week": 5,
-      "match": 1,
-      "a": [
-        "sean"
-      ],
-      "b": [
-        "julian-chirashi"
-      ],
-      "scoreA": null,
-      "scoreB": null
-    },
-    {
-      "week": 5,
-      "match": 2,
-      "a": [
-        "max"
-      ],
-      "b": [
-        "gabe"
-      ],
-      "scoreA": null,
-      "scoreB": null,
-      "games": [
-        {
-          "number": 1,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2024regg-2375446621-gxif5em2aaojowfe06cvqpk0q83n4gtpw",
-          "survivors": null,
-          "a": [],
-          "b": []
-        },
-        {
-          "number": 2,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2024regg-2375451056-rq8vpvgp7jq727ctwwdrdx7h2hef7uvpw",
-          "survivors": null,
-          "a": [],
-          "b": []
-        }
-      ]
-    },
-    {
-      "week": 5,
-      "match": 3,
-      "a": [
-        "philip"
-      ],
-      "b": [
-        "bikey"
-      ],
-      "scoreA": null,
-      "scoreB": null
-    },
-    {
-      "week": 6,
-      "match": 1,
-      "a": [
-        "hunter"
-      ],
-      "b": [
-        "sean"
-      ],
-      "scoreA": null,
-      "scoreB": null
-    },
-    {
-      "week": 6,
-      "match": 2,
-      "a": [
-        "philip"
-      ],
-      "b": [
-        "julian-chirashi"
-      ],
-      "scoreA": null,
-      "scoreB": null
-    },
-    {
-      "week": 6,
-      "match": 3,
-      "a": [
-        "bikey"
-      ],
-      "b": [
-        "gabe"
-      ],
-      "scoreA": null,
-      "scoreB": null,
-      "games": [
-        {
-          "number": 1,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regi-2393624092-dyj5fltnnhy37u64e1ncd40il3lgc4gpw",
-          "survivors": null,
-          "a": [],
-          "b": []
-        },
-        {
-          "number": 2,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regi-2393627459-dsxp7l4jfbevq63m7wiciwjd7nlvkfvpw",
-          "survivors": null,
-          "a": [],
-          "b": []
-        },
-        {
-          "number": 3,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regi-2393630603-nq2i07edifq7dl9b9jf1jytxjpnooynpw",
-          "survivors": null,
-          "a": [],
-          "b": []
-        }
-      ]
-    },
-    {
-      "week": 7,
-      "match": 1,
-      "a": [
-        "hunter"
-      ],
-      "b": [
-        "max"
-      ],
-      "scoreA": 5,
-      "scoreB": 0,
-      "games": [
-        {
-          "number": 1,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2024regg-2392970608",
-          "survivors": null,
-          "a": [],
-          "b": []
-        },
-        {
-          "number": 2,
-          "winner": null,
-          "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2024regg-2392974436",
-          "survivors": null,
-          "a": [],
-          "b": []
-        }
-      ]
-    },
-    {
-      "week": 7,
-      "match": 2,
-      "a": [
-        "philip"
-      ],
-      "b": [
-        "sean"
-      ],
-      "scoreA": null,
-      "scoreB": null
-    },
-    {
-      "week": 7,
-      "match": 3,
-      "a": [
-        "gabe"
-      ],
-      "b": [
-        "julian-chirashi"
-      ],
-      "scoreA": null,
-      "scoreB": null
-    },
-    {
-      "week": 8,
-      "match": 1,
-      "a": [
-        "hunter"
-      ],
-      "b": [
-        "philip"
-      ],
-      "scoreA": null,
-      "scoreB": null
-    },
-    {
-      "week": 8,
-      "match": 2,
-      "a": [
-        "bikey"
-      ],
-      "b": [
-        "max"
-      ],
-      "scoreA": null,
-      "scoreB": null
-    },
-    {
-      "week": 8,
-      "match": 3,
-      "a": [
-        "gabe"
-      ],
-      "b": [
-        "sean"
-      ],
-      "scoreA": null,
-      "scoreB": null
-    }
-  ],
-  "standings": [
-    {
-      "player": "hunter",
-      "name": "Hunter",
-      "team": "Dapper Decidueye",
-      "wins": 5,
-      "losses": 0,
-      "gamesWon": 27,
-      "gamesLost": 0,
-      "monDiff": 27,
-      "points": 5,
-      "rank": 1
-    },
-    {
-      "player": "max",
-      "name": "Max",
-      "team": "Pokemans",
-      "wins": 3,
-      "losses": 2,
-      "gamesWon": 9,
-      "gamesLost": 12,
-      "monDiff": 0,
-      "points": 3,
-      "rank": 2
-    },
-    {
-      "player": "sean",
-      "name": "Sean",
-      "team": "Team Wet",
-      "wins": 2,
-      "losses": 1,
-      "gamesWon": 12,
-      "gamesLost": 6,
-      "monDiff": 3,
-      "points": 2,
-      "rank": 3
-    },
-    {
-      "player": "bikey",
-      "name": "Bikey",
-      "team": "Bikey's Tomatoes",
-      "wins": 2,
-      "losses": 2,
-      "gamesWon": 11,
-      "gamesLost": 12,
-      "monDiff": 2,
-      "points": 2,
-      "rank": 4
-    },
-    {
-      "player": "philip",
-      "name": "Philip",
-      "team": "Violent Victini's",
-      "wins": 1,
-      "losses": 2,
-      "gamesWon": 4,
-      "gamesLost": 9,
-      "monDiff": -4,
-      "points": 1,
-      "rank": 5
-    },
-    {
-      "player": "julian-chirashi",
-      "name": "Julian / Chirashi",
-      "team": "Gassy Equalizer",
-      "wins": 0,
-      "losses": 3,
-      "gamesWon": 3,
-      "gamesLost": 13,
-      "monDiff": -13,
-      "points": 0,
-      "rank": 7
-    },
-    {
-      "player": "gabe",
-      "name": "Gabe",
-      "team": "Mantine's Revenge",
-      "wins": 0,
-      "losses": 3,
-      "gamesWon": 1,
-      "gamesLost": 15,
-      "monDiff": -15,
-      "points": 0,
-      "rank": 8
-    }
-  ],
-  "rules": {},
-  "matchStats": [
-    {
-      "week": 1,
-      "a": {
-        "team": "Hunter",
-        "result": "W",
-        "score": 5,
-        "lines": [
-          {
-            "pokemon": "ursalunabloodmoon",
-            "kills": 4,
-            "deaths": 1
-          },
-          {
-            "pokemon": "typhlosionhisui",
-            "kills": 3,
-            "deaths": 0
-          },
-          {
-            "pokemon": "illumise",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "oranguru",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "torracat",
-            "kills": 1,
-            "deaths": 1
-          },
-          {
-            "pokemon": "meowscarada",
-            "kills": 0,
-            "deaths": 0
-          }
-        ]
-      },
-      "b": {
-        "team": "Philip",
-        "result": "L",
-        "score": 0,
-        "lines": [
-          {
-            "pokemon": "chesnaught",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "ninetalesalola",
-            "kills": 0,
-            "deaths": 2
-          },
-          {
-            "pokemon": "annihilape",
-            "kills": 1,
-            "deaths": 2
-          },
-          {
-            "pokemon": "magmar",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "dragapult",
-            "kills": 1,
-            "deaths": 2
-          },
-          {
-            "pokemon": "frosmoth",
-            "kills": 0,
-            "deaths": 1
-          }
-        ]
-      }
-    },
-    {
-      "week": 1,
-      "a": {
-        "team": "Bikey",
-        "result": "L",
-        "score": 0,
-        "lines": [
-          {
-            "pokemon": "rillaboom",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "gyarados",
-            "kills": 3,
-            "deaths": 2
-          },
-          {
-            "pokemon": "arcaninehisui",
-            "kills": 1,
-            "deaths": 2
-          },
-          {
-            "pokemon": "hawlucha",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "ursaluna",
-            "kills": 2,
-            "deaths": 1
-          },
-          {
-            "pokemon": "espeon",
-            "kills": 0,
-            "deaths": 1
-          }
-        ]
-      },
-      "b": {
-        "team": "Max",
-        "result": "W",
-        "score": 2,
-        "lines": [
-          {
-            "pokemon": "sneasler",
-            "kills": 3,
-            "deaths": 2
-          },
-          {
-            "pokemon": "quaquaval",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "indeedeef",
-            "kills": 0,
-            "deaths": 2
-          },
-          {
-            "pokemon": "hydrapple",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "skarmory",
-            "kills": 5,
-            "deaths": 0
-          },
-          {
-            "pokemon": "armarouge",
-            "kills": 0,
-            "deaths": 1
-          }
-        ]
-      }
-    },
-    {
-      "week": 1,
-      "a": {
-        "team": "Gabe",
-        "result": "L",
-        "score": 0,
-        "lines": [
-          {
-            "pokemon": "clefairy",
-            "kills": 1,
-            "deaths": 2
-          },
-          {
-            "pokemon": "toxtricity",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "golduck",
-            "kills": 0,
-            "deaths": 2
-          },
-          {
-            "pokemon": "gastrodon",
-            "kills": 1,
-            "deaths": 2
-          },
-          {
-            "pokemon": "lilliganthisui",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "slowkinggalar",
-            "kills": 1,
-            "deaths": 1
-          }
-        ]
-      },
-      "b": {
-        "team": "Sean",
-        "result": "W",
-        "score": 5,
-        "lines": [
-          {
-            "pokemon": "archaludon",
-            "kills": 1,
-            "deaths": 1
-          },
-          {
-            "pokemon": "ludicolo",
-            "kills": 3,
-            "deaths": 1
-          },
-          {
-            "pokemon": "pelipper",
-            "kills": 1,
-            "deaths": 0
-          },
-          {
-            "pokemon": "basculegion",
-            "kills": 3,
-            "deaths": 0
-          },
-          {
-            "pokemon": "raichu",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "hitmontop",
-            "kills": 0,
-            "deaths": 0
-          }
-        ]
-      }
-    },
-    {
-      "week": 2,
-      "a": {
-        "team": "Hunter",
-        "result": "W",
-        "score": 7,
-        "lines": [
-          {
-            "pokemon": "ursalunabloodmoon",
-            "kills": 2,
-            "deaths": 0
-          },
-          {
-            "pokemon": "typhlosionhisui",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "illumise",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "torracat",
-            "kills": 1,
-            "deaths": 0
-          },
-          {
-            "pokemon": "meowscarada",
-            "kills": 2,
-            "deaths": 0
-          },
-          {
-            "pokemon": "cloyster",
-            "kills": 3,
-            "deaths": 1
-          }
-        ]
-      },
-      "b": {
-        "team": "Bikey",
-        "result": "L",
-        "score": 0,
-        "lines": [
-          {
-            "pokemon": "ursaluna",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "espeon",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "rillaboom",
-            "kills": 0,
-            "deaths": 2
-          },
-          {
-            "pokemon": "hippowdon",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "arcaninehisui",
-            "kills": 1,
-            "deaths": 2
-          },
-          {
-            "pokemon": "hawlucha",
-            "kills": 0,
-            "deaths": 1
-          }
-        ]
-      }
-    },
-    {
-      "week": 2,
-      "a": {
-        "team": "Gabe",
-        "result": "L",
-        "score": 1,
-        "lines": [
-          {
-            "pokemon": "clefairy",
-            "kills": 0,
-            "deaths": 3
-          },
-          {
-            "pokemon": "talonflame",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "slowkinggalar",
-            "kills": 2,
-            "deaths": 3
-          },
-          {
-            "pokemon": "dondozo",
-            "kills": 4,
-            "deaths": 1
-          },
-          {
-            "pokemon": "torkoal",
-            "kills": 2,
-            "deaths": 3
-          },
-          {
-            "pokemon": "gastrodon",
-            "kills": 0,
-            "deaths": 0
-          }
-        ]
-      },
-      "b": {
-        "team": "Philip",
-        "result": "W",
-        "score": 4,
-        "lines": [
-          {
-            "pokemon": "magmar",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "chesnaught",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "glimmora",
-            "kills": 5,
-            "deaths": 3
-          },
-          {
-            "pokemon": "dragapult",
-            "kills": 5,
-            "deaths": 1
-          },
-          {
-            "pokemon": "annihilape",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "bellibolt",
-            "kills": 1,
-            "deaths": 1
-          }
-        ]
-      }
-    },
-    {
-      "week": 2,
-      "a": {
-        "team": "Julian / Chirashi",
-        "result": "L",
-        "score": 3,
-        "lines": [
-          {
-            "pokemon": "weezinggalar",
-            "kills": 7,
-            "deaths": 2
-          },
-          {
-            "pokemon": "toedscruel",
-            "kills": 0,
-            "deaths": 2
-          },
-          {
-            "pokemon": "mimikyu",
-            "kills": 0,
-            "deaths": 2
-          },
-          {
-            "pokemon": "cyclizar",
-            "kills": 0,
-            "deaths": 2
-          },
-          {
-            "pokemon": "greninja",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "typhlosion",
-            "kills": 1,
-            "deaths": 1
-          }
-        ]
-      },
-      "b": {
-        "team": "Max",
-        "result": "W",
-        "score": 4,
-        "lines": [
-          {
-            "pokemon": "indeedeef",
-            "kills": 1,
-            "deaths": 3
-          },
-          {
-            "pokemon": "armarouge",
-            "kills": 4,
-            "deaths": 0
-          },
-          {
-            "pokemon": "sneasler",
-            "kills": 1,
-            "deaths": 2
-          },
-          {
-            "pokemon": "hydrapple",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "skarmory",
-            "kills": 1,
-            "deaths": 2
-          },
-          {
-            "pokemon": "quaquaval",
-            "kills": 2,
-            "deaths": 1
-          }
-        ]
-      }
-    },
-    {
-      "week": 3,
-      "a": {
-        "team": "Hunter",
-        "result": "W",
-        "score": 6,
-        "lines": [
-          {
-            "pokemon": "ursalunabloodmoon",
-            "kills": 7,
-            "deaths": 0
-          },
-          {
-            "pokemon": "typhlosionhisui",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "illumise",
-            "kills": 0,
-            "deaths": 2
-          },
-          {
-            "pokemon": "torracat",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "meowscarada",
-            "kills": 1,
-            "deaths": 0
-          },
-          {
-            "pokemon": "exeggutor",
-            "kills": 0,
-            "deaths": 0
-          }
-        ]
-      },
-      "b": {
-        "team": "Gabe",
-        "result": "L",
-        "score": 0,
-        "lines": [
-          {
-            "pokemon": "clefairy",
-            "kills": 1,
-            "deaths": 0
-          },
-          {
-            "pokemon": "talonflame",
-            "kills": 2,
-            "deaths": 1
-          },
-          {
-            "pokemon": "slowkinggalar",
-            "kills": 1,
-            "deaths": 0
-          },
-          {
-            "pokemon": "dondozo",
-            "kills": 1,
-            "deaths": 0
-          },
-          {
-            "pokemon": "golduck",
-            "kills": 2,
-            "deaths": 0
-          },
-          {
-            "pokemon": "gastrodon",
-            "kills": 1,
-            "deaths": 1
-          }
-        ]
-      }
-    },
-    {
-      "week": 3,
-      "a": {
-        "team": "Julian / Chirashi",
-        "result": "L",
-        "score": 0,
-        "lines": [
-          {
-            "pokemon": "weezing",
-            "kills": 0,
-            "deaths": 2
-          },
-          {
-            "pokemon": "slaking",
-            "kills": 2,
-            "deaths": 2
-          },
-          {
-            "pokemon": "cyclizar",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "greninja",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "typhlosion",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "jolteon",
-            "kills": 1,
-            "deaths": 2
-          }
-        ]
-      },
-      "b": {
-        "team": "Bikey",
-        "result": "W",
-        "score": 5,
-        "lines": [
-          {
-            "pokemon": "ursaluna",
-            "kills": 3,
-            "deaths": 1
-          },
-          {
-            "pokemon": "pawmot",
-            "kills": 2,
-            "deaths": 1
-          },
-          {
-            "pokemon": "gyarados",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "espeon",
-            "kills": 1,
-            "deaths": 1
-          },
-          {
-            "pokemon": "carbink",
-            "kills": 2,
-            "deaths": 0
-          },
-          {
-            "pokemon": "rillaboom",
-            "kills": 0,
-            "deaths": 0
-          }
-        ]
-      }
-    },
-    {
-      "week": 3,
-      "a": {
-        "team": "Sean",
-        "result": "W",
-        "score": 4,
-        "lines": [
-          {
-            "pokemon": "archaludon",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "ludicolo",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "ditto",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "kingdra",
-            "kills": 4,
-            "deaths": 1
-          },
-          {
-            "pokemon": "pelipper",
-            "kills": 0,
-            "deaths": 2
-          },
-          {
-            "pokemon": "basculegion",
-            "kills": 4,
-            "deaths": 1
-          }
-        ]
-      },
-      "b": {
-        "team": "Max",
-        "result": "L",
-        "score": 0,
-        "lines": [
-          {
-            "pokemon": "armarouge",
-            "kills": 2,
-            "deaths": 2
-          },
-          {
-            "pokemon": "murkrow",
-            "kills": 0,
-            "deaths": 2
-          },
-          {
-            "pokemon": "indeedeef",
-            "kills": 0,
-            "deaths": 2
-          },
-          {
-            "pokemon": "hydrapple",
-            "kills": 2,
-            "deaths": 1
-          },
-          {
-            "pokemon": "quaquaval",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "sneasler",
-            "kills": 1,
-            "deaths": 1
-          }
-        ]
-      }
-    },
-    {
-      "week": 4,
-      "a": {
-        "team": "Hunter",
-        "result": "W",
-        "score": 4,
-        "lines": [
-          {
-            "pokemon": "ursalunabloodmoon",
-            "kills": 3,
-            "deaths": 1
-          },
-          {
-            "pokemon": "meowscarada",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "typhlosionhisui",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "torracat",
-            "kills": 4,
-            "deaths": 0
-          },
-          {
-            "pokemon": "oranguru",
-            "kills": 1,
-            "deaths": 2
-          },
-          {
-            "pokemon": "exeggutor",
-            "kills": 0,
-            "deaths": 1
-          }
-        ]
-      },
-      "b": {
-        "team": "Julian / Chirashi",
-        "result": "L",
-        "score": 0,
-        "lines": [
-          {
-            "pokemon": "weezinggalar",
-            "kills": 0,
-            "deaths": 2
-          },
-          {
-            "pokemon": "mimikyu",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "greninja",
-            "kills": 1,
-            "deaths": 2
-          },
-          {
-            "pokemon": "grafaiai",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "typhlosion",
-            "kills": 2,
-            "deaths": 1
-          },
-          {
-            "pokemon": "furret",
-            "kills": 0,
-            "deaths": 1
-          }
-        ]
-      }
-    },
-    {
-      "week": 4,
-      "a": {
-        "team": "Sean",
-        "result": "L",
-        "score": 3,
-        "lines": [
-          {
-            "pokemon": "basculegion",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "hitmontop",
-            "kills": 3,
-            "deaths": 2
-          },
-          {
-            "pokemon": "archaludon",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "pelipper",
-            "kills": 4,
-            "deaths": 2
-          },
-          {
-            "pokemon": "ludicolo",
-            "kills": 1,
-            "deaths": 2
-          },
-          {
-            "pokemon": "raichu",
-            "kills": 0,
-            "deaths": 1
-          }
-        ]
-      },
-      "b": {
-        "team": "Bikey",
-        "result": "W",
-        "score": 6,
-        "lines": [
-          {
-            "pokemon": "pawmot",
-            "kills": 3,
-            "deaths": 1
-          },
-          {
-            "pokemon": "ursaluna",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "espeon",
-            "kills": 1,
-            "deaths": 1
-          },
-          {
-            "pokemon": "gyarados",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "hippowdon",
-            "kills": 1,
-            "deaths": 3
-          },
-          {
-            "pokemon": "rillaboom",
-            "kills": 4,
-            "deaths": 2
-          }
-        ]
-      }
-    },
-    {
-      "week": 4,
-      "a": {
-        "team": "Max",
-        "result": "W",
-        "score": 3,
-        "lines": [
-          {
-            "pokemon": "sneasler",
-            "kills": 3,
-            "deaths": 2
-          },
-          {
-            "pokemon": "indeedeef",
-            "kills": 0,
-            "deaths": 1
-          },
-          {
-            "pokemon": "armarouge",
-            "kills": 1,
-            "deaths": 1
-          },
-          {
-            "pokemon": "toxapex",
-            "kills": 1,
-            "deaths": 0
-          },
-          {
-            "pokemon": "hydrapple",
-            "kills": 3,
-            "deaths": 0
-          },
-          {
-            "pokemon": "skarmory",
-            "kills": 0,
-            "deaths": 1
-          }
-        ]
-      },
-      "b": {
-        "team": "Philip",
-        "result": "L",
-        "score": 0,
-        "lines": [
-          {
-            "pokemon": "magmar",
-            "kills": 0,
-            "deaths": 0
-          },
-          {
-            "pokemon": "dragapult",
-            "kills": 1,
-            "deaths": 2
-          },
-          {
-            "pokemon": "annihilape",
-            "kills": 2,
-            "deaths": 2
-          },
-          {
-            "pokemon": "ninetalesalola",
-            "kills": 0,
-            "deaths": 2
-          },
-          {
-            "pokemon": "frosmoth",
-            "kills": 1,
-            "deaths": 1
-          },
-          {
-            "pokemon": "bellibolt",
-            "kills": 1,
-            "deaths": 1
-          }
-        ]
-      }
-    },
-    {
-      "week": 5,
-      "a": {
-        "team": "Sean",
-        "result": null,
-        "score": null,
-        "lines": []
-      },
-      "b": {
-        "team": "Julian / Chirashi",
-        "result": null,
-        "score": null,
-        "lines": []
-      }
-    },
-    {
-      "week": 5,
-      "a": {
-        "team": "Max",
-        "result": null,
-        "score": null,
-        "lines": []
-      },
-      "b": {
-        "team": "Gabe",
-        "result": null,
-        "score": null,
-        "lines": []
-      }
-    },
-    {
-      "week": 5,
-      "a": {
-        "team": "Philip",
-        "result": null,
-        "score": null,
-        "lines": []
-      },
-      "b": {
-        "team": "Bikey",
-        "result": null,
-        "score": null,
-        "lines": []
-      }
-    },
-    {
-      "week": 6,
-      "a": {
-        "team": "Hunter",
-        "result": null,
-        "score": null,
-        "lines": []
-      },
-      "b": {
-        "team": "Sean",
-        "result": null,
-        "score": null,
-        "lines": []
-      }
-    },
-    {
-      "week": 6,
-      "a": {
-        "team": "Philip",
-        "result": null,
-        "score": null,
-        "lines": []
-      },
-      "b": {
-        "team": "Julian / Chirashi",
-        "result": null,
-        "score": null,
-        "lines": []
-      }
-    },
-    {
-      "week": 6,
-      "a": {
-        "team": "Bikey",
-        "result": null,
-        "score": null,
-        "lines": []
-      },
-      "b": {
-        "team": "Gabe",
-        "result": null,
-        "score": null,
-        "lines": []
-      }
-    },
-    {
-      "week": 7,
-      "a": {
-        "team": "Hunter",
-        "result": "W",
-        "score": 5,
-        "lines": []
-      },
-      "b": {
-        "team": "Max",
-        "result": "L",
-        "score": 0,
-        "lines": []
-      }
-    },
-    {
-      "week": 7,
-      "a": {
-        "team": "Philip",
-        "result": null,
-        "score": null,
-        "lines": []
-      },
-      "b": {
-        "team": "Sean",
-        "result": null,
-        "score": null,
-        "lines": []
-      }
-    },
-    {
-      "week": 7,
-      "a": {
-        "team": "Gabe",
-        "result": null,
-        "score": null,
-        "lines": []
-      },
-      "b": {
-        "team": "Julian / Chirashi",
-        "result": null,
-        "score": null,
-        "lines": []
-      }
-    },
-    {
-      "week": 8,
-      "a": {
-        "team": "Hunter",
-        "result": null,
-        "score": null,
-        "lines": []
-      },
-      "b": {
-        "team": "Philip",
-        "result": null,
-        "score": null,
-        "lines": []
-      }
-    },
-    {
-      "week": 8,
-      "a": {
-        "team": "Bikey",
-        "result": null,
-        "score": null,
-        "lines": []
-      },
-      "b": {
-        "team": "Max",
-        "result": null,
-        "score": null,
-        "lines": []
-      }
-    },
-    {
-      "week": 8,
-      "a": {
-        "team": "Gabe",
-        "result": null,
-        "score": null,
-        "lines": []
-      },
-      "b": {
-        "team": "Sean",
-        "result": null,
-        "score": null,
-        "lines": []
-      }
-    }
-  ],
-  "pokemonStats": {
-    "ursalunabloodmoon": {
-      "player": "hunter",
-      "gamesPlayed": 4,
-      "kills": 16,
-      "deaths": 2
-    },
-    "annihilape": {
-      "player": "philip",
-      "gamesPlayed": 3,
-      "kills": 3,
-      "deaths": 5
-    },
-    "ursaluna": {
-      "player": "bikey",
-      "gamesPlayed": 4,
-      "kills": 5,
-      "deaths": 3
-    },
-    "indeedeef": {
-      "player": "max",
-      "gamesPlayed": 4,
-      "kills": 1,
-      "deaths": 8
-    },
-    "torkoal": {
-      "player": "gabe",
-      "gamesPlayed": 1,
-      "kills": 2,
-      "deaths": 3
-    },
-    "archaludon": {
-      "player": "sean",
-      "gamesPlayed": 3,
-      "kills": 1,
-      "deaths": 2
-    },
-    "weezing": {
-      "player": "julian-chirashi",
-      "gamesPlayed": 1,
-      "kills": 0,
-      "deaths": 2
-    },
-    "typhlosionhisui": {
-      "player": "hunter",
-      "gamesPlayed": 4,
-      "kills": 3,
-      "deaths": 0
-    },
-    "glimmora": {
-      "player": "philip",
-      "gamesPlayed": 1,
-      "kills": 5,
-      "deaths": 3
-    },
-    "arcaninehisui": {
-      "player": "bikey",
-      "gamesPlayed": 2,
-      "kills": 2,
-      "deaths": 4
-    },
-    "armarouge": {
-      "player": "max",
-      "gamesPlayed": 4,
-      "kills": 7,
-      "deaths": 4
-    },
-    "talonflame": {
-      "player": "gabe",
-      "gamesPlayed": 2,
-      "kills": 2,
-      "deaths": 2
-    },
-    "pelipper": {
-      "player": "sean",
-      "gamesPlayed": 3,
-      "kills": 5,
-      "deaths": 4
-    },
-    "mimikyu": {
-      "player": "julian-chirashi",
-      "gamesPlayed": 2,
-      "kills": 0,
-      "deaths": 2
-    },
-    "illumise": {
-      "player": "hunter",
-      "gamesPlayed": 3,
-      "kills": 0,
-      "deaths": 2
-    },
-    "chesnaught": {
-      "player": "philip",
-      "gamesPlayed": 2,
-      "kills": 0,
-      "deaths": 2
-    },
-    "hippowdon": {
-      "player": "bikey",
-      "gamesPlayed": 2,
-      "kills": 1,
-      "deaths": 4
-    },
-    "sneasel": {
-      "player": "max",
-      "gamesPlayed": 0,
-      "kills": 0,
-      "deaths": 0
-    },
-    "clefairy": {
-      "player": "gabe",
-      "gamesPlayed": 3,
-      "kills": 2,
-      "deaths": 5
-    },
-    "basculegion": {
-      "player": "sean",
-      "gamesPlayed": 3,
-      "kills": 7,
-      "deaths": 2
-    },
-    "slaking": {
-      "player": "julian-chirashi",
-      "gamesPlayed": 1,
-      "kills": 2,
-      "deaths": 2
-    },
-    "torracat": {
-      "player": "hunter",
-      "gamesPlayed": 4,
-      "kills": 6,
-      "deaths": 1
-    },
-    "magmar": {
-      "player": "philip",
-      "gamesPlayed": 3,
-      "kills": 0,
-      "deaths": 2
-    },
-    "rillaboom": {
-      "player": "bikey",
-      "gamesPlayed": 4,
-      "kills": 4,
-      "deaths": 5
-    },
-    "hydrapple": {
-      "player": "max",
-      "gamesPlayed": 4,
-      "kills": 5,
-      "deaths": 1
-    },
-    "slowkinggalar": {
-      "player": "gabe",
-      "gamesPlayed": 3,
-      "kills": 4,
-      "deaths": 4
-    },
-    "kingdra": {
-      "player": "sean",
-      "gamesPlayed": 1,
-      "kills": 4,
-      "deaths": 1
-    },
-    "toedscruel": {
-      "player": "julian-chirashi",
-      "gamesPlayed": 1,
-      "kills": 0,
-      "deaths": 2
-    },
-    "meowscarada": {
-      "player": "hunter",
-      "gamesPlayed": 4,
-      "kills": 3,
-      "deaths": 0
-    },
-    "ninetalesalola": {
-      "player": "philip",
-      "gamesPlayed": 2,
-      "kills": 0,
-      "deaths": 4
-    },
-    "gyarados": {
-      "player": "bikey",
-      "gamesPlayed": 3,
-      "kills": 3,
-      "deaths": 3
-    },
-    "quaquaval": {
-      "player": "max",
-      "gamesPlayed": 3,
-      "kills": 2,
-      "deaths": 2
-    },
-    "gastrodon": {
-      "player": "gabe",
-      "gamesPlayed": 3,
-      "kills": 2,
-      "deaths": 3
-    },
-    "hitmontop": {
-      "player": "sean",
-      "gamesPlayed": 2,
-      "kills": 3,
-      "deaths": 2
-    },
-    "weezinggalar": {
-      "player": "julian-chirashi",
-      "gamesPlayed": 2,
-      "kills": 7,
-      "deaths": 4
-    },
-    "oranguru": {
-      "player": "hunter",
-      "gamesPlayed": 2,
-      "kills": 1,
-      "deaths": 3
-    },
-    "frosmoth": {
-      "player": "philip",
-      "gamesPlayed": 2,
-      "kills": 1,
-      "deaths": 2
-    },
-    "pawmot": {
-      "player": "bikey",
-      "gamesPlayed": 2,
-      "kills": 5,
-      "deaths": 2
-    },
-    "murkrow": {
-      "player": "max",
-      "gamesPlayed": 1,
-      "kills": 0,
-      "deaths": 2
-    },
-    "toxtricity": {
-      "player": "gabe",
-      "gamesPlayed": 1,
-      "kills": 0,
-      "deaths": 0
-    },
-    "ludicolo": {
-      "player": "sean",
-      "gamesPlayed": 3,
-      "kills": 4,
-      "deaths": 3
-    },
-    "greninja": {
-      "player": "julian-chirashi",
-      "gamesPlayed": 3,
-      "kills": 1,
-      "deaths": 3
-    },
-    "exeggutor": {
-      "player": "hunter",
-      "gamesPlayed": 2,
-      "kills": 0,
-      "deaths": 1
-    },
-    "duraludon": {
-      "player": "philip",
-      "gamesPlayed": 0,
-      "kills": 0,
-      "deaths": 0
-    },
-    "carbink": {
-      "player": "bikey",
-      "gamesPlayed": 1,
-      "kills": 2,
-      "deaths": 0
-    },
-    "skarmory": {
-      "player": "max",
-      "gamesPlayed": 3,
-      "kills": 6,
-      "deaths": 3
-    },
-    "lilliganthisui": {
-      "player": "gabe",
-      "gamesPlayed": 1,
-      "kills": 0,
-      "deaths": 1
-    },
-    "raichu": {
-      "player": "sean",
-      "gamesPlayed": 2,
-      "kills": 0,
-      "deaths": 2
-    },
-    "typhlosion": {
-      "player": "julian-chirashi",
-      "gamesPlayed": 3,
-      "kills": 3,
-      "deaths": 2
-    },
-    "sneaselhisui": {
-      "player": "hunter",
-      "gamesPlayed": 0,
-      "kills": 0,
-      "deaths": 0
-    },
-    "dragapult": {
-      "player": "philip",
-      "gamesPlayed": 3,
-      "kills": 7,
-      "deaths": 5
-    },
-    "hawlucha": {
-      "player": "bikey",
-      "gamesPlayed": 2,
-      "kills": 0,
-      "deaths": 2
-    },
-    "sneasler": {
-      "player": "max",
-      "gamesPlayed": 4,
-      "kills": 8,
-      "deaths": 7
-    },
-    "dondozo": {
-      "player": "gabe",
-      "gamesPlayed": 2,
-      "kills": 5,
-      "deaths": 1
-    },
-    "ditto": {
-      "player": "sean",
-      "gamesPlayed": 1,
-      "kills": 0,
-      "deaths": 1
-    },
-    "jolteon": {
-      "player": "julian-chirashi",
-      "gamesPlayed": 1,
-      "kills": 1,
-      "deaths": 2
-    },
-    "cloyster": {
-      "player": "hunter",
-      "gamesPlayed": 1,
-      "kills": 3,
-      "deaths": 1
-    },
-    "bellibolt": {
-      "player": "philip",
-      "gamesPlayed": 2,
-      "kills": 2,
-      "deaths": 2
-    },
-    "espeon": {
-      "player": "bikey",
-      "gamesPlayed": 4,
-      "kills": 2,
-      "deaths": 4
-    },
-    "toxapex": {
-      "player": "max",
-      "gamesPlayed": 1,
-      "kills": 1,
-      "deaths": 0
-    },
-    "golduck": {
-      "player": "gabe",
-      "gamesPlayed": 2,
-      "kills": 2,
-      "deaths": 2
-    },
-    "toxicroak": {
-      "player": "sean",
-      "gamesPlayed": 0,
-      "kills": 0,
-      "deaths": 0
-    },
-    "furret": {
-      "player": "julian-chirashi",
-      "gamesPlayed": 1,
-      "kills": 0,
-      "deaths": 1
-    },
-    "gimmighoul": {
-      "player": "hunter",
-      "gamesPlayed": 0,
-      "kills": 0,
-      "deaths": 0
-    },
-    "kricketune": {
-      "player": "philip",
-      "gamesPlayed": 0,
-      "kills": 0,
-      "deaths": 0
-    },
-    "koffing": {
-      "player": "max",
-      "gamesPlayed": 0,
-      "kills": 0,
-      "deaths": 0
-    },
-    "grafaiai": {
-      "player": "julian-chirashi",
-      "gamesPlayed": 1,
-      "kills": 0,
-      "deaths": 0
-    },
-    "yanma": {
-      "player": "max",
-      "gamesPlayed": 0,
-      "kills": 0,
-      "deaths": 0
-    },
-    "cyclizar": {
-      "player": "julian-chirashi",
-      "gamesPlayed": 2,
-      "kills": 0,
-      "deaths": 3
-    }
+  {
+   "id": "max",
+   "seed": 4,
+   "name": "Max",
+   "team": "Pokemans"
   },
-  "awards": [
-    {
-      "title": "MVP Race",
-      "blurb": "How the season ranked its Pokémon, kills against deaths, as the league kept it at the time. The top ten.",
-      "columns": [
-        "Kills–deaths"
-      ],
-      "winners": [
-        {
-          "place": "First",
-          "pokemon": "ursalunabloodmoon",
-          "coach": "Hunter",
-          "values": [
-            "16-2 (+14) in 4 games"
-          ]
-        },
-        {
-          "place": "Second",
-          "pokemon": "sneasler",
-          "coach": "Max",
-          "values": [
-            "8-7 (+1) in 4 games"
-          ]
-        },
-        {
-          "place": "Third",
-          "pokemon": "basculegion",
-          "coach": "Sean",
-          "values": [
-            "7-2 (+5) in 3 games"
-          ]
-        },
-        {
-          "place": "#4",
-          "pokemon": "weezinggalar",
-          "coach": "Julian / Chirashi",
-          "values": [
-            "7-4 (+3) in 2 games"
-          ]
-        },
-        {
-          "place": "#5",
-          "pokemon": "armarouge",
-          "coach": "Max",
-          "values": [
-            "7-4 (+3) in 4 games"
-          ]
-        },
-        {
-          "place": "#6",
-          "pokemon": "dragapult",
-          "coach": "Philip",
-          "values": [
-            "7-5 (+2) in 3 games"
-          ]
-        },
-        {
-          "place": "#7",
-          "pokemon": "torracat",
-          "coach": "Hunter",
-          "values": [
-            "6-1 (+5) in 4 games"
-          ]
-        },
-        {
-          "place": "#8",
-          "pokemon": "skarmory",
-          "coach": "Max",
-          "values": [
-            "6-3 (+3) in 3 games"
-          ]
-        },
-        {
-          "place": "#9",
-          "pokemon": "dondozo",
-          "coach": "Gabe",
-          "values": [
-            "5-1 (+4) in 2 games"
-          ]
-        },
-        {
-          "place": "#10",
-          "pokemon": "hydrapple",
-          "coach": "Max",
-          "values": [
-            "5-1 (+4) in 4 games"
-          ]
-        }
-      ]
-    }
+  {
+   "id": "gabe",
+   "seed": 5,
+   "name": "Gabe",
+   "team": "Mantine's Revenge"
+  },
+  {
+   "id": "sean",
+   "seed": 6,
+   "name": "Sean",
+   "team": "Team Wet"
+  },
+  {
+   "id": "julian-chirashi",
+   "seed": 7,
+   "name": "Julian / Chirashi",
+   "team": "Gassy Equalizer"
+  }
+ ],
+ "board": {
+  "ursalunabloodmoon": {
+   "name": "Ursaluna-Bloodmoon",
+   "tier": "Top",
+   "note": null,
+   "draftedBy": "Hunter",
+   "points": 23,
+   "baseStats": {
+    "hp": 113,
+    "atk": 70,
+    "def": 120,
+    "spa": 135,
+    "spd": 65,
+    "spe": 52
+   },
+   "bst": 555
+  },
+  "annihilape": {
+   "name": "Annihilape",
+   "tier": "Top",
+   "note": null,
+   "draftedBy": "Philip",
+   "points": 19,
+   "baseStats": {
+    "hp": 110,
+    "atk": 115,
+    "def": 80,
+    "spa": 50,
+    "spd": 90,
+    "spe": 90
+   },
+   "bst": 535
+  },
+  "ursaluna": {
+   "name": "Ursaluna",
+   "tier": "Top",
+   "note": null,
+   "draftedBy": "Bikey",
+   "points": 20,
+   "baseStats": {
+    "hp": 130,
+    "atk": 140,
+    "def": 105,
+    "spa": 45,
+    "spd": 80,
+    "spe": 50
+   },
+   "bst": 550
+  },
+  "indeedeef": {
+   "name": "Indeedee-F",
+   "tier": "Top",
+   "note": null,
+   "draftedBy": "Max",
+   "points": 19,
+   "baseStats": {
+    "hp": 70,
+    "atk": 55,
+    "def": 65,
+    "spa": 95,
+    "spd": 105,
+    "spe": 85
+   },
+   "bst": 475
+  },
+  "torkoal": {
+   "name": "Torkoal",
+   "tier": "Top",
+   "note": null,
+   "draftedBy": "Gabe",
+   "points": 19,
+   "baseStats": {
+    "hp": 70,
+    "atk": 85,
+    "def": 140,
+    "spa": 85,
+    "spd": 70,
+    "spe": 20
+   },
+   "bst": 470
+  },
+  "archaludon": {
+   "name": "Archaludon",
+   "tier": "Top",
+   "note": null,
+   "draftedBy": "Sean",
+   "points": 20,
+   "baseStats": {
+    "hp": 90,
+    "atk": 105,
+    "def": 130,
+    "spa": 125,
+    "spd": 65,
+    "spe": 85
+   },
+   "bst": 600
+  },
+  "weezing": {
+   "name": "Weezing",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Julian / Chirashi",
+   "points": 12,
+   "baseStats": {
+    "hp": 65,
+    "atk": 90,
+    "def": 120,
+    "spa": 85,
+    "spd": 70,
+    "spe": 60
+   },
+   "bst": 490
+  },
+  "typhlosionhisui": {
+   "name": "Typhlosion-Hisui",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Hunter",
+   "points": 13,
+   "baseStats": {
+    "hp": 73,
+    "atk": 84,
+    "def": 78,
+    "spa": 119,
+    "spd": 85,
+    "spe": 95
+   },
+   "bst": 534
+  },
+  "glimmora": {
+   "name": "Glimmora",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Philip",
+   "points": 13,
+   "baseStats": {
+    "hp": 83,
+    "atk": 55,
+    "def": 90,
+    "spa": 130,
+    "spd": 81,
+    "spe": 86
+   },
+   "bst": 525
+  },
+  "arcaninehisui": {
+   "name": "Arcanine-Hisui",
+   "tier": "Top",
+   "note": null,
+   "draftedBy": "Bikey",
+   "points": 17,
+   "baseStats": {
+    "hp": 95,
+    "atk": 115,
+    "def": 80,
+    "spa": 95,
+    "spd": 80,
+    "spe": 90
+   },
+   "bst": 555
+  },
+  "armarouge": {
+   "name": "Armarouge",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Max",
+   "points": 15,
+   "baseStats": {
+    "hp": 85,
+    "atk": 60,
+    "def": 100,
+    "spa": 125,
+    "spd": 80,
+    "spe": 75
+   },
+   "bst": 525
+  },
+  "talonflame": {
+   "name": "Talonflame",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Gabe",
+   "points": 16,
+   "baseStats": {
+    "hp": 78,
+    "atk": 81,
+    "def": 71,
+    "spa": 74,
+    "spd": 69,
+    "spe": 126
+   },
+   "bst": 499
+  },
+  "pelipper": {
+   "name": "Pelipper",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Sean",
+   "points": 15,
+   "baseStats": {
+    "hp": 60,
+    "atk": 50,
+    "def": 100,
+    "spa": 95,
+    "spd": 70,
+    "spe": 65
+   },
+   "bst": 440
+  },
+  "mimikyu": {
+   "name": "Mimikyu",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Julian / Chirashi",
+   "points": 13,
+   "baseStats": {
+    "hp": 55,
+    "atk": 90,
+    "def": 80,
+    "spa": 50,
+    "spd": 105,
+    "spe": 96
+   },
+   "bst": 476
+  },
+  "illumise": {
+   "name": "Illumise",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Hunter",
+   "points": 14,
+   "baseStats": {
+    "hp": 65,
+    "atk": 47,
+    "def": 75,
+    "spa": 73,
+    "spd": 85,
+    "spe": 85
+   },
+   "bst": 430
+  },
+  "chesnaught": {
+   "name": "Chesnaught",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Philip",
+   "points": 8,
+   "baseStats": {
+    "hp": 88,
+    "atk": 107,
+    "def": 122,
+    "spa": 74,
+    "spd": 75,
+    "spe": 64
+   },
+   "bst": 530
+  },
+  "hippowdon": {
+   "name": "Hippowdon",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Bikey",
+   "points": 9,
+   "baseStats": {
+    "hp": 108,
+    "atk": 112,
+    "def": 118,
+    "spa": 68,
+    "spd": 72,
+    "spe": 47
+   },
+   "bst": 525
+  },
+  "sneasel": {
+   "name": "Sneasel",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Max",
+   "points": 8,
+   "baseStats": {
+    "hp": 55,
+    "atk": 95,
+    "def": 55,
+    "spa": 35,
+    "spd": 75,
+    "spe": 115
+   },
+   "bst": 430
+  },
+  "clefairy": {
+   "name": "Clefairy",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Gabe",
+   "points": 15,
+   "baseStats": {
+    "hp": 70,
+    "atk": 45,
+    "def": 48,
+    "spa": 60,
+    "spd": 65,
+    "spe": 35
+   },
+   "bst": 323
+  },
+  "basculegion": {
+   "name": "Basculegion",
+   "tier": "Top",
+   "note": null,
+   "draftedBy": "Sean",
+   "points": 17,
+   "baseStats": {
+    "hp": 120,
+    "atk": 112,
+    "def": 65,
+    "spa": 80,
+    "spd": 75,
+    "spe": 78
+   },
+   "bst": 530
+  },
+  "slaking": {
+   "name": "Slaking",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Julian / Chirashi",
+   "points": 10,
+   "baseStats": {
+    "hp": 150,
+    "atk": 160,
+    "def": 100,
+    "spa": 95,
+    "spd": 65,
+    "spe": 100
+   },
+   "bst": 670
+  },
+  "torracat": {
+   "name": "Torracat",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Hunter",
+   "points": 10,
+   "baseStats": {
+    "hp": 65,
+    "atk": 85,
+    "def": 50,
+    "spa": 80,
+    "spd": 50,
+    "spe": 90
+   },
+   "bst": 420
+  },
+  "magmar": {
+   "name": "Magmar",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Philip",
+   "points": 12,
+   "baseStats": {
+    "hp": 65,
+    "atk": 95,
+    "def": 57,
+    "spa": 100,
+    "spd": 85,
+    "spe": 93
+   },
+   "bst": 495
+  },
+  "rillaboom": {
+   "name": "Rillaboom",
+   "tier": "Top",
+   "note": null,
+   "draftedBy": "Bikey",
+   "points": 20,
+   "baseStats": {
+    "hp": 100,
+    "atk": 125,
+    "def": 90,
+    "spa": 60,
+    "spd": 70,
+    "spe": 85
+   },
+   "bst": 530
+  },
+  "hydrapple": {
+   "name": "Hydrapple",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Max",
+   "points": 10,
+   "baseStats": {
+    "hp": 106,
+    "atk": 80,
+    "def": 110,
+    "spa": 120,
+    "spd": 80,
+    "spe": 44
+   },
+   "bst": 540
+  },
+  "slowkinggalar": {
+   "name": "Slowking-Galar",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Gabe",
+   "points": 10,
+   "baseStats": {
+    "hp": 95,
+    "atk": 65,
+    "def": 80,
+    "spa": 110,
+    "spd": 110,
+    "spe": 30
+   },
+   "bst": 490
+  },
+  "kingdra": {
+   "name": "Kingdra",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Sean",
+   "points": 12,
+   "baseStats": {
+    "hp": 75,
+    "atk": 95,
+    "def": 95,
+    "spa": 95,
+    "spd": 95,
+    "spe": 85
+   },
+   "bst": 540
+  },
+  "toedscruel": {
+   "name": "Toedscruel",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Julian / Chirashi",
+   "points": 10,
+   "baseStats": {
+    "hp": 80,
+    "atk": 70,
+    "def": 65,
+    "spa": 80,
+    "spd": 120,
+    "spe": 100
+   },
+   "bst": 515
+  },
+  "meowscarada": {
+   "name": "Meowscarada",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Hunter",
+   "points": 13,
+   "baseStats": {
+    "hp": 76,
+    "atk": 110,
+    "def": 70,
+    "spa": 81,
+    "spd": 70,
+    "spe": 123
+   },
+   "bst": 530
+  },
+  "ninetalesalola": {
+   "name": "Ninetales-Alola",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Philip",
+   "points": 16,
+   "baseStats": {
+    "hp": 73,
+    "atk": 67,
+    "def": 75,
+    "spa": 81,
+    "spd": 100,
+    "spe": 109
+   },
+   "bst": 505
+  },
+  "gyarados": {
+   "name": "Gyarados",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Bikey",
+   "points": 14,
+   "baseStats": {
+    "hp": 95,
+    "atk": 125,
+    "def": 79,
+    "spa": 60,
+    "spd": 100,
+    "spe": 81
+   },
+   "bst": 540
+  },
+  "quaquaval": {
+   "name": "Quaquaval",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Max",
+   "points": 11,
+   "baseStats": {
+    "hp": 85,
+    "atk": 120,
+    "def": 80,
+    "spa": 85,
+    "spd": 75,
+    "spe": 85
+   },
+   "bst": 530
+  },
+  "gastrodon": {
+   "name": "Gastrodon",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Gabe",
+   "points": 12,
+   "baseStats": {
+    "hp": 111,
+    "atk": 83,
+    "def": 68,
+    "spa": 92,
+    "spd": 82,
+    "spe": 39
+   },
+   "bst": 475
+  },
+  "hitmontop": {
+   "name": "Hitmontop",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Sean",
+   "points": 14,
+   "baseStats": {
+    "hp": 50,
+    "atk": 95,
+    "def": 95,
+    "spa": 35,
+    "spd": 110,
+    "spe": 70
+   },
+   "bst": 455
+  },
+  "weezinggalar": {
+   "name": "Weezing-Galar",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Julian / Chirashi",
+   "points": 13,
+   "baseStats": {
+    "hp": 65,
+    "atk": 90,
+    "def": 120,
+    "spa": 85,
+    "spd": 70,
+    "spe": 60
+   },
+   "bst": 490
+  },
+  "oranguru": {
+   "name": "Oranguru",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Hunter",
+   "points": 15,
+   "baseStats": {
+    "hp": 90,
+    "atk": 60,
+    "def": 80,
+    "spa": 90,
+    "spd": 110,
+    "spe": 60
+   },
+   "bst": 490
+  },
+  "frosmoth": {
+   "name": "Frosmoth",
+   "tier": "Low",
+   "note": null,
+   "draftedBy": "Philip",
+   "points": 5,
+   "baseStats": {
+    "hp": 70,
+    "atk": 65,
+    "def": 60,
+    "spa": 125,
+    "spd": 90,
+    "spe": 65
+   },
+   "bst": 475
+  },
+  "pawmot": {
+   "name": "Pawmot",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Bikey",
+   "points": 10,
+   "baseStats": {
+    "hp": 70,
+    "atk": 115,
+    "def": 70,
+    "spa": 70,
+    "spd": 60,
+    "spe": 105
+   },
+   "bst": 490
+  },
+  "murkrow": {
+   "name": "Murkrow",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Max",
+   "points": 14,
+   "baseStats": {
+    "hp": 60,
+    "atk": 85,
+    "def": 42,
+    "spa": 85,
+    "spd": 42,
+    "spe": 91
+   },
+   "bst": 405
+  },
+  "toxtricity": {
+   "name": "Toxtricity",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Gabe",
+   "points": 9,
+   "baseStats": {
+    "hp": 75,
+    "atk": 98,
+    "def": 70,
+    "spa": 114,
+    "spd": 70,
+    "spe": 75
+   },
+   "bst": 502
+  },
+  "ludicolo": {
+   "name": "Ludicolo",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Sean",
+   "points": 11,
+   "baseStats": {
+    "hp": 80,
+    "atk": 70,
+    "def": 70,
+    "spa": 90,
+    "spd": 100,
+    "spe": 70
+   },
+   "bst": 480
+  },
+  "greninja": {
+   "name": "Greninja",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Julian / Chirashi",
+   "points": 11,
+   "baseStats": {
+    "hp": 72,
+    "atk": 95,
+    "def": 67,
+    "spa": 103,
+    "spd": 71,
+    "spe": 122
+   },
+   "bst": 530
+  },
+  "exeggutor": {
+   "name": "Exeggutor",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Hunter",
+   "points": 8,
+   "baseStats": {
+    "hp": 95,
+    "atk": 95,
+    "def": 85,
+    "spa": 125,
+    "spd": 75,
+    "spe": 55
+   },
+   "bst": 530
+  },
+  "duraludon": {
+   "name": "Duraludon",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Philip",
+   "points": 10,
+   "baseStats": {
+    "hp": 70,
+    "atk": 95,
+    "def": 115,
+    "spa": 120,
+    "spd": 50,
+    "spe": 85
+   },
+   "bst": 535
+  },
+  "carbink": {
+   "name": "Carbink",
+   "tier": "Low",
+   "note": null,
+   "draftedBy": "Bikey",
+   "points": 5,
+   "baseStats": {
+    "hp": 50,
+    "atk": 50,
+    "def": 150,
+    "spa": 50,
+    "spd": 150,
+    "spe": 50
+   },
+   "bst": 500
+  },
+  "skarmory": {
+   "name": "Skarmory",
+   "tier": "Low",
+   "note": null,
+   "draftedBy": "Max",
+   "points": 5,
+   "baseStats": {
+    "hp": 65,
+    "atk": 80,
+    "def": 140,
+    "spa": 40,
+    "spd": 70,
+    "spe": 70
+   },
+   "bst": 465
+  },
+  "lilliganthisui": {
+   "name": "Lilligant-Hisui",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Gabe",
+   "points": 12,
+   "baseStats": {
+    "hp": 70,
+    "atk": 105,
+    "def": 75,
+    "spa": 50,
+    "spd": 75,
+    "spe": 105
+   },
+   "bst": 480
+  },
+  "raichu": {
+   "name": "Raichu",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Sean",
+   "points": 9,
+   "baseStats": {
+    "hp": 60,
+    "atk": 90,
+    "def": 55,
+    "spa": 90,
+    "spd": 80,
+    "spe": 110
+   },
+   "bst": 485
+  },
+  "typhlosion": {
+   "name": "Typhlosion",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Julian / Chirashi",
+   "points": 10,
+   "baseStats": {
+    "hp": 78,
+    "atk": 84,
+    "def": 78,
+    "spa": 109,
+    "spd": 85,
+    "spe": 100
+   },
+   "bst": 534
+  },
+  "sneaselhisui": {
+   "name": "Sneasel-Hisui",
+   "tier": "Low",
+   "note": null,
+   "draftedBy": "Hunter",
+   "points": 7,
+   "baseStats": {
+    "hp": 55,
+    "atk": 95,
+    "def": 55,
+    "spa": 35,
+    "spd": 75,
+    "spe": 115
+   },
+   "bst": 430
+  },
+  "dragapult": {
+   "name": "Dragapult",
+   "tier": "Top",
+   "note": null,
+   "draftedBy": "Philip",
+   "points": 18,
+   "baseStats": {
+    "hp": 88,
+    "atk": 120,
+    "def": 75,
+    "spa": 100,
+    "spd": 75,
+    "spe": 142
+   },
+   "bst": 600
+  },
+  "hawlucha": {
+   "name": "Hawlucha",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Bikey",
+   "points": 8,
+   "baseStats": {
+    "hp": 78,
+    "atk": 92,
+    "def": 75,
+    "spa": 74,
+    "spd": 63,
+    "spe": 118
+   },
+   "bst": 500
+  },
+  "sneasler": {
+   "name": "Sneasler",
+   "tier": "Top",
+   "note": null,
+   "draftedBy": "Max",
+   "points": 21,
+   "baseStats": {
+    "hp": 80,
+    "atk": 130,
+    "def": 60,
+    "spa": 40,
+    "spd": 80,
+    "spe": 120
+   },
+   "bst": 510
+  },
+  "dondozo": {
+   "name": "Dondozo",
+   "tier": "High",
+   "note": null,
+   "draftedBy": "Gabe",
+   "points": 14,
+   "baseStats": {
+    "hp": 150,
+    "atk": 100,
+    "def": 115,
+    "spa": 65,
+    "spd": 65,
+    "spe": 35
+   },
+   "bst": 530
+  },
+  "ditto": {
+   "name": "Ditto",
+   "tier": "Low",
+   "note": null,
+   "draftedBy": "Sean",
+   "points": 6,
+   "baseStats": {
+    "hp": 48,
+    "atk": 48,
+    "def": 48,
+    "spa": 48,
+    "spd": 48,
+    "spe": 48
+   },
+   "bst": 288
+  },
+  "jolteon": {
+   "name": "Jolteon",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Julian / Chirashi",
+   "points": 10,
+   "baseStats": {
+    "hp": 65,
+    "atk": 65,
+    "def": 60,
+    "spa": 110,
+    "spd": 95,
+    "spe": 130
+   },
+   "bst": 525
+  },
+  "cloyster": {
+   "name": "Cloyster",
+   "tier": "Low",
+   "note": null,
+   "draftedBy": "Hunter",
+   "points": 6,
+   "baseStats": {
+    "hp": 50,
+    "atk": 95,
+    "def": 180,
+    "spa": 85,
+    "spd": 45,
+    "spe": 70
+   },
+   "bst": 525
+  },
+  "bellibolt": {
+   "name": "Bellibolt",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Philip",
+   "points": 8,
+   "baseStats": {
+    "hp": 109,
+    "atk": 64,
+    "def": 91,
+    "spa": 103,
+    "spd": 83,
+    "spe": 45
+   },
+   "bst": 495
+  },
+  "espeon": {
+   "name": "Espeon",
+   "tier": "Low",
+   "note": null,
+   "draftedBy": "Bikey",
+   "points": 7,
+   "baseStats": {
+    "hp": 65,
+    "atk": 65,
+    "def": 60,
+    "spa": 130,
+    "spd": 95,
+    "spe": 110
+   },
+   "bst": 525
+  },
+  "toxapex": {
+   "name": "Toxapex",
+   "tier": "Low",
+   "note": null,
+   "draftedBy": "Max",
+   "points": 3,
+   "baseStats": {
+    "hp": 50,
+    "atk": 63,
+    "def": 152,
+    "spa": 53,
+    "spd": 142,
+    "spe": 35
+   },
+   "bst": 495
+  },
+  "golduck": {
+   "name": "Golduck",
+   "tier": "Low",
+   "note": null,
+   "draftedBy": "Gabe",
+   "points": 3,
+   "baseStats": {
+    "hp": 80,
+    "atk": 82,
+    "def": 78,
+    "spa": 95,
+    "spd": 80,
+    "spe": 85
+   },
+   "bst": 500
+  },
+  "toxicroak": {
+   "name": "Toxicroak",
+   "tier": "Low",
+   "note": null,
+   "draftedBy": "Sean",
+   "points": 6,
+   "baseStats": {
+    "hp": 83,
+    "atk": 106,
+    "def": 65,
+    "spa": 86,
+    "spd": 65,
+    "spe": 85
+   },
+   "bst": 490
+  },
+  "furret": {
+   "name": "Furret",
+   "tier": "Low",
+   "note": null,
+   "draftedBy": "Julian / Chirashi",
+   "points": 6,
+   "baseStats": {
+    "hp": 85,
+    "atk": 76,
+    "def": 64,
+    "spa": 45,
+    "spd": 55,
+    "spe": 90
+   },
+   "bst": 415
+  },
+  "gimmighoul": {
+   "name": "Gimmighoul",
+   "tier": "Low",
+   "note": null,
+   "draftedBy": "Hunter",
+   "points": 1,
+   "baseStats": {
+    "hp": 45,
+    "atk": 30,
+    "def": 70,
+    "spa": 75,
+    "spd": 70,
+    "spe": 10
+   },
+   "bst": 300
+  },
+  "kricketune": {
+   "name": "Kricketune",
+   "tier": "Low",
+   "note": null,
+   "draftedBy": "Philip",
+   "points": 1,
+   "baseStats": {
+    "hp": 77,
+    "atk": 85,
+    "def": 51,
+    "spa": 55,
+    "spd": 51,
+    "spe": 65
+   },
+   "bst": 384
+  },
+  "koffing": {
+   "name": "Koffing",
+   "tier": "Low",
+   "note": null,
+   "draftedBy": "Max",
+   "points": 3,
+   "baseStats": {
+    "hp": 40,
+    "atk": 65,
+    "def": 95,
+    "spa": 60,
+    "spd": 45,
+    "spe": 35
+   },
+   "bst": 340
+  },
+  "grafaiai": {
+   "name": "Grafaiai",
+   "tier": "Mid",
+   "note": null,
+   "draftedBy": "Julian / Chirashi",
+   "points": 10,
+   "baseStats": {
+    "hp": 63,
+    "atk": 95,
+    "def": 65,
+    "spa": 80,
+    "spd": 72,
+    "spe": 110
+   },
+   "bst": 485
+  },
+  "yanma": {
+   "name": "Yanma",
+   "tier": "Low",
+   "note": null,
+   "draftedBy": "Max",
+   "points": 1,
+   "baseStats": {
+    "hp": 65,
+    "atk": 65,
+    "def": 45,
+    "spa": 75,
+    "spd": 45,
+    "spe": 95
+   },
+   "bst": 390
+  },
+  "cyclizar": {
+   "name": "Cyclizar",
+   "tier": "Low",
+   "note": null,
+   "draftedBy": "Julian / Chirashi",
+   "points": 5,
+   "baseStats": {
+    "hp": 70,
+    "atk": 95,
+    "def": 65,
+    "spa": 85,
+    "spd": 65,
+    "spe": 121
+   },
+   "bst": 501
+  }
+ },
+ "rosters": {
+  "hunter": [
+   {
+    "pokemon": "ursalunabloodmoon",
+    "tier": "Low",
+    "points": 23
+   },
+   {
+    "pokemon": "typhlosionhisui",
+    "tier": "Low",
+    "points": 13
+   },
+   {
+    "pokemon": "illumise",
+    "tier": "Low",
+    "points": 14
+   },
+   {
+    "pokemon": "torracat",
+    "tier": "Low",
+    "points": 10
+   },
+   {
+    "pokemon": "meowscarada",
+    "tier": "Low",
+    "points": 13
+   },
+   {
+    "pokemon": "oranguru",
+    "tier": "Low",
+    "points": 15
+   },
+   {
+    "pokemon": "exeggutor",
+    "tier": "Low",
+    "points": 8
+   },
+   {
+    "pokemon": "sneaselhisui",
+    "tier": "Low",
+    "points": 7
+   },
+   {
+    "pokemon": "cloyster",
+    "tier": "Low",
+    "points": 6
+   },
+   {
+    "pokemon": "gimmighoul",
+    "tier": "Low",
+    "points": 1
+   }
+  ],
+  "philip": [
+   {
+    "pokemon": "annihilape",
+    "tier": "Low",
+    "points": 19
+   },
+   {
+    "pokemon": "glimmora",
+    "tier": "Low",
+    "points": 13
+   },
+   {
+    "pokemon": "chesnaught",
+    "tier": "Low",
+    "points": 8
+   },
+   {
+    "pokemon": "magmar",
+    "tier": "Low",
+    "points": 12
+   },
+   {
+    "pokemon": "ninetalesalola",
+    "tier": "Low",
+    "points": 16
+   },
+   {
+    "pokemon": "frosmoth",
+    "tier": "Low",
+    "points": 5
+   },
+   {
+    "pokemon": "duraludon",
+    "tier": "Low",
+    "points": 10
+   },
+   {
+    "pokemon": "dragapult",
+    "tier": "Low",
+    "points": 18
+   },
+   {
+    "pokemon": "bellibolt",
+    "tier": "Low",
+    "points": 8
+   },
+   {
+    "pokemon": "kricketune",
+    "tier": "Low",
+    "points": 1
+   }
+  ],
+  "bikey": [
+   {
+    "pokemon": "ursaluna",
+    "tier": "Low",
+    "points": 20
+   },
+   {
+    "pokemon": "arcaninehisui",
+    "tier": "Low",
+    "points": 17
+   },
+   {
+    "pokemon": "hippowdon",
+    "tier": "Low",
+    "points": 9
+   },
+   {
+    "pokemon": "rillaboom",
+    "tier": "Low",
+    "points": 20
+   },
+   {
+    "pokemon": "gyarados",
+    "tier": "Low",
+    "points": 14
+   },
+   {
+    "pokemon": "pawmot",
+    "tier": "Low",
+    "points": 10
+   },
+   {
+    "pokemon": "carbink",
+    "tier": "Low",
+    "points": 5
+   },
+   {
+    "pokemon": "hawlucha",
+    "tier": "Low",
+    "points": 8
+   },
+   {
+    "pokemon": "espeon",
+    "tier": "Low",
+    "points": 7
+   }
+  ],
+  "max": [
+   {
+    "pokemon": "indeedeef",
+    "tier": "Low",
+    "points": 19
+   },
+   {
+    "pokemon": "armarouge",
+    "tier": "Low",
+    "points": 15
+   },
+   {
+    "pokemon": "sneasel",
+    "tier": "Low",
+    "points": 8
+   },
+   {
+    "pokemon": "hydrapple",
+    "tier": "Low",
+    "points": 10
+   },
+   {
+    "pokemon": "quaquaval",
+    "tier": "Low",
+    "points": 11
+   },
+   {
+    "pokemon": "murkrow",
+    "tier": "Low",
+    "points": 14
+   },
+   {
+    "pokemon": "skarmory",
+    "tier": "Low",
+    "points": 5
+   },
+   {
+    "pokemon": "sneasler",
+    "tier": "Low",
+    "points": 21
+   },
+   {
+    "pokemon": "toxapex",
+    "tier": "Low",
+    "points": 3
+   },
+   {
+    "pokemon": "koffing",
+    "tier": "Low",
+    "points": 3
+   },
+   {
+    "pokemon": "yanma",
+    "tier": "Low",
+    "points": 1
+   }
+  ],
+  "gabe": [
+   {
+    "pokemon": "torkoal",
+    "tier": "Low",
+    "points": 19
+   },
+   {
+    "pokemon": "talonflame",
+    "tier": "Low",
+    "points": 16
+   },
+   {
+    "pokemon": "clefairy",
+    "tier": "Low",
+    "points": 15
+   },
+   {
+    "pokemon": "slowkinggalar",
+    "tier": "Low",
+    "points": 10
+   },
+   {
+    "pokemon": "gastrodon",
+    "tier": "Low",
+    "points": 12
+   },
+   {
+    "pokemon": "toxtricity",
+    "tier": "Low",
+    "points": 9
+   },
+   {
+    "pokemon": "lilliganthisui",
+    "tier": "Low",
+    "points": 12
+   },
+   {
+    "pokemon": "dondozo",
+    "tier": "Low",
+    "points": 14
+   },
+   {
+    "pokemon": "golduck",
+    "tier": "Low",
+    "points": 3
+   }
+  ],
+  "sean": [
+   {
+    "pokemon": "archaludon",
+    "tier": "Low",
+    "points": 20
+   },
+   {
+    "pokemon": "pelipper",
+    "tier": "Low",
+    "points": 15
+   },
+   {
+    "pokemon": "basculegion",
+    "tier": "Low",
+    "points": 17
+   },
+   {
+    "pokemon": "kingdra",
+    "tier": "Low",
+    "points": 12
+   },
+   {
+    "pokemon": "hitmontop",
+    "tier": "Low",
+    "points": 14
+   },
+   {
+    "pokemon": "ludicolo",
+    "tier": "Low",
+    "points": 11
+   },
+   {
+    "pokemon": "raichu",
+    "tier": "Low",
+    "points": 9
+   },
+   {
+    "pokemon": "ditto",
+    "tier": "Low",
+    "points": 6
+   },
+   {
+    "pokemon": "toxicroak",
+    "tier": "Low",
+    "points": 6
+   }
+  ],
+  "julian-chirashi": [
+   {
+    "pokemon": "weezing",
+    "tier": "Low",
+    "points": 12
+   },
+   {
+    "pokemon": "mimikyu",
+    "tier": "Low",
+    "points": 13
+   },
+   {
+    "pokemon": "slaking",
+    "tier": "Low",
+    "points": 10
+   },
+   {
+    "pokemon": "toedscruel",
+    "tier": "Low",
+    "points": 10
+   },
+   {
+    "pokemon": "weezinggalar",
+    "tier": "Low",
+    "points": 13
+   },
+   {
+    "pokemon": "greninja",
+    "tier": "Low",
+    "points": 11
+   },
+   {
+    "pokemon": "typhlosion",
+    "tier": "Low",
+    "points": 10
+   },
+   {
+    "pokemon": "jolteon",
+    "tier": "Low",
+    "points": 10
+   },
+   {
+    "pokemon": "furret",
+    "tier": "Low",
+    "points": 6
+   },
+   {
+    "pokemon": "grafaiai",
+    "tier": "Low",
+    "points": 10
+   },
+   {
+    "pokemon": "cyclizar",
+    "tier": "Low",
+    "points": 5
+   }
   ]
+ },
+ "draft": [
+  {
+   "round": 1,
+   "pick": 1,
+   "player": "hunter",
+   "pokemon": "ursalunabloodmoon",
+   "tier": "Low",
+   "points": 23
+  },
+  {
+   "round": 1,
+   "pick": 2,
+   "player": "philip",
+   "pokemon": "annihilape",
+   "tier": "Low",
+   "points": 19
+  },
+  {
+   "round": 1,
+   "pick": 3,
+   "player": "bikey",
+   "pokemon": "ursaluna",
+   "tier": "Low",
+   "points": 20
+  },
+  {
+   "round": 1,
+   "pick": 4,
+   "player": "max",
+   "pokemon": "indeedeef",
+   "tier": "Low",
+   "points": 19
+  },
+  {
+   "round": 1,
+   "pick": 5,
+   "player": "gabe",
+   "pokemon": "torkoal",
+   "tier": "Low",
+   "points": 19
+  },
+  {
+   "round": 1,
+   "pick": 6,
+   "player": "sean",
+   "pokemon": "archaludon",
+   "tier": "Low",
+   "points": 20
+  },
+  {
+   "round": 1,
+   "pick": 7,
+   "player": "julian-chirashi",
+   "pokemon": "weezing",
+   "tier": "Low",
+   "points": 12
+  },
+  {
+   "round": 2,
+   "pick": 1,
+   "player": "hunter",
+   "pokemon": "typhlosionhisui",
+   "tier": "Low",
+   "points": 13
+  },
+  {
+   "round": 2,
+   "pick": 2,
+   "player": "philip",
+   "pokemon": "glimmora",
+   "tier": "Low",
+   "points": 13
+  },
+  {
+   "round": 2,
+   "pick": 3,
+   "player": "bikey",
+   "pokemon": "arcaninehisui",
+   "tier": "Low",
+   "points": 17
+  },
+  {
+   "round": 2,
+   "pick": 4,
+   "player": "max",
+   "pokemon": "armarouge",
+   "tier": "Low",
+   "points": 15
+  },
+  {
+   "round": 2,
+   "pick": 5,
+   "player": "gabe",
+   "pokemon": "talonflame",
+   "tier": "Low",
+   "points": 16
+  },
+  {
+   "round": 2,
+   "pick": 6,
+   "player": "sean",
+   "pokemon": "pelipper",
+   "tier": "Low",
+   "points": 15
+  },
+  {
+   "round": 2,
+   "pick": 7,
+   "player": "julian-chirashi",
+   "pokemon": "mimikyu",
+   "tier": "Low",
+   "points": 13
+  },
+  {
+   "round": 3,
+   "pick": 1,
+   "player": "hunter",
+   "pokemon": "illumise",
+   "tier": "Low",
+   "points": 14
+  },
+  {
+   "round": 3,
+   "pick": 2,
+   "player": "philip",
+   "pokemon": "chesnaught",
+   "tier": "Low",
+   "points": 8
+  },
+  {
+   "round": 3,
+   "pick": 3,
+   "player": "bikey",
+   "pokemon": "hippowdon",
+   "tier": "Low",
+   "points": 9
+  },
+  {
+   "round": 3,
+   "pick": 4,
+   "player": "max",
+   "pokemon": "sneasel",
+   "tier": "Low",
+   "points": 8
+  },
+  {
+   "round": 3,
+   "pick": 5,
+   "player": "gabe",
+   "pokemon": "clefairy",
+   "tier": "Low",
+   "points": 15
+  },
+  {
+   "round": 3,
+   "pick": 6,
+   "player": "sean",
+   "pokemon": "basculegion",
+   "tier": "Low",
+   "points": 17
+  },
+  {
+   "round": 3,
+   "pick": 7,
+   "player": "julian-chirashi",
+   "pokemon": "slaking",
+   "tier": "Low",
+   "points": 10
+  },
+  {
+   "round": 4,
+   "pick": 1,
+   "player": "hunter",
+   "pokemon": "torracat",
+   "tier": "Low",
+   "points": 10
+  },
+  {
+   "round": 4,
+   "pick": 2,
+   "player": "philip",
+   "pokemon": "magmar",
+   "tier": "Low",
+   "points": 12
+  },
+  {
+   "round": 4,
+   "pick": 3,
+   "player": "bikey",
+   "pokemon": "rillaboom",
+   "tier": "Low",
+   "points": 20
+  },
+  {
+   "round": 4,
+   "pick": 4,
+   "player": "max",
+   "pokemon": "hydrapple",
+   "tier": "Low",
+   "points": 10
+  },
+  {
+   "round": 4,
+   "pick": 5,
+   "player": "gabe",
+   "pokemon": "slowkinggalar",
+   "tier": "Low",
+   "points": 10
+  },
+  {
+   "round": 4,
+   "pick": 6,
+   "player": "sean",
+   "pokemon": "kingdra",
+   "tier": "Low",
+   "points": 12
+  },
+  {
+   "round": 4,
+   "pick": 7,
+   "player": "julian-chirashi",
+   "pokemon": "toedscruel",
+   "tier": "Low",
+   "points": 10
+  },
+  {
+   "round": 5,
+   "pick": 1,
+   "player": "hunter",
+   "pokemon": "meowscarada",
+   "tier": "Low",
+   "points": 13
+  },
+  {
+   "round": 5,
+   "pick": 2,
+   "player": "philip",
+   "pokemon": "ninetalesalola",
+   "tier": "Low",
+   "points": 16
+  },
+  {
+   "round": 5,
+   "pick": 3,
+   "player": "bikey",
+   "pokemon": "gyarados",
+   "tier": "Low",
+   "points": 14
+  },
+  {
+   "round": 5,
+   "pick": 4,
+   "player": "max",
+   "pokemon": "quaquaval",
+   "tier": "Low",
+   "points": 11
+  },
+  {
+   "round": 5,
+   "pick": 5,
+   "player": "gabe",
+   "pokemon": "gastrodon",
+   "tier": "Low",
+   "points": 12
+  },
+  {
+   "round": 5,
+   "pick": 6,
+   "player": "sean",
+   "pokemon": "hitmontop",
+   "tier": "Low",
+   "points": 14
+  },
+  {
+   "round": 5,
+   "pick": 7,
+   "player": "julian-chirashi",
+   "pokemon": "weezinggalar",
+   "tier": "Low",
+   "points": 13
+  },
+  {
+   "round": 6,
+   "pick": 1,
+   "player": "hunter",
+   "pokemon": "oranguru",
+   "tier": "Low",
+   "points": 15
+  },
+  {
+   "round": 6,
+   "pick": 2,
+   "player": "philip",
+   "pokemon": "frosmoth",
+   "tier": "Low",
+   "points": 5
+  },
+  {
+   "round": 6,
+   "pick": 3,
+   "player": "bikey",
+   "pokemon": "pawmot",
+   "tier": "Low",
+   "points": 10
+  },
+  {
+   "round": 6,
+   "pick": 4,
+   "player": "max",
+   "pokemon": "murkrow",
+   "tier": "Low",
+   "points": 14
+  },
+  {
+   "round": 6,
+   "pick": 5,
+   "player": "gabe",
+   "pokemon": "toxtricity",
+   "tier": "Low",
+   "points": 9
+  },
+  {
+   "round": 6,
+   "pick": 6,
+   "player": "sean",
+   "pokemon": "ludicolo",
+   "tier": "Low",
+   "points": 11
+  },
+  {
+   "round": 6,
+   "pick": 7,
+   "player": "julian-chirashi",
+   "pokemon": "greninja",
+   "tier": "Low",
+   "points": 11
+  },
+  {
+   "round": 7,
+   "pick": 1,
+   "player": "hunter",
+   "pokemon": "exeggutor",
+   "tier": "Low",
+   "points": 8
+  },
+  {
+   "round": 7,
+   "pick": 2,
+   "player": "philip",
+   "pokemon": "duraludon",
+   "tier": "Low",
+   "points": 10
+  },
+  {
+   "round": 7,
+   "pick": 3,
+   "player": "bikey",
+   "pokemon": "carbink",
+   "tier": "Low",
+   "points": 5
+  },
+  {
+   "round": 7,
+   "pick": 4,
+   "player": "max",
+   "pokemon": "skarmory",
+   "tier": "Low",
+   "points": 5
+  },
+  {
+   "round": 7,
+   "pick": 5,
+   "player": "gabe",
+   "pokemon": "lilliganthisui",
+   "tier": "Low",
+   "points": 12
+  },
+  {
+   "round": 7,
+   "pick": 6,
+   "player": "sean",
+   "pokemon": "raichu",
+   "tier": "Low",
+   "points": 9
+  },
+  {
+   "round": 7,
+   "pick": 7,
+   "player": "julian-chirashi",
+   "pokemon": "typhlosion",
+   "tier": "Low",
+   "points": 10
+  },
+  {
+   "round": 8,
+   "pick": 1,
+   "player": "hunter",
+   "pokemon": "sneaselhisui",
+   "tier": "Low",
+   "points": 7
+  },
+  {
+   "round": 8,
+   "pick": 2,
+   "player": "philip",
+   "pokemon": "dragapult",
+   "tier": "Low",
+   "points": 18
+  },
+  {
+   "round": 8,
+   "pick": 3,
+   "player": "bikey",
+   "pokemon": "hawlucha",
+   "tier": "Low",
+   "points": 8
+  },
+  {
+   "round": 8,
+   "pick": 4,
+   "player": "max",
+   "pokemon": "sneasler",
+   "tier": "Low",
+   "points": 21
+  },
+  {
+   "round": 8,
+   "pick": 5,
+   "player": "gabe",
+   "pokemon": "dondozo",
+   "tier": "Low",
+   "points": 14
+  },
+  {
+   "round": 8,
+   "pick": 6,
+   "player": "sean",
+   "pokemon": "ditto",
+   "tier": "Low",
+   "points": 6
+  },
+  {
+   "round": 8,
+   "pick": 7,
+   "player": "julian-chirashi",
+   "pokemon": "jolteon",
+   "tier": "Low",
+   "points": 10
+  },
+  {
+   "round": 9,
+   "pick": 1,
+   "player": "hunter",
+   "pokemon": "cloyster",
+   "tier": "Low",
+   "points": 6
+  },
+  {
+   "round": 9,
+   "pick": 2,
+   "player": "philip",
+   "pokemon": "bellibolt",
+   "tier": "Low",
+   "points": 8
+  },
+  {
+   "round": 9,
+   "pick": 3,
+   "player": "bikey",
+   "pokemon": "espeon",
+   "tier": "Low",
+   "points": 7
+  },
+  {
+   "round": 9,
+   "pick": 4,
+   "player": "max",
+   "pokemon": "toxapex",
+   "tier": "Low",
+   "points": 3
+  },
+  {
+   "round": 9,
+   "pick": 5,
+   "player": "gabe",
+   "pokemon": "golduck",
+   "tier": "Low",
+   "points": 3
+  },
+  {
+   "round": 9,
+   "pick": 6,
+   "player": "sean",
+   "pokemon": "toxicroak",
+   "tier": "Low",
+   "points": 6
+  },
+  {
+   "round": 9,
+   "pick": 7,
+   "player": "julian-chirashi",
+   "pokemon": "furret",
+   "tier": "Low",
+   "points": 6
+  },
+  {
+   "round": 10,
+   "pick": 1,
+   "player": "hunter",
+   "pokemon": "gimmighoul",
+   "tier": "Low",
+   "points": 1
+  },
+  {
+   "round": 10,
+   "pick": 2,
+   "player": "philip",
+   "pokemon": "kricketune",
+   "tier": "Low",
+   "points": 1
+  },
+  {
+   "round": 10,
+   "pick": 4,
+   "player": "max",
+   "pokemon": "koffing",
+   "tier": "Low",
+   "points": 3
+  },
+  {
+   "round": 10,
+   "pick": 7,
+   "player": "julian-chirashi",
+   "pokemon": "grafaiai",
+   "tier": "Low",
+   "points": 10
+  },
+  {
+   "round": 11,
+   "pick": 4,
+   "player": "max",
+   "pokemon": "yanma",
+   "tier": "Low",
+   "points": 1
+  },
+  {
+   "round": 11,
+   "pick": 7,
+   "player": "julian-chirashi",
+   "pokemon": "cyclizar",
+   "tier": "Low",
+   "points": 5
+  }
+ ],
+ "schedule": [
+  {
+   "week": 1,
+   "match": 1,
+   "a": [
+    "hunter"
+   ],
+   "b": [
+    "philip"
+   ],
+   "scoreA": 5,
+   "scoreB": 0
+  },
+  {
+   "week": 1,
+   "match": 2,
+   "a": [
+    "bikey"
+   ],
+   "b": [
+    "max"
+   ],
+   "scoreA": 0,
+   "scoreB": 2,
+   "games": [
+    {
+     "number": 1,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regg-2348512978",
+     "survivors": null,
+     "a": [],
+     "b": []
+    },
+    {
+     "number": 2,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regg-2348519202",
+     "survivors": null,
+     "a": [],
+     "b": []
+    }
+   ]
+  },
+  {
+   "week": 1,
+   "match": 3,
+   "a": [
+    "gabe"
+   ],
+   "b": [
+    "sean"
+   ],
+   "scoreA": 0,
+   "scoreB": 5,
+   "games": [
+    {
+     "number": 1,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025reggbo3-2348306004-a0g1bldlq6p7o2uiev416duh8fkuqvmpw",
+     "survivors": null,
+     "a": [],
+     "b": []
+    },
+    {
+     "number": 2,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025reggbo3-2348318162-ofj1nnpufmmgujuaevavbwqh0ojtwunpw",
+     "survivors": null,
+     "a": [],
+     "b": []
+    }
+   ]
+  },
+  {
+   "week": 2,
+   "match": 1,
+   "a": [
+    "hunter"
+   ],
+   "b": [
+    "bikey"
+   ],
+   "scoreA": 7,
+   "scoreB": 0,
+   "games": [
+    {
+     "number": 1,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regg-2350133458-jfwhmfpdwg7jvw2nm3mn637tgm6t9sbpw",
+     "survivors": null,
+     "a": [],
+     "b": []
+    },
+    {
+     "number": 2,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regg-2350137254-bgag8t7hdxxd8mg6r35gg8mphgs2uvgpw",
+     "survivors": null,
+     "a": [],
+     "b": []
+    }
+   ]
+  },
+  {
+   "week": 2,
+   "match": 2,
+   "a": [
+    "gabe"
+   ],
+   "b": [
+    "philip"
+   ],
+   "scoreA": 1,
+   "scoreB": 4
+  },
+  {
+   "week": 2,
+   "match": 3,
+   "a": [
+    "julian-chirashi"
+   ],
+   "b": [
+    "max"
+   ],
+   "scoreA": 3,
+   "scoreB": 4
+  },
+  {
+   "week": 3,
+   "match": 1,
+   "a": [
+    "hunter"
+   ],
+   "b": [
+    "gabe"
+   ],
+   "scoreA": 6,
+   "scoreB": 0,
+   "games": [
+    {
+     "number": 1,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regg-2353567147-muipk42fpgg6j2re0swnx951d0wr33ppw",
+     "survivors": null,
+     "a": [],
+     "b": []
+    },
+    {
+     "number": 2,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regg-2353572469-0g9b7nxlcbbs9f55r8mle6upgsoewxdpw",
+     "survivors": null,
+     "a": [],
+     "b": []
+    }
+   ]
+  },
+  {
+   "week": 3,
+   "match": 2,
+   "a": [
+    "julian-chirashi"
+   ],
+   "b": [
+    "bikey"
+   ],
+   "scoreA": 0,
+   "scoreB": 5
+  },
+  {
+   "week": 3,
+   "match": 3,
+   "a": [
+    "sean"
+   ],
+   "b": [
+    "max"
+   ],
+   "scoreA": 4,
+   "scoreB": 0,
+   "games": [
+    {
+     "number": 1,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2024regg-2354846081",
+     "survivors": null,
+     "a": [],
+     "b": []
+    },
+    {
+     "number": 2,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2024regg-2354864934",
+     "survivors": null,
+     "a": [],
+     "b": []
+    }
+   ]
+  },
+  {
+   "week": 4,
+   "match": 1,
+   "a": [
+    "hunter"
+   ],
+   "b": [
+    "julian-chirashi"
+   ],
+   "scoreA": 4,
+   "scoreB": 0
+  },
+  {
+   "week": 4,
+   "match": 2,
+   "a": [
+    "sean"
+   ],
+   "b": [
+    "bikey"
+   ],
+   "scoreA": 3,
+   "scoreB": 6,
+   "games": [
+    {
+     "number": 1,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regi-2358412243",
+     "survivors": null,
+     "a": [],
+     "b": []
+    },
+    {
+     "number": 2,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regi-2358418196",
+     "survivors": null,
+     "a": [],
+     "b": []
+    },
+    {
+     "number": 3,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regi-2358423229",
+     "survivors": null,
+     "a": [],
+     "b": []
+    }
+   ]
+  },
+  {
+   "week": 4,
+   "match": 3,
+   "a": [
+    "max"
+   ],
+   "b": [
+    "philip"
+   ],
+   "scoreA": 3,
+   "scoreB": 0
+  },
+  {
+   "week": 5,
+   "match": 1,
+   "a": [
+    "sean"
+   ],
+   "b": [
+    "julian-chirashi"
+   ],
+   "scoreA": null,
+   "scoreB": null
+  },
+  {
+   "week": 5,
+   "match": 2,
+   "a": [
+    "max"
+   ],
+   "b": [
+    "gabe"
+   ],
+   "scoreA": null,
+   "scoreB": null,
+   "games": [
+    {
+     "number": 1,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2024regg-2375446621-gxif5em2aaojowfe06cvqpk0q83n4gtpw",
+     "survivors": null,
+     "a": [],
+     "b": []
+    },
+    {
+     "number": 2,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2024regg-2375451056-rq8vpvgp7jq727ctwwdrdx7h2hef7uvpw",
+     "survivors": null,
+     "a": [],
+     "b": []
+    }
+   ]
+  },
+  {
+   "week": 5,
+   "match": 3,
+   "a": [
+    "philip"
+   ],
+   "b": [
+    "bikey"
+   ],
+   "scoreA": null,
+   "scoreB": null
+  },
+  {
+   "week": 6,
+   "match": 1,
+   "a": [
+    "hunter"
+   ],
+   "b": [
+    "sean"
+   ],
+   "scoreA": null,
+   "scoreB": null
+  },
+  {
+   "week": 6,
+   "match": 2,
+   "a": [
+    "philip"
+   ],
+   "b": [
+    "julian-chirashi"
+   ],
+   "scoreA": null,
+   "scoreB": null
+  },
+  {
+   "week": 6,
+   "match": 3,
+   "a": [
+    "bikey"
+   ],
+   "b": [
+    "gabe"
+   ],
+   "scoreA": null,
+   "scoreB": null,
+   "games": [
+    {
+     "number": 1,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regi-2393624092-dyj5fltnnhy37u64e1ncd40il3lgc4gpw",
+     "survivors": null,
+     "a": [],
+     "b": []
+    },
+    {
+     "number": 2,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regi-2393627459-dsxp7l4jfbevq63m7wiciwjd7nlvkfvpw",
+     "survivors": null,
+     "a": [],
+     "b": []
+    },
+    {
+     "number": 3,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2025regi-2393630603-nq2i07edifq7dl9b9jf1jytxjpnooynpw",
+     "survivors": null,
+     "a": [],
+     "b": []
+    }
+   ]
+  },
+  {
+   "week": 7,
+   "match": 1,
+   "a": [
+    "hunter"
+   ],
+   "b": [
+    "max"
+   ],
+   "scoreA": 5,
+   "scoreB": 0,
+   "games": [
+    {
+     "number": 1,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2024regg-2392970608",
+     "survivors": null,
+     "a": [],
+     "b": []
+    },
+    {
+     "number": 2,
+     "winner": null,
+     "replayUrl": "https://replay.pokemonshowdown.com/gen9vgc2024regg-2392974436",
+     "survivors": null,
+     "a": [],
+     "b": []
+    }
+   ]
+  },
+  {
+   "week": 7,
+   "match": 2,
+   "a": [
+    "philip"
+   ],
+   "b": [
+    "sean"
+   ],
+   "scoreA": null,
+   "scoreB": null
+  },
+  {
+   "week": 7,
+   "match": 3,
+   "a": [
+    "gabe"
+   ],
+   "b": [
+    "julian-chirashi"
+   ],
+   "scoreA": null,
+   "scoreB": null
+  },
+  {
+   "week": 8,
+   "match": 1,
+   "a": [
+    "hunter"
+   ],
+   "b": [
+    "philip"
+   ],
+   "scoreA": null,
+   "scoreB": null
+  },
+  {
+   "week": 8,
+   "match": 2,
+   "a": [
+    "bikey"
+   ],
+   "b": [
+    "max"
+   ],
+   "scoreA": null,
+   "scoreB": null
+  },
+  {
+   "week": 8,
+   "match": 3,
+   "a": [
+    "gabe"
+   ],
+   "b": [
+    "sean"
+   ],
+   "scoreA": null,
+   "scoreB": null
+  }
+ ],
+ "standings": [
+  {
+   "player": "hunter",
+   "name": "Hunter",
+   "team": "Dapper Decidueye",
+   "wins": 5,
+   "losses": 0,
+   "gamesWon": 27,
+   "gamesLost": 0,
+   "monDiff": 27,
+   "points": 5,
+   "rank": 1
+  },
+  {
+   "player": "max",
+   "name": "Max",
+   "team": "Pokemans",
+   "wins": 3,
+   "losses": 2,
+   "gamesWon": 9,
+   "gamesLost": 12,
+   "monDiff": 0,
+   "points": 3,
+   "rank": 2
+  },
+  {
+   "player": "sean",
+   "name": "Sean",
+   "team": "Team Wet",
+   "wins": 2,
+   "losses": 1,
+   "gamesWon": 12,
+   "gamesLost": 6,
+   "monDiff": 3,
+   "points": 2,
+   "rank": 3
+  },
+  {
+   "player": "bikey",
+   "name": "Bikey",
+   "team": "Bikey's Tomatoes",
+   "wins": 2,
+   "losses": 2,
+   "gamesWon": 11,
+   "gamesLost": 12,
+   "monDiff": 2,
+   "points": 2,
+   "rank": 4
+  },
+  {
+   "player": "philip",
+   "name": "Philip",
+   "team": "Violent Victini's",
+   "wins": 1,
+   "losses": 2,
+   "gamesWon": 4,
+   "gamesLost": 9,
+   "monDiff": -4,
+   "points": 1,
+   "rank": 5
+  },
+  {
+   "player": "julian-chirashi",
+   "name": "Julian / Chirashi",
+   "team": "Gassy Equalizer",
+   "wins": 0,
+   "losses": 3,
+   "gamesWon": 3,
+   "gamesLost": 13,
+   "monDiff": -13,
+   "points": 0,
+   "rank": 7
+  },
+  {
+   "player": "gabe",
+   "name": "Gabe",
+   "team": "Mantine's Revenge",
+   "wins": 0,
+   "losses": 3,
+   "gamesWon": 1,
+   "gamesLost": 15,
+   "monDiff": -15,
+   "points": 0,
+   "rank": 8
+  }
+ ],
+ "rules": {},
+ "matchStats": [
+  {
+   "week": 1,
+   "a": {
+    "team": "Hunter",
+    "result": "W",
+    "score": 5,
+    "lines": [
+     {
+      "pokemon": "ursalunabloodmoon",
+      "kills": 4,
+      "deaths": 1
+     },
+     {
+      "pokemon": "typhlosionhisui",
+      "kills": 3,
+      "deaths": 0
+     },
+     {
+      "pokemon": "illumise",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "oranguru",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "torracat",
+      "kills": 1,
+      "deaths": 1
+     },
+     {
+      "pokemon": "meowscarada",
+      "kills": 0,
+      "deaths": 0
+     }
+    ]
+   },
+   "b": {
+    "team": "Philip",
+    "result": "L",
+    "score": 0,
+    "lines": [
+     {
+      "pokemon": "chesnaught",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "ninetalesalola",
+      "kills": 0,
+      "deaths": 2
+     },
+     {
+      "pokemon": "annihilape",
+      "kills": 1,
+      "deaths": 2
+     },
+     {
+      "pokemon": "magmar",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "dragapult",
+      "kills": 1,
+      "deaths": 2
+     },
+     {
+      "pokemon": "frosmoth",
+      "kills": 0,
+      "deaths": 1
+     }
+    ]
+   }
+  },
+  {
+   "week": 1,
+   "a": {
+    "team": "Bikey",
+    "result": "L",
+    "score": 0,
+    "lines": [
+     {
+      "pokemon": "rillaboom",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "gyarados",
+      "kills": 3,
+      "deaths": 2
+     },
+     {
+      "pokemon": "arcaninehisui",
+      "kills": 1,
+      "deaths": 2
+     },
+     {
+      "pokemon": "hawlucha",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "ursaluna",
+      "kills": 2,
+      "deaths": 1
+     },
+     {
+      "pokemon": "espeon",
+      "kills": 0,
+      "deaths": 1
+     }
+    ]
+   },
+   "b": {
+    "team": "Max",
+    "result": "W",
+    "score": 2,
+    "lines": [
+     {
+      "pokemon": "sneasler",
+      "kills": 3,
+      "deaths": 2
+     },
+     {
+      "pokemon": "quaquaval",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "indeedeef",
+      "kills": 0,
+      "deaths": 2
+     },
+     {
+      "pokemon": "hydrapple",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "skarmory",
+      "kills": 5,
+      "deaths": 0
+     },
+     {
+      "pokemon": "armarouge",
+      "kills": 0,
+      "deaths": 1
+     }
+    ]
+   }
+  },
+  {
+   "week": 1,
+   "a": {
+    "team": "Gabe",
+    "result": "L",
+    "score": 0,
+    "lines": [
+     {
+      "pokemon": "clefairy",
+      "kills": 1,
+      "deaths": 2
+     },
+     {
+      "pokemon": "toxtricity",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "golduck",
+      "kills": 0,
+      "deaths": 2
+     },
+     {
+      "pokemon": "gastrodon",
+      "kills": 1,
+      "deaths": 2
+     },
+     {
+      "pokemon": "lilliganthisui",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "slowkinggalar",
+      "kills": 1,
+      "deaths": 1
+     }
+    ]
+   },
+   "b": {
+    "team": "Sean",
+    "result": "W",
+    "score": 5,
+    "lines": [
+     {
+      "pokemon": "archaludon",
+      "kills": 1,
+      "deaths": 1
+     },
+     {
+      "pokemon": "ludicolo",
+      "kills": 3,
+      "deaths": 1
+     },
+     {
+      "pokemon": "pelipper",
+      "kills": 1,
+      "deaths": 0
+     },
+     {
+      "pokemon": "basculegion",
+      "kills": 3,
+      "deaths": 0
+     },
+     {
+      "pokemon": "raichu",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "hitmontop",
+      "kills": 0,
+      "deaths": 0
+     }
+    ]
+   }
+  },
+  {
+   "week": 2,
+   "a": {
+    "team": "Hunter",
+    "result": "W",
+    "score": 7,
+    "lines": [
+     {
+      "pokemon": "ursalunabloodmoon",
+      "kills": 2,
+      "deaths": 0
+     },
+     {
+      "pokemon": "typhlosionhisui",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "illumise",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "torracat",
+      "kills": 1,
+      "deaths": 0
+     },
+     {
+      "pokemon": "meowscarada",
+      "kills": 2,
+      "deaths": 0
+     },
+     {
+      "pokemon": "cloyster",
+      "kills": 3,
+      "deaths": 1
+     }
+    ]
+   },
+   "b": {
+    "team": "Bikey",
+    "result": "L",
+    "score": 0,
+    "lines": [
+     {
+      "pokemon": "ursaluna",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "espeon",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "rillaboom",
+      "kills": 0,
+      "deaths": 2
+     },
+     {
+      "pokemon": "hippowdon",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "arcaninehisui",
+      "kills": 1,
+      "deaths": 2
+     },
+     {
+      "pokemon": "hawlucha",
+      "kills": 0,
+      "deaths": 1
+     }
+    ]
+   }
+  },
+  {
+   "week": 2,
+   "a": {
+    "team": "Gabe",
+    "result": "L",
+    "score": 1,
+    "lines": [
+     {
+      "pokemon": "clefairy",
+      "kills": 0,
+      "deaths": 3
+     },
+     {
+      "pokemon": "talonflame",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "slowkinggalar",
+      "kills": 2,
+      "deaths": 3
+     },
+     {
+      "pokemon": "dondozo",
+      "kills": 4,
+      "deaths": 1
+     },
+     {
+      "pokemon": "torkoal",
+      "kills": 2,
+      "deaths": 3
+     },
+     {
+      "pokemon": "gastrodon",
+      "kills": 0,
+      "deaths": 0
+     }
+    ]
+   },
+   "b": {
+    "team": "Philip",
+    "result": "W",
+    "score": 4,
+    "lines": [
+     {
+      "pokemon": "magmar",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "chesnaught",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "glimmora",
+      "kills": 5,
+      "deaths": 3
+     },
+     {
+      "pokemon": "dragapult",
+      "kills": 5,
+      "deaths": 1
+     },
+     {
+      "pokemon": "annihilape",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "bellibolt",
+      "kills": 1,
+      "deaths": 1
+     }
+    ]
+   }
+  },
+  {
+   "week": 2,
+   "a": {
+    "team": "Julian / Chirashi",
+    "result": "L",
+    "score": 3,
+    "lines": [
+     {
+      "pokemon": "weezinggalar",
+      "kills": 7,
+      "deaths": 2
+     },
+     {
+      "pokemon": "toedscruel",
+      "kills": 0,
+      "deaths": 2
+     },
+     {
+      "pokemon": "mimikyu",
+      "kills": 0,
+      "deaths": 2
+     },
+     {
+      "pokemon": "cyclizar",
+      "kills": 0,
+      "deaths": 2
+     },
+     {
+      "pokemon": "greninja",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "typhlosion",
+      "kills": 1,
+      "deaths": 1
+     }
+    ]
+   },
+   "b": {
+    "team": "Max",
+    "result": "W",
+    "score": 4,
+    "lines": [
+     {
+      "pokemon": "indeedeef",
+      "kills": 1,
+      "deaths": 3
+     },
+     {
+      "pokemon": "armarouge",
+      "kills": 4,
+      "deaths": 0
+     },
+     {
+      "pokemon": "sneasler",
+      "kills": 1,
+      "deaths": 2
+     },
+     {
+      "pokemon": "hydrapple",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "skarmory",
+      "kills": 1,
+      "deaths": 2
+     },
+     {
+      "pokemon": "quaquaval",
+      "kills": 2,
+      "deaths": 1
+     }
+    ]
+   }
+  },
+  {
+   "week": 3,
+   "a": {
+    "team": "Hunter",
+    "result": "W",
+    "score": 6,
+    "lines": [
+     {
+      "pokemon": "ursalunabloodmoon",
+      "kills": 7,
+      "deaths": 0
+     },
+     {
+      "pokemon": "typhlosionhisui",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "illumise",
+      "kills": 0,
+      "deaths": 2
+     },
+     {
+      "pokemon": "torracat",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "meowscarada",
+      "kills": 1,
+      "deaths": 0
+     },
+     {
+      "pokemon": "exeggutor",
+      "kills": 0,
+      "deaths": 0
+     }
+    ]
+   },
+   "b": {
+    "team": "Gabe",
+    "result": "L",
+    "score": 0,
+    "lines": [
+     {
+      "pokemon": "clefairy",
+      "kills": 1,
+      "deaths": 0
+     },
+     {
+      "pokemon": "talonflame",
+      "kills": 2,
+      "deaths": 1
+     },
+     {
+      "pokemon": "slowkinggalar",
+      "kills": 1,
+      "deaths": 0
+     },
+     {
+      "pokemon": "dondozo",
+      "kills": 1,
+      "deaths": 0
+     },
+     {
+      "pokemon": "golduck",
+      "kills": 2,
+      "deaths": 0
+     },
+     {
+      "pokemon": "gastrodon",
+      "kills": 1,
+      "deaths": 1
+     }
+    ]
+   }
+  },
+  {
+   "week": 3,
+   "a": {
+    "team": "Julian / Chirashi",
+    "result": "L",
+    "score": 0,
+    "lines": [
+     {
+      "pokemon": "weezing",
+      "kills": 0,
+      "deaths": 2
+     },
+     {
+      "pokemon": "slaking",
+      "kills": 2,
+      "deaths": 2
+     },
+     {
+      "pokemon": "cyclizar",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "greninja",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "typhlosion",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "jolteon",
+      "kills": 1,
+      "deaths": 2
+     }
+    ]
+   },
+   "b": {
+    "team": "Bikey",
+    "result": "W",
+    "score": 5,
+    "lines": [
+     {
+      "pokemon": "ursaluna",
+      "kills": 3,
+      "deaths": 1
+     },
+     {
+      "pokemon": "pawmot",
+      "kills": 2,
+      "deaths": 1
+     },
+     {
+      "pokemon": "gyarados",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "espeon",
+      "kills": 1,
+      "deaths": 1
+     },
+     {
+      "pokemon": "carbink",
+      "kills": 2,
+      "deaths": 0
+     },
+     {
+      "pokemon": "rillaboom",
+      "kills": 0,
+      "deaths": 0
+     }
+    ]
+   }
+  },
+  {
+   "week": 3,
+   "a": {
+    "team": "Sean",
+    "result": "W",
+    "score": 4,
+    "lines": [
+     {
+      "pokemon": "archaludon",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "ludicolo",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "ditto",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "kingdra",
+      "kills": 4,
+      "deaths": 1
+     },
+     {
+      "pokemon": "pelipper",
+      "kills": 0,
+      "deaths": 2
+     },
+     {
+      "pokemon": "basculegion",
+      "kills": 4,
+      "deaths": 1
+     }
+    ]
+   },
+   "b": {
+    "team": "Max",
+    "result": "L",
+    "score": 0,
+    "lines": [
+     {
+      "pokemon": "armarouge",
+      "kills": 2,
+      "deaths": 2
+     },
+     {
+      "pokemon": "murkrow",
+      "kills": 0,
+      "deaths": 2
+     },
+     {
+      "pokemon": "indeedeef",
+      "kills": 0,
+      "deaths": 2
+     },
+     {
+      "pokemon": "hydrapple",
+      "kills": 2,
+      "deaths": 1
+     },
+     {
+      "pokemon": "quaquaval",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "sneasler",
+      "kills": 1,
+      "deaths": 1
+     }
+    ]
+   }
+  },
+  {
+   "week": 4,
+   "a": {
+    "team": "Hunter",
+    "result": "W",
+    "score": 4,
+    "lines": [
+     {
+      "pokemon": "ursalunabloodmoon",
+      "kills": 3,
+      "deaths": 1
+     },
+     {
+      "pokemon": "meowscarada",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "typhlosionhisui",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "torracat",
+      "kills": 4,
+      "deaths": 0
+     },
+     {
+      "pokemon": "oranguru",
+      "kills": 1,
+      "deaths": 2
+     },
+     {
+      "pokemon": "exeggutor",
+      "kills": 0,
+      "deaths": 1
+     }
+    ]
+   },
+   "b": {
+    "team": "Julian / Chirashi",
+    "result": "L",
+    "score": 0,
+    "lines": [
+     {
+      "pokemon": "weezinggalar",
+      "kills": 0,
+      "deaths": 2
+     },
+     {
+      "pokemon": "mimikyu",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "greninja",
+      "kills": 1,
+      "deaths": 2
+     },
+     {
+      "pokemon": "grafaiai",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "typhlosion",
+      "kills": 2,
+      "deaths": 1
+     },
+     {
+      "pokemon": "furret",
+      "kills": 0,
+      "deaths": 1
+     }
+    ]
+   }
+  },
+  {
+   "week": 4,
+   "a": {
+    "team": "Sean",
+    "result": "L",
+    "score": 3,
+    "lines": [
+     {
+      "pokemon": "basculegion",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "hitmontop",
+      "kills": 3,
+      "deaths": 2
+     },
+     {
+      "pokemon": "archaludon",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "pelipper",
+      "kills": 4,
+      "deaths": 2
+     },
+     {
+      "pokemon": "ludicolo",
+      "kills": 1,
+      "deaths": 2
+     },
+     {
+      "pokemon": "raichu",
+      "kills": 0,
+      "deaths": 1
+     }
+    ]
+   },
+   "b": {
+    "team": "Bikey",
+    "result": "W",
+    "score": 6,
+    "lines": [
+     {
+      "pokemon": "pawmot",
+      "kills": 3,
+      "deaths": 1
+     },
+     {
+      "pokemon": "ursaluna",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "espeon",
+      "kills": 1,
+      "deaths": 1
+     },
+     {
+      "pokemon": "gyarados",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "hippowdon",
+      "kills": 1,
+      "deaths": 3
+     },
+     {
+      "pokemon": "rillaboom",
+      "kills": 4,
+      "deaths": 2
+     }
+    ]
+   }
+  },
+  {
+   "week": 4,
+   "a": {
+    "team": "Max",
+    "result": "W",
+    "score": 3,
+    "lines": [
+     {
+      "pokemon": "sneasler",
+      "kills": 3,
+      "deaths": 2
+     },
+     {
+      "pokemon": "indeedeef",
+      "kills": 0,
+      "deaths": 1
+     },
+     {
+      "pokemon": "armarouge",
+      "kills": 1,
+      "deaths": 1
+     },
+     {
+      "pokemon": "toxapex",
+      "kills": 1,
+      "deaths": 0
+     },
+     {
+      "pokemon": "hydrapple",
+      "kills": 3,
+      "deaths": 0
+     },
+     {
+      "pokemon": "skarmory",
+      "kills": 0,
+      "deaths": 1
+     }
+    ]
+   },
+   "b": {
+    "team": "Philip",
+    "result": "L",
+    "score": 0,
+    "lines": [
+     {
+      "pokemon": "magmar",
+      "kills": 0,
+      "deaths": 0
+     },
+     {
+      "pokemon": "dragapult",
+      "kills": 1,
+      "deaths": 2
+     },
+     {
+      "pokemon": "annihilape",
+      "kills": 2,
+      "deaths": 2
+     },
+     {
+      "pokemon": "ninetalesalola",
+      "kills": 0,
+      "deaths": 2
+     },
+     {
+      "pokemon": "frosmoth",
+      "kills": 1,
+      "deaths": 1
+     },
+     {
+      "pokemon": "bellibolt",
+      "kills": 1,
+      "deaths": 1
+     }
+    ]
+   }
+  },
+  {
+   "week": 5,
+   "a": {
+    "team": "Sean",
+    "result": null,
+    "score": null,
+    "lines": []
+   },
+   "b": {
+    "team": "Julian / Chirashi",
+    "result": null,
+    "score": null,
+    "lines": []
+   }
+  },
+  {
+   "week": 5,
+   "a": {
+    "team": "Max",
+    "result": null,
+    "score": null,
+    "lines": []
+   },
+   "b": {
+    "team": "Gabe",
+    "result": null,
+    "score": null,
+    "lines": []
+   }
+  },
+  {
+   "week": 5,
+   "a": {
+    "team": "Philip",
+    "result": null,
+    "score": null,
+    "lines": []
+   },
+   "b": {
+    "team": "Bikey",
+    "result": null,
+    "score": null,
+    "lines": []
+   }
+  },
+  {
+   "week": 6,
+   "a": {
+    "team": "Hunter",
+    "result": null,
+    "score": null,
+    "lines": []
+   },
+   "b": {
+    "team": "Sean",
+    "result": null,
+    "score": null,
+    "lines": []
+   }
+  },
+  {
+   "week": 6,
+   "a": {
+    "team": "Philip",
+    "result": null,
+    "score": null,
+    "lines": []
+   },
+   "b": {
+    "team": "Julian / Chirashi",
+    "result": null,
+    "score": null,
+    "lines": []
+   }
+  },
+  {
+   "week": 6,
+   "a": {
+    "team": "Bikey",
+    "result": null,
+    "score": null,
+    "lines": []
+   },
+   "b": {
+    "team": "Gabe",
+    "result": null,
+    "score": null,
+    "lines": []
+   }
+  },
+  {
+   "week": 7,
+   "a": {
+    "team": "Hunter",
+    "result": "W",
+    "score": 5,
+    "lines": []
+   },
+   "b": {
+    "team": "Max",
+    "result": "L",
+    "score": 0,
+    "lines": []
+   }
+  },
+  {
+   "week": 7,
+   "a": {
+    "team": "Philip",
+    "result": null,
+    "score": null,
+    "lines": []
+   },
+   "b": {
+    "team": "Sean",
+    "result": null,
+    "score": null,
+    "lines": []
+   }
+  },
+  {
+   "week": 7,
+   "a": {
+    "team": "Gabe",
+    "result": null,
+    "score": null,
+    "lines": []
+   },
+   "b": {
+    "team": "Julian / Chirashi",
+    "result": null,
+    "score": null,
+    "lines": []
+   }
+  },
+  {
+   "week": 8,
+   "a": {
+    "team": "Hunter",
+    "result": null,
+    "score": null,
+    "lines": []
+   },
+   "b": {
+    "team": "Philip",
+    "result": null,
+    "score": null,
+    "lines": []
+   }
+  },
+  {
+   "week": 8,
+   "a": {
+    "team": "Bikey",
+    "result": null,
+    "score": null,
+    "lines": []
+   },
+   "b": {
+    "team": "Max",
+    "result": null,
+    "score": null,
+    "lines": []
+   }
+  },
+  {
+   "week": 8,
+   "a": {
+    "team": "Gabe",
+    "result": null,
+    "score": null,
+    "lines": []
+   },
+   "b": {
+    "team": "Sean",
+    "result": null,
+    "score": null,
+    "lines": []
+   }
+  }
+ ],
+ "pokemonStats": {
+  "ursalunabloodmoon": {
+   "player": "hunter",
+   "gamesPlayed": 4,
+   "kills": 16,
+   "deaths": 2
+  },
+  "annihilape": {
+   "player": "philip",
+   "gamesPlayed": 3,
+   "kills": 3,
+   "deaths": 5
+  },
+  "ursaluna": {
+   "player": "bikey",
+   "gamesPlayed": 4,
+   "kills": 5,
+   "deaths": 3
+  },
+  "indeedeef": {
+   "player": "max",
+   "gamesPlayed": 4,
+   "kills": 1,
+   "deaths": 8
+  },
+  "torkoal": {
+   "player": "gabe",
+   "gamesPlayed": 1,
+   "kills": 2,
+   "deaths": 3
+  },
+  "archaludon": {
+   "player": "sean",
+   "gamesPlayed": 3,
+   "kills": 1,
+   "deaths": 2
+  },
+  "weezing": {
+   "player": "julian-chirashi",
+   "gamesPlayed": 1,
+   "kills": 0,
+   "deaths": 2
+  },
+  "typhlosionhisui": {
+   "player": "hunter",
+   "gamesPlayed": 4,
+   "kills": 3,
+   "deaths": 0
+  },
+  "glimmora": {
+   "player": "philip",
+   "gamesPlayed": 1,
+   "kills": 5,
+   "deaths": 3
+  },
+  "arcaninehisui": {
+   "player": "bikey",
+   "gamesPlayed": 2,
+   "kills": 2,
+   "deaths": 4
+  },
+  "armarouge": {
+   "player": "max",
+   "gamesPlayed": 4,
+   "kills": 7,
+   "deaths": 4
+  },
+  "talonflame": {
+   "player": "gabe",
+   "gamesPlayed": 2,
+   "kills": 2,
+   "deaths": 2
+  },
+  "pelipper": {
+   "player": "sean",
+   "gamesPlayed": 3,
+   "kills": 5,
+   "deaths": 4
+  },
+  "mimikyu": {
+   "player": "julian-chirashi",
+   "gamesPlayed": 2,
+   "kills": 0,
+   "deaths": 2
+  },
+  "illumise": {
+   "player": "hunter",
+   "gamesPlayed": 3,
+   "kills": 0,
+   "deaths": 2
+  },
+  "chesnaught": {
+   "player": "philip",
+   "gamesPlayed": 2,
+   "kills": 0,
+   "deaths": 2
+  },
+  "hippowdon": {
+   "player": "bikey",
+   "gamesPlayed": 2,
+   "kills": 1,
+   "deaths": 4
+  },
+  "sneasel": {
+   "player": "max",
+   "gamesPlayed": 0,
+   "kills": 0,
+   "deaths": 0
+  },
+  "clefairy": {
+   "player": "gabe",
+   "gamesPlayed": 3,
+   "kills": 2,
+   "deaths": 5
+  },
+  "basculegion": {
+   "player": "sean",
+   "gamesPlayed": 3,
+   "kills": 7,
+   "deaths": 2
+  },
+  "slaking": {
+   "player": "julian-chirashi",
+   "gamesPlayed": 1,
+   "kills": 2,
+   "deaths": 2
+  },
+  "torracat": {
+   "player": "hunter",
+   "gamesPlayed": 4,
+   "kills": 6,
+   "deaths": 1
+  },
+  "magmar": {
+   "player": "philip",
+   "gamesPlayed": 3,
+   "kills": 0,
+   "deaths": 2
+  },
+  "rillaboom": {
+   "player": "bikey",
+   "gamesPlayed": 4,
+   "kills": 4,
+   "deaths": 5
+  },
+  "hydrapple": {
+   "player": "max",
+   "gamesPlayed": 4,
+   "kills": 5,
+   "deaths": 1
+  },
+  "slowkinggalar": {
+   "player": "gabe",
+   "gamesPlayed": 3,
+   "kills": 4,
+   "deaths": 4
+  },
+  "kingdra": {
+   "player": "sean",
+   "gamesPlayed": 1,
+   "kills": 4,
+   "deaths": 1
+  },
+  "toedscruel": {
+   "player": "julian-chirashi",
+   "gamesPlayed": 1,
+   "kills": 0,
+   "deaths": 2
+  },
+  "meowscarada": {
+   "player": "hunter",
+   "gamesPlayed": 4,
+   "kills": 3,
+   "deaths": 0
+  },
+  "ninetalesalola": {
+   "player": "philip",
+   "gamesPlayed": 2,
+   "kills": 0,
+   "deaths": 4
+  },
+  "gyarados": {
+   "player": "bikey",
+   "gamesPlayed": 3,
+   "kills": 3,
+   "deaths": 3
+  },
+  "quaquaval": {
+   "player": "max",
+   "gamesPlayed": 3,
+   "kills": 2,
+   "deaths": 2
+  },
+  "gastrodon": {
+   "player": "gabe",
+   "gamesPlayed": 3,
+   "kills": 2,
+   "deaths": 3
+  },
+  "hitmontop": {
+   "player": "sean",
+   "gamesPlayed": 2,
+   "kills": 3,
+   "deaths": 2
+  },
+  "weezinggalar": {
+   "player": "julian-chirashi",
+   "gamesPlayed": 2,
+   "kills": 7,
+   "deaths": 4
+  },
+  "oranguru": {
+   "player": "hunter",
+   "gamesPlayed": 2,
+   "kills": 1,
+   "deaths": 3
+  },
+  "frosmoth": {
+   "player": "philip",
+   "gamesPlayed": 2,
+   "kills": 1,
+   "deaths": 2
+  },
+  "pawmot": {
+   "player": "bikey",
+   "gamesPlayed": 2,
+   "kills": 5,
+   "deaths": 2
+  },
+  "murkrow": {
+   "player": "max",
+   "gamesPlayed": 1,
+   "kills": 0,
+   "deaths": 2
+  },
+  "toxtricity": {
+   "player": "gabe",
+   "gamesPlayed": 1,
+   "kills": 0,
+   "deaths": 0
+  },
+  "ludicolo": {
+   "player": "sean",
+   "gamesPlayed": 3,
+   "kills": 4,
+   "deaths": 3
+  },
+  "greninja": {
+   "player": "julian-chirashi",
+   "gamesPlayed": 3,
+   "kills": 1,
+   "deaths": 3
+  },
+  "exeggutor": {
+   "player": "hunter",
+   "gamesPlayed": 2,
+   "kills": 0,
+   "deaths": 1
+  },
+  "duraludon": {
+   "player": "philip",
+   "gamesPlayed": 0,
+   "kills": 0,
+   "deaths": 0
+  },
+  "carbink": {
+   "player": "bikey",
+   "gamesPlayed": 1,
+   "kills": 2,
+   "deaths": 0
+  },
+  "skarmory": {
+   "player": "max",
+   "gamesPlayed": 3,
+   "kills": 6,
+   "deaths": 3
+  },
+  "lilliganthisui": {
+   "player": "gabe",
+   "gamesPlayed": 1,
+   "kills": 0,
+   "deaths": 1
+  },
+  "raichu": {
+   "player": "sean",
+   "gamesPlayed": 2,
+   "kills": 0,
+   "deaths": 2
+  },
+  "typhlosion": {
+   "player": "julian-chirashi",
+   "gamesPlayed": 3,
+   "kills": 3,
+   "deaths": 2
+  },
+  "sneaselhisui": {
+   "player": "hunter",
+   "gamesPlayed": 0,
+   "kills": 0,
+   "deaths": 0
+  },
+  "dragapult": {
+   "player": "philip",
+   "gamesPlayed": 3,
+   "kills": 7,
+   "deaths": 5
+  },
+  "hawlucha": {
+   "player": "bikey",
+   "gamesPlayed": 2,
+   "kills": 0,
+   "deaths": 2
+  },
+  "sneasler": {
+   "player": "max",
+   "gamesPlayed": 4,
+   "kills": 8,
+   "deaths": 7
+  },
+  "dondozo": {
+   "player": "gabe",
+   "gamesPlayed": 2,
+   "kills": 5,
+   "deaths": 1
+  },
+  "ditto": {
+   "player": "sean",
+   "gamesPlayed": 1,
+   "kills": 0,
+   "deaths": 1
+  },
+  "jolteon": {
+   "player": "julian-chirashi",
+   "gamesPlayed": 1,
+   "kills": 1,
+   "deaths": 2
+  },
+  "cloyster": {
+   "player": "hunter",
+   "gamesPlayed": 1,
+   "kills": 3,
+   "deaths": 1
+  },
+  "bellibolt": {
+   "player": "philip",
+   "gamesPlayed": 2,
+   "kills": 2,
+   "deaths": 2
+  },
+  "espeon": {
+   "player": "bikey",
+   "gamesPlayed": 4,
+   "kills": 2,
+   "deaths": 4
+  },
+  "toxapex": {
+   "player": "max",
+   "gamesPlayed": 1,
+   "kills": 1,
+   "deaths": 0
+  },
+  "golduck": {
+   "player": "gabe",
+   "gamesPlayed": 2,
+   "kills": 2,
+   "deaths": 2
+  },
+  "toxicroak": {
+   "player": "sean",
+   "gamesPlayed": 0,
+   "kills": 0,
+   "deaths": 0
+  },
+  "furret": {
+   "player": "julian-chirashi",
+   "gamesPlayed": 1,
+   "kills": 0,
+   "deaths": 1
+  },
+  "gimmighoul": {
+   "player": "hunter",
+   "gamesPlayed": 0,
+   "kills": 0,
+   "deaths": 0
+  },
+  "kricketune": {
+   "player": "philip",
+   "gamesPlayed": 0,
+   "kills": 0,
+   "deaths": 0
+  },
+  "koffing": {
+   "player": "max",
+   "gamesPlayed": 0,
+   "kills": 0,
+   "deaths": 0
+  },
+  "grafaiai": {
+   "player": "julian-chirashi",
+   "gamesPlayed": 1,
+   "kills": 0,
+   "deaths": 0
+  },
+  "yanma": {
+   "player": "max",
+   "gamesPlayed": 0,
+   "kills": 0,
+   "deaths": 0
+  },
+  "cyclizar": {
+   "player": "julian-chirashi",
+   "gamesPlayed": 2,
+   "kills": 0,
+   "deaths": 3
+  }
+ },
+ "awards": [
+  {
+   "title": "MVP Race",
+   "blurb": "How the season ranked its Pokémon, kills against deaths, as the league kept it at the time. The top ten.",
+   "columns": [
+    "Kills–deaths"
+   ],
+   "winners": [
+    {
+     "place": "First",
+     "pokemon": "ursalunabloodmoon",
+     "coach": "Hunter",
+     "values": [
+      "16-2 (+14) in 4 games"
+     ]
+    },
+    {
+     "place": "Second",
+     "pokemon": "sneasler",
+     "coach": "Max",
+     "values": [
+      "8-7 (+1) in 4 games"
+     ]
+    },
+    {
+     "place": "Third",
+     "pokemon": "basculegion",
+     "coach": "Sean",
+     "values": [
+      "7-2 (+5) in 3 games"
+     ]
+    },
+    {
+     "place": "#4",
+     "pokemon": "weezinggalar",
+     "coach": "Julian / Chirashi",
+     "values": [
+      "7-4 (+3) in 2 games"
+     ]
+    },
+    {
+     "place": "#5",
+     "pokemon": "armarouge",
+     "coach": "Max",
+     "values": [
+      "7-4 (+3) in 4 games"
+     ]
+    },
+    {
+     "place": "#6",
+     "pokemon": "dragapult",
+     "coach": "Philip",
+     "values": [
+      "7-5 (+2) in 3 games"
+     ]
+    },
+    {
+     "place": "#7",
+     "pokemon": "torracat",
+     "coach": "Hunter",
+     "values": [
+      "6-1 (+5) in 4 games"
+     ]
+    },
+    {
+     "place": "#8",
+     "pokemon": "skarmory",
+     "coach": "Max",
+     "values": [
+      "6-3 (+3) in 3 games"
+     ]
+    },
+    {
+     "place": "#9",
+     "pokemon": "dondozo",
+     "coach": "Gabe",
+     "values": [
+      "5-1 (+4) in 2 games"
+     ]
+    },
+    {
+     "place": "#10",
+     "pokemon": "hydrapple",
+     "coach": "Max",
+     "values": [
+      "5-1 (+4) in 4 games"
+     ]
+    }
+   ]
+  }
+ ],
+ "postseason": {
+  "champion": "hunter",
+  "matches": [],
+  "placement": {
+   "hunter": 1
+  }
+ }
 }

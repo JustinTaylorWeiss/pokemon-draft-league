@@ -451,15 +451,36 @@ function rankStandings(league: League): Standing[] {
 
   const rate = (won: number, total: number) => (total ? won / total : 0)
 
-  return [...league.standings]
+  const byRecord = [...league.standings]
     .sort((a, b) =>
-      rate(b.wins, b.wins + b.losses) - rate(a.wins, a.wins + a.losses)
+      // Seasons won come before anything a record can say, and only the
+      // all-time table has any — within a season every row is undefined here
+      // and this step decides nothing.
+      (b.titles ?? 0) - (a.titles ?? 0)
+      || rate(b.wins, b.wins + b.losses) - rate(a.wins, a.wins + a.losses)
       || b.gamesWon - a.gamesWon
       || a.gamesLost - b.gamesLost
       || b.monDiff - a.monDiff
       || headToHead(b, a)
       || a.name.localeCompare(b.name))
-    .map((s, i) => ({ ...s, rank: i + 1 }))
+
+  /**
+   * A season that ended in a playoff ended where the playoff put people.
+   *
+   * The record above is how the regular season went, and for four of five
+   * seasons that is not how the season finished: Season 2's best record was
+   * Hunter's and the champion was Sean. So the coaches who reached the
+   * postseason are ordered by how far they got, and everyone else keeps their
+   * place underneath in the order the record gives — a coach who missed the
+   * playoffs has nothing in the bracket to be ranked by.
+   */
+  const placed = league.postseason?.placement
+  if (!placed) return byRecord.map((s, i) => ({ ...s, rank: i + 1 }))
+  return [
+    ...byRecord.filter((s) => placed[s.player] != null)
+      .sort((a, b) => placed[a.player] - placed[b.player]),
+    ...byRecord.filter((s) => placed[s.player] == null),
+  ].map((s, i) => ({ ...s, rank: i + 1 }))
 }
 
 function Standings({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
@@ -506,7 +527,15 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
         {/* The tiebreaks in the order they apply, sitting where the columns they
             refer to are — one line, so it reads as a caption and not a paragraph. */}
         <p className="sort-note">
-          Match Win % → Game Wins → Fewest Game Losses → Diff → Head-to-head
+          {league.postseason?.placement && (
+            <span className="qualifier" title="The coaches who reached the playoffs are in the order they went out; the rest follow on their regular-season record.">
+              Postseason finish
+            </span>
+          )}
+          <span>
+            {allTime && 'Championships → '}
+            Match Win % → Game Wins → Fewest Game Losses → Diff → Head-to-head
+          </span>
         </p>
       </div>
       {managing && (
@@ -532,6 +561,7 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                   from the schedule. */}
               <th>#</th><th className="col-name">Player</th>
               <th className="col-abil">{allTime ? 'Seasons' : 'Team'}</th>
+              {allTime && <th title="Seasons won">Titles</th>}
               <th title="Matches won">W</th><th title="Matches lost">L</th>
               <th title="Series won as a share of series played">Match Win %</th>
               <th title="Games won">GW</th><th title="Games lost">GL</th>
@@ -574,6 +604,13 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                     <span>{s.name}</span>
                   </th>
                   <td className="col-abil">{s.team ?? <em className="none">TBD</em>}</td>
+                  {allTime && (
+                    <td className="titles">
+                      {s.titles
+                        ? '\u{1F3C6}'.repeat(s.titles)
+                        : <em className="none">{'\u2014'}</em>}
+                    </td>
+                  )}
                   <td>{s.wins}</td>
                   <td>{s.losses}</td>
                   <td><strong>{played ? `${Math.round((s.wins / played) * 100)}%` : '—'}</strong></td>
@@ -585,7 +622,7 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                 </tr>
                 {showing && (
                   <tr className="team-row">
-                    <td colSpan={9}>
+                    <td colSpan={allTime ? 10 : 9}>
                       {picks.length === 0
                         ? <p className="panel-note">No team drafted yet.</p>
                         : (

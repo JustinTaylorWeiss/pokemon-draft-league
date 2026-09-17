@@ -127,6 +127,11 @@ export interface Standing {
   gamesLost: number
   monDiff: number
   points: number
+  /**
+   * Seasons won. Only the all-time table has one — a single season's table is
+   * already about the season it would be counting.
+   */
+  titles?: number
 }
 
 export interface RuleSection {
@@ -210,6 +215,36 @@ export interface Award {
   }[]
 }
 
+/**
+ * How a season actually ended, where it ended with a playoff.
+ *
+ * A regular season decides who is good and a postseason decides who won, and
+ * the site was showing the first under the heading of the second — Season 2's
+ * table had Hunter on top of a season Sean won. `placement` covers only the
+ * coaches who reached the playoffs; everybody else keeps the order the regular
+ * season put them in.
+ *
+ * Written by `scripts/import-postseason.mjs` out of the league's archive
+ * document, which says who the champion was and links the replays the rest is
+ * read from.
+ */
+export interface Postseason {
+  /** The player id the archive names as champion. */
+  champion: string | null
+  matches: {
+    round: string | null
+    a: string | null
+    b: string | null
+    scoreA: number
+    scoreB: number
+    /** Null for a series whose replays do not settle it. */
+    winner: string | null
+    replays: string[]
+  }[]
+  /** Player id to finishing position, 1 first. Playoff coaches only. */
+  placement: Record<string, number>
+}
+
 export interface League {
   meta: LeagueMeta
   players: Player[]
@@ -223,6 +258,8 @@ export interface League {
   pokemonStats?: Record<string, PokemonStat>
   /** Only ever from the spreadsheet: a league writes its own awards. */
   awards?: Award[]
+  /** Absent on a season still being played, and on one that had no playoffs. */
+  postseason?: Postseason
 }
 
 /**
