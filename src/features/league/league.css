@@ -141,9 +141,10 @@
 }
 
 /* ---- what the standings table is counting ---- */
+/* A heading for the table, so what it is counting is read before it is. */
 .table-label {
-  margin: 0; font-size: 0.72rem; font-weight: 600; color: var(--fg);
-  display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+  margin: 0; font-size: 0.95rem; font-weight: 700; color: var(--fg);
+  display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap;
 }
 /*
  * How far down the table the playoffs reached.
@@ -153,7 +154,8 @@
  * around eight rows would and says it in one line — and the table keeps its
  * own rules instead of carrying a second set drawn over the top.
  */
-.advanced-note { color: var(--accent); font-weight: 600; }
+/* Kept at the size it was, so the heading is the thing that grew. */
+.advanced-note { color: var(--accent); font-weight: 600; font-size: 0.72rem; }
 /*
  * And marked row by row, with an edge rather than a box.
  *
