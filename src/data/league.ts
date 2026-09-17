@@ -239,11 +239,24 @@ export interface Season {
   source: 'sheet' | 'database'
 }
 
-/** Newest league season first; the test season is scaffolding and sits last. */
+/**
+ * The seasons the site offers, current first — and the first is the one it
+ * opens on.
+ *
+ * The Test Season is no longer among them. It was Season 4 imported into the
+ * database to build the database-backed half of the site against real data, and
+ * it did that job; with Season 5 live and being drafted, a second copy of a
+ * finished season is a thing to pick by mistake rather than a thing to use.
+ *
+ * Taken off the list and not deleted. Its rows are still there, and `seasons`
+ * is the table every other one cascades from — a single DELETE against it took
+ * 2,925 rows across eleven tables in August, which is why it now has no delete
+ * policy and why `supabase/README.md` says there must never be a
+ * `delete_season`. Putting it back is this line again.
+ */
 export const SEASONS: Season[] = [
-  { id: 'season-4', label: 'Season 4', source: 'sheet' },
   { id: 'mega-mc', label: 'Season 5', source: 'database' },
-  { id: 'test', label: 'Test Season', source: 'database' },
+  { id: 'season-4', label: 'Season 4', source: 'sheet' },
 ]
 
 const SEASON_KEY = 'league:season'
@@ -251,7 +264,13 @@ const SEASON_KEY = 'league:season'
 function storedSeason(): Season {
   try {
     const id = localStorage.getItem(SEASON_KEY)
-    return SEASONS.find((s) => s.id === id) ?? SEASONS[0]
+    const saved = SEASONS.find((s) => s.id === id)
+    if (saved) return saved
+    // A season that is not offered any more — anyone who was last looking at
+    // the Test Season has one of these. Cleared rather than left to sit there
+    // naming something the picker cannot show.
+    if (id) localStorage.removeItem(SEASON_KEY)
+    return SEASONS[0]
   } catch {
     return SEASONS[0]
   }

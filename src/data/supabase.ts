@@ -54,6 +54,13 @@ export function setActor(name: string) {
  * `league.ts` owns the choice and pushes it here when it changes. The fallback
  * matters — a stale saved id can name the spreadsheet season, which has no rows
  * in the database at all, and a write aimed at it would land nowhere.
+ *
+ * It still names the Test Season, which the picker no longer offers, and that
+ * is deliberate. The fallback is only ever reached while the spreadsheet season
+ * is showing, and the Test Season is that same season imported — so the one
+ * thing that reads through it, the history tab, shows something belonging to
+ * the season on screen. Pointing it at Season 5 would put Season 5's history
+ * under Season 4. The rows are still there; only the menu entry went.
  */
 const DEFAULT_SEASON = 'test'
 let seasonId = DEFAULT_SEASON
