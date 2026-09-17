@@ -106,6 +106,17 @@ export default function App() {
   // The primary bar wraps to two rows on narrow screens, so the secondary bar
   // cannot assume a fixed offset to stick below.
   const [topbarRef, topbarHeight] = useElementHeight<HTMLElement>()
+  /**
+   * How tall the pinned bars are, so something further down the page can pin
+   * below them rather than under them — the draft board's filters do.
+   *
+   * Measured rather than assumed because it changes: two rows on a laptop,
+   * four on a phone once the tabs wrap, and none of it pinned below 700px.
+   */
+  const [barsRef, barsHeight] = useElementHeight<HTMLDivElement>()
+  useEffect(() => {
+    if (barsHeight) document.documentElement.style.setProperty('--bars-h', `${barsHeight}px`)
+  }, [barsHeight])
   useEffect(() => {
     if (topbarHeight) document.documentElement.style.setProperty('--topbar-h', `${topbarHeight}px`)
   }, [topbarHeight])
@@ -143,7 +154,7 @@ export default function App() {
           height arrived, and Safari left the underline it had already painted
           behind at the old offset. Stuck together they need no measurement and
           nothing shifts. */}
-      <div className="bars">
+      <div className="bars" ref={barsRef}>
       <header className="topbar" ref={topbarRef}>
         <div className="bar-inner">
           <span className="brand">

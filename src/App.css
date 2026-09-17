@@ -8,6 +8,9 @@
      still sizes the matchup card, so a guess near the truth (57px at the usual
      width) avoids that resizing on load too. */
   --topbar-h: 57px;
+  /* Both bars together. Replaced by a measured value once the page has laid
+     out; this is what it comes to on a laptop, so nothing jumps far. */
+  --bars-h: 113px;
 }
 @media (min-width: 1800px) { :root { --content-max: 1680px; } }
 @media (min-width: 2400px) { :root { --content-max: 2040px; } }

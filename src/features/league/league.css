@@ -117,8 +117,21 @@
 .schedule-picker { max-width: 32rem; }
 
 /* ---- pill filters ---- */
+/*
+ * The search and the filters stay put while the board scrolls under them.
+ *
+ * A points board is 900 rows and the thing you most want while reading down it
+ * is the search you got there with. Pinned below the bars rather than at the
+ * top of the window, because the bars are pinned too and it would otherwise
+ * slide underneath them — `--bars-h` is their measured height.
+ *
+ * The page's own background, because rows pass behind it, and the padding
+ * that the shell would have given it above.
+ */
 .board-controls {
   display: flex; gap: 1rem; flex-wrap: wrap; align-items: center;
+  position: sticky; top: var(--bars-h); z-index: 20;
+  background: var(--bg); padding: 0.75rem 0; margin-top: -0.75rem;
 }
 .board-controls > input[type="search"] {
   height: 2.2rem; padding: 0 0.7rem; flex: 0 1 18rem;
@@ -343,6 +356,10 @@
   .board-key { margin-left: 0; }
 }
 
+@media (max-width: 700px) {
+  /* The bars scroll away on a phone, so there is nothing to pin below. */
+  .board-controls { top: 0; }
+}
 @media (max-width: 620px) {
   /* Wrapped onto their own line, the clocks read left to right like everything
      else; held right they would sit alone against the far edge. */
