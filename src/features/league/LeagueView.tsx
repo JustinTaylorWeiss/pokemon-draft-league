@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { loadPokemon } from '../../data/load'
 import type { PokemonDex } from '../../data/types'
 import {
@@ -128,6 +128,70 @@ const ALL_TIME_NOTE = 'KOs/game → K/D → games → Diff → KOs → fewest de
  */
 const ALL_TIME_MINIMUM = 4
 
+type StatColumn = Exclude<StatSort, 'name'>
+
+/**
+ * Everything the stats table shows about a Pokemon besides its name, each
+ * column owning the cell it draws.
+ *
+ * Held as data rather than written out twice because the order is not fixed:
+ * the columns run left to right in the order the ranking applies them, so the
+ * table reads as the chain that built it, and the all-time board ranks by a
+ * different chain.
+ */
+const STAT_CELLS: Record<StatColumn, {
+  label: string
+  cell: (t: PokemonTotals, mon: LeaguePokemon | undefined) => ReactNode
+}> = {
+  tier: {
+    label: 'Tier',
+    cell: (_t, mon) => (
+      <td>
+        {mon?.draftTier
+          ? <span className={tierClass(mon.draftTier)}>{mon.draftTier}</span>
+          : <em className="none">{'\u2014'}</em>}
+      </td>
+    ),
+  },
+  diff: {
+    label: 'Diff',
+    cell: (t) => (
+      <td className={t.diff > 0 ? 'pos' : t.diff < 0 ? 'neg' : ''}>
+        {t.diff > 0 ? `+${t.diff}` : t.diff}
+      </td>
+    ),
+  },
+  kd: {
+    label: 'K/D',
+    // A Pokemon that has never fainted has no ratio to give, which is better
+    // said than rounded to a number.
+    cell: (t) => (
+      <td title={t.deaths ? undefined : 'Never fainted'}>
+        {!t.kills && !t.deaths ? '\u2014' : t.kd === Infinity ? '\u221E' : t.kd.toFixed(2)}
+      </td>
+    ),
+  },
+  killsPerGame: { label: 'KOs/Game', cell: (t) => <td>{t.killsPerGame.toFixed(2)}</td> },
+  kills: { label: 'KOs', cell: (t) => <td>{t.kills}</td> },
+  gamesPlayed: { label: 'Games', cell: (t) => <td>{t.gamesPlayed}</td> },
+  deaths: { label: 'Deaths', cell: (t) => <td>{t.deaths}</td> },
+}
+
+/** Diff, then K/D, then the rest of the power ranking. */
+const SEASON_COLUMNS: StatColumn[] =
+  ['tier', 'diff', 'kd', 'killsPerGame', 'kills', 'gamesPlayed', 'deaths']
+
+/**
+ * The all-time chain, which leads with the rate.
+ *
+ * No Tier either. A tier is a season's opinion of a Pokemon, written on that
+ * season's board; across all of them there is no such opinion — Season 3
+ * priced Omanyte for Little Cup and Season 4 never listed it — so the column
+ * would be a rule of dashes and a sort by nothing.
+ */
+const ALL_TIME_COLUMNS: StatColumn[] =
+  ['killsPerGame', 'kd', 'gamesPlayed', 'diff', 'kills', 'deaths']
+
 type StatSort = 'kills' | 'deaths' | 'diff' | 'gamesPlayed' | 'killsPerGame' | 'kd' | 'name' | 'tier'
 
 function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
@@ -168,15 +232,9 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
 
   const matches = useMemo(() => league.matchStats ?? [], [league.matchStats])
   const allTime = currentSeason().source === 'all-time'
-  /**
-   * A tier is a season's opinion of a Pokemon, written on that season's board.
-   * Across all of them there is no such opinion — Season 3 priced Omanyte for
-   * Little Cup and Season 4 never listed it — so the column would be a rule
-   * of dashes and a sort by nothing. Left out rather than left empty.
-   */
-  const tiered = !allTime
   /** One everywhere else: every Pokemon that played at all is on the board. */
   const minGames = allTime ? ALL_TIME_MINIMUM : 1
+  const columns = allTime ? ALL_TIME_COLUMNS : SEASON_COLUMNS
 
   /** The whole season, always: a ranking of the season is the point. */
   const totals = useMemo(() => Object.values(totalsFromMatches(matches)), [matches])
@@ -290,12 +348,8 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
             <thead>
               <tr>
                 <th className="rank-col">#</th>
-                {/* Left to right in the order the power ranking applies them:
-                    every column past the tier is one of its steps. */}
-                {(([['name', 'Pokémon'], ['tier', 'Tier'], ['diff', 'Diff'], ['kd', 'K/D'],
-                    ['killsPerGame', 'KOs/Game'], ['kills', 'KOs'], ['gamesPlayed', 'Games'],
-                    ['deaths', 'Deaths']] as [StatSort, string][])
-                  .filter(([key]) => tiered || key !== 'tier')).map(([key, label]) => (
+                {([['name', 'Pokémon'] as [StatSort, string]]
+                  .concat(columns.map((k) => [k, STAT_CELLS[k].label]))).map(([key, label]) => (
                   <th
                     key={key}
                     className={`sortable${key === 'name' ? ' col-name' : ''}${
@@ -345,25 +399,9 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                         {mon?.types[1] && <TypeChip type={mon.types[1]} />}
                       </span>
                     </th>
-                    {tiered && (
-                      <td>
-                        {mon?.draftTier
-                          ? <span className={tierClass(mon.draftTier)}>{mon.draftTier}</span>
-                          : <em className="none">—</em>}
-                      </td>
-                    )}
-                    <td className={t.diff > 0 ? 'pos' : t.diff < 0 ? 'neg' : ''}>
-                      {t.diff > 0 ? `+${t.diff}` : t.diff}
-                    </td>
-                    {/* A Pokémon that has never fainted has no ratio to give,
-                        which is better said than rounded to a number. */}
-                    <td title={t.deaths ? undefined : 'Never fainted'}>
-                      {!t.kills && !t.deaths ? '—' : t.kd === Infinity ? '∞' : t.kd.toFixed(2)}
-                    </td>
-                    <td>{t.killsPerGame.toFixed(2)}</td>
-                    <td>{t.kills}</td>
-                    <td>{t.gamesPlayed}</td>
-                    <td>{t.deaths}</td>
+                    {columns.map((key) => (
+                      <Fragment key={key}>{STAT_CELLS[key].cell(t, mon)}</Fragment>
+                    ))}
                   </tr>
                 )
               })}
@@ -613,7 +651,9 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                   )}
                   <td>{s.wins}</td>
                   <td>{s.losses}</td>
-                  <td><strong>{played ? `${Math.round((s.wins / played) * 100)}%` : '—'}</strong></td>
+                  <td>
+                    <strong>{played ? `${((s.wins / played) * 100).toFixed(1)}%` : '—'}</strong>
+                  </td>
                   <td>{s.gamesWon}</td>
                   <td>{s.gamesLost}</td>
                   <td className={s.monDiff > 0 ? 'pos' : s.monDiff < 0 ? 'neg' : ''}>
