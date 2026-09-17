@@ -11,7 +11,7 @@
  * file, so Season 5 counts the moment a match is reported rather than the next
  * time someone runs a script.
  */
-import type { League, Match, MatchStat, Player, Standing } from './league'
+import type { League, Match, MatchStat, Player, Postseason, Standing } from './league'
 
 /**
  * The same person, season after season, under whatever handle they used then.
@@ -89,6 +89,14 @@ export function combineSeasons(parts: SeasonPart[]): League {
   const coaches = new Map<string, Tally>()
   const schedule: Match[] = []
   const matchStats: MatchStat[] = []
+  /**
+   * Every bracket the league has played, added up the way the seasons are.
+   *
+   * No placement among them: a coach finished third in Season 3, not third all
+   * time, and what all-time has in place of a finish is the titles column.
+   */
+  const playoffStats: MatchStat[] = []
+  const playoffRecords: Postseason['records'] = {}
 
   // Oldest first, so each pass overwrites the name with a more recent one and
   // the seasons land in the order they were played.
@@ -123,6 +131,18 @@ export function combineSeasons(parts: SeasonPart[]): League {
     if (won) {
       const tally = coaches.get(coachId(won))
       if (tally) tally.titles++
+    }
+
+    playoffStats.push(...(league.postseason?.matchStats ?? []))
+    for (const [id, add] of Object.entries(league.postseason?.records ?? {})) {
+      const own = (playoffRecords[coachId(id)] ??= {
+        wins: 0, losses: 0, gamesWon: 0, gamesLost: 0, monDiff: 0,
+      })
+      own.wins += add.wins
+      own.losses += add.losses
+      own.gamesWon += add.gamesWon
+      own.gamesLost += add.gamesLost
+      own.monDiff += add.monDiff
     }
 
     // The ids come along canonicalised, so the head-to-head tiebreak can see
@@ -182,5 +202,13 @@ export function combineSeasons(parts: SeasonPart[]): League {
     // in its own place. What this tab has instead is the ranking underneath
     // them, over every match the league has played.
     awards: [],
+    ...(playoffStats.length ? {
+      postseason: {
+        champion: null,
+        matches: [],
+        records: playoffRecords,
+        matchStats: playoffStats,
+      },
+    } : {}),
   }
 }

@@ -19020,6 +19020,560 @@
    "mieles": 6,
    "bikey": 7,
    "phillip": 8
-  }
+  },
+  "records": {
+   "bray": {
+    "wins": 1,
+    "losses": 1,
+    "gamesWon": 3,
+    "gamesLost": 3,
+    "monDiff": 0
+   },
+   "max": {
+    "wins": 0,
+    "losses": 1,
+    "gamesWon": 1,
+    "gamesLost": 2,
+    "monDiff": -1
+   },
+   "jeremy": {
+    "wins": 2,
+    "losses": 1,
+    "gamesWon": 5,
+    "gamesLost": 3,
+    "monDiff": 5
+   },
+   "mieles": {
+    "wins": 0,
+    "losses": 1,
+    "gamesWon": 0,
+    "gamesLost": 2,
+    "monDiff": -5
+   },
+   "bikey": {
+    "wins": 0,
+    "losses": 1,
+    "gamesWon": 1,
+    "gamesLost": 2,
+    "monDiff": 0
+   },
+   "bargus": {
+    "wins": 3,
+    "losses": 0,
+    "gamesWon": 6,
+    "gamesLost": 3,
+    "monDiff": 2
+   },
+   "sean": {
+    "wins": 1,
+    "losses": 1,
+    "gamesWon": 3,
+    "gamesLost": 3,
+    "monDiff": 3
+   },
+   "phillip": {
+    "wins": 0,
+    "losses": 1,
+    "gamesWon": 1,
+    "gamesLost": 2,
+    "monDiff": -4
+   }
+  },
+  "matchStats": [
+   {
+    "week": 0,
+    "a": {
+     "team": "Bray",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "minccino",
+       "kills": 1,
+       "deaths": 1
+      },
+      {
+       "pokemon": "mimejr",
+       "kills": 3,
+       "deaths": 3
+      },
+      {
+       "pokemon": "tirtouga",
+       "kills": 4,
+       "deaths": 2
+      },
+      {
+       "pokemon": "toedscool",
+       "kills": 2,
+       "deaths": 1
+      },
+      {
+       "pokemon": "wattrel",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "torchic",
+       "kills": 0,
+       "deaths": 1
+      }
+     ]
+    },
+    "b": {
+     "team": "Max",
+     "result": "L",
+     "score": 1,
+     "lines": [
+      {
+       "pokemon": "squirtle",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "tyrunt",
+       "kills": 3,
+       "deaths": 2
+      },
+      {
+       "pokemon": "scraggy",
+       "kills": 4,
+       "deaths": 3
+      },
+      {
+       "pokemon": "lileep",
+       "kills": 1,
+       "deaths": 1
+      },
+      {
+       "pokemon": "natu",
+       "kills": 0,
+       "deaths": 2
+      }
+     ]
+    }
+   },
+   {
+    "week": 0,
+    "a": {
+     "team": "Jeremy",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "omanyte",
+       "kills": 4,
+       "deaths": 0
+      },
+      {
+       "pokemon": "paras",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "meditite",
+       "kills": 1,
+       "deaths": 1
+      },
+      {
+       "pokemon": "snivy",
+       "kills": 3,
+       "deaths": 1
+      }
+     ]
+    },
+    "b": {
+     "team": "Mieles",
+     "result": "L",
+     "score": 0,
+     "lines": [
+      {
+       "pokemon": "hippopotas",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "drilbur",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "timburr",
+       "kills": 1,
+       "deaths": 1
+      },
+      {
+       "pokemon": "snover",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "remoraid",
+       "kills": 1,
+       "deaths": 1
+      }
+     ]
+    }
+   },
+   {
+    "week": 0,
+    "a": {
+     "team": "Bikey",
+     "result": "L",
+     "score": 1,
+     "lines": [
+      {
+       "pokemon": "farfetchdgalar",
+       "kills": 2,
+       "deaths": 1
+      },
+      {
+       "pokemon": "magnemite",
+       "kills": 4,
+       "deaths": 1
+      },
+      {
+       "pokemon": "slowpoke",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "greavard",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "drowzee",
+       "kills": 1,
+       "deaths": 1
+      },
+      {
+       "pokemon": "spinarak",
+       "kills": 0,
+       "deaths": 2
+      }
+     ]
+    },
+    "b": {
+     "team": "Bargus",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "magby",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "gastly",
+       "kills": 5,
+       "deaths": 1
+      },
+      {
+       "pokemon": "vulpixalola",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "crabrawler",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "shroomish",
+       "kills": 2,
+       "deaths": 1
+      },
+      {
+       "pokemon": "mantyke",
+       "kills": 1,
+       "deaths": 2
+      }
+     ]
+    }
+   },
+   {
+    "week": 0,
+    "a": {
+     "team": "Sean",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "riolu",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "wailmer",
+       "kills": 2,
+       "deaths": 0
+      },
+      {
+       "pokemon": "anorith",
+       "kills": 3,
+       "deaths": 2
+      },
+      {
+       "pokemon": "litten",
+       "kills": 4,
+       "deaths": 2
+      },
+      {
+       "pokemon": "frillish",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "cubone",
+       "kills": 2,
+       "deaths": 1
+      }
+     ]
+    },
+    "b": {
+     "team": "Phillip",
+     "result": "L",
+     "score": 1,
+     "lines": [
+      {
+       "pokemon": "amaura",
+       "kills": 2,
+       "deaths": 3
+      },
+      {
+       "pokemon": "capsakid",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "geodudealola",
+       "kills": 1,
+       "deaths": 3
+      },
+      {
+       "pokemon": "ponytagalar",
+       "kills": 1,
+       "deaths": 3
+      },
+      {
+       "pokemon": "froakie",
+       "kills": 1,
+       "deaths": 0
+      }
+     ]
+    }
+   },
+   {
+    "week": 0,
+    "a": {
+     "team": "Bray",
+     "result": "L",
+     "score": 1,
+     "lines": [
+      {
+       "pokemon": "wattrel",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "minccino",
+       "kills": 1,
+       "deaths": 3
+      },
+      {
+       "pokemon": "mimejr",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "torchic",
+       "kills": 3,
+       "deaths": 3
+      },
+      {
+       "pokemon": "tirtouga",
+       "kills": 2,
+       "deaths": 1
+      }
+     ]
+    },
+    "b": {
+     "team": "Jeremy",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "omanyte",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "meditite",
+       "kills": 3,
+       "deaths": 1
+      },
+      {
+       "pokemon": "aipom",
+       "kills": 5,
+       "deaths": 3
+      },
+      {
+       "pokemon": "helioptile",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "paras",
+       "kills": 0,
+       "deaths": 1
+      }
+     ]
+    }
+   },
+   {
+    "week": 0,
+    "a": {
+     "team": "Sean",
+     "result": "L",
+     "score": 1,
+     "lines": [
+      {
+       "pokemon": "riolu",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "wailmer",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "anorith",
+       "kills": 6,
+       "deaths": 2
+      },
+      {
+       "pokemon": "litten",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "frillish",
+       "kills": 1,
+       "deaths": 1
+      },
+      {
+       "pokemon": "cubone",
+       "kills": 0,
+       "deaths": 1
+      }
+     ]
+    },
+    "b": {
+     "team": "Bargus",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "mantyke",
+       "kills": 5,
+       "deaths": 0
+      },
+      {
+       "pokemon": "magby",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "gastly",
+       "kills": 1,
+       "deaths": 3
+      },
+      {
+       "pokemon": "crabrawler",
+       "kills": 2,
+       "deaths": 2
+      },
+      {
+       "pokemon": "shroomish",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "vulpixalola",
+       "kills": 2,
+       "deaths": 1
+      }
+     ]
+    }
+   },
+   {
+    "week": 0,
+    "a": {
+     "team": "Bargus",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "vulpixalola",
+       "kills": 2,
+       "deaths": 3
+      },
+      {
+       "pokemon": "gastly",
+       "kills": 4,
+       "deaths": 2
+      },
+      {
+       "pokemon": "magby",
+       "kills": 1,
+       "deaths": 3
+      },
+      {
+       "pokemon": "crabrawler",
+       "kills": 2,
+       "deaths": 1
+      },
+      {
+       "pokemon": "mantyke",
+       "kills": 1,
+       "deaths": 0
+      }
+     ]
+    },
+    "b": {
+     "team": "Jeremy",
+     "result": "L",
+     "score": 1,
+     "lines": [
+      {
+       "pokemon": "omanyte",
+       "kills": 5,
+       "deaths": 2
+      },
+      {
+       "pokemon": "meditite",
+       "kills": 3,
+       "deaths": 2
+      },
+      {
+       "pokemon": "aipom",
+       "kills": 1,
+       "deaths": 3
+      },
+      {
+       "pokemon": "helioptile",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "paras",
+       "kills": 0,
+       "deaths": 1
+      }
+     ]
+    }
+   }
+  ]
  }
 }

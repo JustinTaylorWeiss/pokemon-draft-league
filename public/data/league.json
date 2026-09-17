@@ -18404,6 +18404,535 @@
    "max": 6,
    "arune": 7,
    "aadi": 8
-  }
+  },
+  "records": {
+   "bikey": {
+    "wins": 3,
+    "losses": 0,
+    "gamesWon": 6,
+    "gamesLost": 1,
+    "monDiff": 10
+   },
+   "nolan": {
+    "wins": 0,
+    "losses": 1,
+    "gamesWon": 0,
+    "gamesLost": 2,
+    "monDiff": -4
+   },
+   "max": {
+    "wins": 0,
+    "losses": 1,
+    "gamesWon": 1,
+    "gamesLost": 2,
+    "monDiff": -6
+   },
+   "uezu": {
+    "wins": 1,
+    "losses": 1,
+    "gamesWon": 3,
+    "gamesLost": 3,
+    "monDiff": 3
+   },
+   "arune": {
+    "wins": 0,
+    "losses": 1,
+    "gamesWon": 0,
+    "gamesLost": 2,
+    "monDiff": -4
+   },
+   "jeremy": {
+    "wins": 2,
+    "losses": 1,
+    "gamesWon": 4,
+    "gamesLost": 2,
+    "monDiff": 8
+   },
+   "aadi": {
+    "wins": 0,
+    "losses": 1,
+    "gamesWon": 1,
+    "gamesLost": 2,
+    "monDiff": -2
+   },
+   "tiarnan": {
+    "wins": 1,
+    "losses": 1,
+    "gamesWon": 2,
+    "gamesLost": 3,
+    "monDiff": -5
+   }
+  },
+  "matchStats": [
+   {
+    "week": 0,
+    "a": {
+     "team": "Bikey",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "murkrow",
+       "kills": 1,
+       "deaths": 0
+      },
+      {
+       "pokemon": "gougingfire",
+       "kills": 5,
+       "deaths": 1
+      },
+      {
+       "pokemon": "gyarados",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "zapdosgalar",
+       "kills": 2,
+       "deaths": 0
+      }
+     ]
+    },
+    "b": {
+     "team": "Nolan",
+     "result": "L",
+     "score": 0,
+     "lines": [
+      {
+       "pokemon": "grimmsnarl",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "espeon",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "electabuzz",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "registeel",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "regigigas",
+       "kills": 2,
+       "deaths": 1
+      }
+     ]
+    }
+   },
+   {
+    "week": 0,
+    "a": {
+     "team": "Max",
+     "result": "L",
+     "score": 1,
+     "lines": [
+      {
+       "pokemon": "garchomp",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "sneasler",
+       "kills": 2,
+       "deaths": 3
+      },
+      {
+       "pokemon": "magmar",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "regieleki",
+       "kills": 1,
+       "deaths": 3
+      },
+      {
+       "pokemon": "slowbro",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "hitmontop",
+       "kills": 1,
+       "deaths": 2
+      }
+     ]
+    },
+    "b": {
+     "team": "Uezu",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "farigiraf",
+       "kills": 1,
+       "deaths": 1
+      },
+      {
+       "pokemon": "primarina",
+       "kills": 1,
+       "deaths": 1
+      },
+      {
+       "pokemon": "rhyperior",
+       "kills": 8,
+       "deaths": 1
+      },
+      {
+       "pokemon": "amoonguss",
+       "kills": 0,
+       "deaths": 0
+      },
+      {
+       "pokemon": "orthworm",
+       "kills": 1,
+       "deaths": 1
+      }
+     ]
+    }
+   },
+   {
+    "week": 0,
+    "a": {
+     "team": "Arune",
+     "result": "L",
+     "score": 0,
+     "lines": [
+      {
+       "pokemon": "ironjugulis",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "landorus",
+       "kills": 2,
+       "deaths": 2
+      },
+      {
+       "pokemon": "barraskewda",
+       "kills": 2,
+       "deaths": 2
+      },
+      {
+       "pokemon": "thundurus",
+       "kills": 0,
+       "deaths": 2
+      }
+     ]
+    },
+    "b": {
+     "team": "Jeremy",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "basculegion",
+       "kills": 2,
+       "deaths": 0
+      },
+      {
+       "pokemon": "rillaboom",
+       "kills": 4,
+       "deaths": 1
+      },
+      {
+       "pokemon": "araquanid",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "volcarona",
+       "kills": 0,
+       "deaths": 0
+      },
+      {
+       "pokemon": "medicham",
+       "kills": 1,
+       "deaths": 1
+      }
+     ]
+    }
+   },
+   {
+    "week": 0,
+    "a": {
+     "team": "Aadi",
+     "result": "L",
+     "score": 1,
+     "lines": [
+      {
+       "pokemon": "ironhands",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "basculegionf",
+       "kills": 3,
+       "deaths": 2
+      },
+      {
+       "pokemon": "tornadus",
+       "kills": 1,
+       "deaths": 3
+      },
+      {
+       "pokemon": "zapdos",
+       "kills": 2,
+       "deaths": 2
+      },
+      {
+       "pokemon": "politoed",
+       "kills": 1,
+       "deaths": 2
+      }
+     ]
+    },
+    "b": {
+     "team": "Tiarnan",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "walkingwake",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "ninetales",
+       "kills": 4,
+       "deaths": 1
+      },
+      {
+       "pokemon": "wochien",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "ceruledge",
+       "kills": 3,
+       "deaths": 2
+      },
+      {
+       "pokemon": "lilliganthisui",
+       "kills": 1,
+       "deaths": 2
+      }
+     ]
+    }
+   },
+   {
+    "week": 0,
+    "a": {
+     "team": "Bikey",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "indeedeef",
+       "kills": 4,
+       "deaths": 0
+      },
+      {
+       "pokemon": "armarouge",
+       "kills": 1,
+       "deaths": 3
+      },
+      {
+       "pokemon": "milotic",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "zapdosgalar",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "venusaur",
+       "kills": 3,
+       "deaths": 1
+      },
+      {
+       "pokemon": "tinglu",
+       "kills": 2,
+       "deaths": 0
+      }
+     ]
+    },
+    "b": {
+     "team": "Uezu",
+     "result": "L",
+     "score": 1,
+     "lines": [
+      {
+       "pokemon": "farigiraf",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "kingambit",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "primarina",
+       "kills": 5,
+       "deaths": 2
+      },
+      {
+       "pokemon": "orthworm",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "heracross",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "rhyperior",
+       "kills": 1,
+       "deaths": 1
+      }
+     ]
+    }
+   },
+   {
+    "week": 0,
+    "a": {
+     "team": "Jeremy",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "araquanid",
+       "kills": 4,
+       "deaths": 0
+      },
+      {
+       "pokemon": "salamence",
+       "kills": 2,
+       "deaths": 0
+      },
+      {
+       "pokemon": "volbeat",
+       "kills": 0,
+       "deaths": 0
+      },
+      {
+       "pokemon": "volcarona",
+       "kills": 2,
+       "deaths": 1
+      }
+     ]
+    },
+    "b": {
+     "team": "Tiarnan",
+     "result": "L",
+     "score": 0,
+     "lines": [
+      {
+       "pokemon": "walkingwake",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "ninetales",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "ceruledge",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "shiftry",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "lilliganthisui",
+       "kills": 0,
+       "deaths": 1
+      }
+     ]
+    }
+   },
+   {
+    "week": 0,
+    "a": {
+     "team": "Bikey",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "dragapult",
+       "kills": 3,
+       "deaths": 1
+      },
+      {
+       "pokemon": "murkrow",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "gougingfire",
+       "kills": 2,
+       "deaths": 2
+      },
+      {
+       "pokemon": "zapdosgalar",
+       "kills": 1,
+       "deaths": 1
+      },
+      {
+       "pokemon": "milotic",
+       "kills": 2,
+       "deaths": 0
+      }
+     ]
+    },
+    "b": {
+     "team": "Jeremy",
+     "result": "L",
+     "score": 0,
+     "lines": [
+      {
+       "pokemon": "raikou",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "ironboulder",
+       "kills": 2,
+       "deaths": 2
+      },
+      {
+       "pokemon": "clefairy",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "volcarona",
+       "kills": 2,
+       "deaths": 1
+      },
+      {
+       "pokemon": "salamence",
+       "kills": 1,
+       "deaths": 1
+      }
+     ]
+    }
+   }
+  ]
  }
 }

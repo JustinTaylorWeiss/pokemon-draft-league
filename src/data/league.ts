@@ -241,8 +241,46 @@ export interface Postseason {
     winner: string | null
     replays: string[]
   }[]
-  /** Player id to finishing position, 1 first. Playoff coaches only. */
-  placement: Record<string, number>
+  /**
+   * Player id to finishing position, 1 first. Playoff coaches only. Absent on
+   * the all-time table, which has records from every bracket but no bracket of
+   * its own to finish in.
+   */
+  placement?: Record<string, number>
+  /** What the playoffs add to a coach's record, for the tables that count it. */
+  records: Record<string, {
+    wins: number
+    losses: number
+    gamesWon: number
+    gamesLost: number
+    monDiff: number
+  }>
+  /** One per series, in the shape the stats views already read. */
+  matchStats: MatchStat[]
+}
+
+/**
+ * A season's records, with the playoffs counted or not.
+ *
+ * Both answers are wanted and neither is the truth on its own: the regular
+ * season is what the league's sheet recorded, and the playoffs are what
+ * happened after it. The tables offer the choice rather than picking.
+ */
+export function standingsWith(league: League, playoffs: boolean): Standing[] {
+  const add = playoffs ? league.postseason?.records : null
+  if (!add) return league.standings
+  return league.standings.map((s) => {
+    const extra = add[s.player]
+    if (!extra) return s
+    return {
+      ...s,
+      wins: s.wins + extra.wins,
+      losses: s.losses + extra.losses,
+      gamesWon: s.gamesWon + extra.gamesWon,
+      gamesLost: s.gamesLost + extra.gamesLost,
+      monDiff: s.monDiff + extra.monDiff,
+    }
+  })
 }
 
 export interface League {

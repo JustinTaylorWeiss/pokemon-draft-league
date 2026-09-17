@@ -17386,6 +17386,516 @@
    "jeremy": 4,
    "ferlo": 5,
    "nick": 6
-  }
+  },
+  "records": {
+   "hunter": {
+    "wins": 1,
+    "losses": 1,
+    "gamesWon": 2,
+    "gamesLost": 3,
+    "monDiff": -2
+   },
+   "swjf": {
+    "wins": 3,
+    "losses": 0,
+    "gamesWon": 6,
+    "gamesLost": 1,
+    "monDiff": 8
+   },
+   "nick": {
+    "wins": 0,
+    "losses": 2,
+    "gamesWon": 2,
+    "gamesLost": 4,
+    "monDiff": -3
+   },
+   "bikeytomato": {
+    "wins": 2,
+    "losses": 1,
+    "gamesWon": 4,
+    "gamesLost": 3,
+    "monDiff": 4
+   },
+   "jeremy": {
+    "wins": 0,
+    "losses": 1,
+    "gamesWon": 1,
+    "gamesLost": 3,
+    "monDiff": -4
+   },
+   "ferlo": {
+    "wins": 0,
+    "losses": 1,
+    "gamesWon": 2,
+    "gamesLost": 3,
+    "monDiff": -3
+   }
+  },
+  "matchStats": [
+   {
+    "week": 0,
+    "a": {
+     "team": "Hunter",
+     "result": "L",
+     "score": 0,
+     "lines": [
+      {
+       "pokemon": "decidueyehisui",
+       "kills": 2,
+       "deaths": 2
+      },
+      {
+       "pokemon": "slowbro",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "venonat",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "zoroarkhisui",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "armarouge",
+       "kills": 0,
+       "deaths": 1
+      }
+     ]
+    },
+    "b": {
+     "team": "SWJF",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "tyranitar",
+       "kills": 4,
+       "deaths": 1
+      },
+      {
+       "pokemon": "excadrill",
+       "kills": 1,
+       "deaths": 1
+      },
+      {
+       "pokemon": "sinistcha",
+       "kills": 3,
+       "deaths": 0
+      },
+      {
+       "pokemon": "ditto",
+       "kills": 0,
+       "deaths": 1
+      }
+     ]
+    }
+   },
+   {
+    "week": 0,
+    "a": {
+     "team": "Hunter",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "slowbro",
+       "kills": 2,
+       "deaths": 3
+      },
+      {
+       "pokemon": "armarouge",
+       "kills": 3,
+       "deaths": 1
+      },
+      {
+       "pokemon": "venonat",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "zoroarkhisui",
+       "kills": 2,
+       "deaths": 2
+      },
+      {
+       "pokemon": "decidueyehisui",
+       "kills": 3,
+       "deaths": 1
+      }
+     ]
+    },
+    "b": {
+     "team": "Nick",
+     "result": "L",
+     "score": 1,
+     "lines": [
+      {
+       "pokemon": "scrafty",
+       "kills": 4,
+       "deaths": 3
+      },
+      {
+       "pokemon": "gothitelle",
+       "kills": 0,
+       "deaths": 3
+      },
+      {
+       "pokemon": "grafaiai",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "politoed",
+       "kills": 2,
+       "deaths": 3
+      }
+     ]
+    }
+   },
+   {
+    "week": 0,
+    "a": {
+     "team": "SWJF",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "grimmsnarl",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "lapras",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "sinistcha",
+       "kills": 2,
+       "deaths": 1
+      },
+      {
+       "pokemon": "ditto",
+       "kills": 1,
+       "deaths": 1
+      },
+      {
+       "pokemon": "tyranitar",
+       "kills": 1,
+       "deaths": 0
+      },
+      {
+       "pokemon": "excadrill",
+       "kills": 1,
+       "deaths": 0
+      }
+     ]
+    },
+    "b": {
+     "team": "Nick",
+     "result": "L",
+     "score": 1,
+     "lines": [
+      {
+       "pokemon": "scrafty",
+       "kills": 1,
+       "deaths": 1
+      },
+      {
+       "pokemon": "gothitelle",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "grafaiai",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "politoed",
+       "kills": 0,
+       "deaths": 1
+      }
+     ]
+    }
+   },
+   {
+    "week": 0,
+    "a": {
+     "team": "BikeyTomato",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "porygon2",
+       "kills": 2,
+       "deaths": 1
+      },
+      {
+       "pokemon": "scraggy",
+       "kills": 3,
+       "deaths": 1
+      },
+      {
+       "pokemon": "ursalunabloodmoon",
+       "kills": 1,
+       "deaths": 1
+      },
+      {
+       "pokemon": "emboar",
+       "kills": 2,
+       "deaths": 1
+      }
+     ]
+    },
+    "b": {
+     "team": "Jeremy",
+     "result": "L",
+     "score": 0,
+     "lines": [
+      {
+       "pokemon": "smeargle",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "volcarona",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "avalugghisui",
+       "kills": 1,
+       "deaths": 1
+      },
+      {
+       "pokemon": "ninetalesalola",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "hatterene",
+       "kills": 2,
+       "deaths": 1
+      },
+      {
+       "pokemon": "indeedeef",
+       "kills": 0,
+       "deaths": 1
+      }
+     ]
+    }
+   },
+   {
+    "week": 0,
+    "a": {
+     "team": "BikeyTomato",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "porygon2",
+       "kills": 3,
+       "deaths": 1
+      },
+      {
+       "pokemon": "araquanid",
+       "kills": 2,
+       "deaths": 1
+      },
+      {
+       "pokemon": "metagross",
+       "kills": 2,
+       "deaths": 0
+      },
+      {
+       "pokemon": "ursalunabloodmoon",
+       "kills": 2,
+       "deaths": 1
+      },
+      {
+       "pokemon": "emboar",
+       "kills": 0,
+       "deaths": 1
+      }
+     ]
+    },
+    "b": {
+     "team": "Ferlo",
+     "result": "L",
+     "score": 1,
+     "lines": [
+      {
+       "pokemon": "greedent",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "taurospaldeaaqua",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "florges",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "dragapult",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "exeggutor",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "torkoal",
+       "kills": 2,
+       "deaths": 1
+      }
+     ]
+    }
+   },
+   {
+    "week": 0,
+    "a": {
+     "team": "Ferlo",
+     "result": null,
+     "score": 1,
+     "lines": [
+      {
+       "pokemon": "taurospaldeaaqua",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "florges",
+       "kills": 1,
+       "deaths": 1
+      },
+      {
+       "pokemon": "dragapult",
+       "kills": 1,
+       "deaths": 1
+      },
+      {
+       "pokemon": "torkoal",
+       "kills": 3,
+       "deaths": 1
+      }
+     ]
+    },
+    "b": {
+     "team": "Jeremy",
+     "result": null,
+     "score": 1,
+     "lines": [
+      {
+       "pokemon": "smeargle",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "hatterene",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "volcarona",
+       "kills": 1,
+       "deaths": 0
+      },
+      {
+       "pokemon": "ninetalesalola",
+       "kills": 2,
+       "deaths": 1
+      },
+      {
+       "pokemon": "indeedeef",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "avalugghisui",
+       "kills": 0,
+       "deaths": 1
+      }
+     ]
+    }
+   },
+   {
+    "week": 0,
+    "a": {
+     "team": "BikeyTomato",
+     "result": "L",
+     "score": 0,
+     "lines": [
+      {
+       "pokemon": "emboar",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "porygon2",
+       "kills": 0,
+       "deaths": 2
+      },
+      {
+       "pokemon": "ursalunabloodmoon",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "araquanid",
+       "kills": 3,
+       "deaths": 2
+      }
+     ]
+    },
+    "b": {
+     "team": "SWJF",
+     "result": "W",
+     "score": 2,
+     "lines": [
+      {
+       "pokemon": "lapras",
+       "kills": 3,
+       "deaths": 0
+      },
+      {
+       "pokemon": "sinistcha",
+       "kills": 3,
+       "deaths": 1
+      },
+      {
+       "pokemon": "coalossal",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "grimmsnarl",
+       "kills": 1,
+       "deaths": 2
+      },
+      {
+       "pokemon": "tyranitar",
+       "kills": 0,
+       "deaths": 1
+      },
+      {
+       "pokemon": "excadrill",
+       "kills": 1,
+       "deaths": 0
+      }
+     ]
+    }
+   }
+  ]
  }
 }

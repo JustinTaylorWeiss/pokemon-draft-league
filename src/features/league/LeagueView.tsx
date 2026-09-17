@@ -4,7 +4,7 @@ import type { PokemonDex } from '../../data/types'
 import {
   byId, byTier, currentSeason, isMega, loadLeague, megaParts, mergeDex, reloadSeason, subscribeLeague,
   tierClass,
-  totalsFromMatches, type Standing,
+  standingsWith, totalsFromMatches, type Standing,
   type GameLine, type League, type LeaguePokemon, type Match, type MatchStat,
   type PokemonTotals,
 } from '../../data/league'
@@ -31,6 +31,12 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
   const [league, setLeague] = useState<League | null>(null)
   const [rawDex, setRawDex] = useState<PokemonDex | null>(null)
   const [error, setError] = useState<string | null>(null)
+  /**
+   * Whether the playoffs are being counted. Held here rather than in either
+   * tab so the answer survives moving between them: a reader who has asked for
+   * the playoffs in the coaches' table means it for the Pokemon's too.
+   */
+  const [playoffs, setPlayoffs] = useState(false)
 
   useEffect(() => {
     Promise.all([loadLeague(), loadPokemon()]).then(
@@ -58,13 +64,42 @@ export function LeagueView({ tab }: { tab: LeagueTab }) {
 
   return (
     <div className="league">
-      {tab === 'standings' && <Standings league={league} dex={dex} />}
+      {tab === 'standings' && (
+        <Standings league={league} dex={dex} playoffs={playoffs} onPlayoffs={setPlayoffs} />
+      )}
       {tab === 'matches' && <Matches league={league} dex={dex} />}
       {tab === 'board' && <Board league={league} dex={dex} />}
       {tab === 'my-team' && <DraftTeams league={league} dex={dex} />}
       {tab === 'history' && <History league={league} />}
-      {tab === 'stats' && <Stats league={league} dex={dex} />}
+      {tab === 'stats' && (
+        <Stats league={league} dex={dex} playoffs={playoffs} onPlayoffs={setPlayoffs} />
+      )}
       {tab === 'rules' && <Rules league={league} />}
+    </div>
+  )
+}
+
+/**
+ * Count the playoffs, or do not.
+ *
+ * Only offered where there were any. The regular season is what the league's
+ * sheet recorded and is what the tables have always shown, so it is the side
+ * that is on to begin with; the playoffs are a handful of matches that can
+ * move a coach several places and are worth being able to see either way.
+ */
+function PlayoffToggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="pill-group" role="group" aria-label="Whether to count the playoffs">
+      {([false, true] as const).map((v) => (
+        <button
+          key={String(v)} type="button"
+          className={`pill${on === v ? ' is-active' : ''}`}
+          aria-pressed={on === v}
+          onClick={() => onChange(v)}
+        >
+          {v ? 'With playoffs' : 'Regular season'}
+        </button>
+      ))}
     </div>
   )
 }
@@ -194,7 +229,12 @@ const ALL_TIME_COLUMNS: StatColumn[] =
 
 type StatSort = 'kills' | 'deaths' | 'diff' | 'gamesPlayed' | 'killsPerGame' | 'kd' | 'name' | 'tier'
 
-function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
+function Stats({ league, dex, playoffs, onPlayoffs }: {
+  league: League
+  dex: Record<string, LeaguePokemon>
+  playoffs: boolean
+  onPlayoffs: (v: boolean) => void
+}) {
   // dir 0 is the power ranking above; a column cycles through both directions
   // and back to it.
   const [sort, setSort] = useState<{ key: StatSort; dir: 1 | -1 | 0 }>({ key: 'kills', dir: 0 })
@@ -230,7 +270,17 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
     setSort({ key: 'kills', dir: 0 })
   }
 
-  const matches = useMemo(() => league.matchStats ?? [], [league.matchStats])
+  const extra = league.postseason?.matchStats
+  const hadPlayoffs = Boolean(extra?.length)
+  /**
+   * A playoff game's kills are kills, so with the playoffs counted they are
+   * simply more matches — and without them the board is the regular season
+   * exactly as it was.
+   */
+  const matches = useMemo(
+    () => (playoffs && extra ? [...(league.matchStats ?? []), ...extra] : league.matchStats ?? []),
+    [league.matchStats, extra, playoffs],
+  )
   const allTime = currentSeason().source === 'all-time'
   /** One everywhere else: every Pokemon that played at all is on the board. */
   const minGames = allTime ? ALL_TIME_MINIMUM : 1
@@ -324,6 +374,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
             placeholder="Search Pokémon…" aria-label="Search stats"
           />
           <span className="count">{rows.length} Pokémon</span>
+          {hadPlayoffs && <PlayoffToggle on={playoffs} onChange={onPlayoffs} />}
           {/* What the order actually is, whether that is the power ranking or
               the award whose tab is open. Dropped once a column is picked,
               since the chain would then describe something that is not
@@ -474,7 +525,7 @@ function Rules({ league }: { league: League }) {
  * else, so it is resolved from the schedule rather than stored: whoever won
  * more of the series they played against each other.
  */
-function rankStandings(league: League): Standing[] {
+function rankStandings(league: League, playoffs: boolean): Standing[] {
   const headToHead = (a: Standing, b: Standing) => {
     let wins = 0
     for (const m of league.schedule) {
@@ -489,7 +540,8 @@ function rankStandings(league: League): Standing[] {
 
   const rate = (won: number, total: number) => (total ? won / total : 0)
 
-  const byRecord = [...league.standings]
+  const byRecord = standingsWith(league, playoffs)
+    .slice()
     .sort((a, b) =>
       // Seasons won come before anything a record can say, and only the
       // all-time table has any — within a season every row is undefined here
@@ -513,7 +565,9 @@ function rankStandings(league: League): Standing[] {
    * playoffs has nothing in the bracket to be ranked by.
    */
   const placed = league.postseason?.placement
-  if (!placed) return byRecord.map((s, i) => ({ ...s, rank: i + 1 }))
+  if (!placed || !Object.keys(placed).length) {
+    return byRecord.map((s, i) => ({ ...s, rank: i + 1 }))
+  }
   return [
     ...byRecord.filter((s) => placed[s.player] != null)
       .sort((a, b) => placed[a.player] - placed[b.player]),
@@ -521,8 +575,15 @@ function rankStandings(league: League): Standing[] {
   ].map((s, i) => ({ ...s, rank: i + 1 }))
 }
 
-function Standings({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
-  const ranked = rankStandings(league)
+function Standings({ league, dex, playoffs, onPlayoffs }: {
+  league: League
+  dex: Record<string, LeaguePokemon>
+  playoffs: boolean
+  onPlayoffs: (v: boolean) => void
+}) {
+  const hadPlayoffs = Boolean(league.postseason?.records
+    && Object.keys(league.postseason.records).length)
+  const ranked = rankStandings(league, playoffs && hadPlayoffs)
   const editable = currentSeason().source === 'database'
   /**
    * The all-time table has no team behind a row to open.
@@ -564,11 +625,22 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
         )}
         {/* The tiebreaks in the order they apply, sitting where the columns they
             refer to are — one line, so it reads as a caption and not a paragraph. */}
+        {hadPlayoffs && <PlayoffToggle on={playoffs} onChange={onPlayoffs} />}
         <p className="sort-note">
-          {league.postseason?.placement && (
-            <span className="qualifier" title="The coaches who reached the playoffs are in the order they went out; the rest follow on their regular-season record.">
-              Postseason finish
-            </span>
+          {Boolean(league.postseason?.placement
+            && Object.keys(league.postseason.placement).length) && (
+            // Season 1 had no bracket at all — the archive simply names its
+            // champion — so there is no postseason finish to order by there,
+            // only a winner to put first.
+            hadPlayoffs ? (
+              <span className="qualifier" title="The coaches who reached the playoffs are in the order they went out; the rest follow on their regular-season record.">
+                Postseason finish
+              </span>
+            ) : (
+              <span className="qualifier" title="This season had no playoffs. The archive names its champion, and the rest follow on their regular-season record.">
+                Champion first
+              </span>
+            )
           )}
           <span>
             {allTime && 'Championships → '}
