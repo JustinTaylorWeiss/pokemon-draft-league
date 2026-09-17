@@ -6,10 +6,10 @@
  * lore-and-flavor shape PokeAPI returns. Generation 9 is the baseline: no
  * past-gen-only moves, and no species the current games do not have.
  *
- * Three sets of species are kept past that line, each because the league needs
- * them and none because Showdown says so: Mega and Primal formes, the base
- * forme of every Mega kept, and the species Pokemon Champions brings back that
- * Scarlet/Violet dropped. See `isKeptMega` and `CHAMPIONS_RETURNS` below.
+ * Species are the exception: every real one is kept, of every generation, so a
+ * season drafting outside the current games — Champions, or a National Dex
+ * Little Cup — has a dex that knows what it drafted. Only Smogon's invented
+ * Pokémon are dropped. See `isFakemon` below.
  *
  * Run with `npm run build:data`. Output lands in public/data/ as plain JSON so
  * the app can fetch it lazily instead of inlining it into the JS bundle.
@@ -53,15 +53,9 @@ async function fetchScript(name) {
 }
 
 /**
- * Showdown marks anything unavailable in the current games with `isNonstandard`
- * ("Past", "CAP", "Future", "Custom"). Null means legal right now.
- *
- * Mega and Primal formes are the exception, and are kept despite the mark. A
- * Mega season needs them, and Showdown files them either as "Past" (the Gen 6
- * and 7 Megas) or "Future" (the ones announced for Legends Z-A) — neither of
- * which is a statement about this league. Which of them a season may actually
- * draft is decided by that season's board, not here; this only decides what the
- * site knows about them.
+ * Whether a forme is a Mega or a Primal, which the dataset treats specially in
+ * two places: a Mega has one ability rather than a choice of three, and it is
+ * an evolution of something, which the site draws it as.
  *
  * "Mega" is matched as a whole segment of the forme, anywhere in it, and not
  * as a prefix. Six of them Mega Evolve from a forme rather than from a species
@@ -74,53 +68,14 @@ async function fetchScript(name) {
 const isMega = (entry) => /(^|-)(Mega|Primal)(-|$)/.test(entry.forme ?? '')
 
 /**
- * The exception is only for real Megas. CAP has drawn one of its own
- * (Crucibelle-Mega), and it is a fakemon like the rest of CAP: the mark that
- * keeps Crucibelle out keeps its Mega out too.
- */
-const isKeptMega = (entry) =>
-  isMega(entry) && (!entry.isNonstandard || ['Past', 'Future'].includes(entry.isNonstandard))
-
-/**
- * Species Pokemon Champions has that Scarlet/Violet does not.
+ * Which Pokemon a Mega is the Mega of.
  *
- * Season 5 is played in Champions, and Champions' roster is not Gen 9's: it
- * brings back Pokemon Showdown still files as "Past" because the Switch games
- * dropped them. The league's Regulation M-C list prices all of these, so the
- * site has to know them or a priced Pokemon has no page, no stats and no sprite.
- *
- * Written out rather than derived, because nothing in Showdown's data says what
- * Champions has — this list came from the league's own board. A later
- * regulation that brings more back extends it.
- *
- * Gourgeist is here with all four sizes: the league prices them together, and
- * the sizes are a real competitive choice (they differ in HP and Speed), not a
- * cosmetic one like Vivillon's patterns.
- */
-const CHAMPIONS_RETURNS = new Set([
-  'aegislash', 'aromatisse', 'aurorus', 'castform', 'cofagrigus', 'diggersby',
-  'emolga', 'farfetchd', 'floetteeternal', 'furfrou', 'garbodor',
-  'gourgeist', 'gourgeistsmall', 'gourgeistlarge', 'gourgeistsuper',
-  'grapploct', 'heliolisk', 'liepard', 'machamp', 'mrmime', 'mrrime',
-  'musharna', 'pangoro', 'roserade', 'runerigus', 'simipour', 'simisage',
-  'simisear', 'sirfetchd', 'slurpuff', 'stunfisk', 'stunfiskgalar', 'thievul',
-  'tyrantrum', 'vanilluxe', 'watchog',
-])
-
-/**
- * The forme a Mega evolves from, which is not always the base species.
- *
- * Six Megas evolve from a forme and are named for it — "M-Mega", "F-Mega",
- * "Curly-Mega" — so strip the Mega off the end and what is left names the
- * parent: Meowstic-F-Mega comes from Meowstic-F, not from Meowstic, which is
- * the male. That matters beyond tidiness, because a Mega has no movepool of its
- * own and takes its parent's, and the two Meowstics do not share one — she gets
- * Extrasensory, Future Sight and Magical Leaf, he gets Imprison, Mean Look,
- * Misty Terrain and Quick Guard.
- *
- * Where nothing is left, or what is left is not a forme Showdown files apart,
- * it is the base species: plain "Mega", and "M-Mega" and "Curly-Mega", whose
- * parents are the default formes and so have no id of their own.
+ * Usually the base species, and for most of them the name says so: strip
+ * "-Mega" off Charizard-Mega-X and Charizard is left. Not always, though.
+ * Meowstic-F-Mega Megas from Meowstic-F, a different Pokemon from Meowstic
+ * with a different movepool, and reading the base species would send it to
+ * the wrong one. So the forme is read first and only falls back to the base
+ * species when there is no such forme in the dex.
  */
 const megaEvolvesFrom = (entry, exists) => {
   const from = (entry.forme ?? '').replace(/(^|-)(Mega|Primal)(-.*)?$/, '')
@@ -128,6 +83,48 @@ const megaEvolvesFrom = (entry, exists) => {
   return forme && exists(forme) ? forme : toId(entry.baseSpecies)
 }
 
+/**
+ * Every Pokémon there is, rather than only the ones the current games have.
+ *
+ * This used to be Gen 9 plus a growing pile of exceptions: the Megas, the base
+ * forme of each Mega, a list of what Pokémon Champions brings back for Season
+ * 5, a list of the National Dex Little Cup board Season 3 drafted. Each was
+ * written out by hand after a season turned up Pokémon the site could not name
+ * or draw, and each only covered the season that prompted it — the next
+ * National Dex season would have started the cycle again.
+ *
+ * So the line moved. Anything with a real dex number is kept, whatever the
+ * current games think of it, which is every stage of every evolution line and
+ * every regional forme from Kanto to Paldea. What a season may actually draft
+ * was never decided here anyway — that is its board.
+ *
+ * Fakemon are still out. CAP is Smogon's own invented Pokémon and "Custom" is
+ * the engine's scratch space; neither has ever been in a game.
+ */
+const isFakemon = (entry) => ['CAP', 'Custom'].includes(entry.isNonstandard)
+
+/**
+ * Whether a learnset source is a way of actually learning the move.
+ *
+ * Showdown's letter says how: L level, M machine, E breeding, T tutor, S event.
+ * Two others are not methods at all. `V` means the move only came along on a
+ * Pokemon transferred in from an older game, and `R` means the forme is
+ * required to know it — Rotom-Heat and Overheat, Zacian-Crowned and Behemoth
+ * Blade. Neither is something a view can file under a heading.
+ */
+const isLearnable = (method) => 'LMETS'.includes(method)
+
+/**
+ * Showdown marks anything unavailable in the current games with `isNonstandard`
+ * ("Past", "CAP", "Future", "Custom"). Null means legal right now.
+ *
+ * Moves and abilities are held to it; species are not. A season can draft a
+ * Pokemon the current games left out — Season 3 drafted a hundred and sixty of
+ * them — but it still plays under this generation's rules, so that Pokemon
+ * brings the movepool and the abilities it has today, not the ones it had in
+ * Gen 5. Hidden Power is gone for everyone, which is why Unown, whose whole
+ * movepool was Hidden Power, has no moves at all.
+ */
 const isCurrentGen = (entry) => !entry.isNonstandard
 
 async function main() {
@@ -144,29 +141,11 @@ async function main() {
   const stats = {}
 
   // ---- Pokemon -------------------------------------------------------------
-  /**
-   * The base forme of every Mega worth keeping, kept with it.
-   *
-   * A Mega is only half an entry on its own: the site files it one evolution on
-   * from its base, and its movepool is the base's, because Showdown ships none
-   * under a Mega's own id. Twenty-two Megas had neither — Aerodactyl, Alakazam,
-   * Kangaskhan and the rest left Scarlet/Violet and took their Megas' moves
-   * with them — so the base comes along whatever the current games think of it.
-   */
-  const megaBases = new Set(
-    Object.values(dex).filter(isKeptMega).flatMap((p) => [
-      toId(p.baseSpecies),
-      megaEvolvesFrom(p, (id) => id in dex),
-    ]),
-  )
-
   const pokemon = {}
   for (const [id, p] of Object.entries(dex)) {
-    // Showdown keeps CAP fakemon and retired formes in the same table. The
-    // `formats` check is skipped for Megas as well as the dex one: it marks
-    // them by the same rule, and it has no forme to recognise them by.
-    const kept = isKeptMega(p) || megaBases.has(id) || CHAMPIONS_RETURNS.has(id)
-    if (!kept && (!isCurrentGen(p) || !isCurrentGen(formats[id] ?? {}))) continue
+    // Showdown keeps its own invented Pokémon in the same table as the real
+    // ones, and a handful of engine placeholders below dex number one.
+    if (isFakemon(p)) continue
     if (!p.num || p.num < 1) continue // MissingNo and egg placeholders use num <= 0
 
     const bs = p.baseStats
@@ -265,20 +244,44 @@ async function main() {
      * know what Champions gives them back until Champions is playable there, so
      * the newest movepool it does record stands in. It is still filtered to
      * moves that exist in Gen 9 below, so nothing retired comes back with it.
+     *
+     * The newest generation that records a way of *learning* something, which
+     * is not always the newest generation present. Pidgeot, Beedrill and Paras
+     * each have a Gen 8 entry holding nothing but transfer marks — every real
+     * method stopped at Gen 7 — so taking the highest number gave them
+     * twenty-odd moves that no view could file anywhere and a page that looked
+     * like the Pokemon had no moves at all.
      */
-    const gens = new Set()
+    const learnable = new Set()
+    const present = new Set()
     for (const sources of Object.values(entry.learnset)) {
-      for (const source of sources) gens.add(Number(source[0]))
+      for (const source of sources) {
+        present.add(Number(source[0]))
+        if (isLearnable(source[1])) learnable.add(Number(source[0]))
+      }
     }
-    if (!gens.size) continue
-    const gen = gens.has(CURRENT_GEN) ? CURRENT_GEN : Math.max(...gens)
+    if (!present.size) continue
+    const gen = learnable.has(CURRENT_GEN) ? CURRENT_GEN
+      // Nothing learnable anywhere is a forme whose whole entry is its required
+      // move; it keeps that, and takes the rest from the Pokemon it is a forme of.
+      : Math.max(...(learnable.size ? learnable : present))
     if (gen !== CURRENT_GEN) fromOlderGen++
 
     const kept = {}
     for (const [move, sources] of Object.entries(entry.learnset)) {
       sourcesTotal += sources.length
       if (!movesOut[move]) continue
-      const current = sources.filter((s) => s.startsWith(String(gen)))
+      /*
+       * Only the ways it can actually be learned, plus the forme's required
+       * move. A transfer mark is not a way of learning anything — the move came
+       * along on a Pokemon moved in from an older game — and nothing downstream
+       * treats it as one: the moves table files sources under headings and has
+       * no heading for it, so those moves were in the data and on no page.
+       * Coverage does not read the heading, though, and was counting attacking
+       * types off moves that cannot be used.
+       */
+      const current = sources.filter((s) =>
+        s.startsWith(String(gen)) && (isLearnable(s[1]) || s[1] === 'R'))
       if (!current.length) continue
       sourcesKept += current.length
       // Strip the leading gen digit: which generation a move was learned in is
@@ -298,16 +301,30 @@ async function main() {
   // inherits from that forme: Meowstic-F-Mega learns what Meowstic-F learns,
   // and copying the male's movepool onto her was wrong in seven moves.
   let inherited = 0
+  let topped = 0
   for (const [id, p] of Object.entries(pokemon)) {
-    if (!p.baseSpecies || learnOut[id]) continue
+    if (!p.baseSpecies) continue
     const base = learnOut[p.megaBase ?? toId(p.baseSpecies)]
     if (!base) continue
-    learnOut[id] = base
-    inherited++
+    const own = learnOut[id]
+    if (!own) { learnOut[id] = base; inherited++; continue }
+
+    /*
+     * An entry holding no learnable source is not a movepool — it is the one
+     * move the forme is required to know, listed on its own. Rotom-Heat's is
+     * Overheat, Zacian-Crowned's is Behemoth Blade. Read as a pool it replaced
+     * the base's, so five Rotoms, two Necrozmas and two heroes of Galar each
+     * showed exactly one move and no way to file it.
+     *
+     * Added to the base's rather than replacing it, which is what it is.
+     */
+    const hasPool = Object.values(own).some((sources) => sources.some((s) => isLearnable(s[0])))
+    if (!hasPool) { learnOut[id] = { ...base, ...own }; topped++ }
   }
   stats.learnsets = {
     kept: Object.keys(learnOut).length,
     inheritedFromBase: inherited,
+    signatureToppedUp: topped,
     fromOlderGen,
     sourcesKept,
     sourcesDropped: sourcesTotal - sourcesKept,
