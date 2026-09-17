@@ -176,6 +176,56 @@ export function DraftTeams({ league, dex }: Props) {
 
   return (
     <div className="draft-teams">
+      {/* The draft order is about the league and not about your team, so it
+          sits outside the panel that holds yours and shows whoever is looking.
+          Someone watching came to see whose turn it is as much as anybody. */}
+      {order && (
+        <section className="panel draft-order-panel">
+          <div className="draft-order" aria-label={`Draft order, round ${order.round}`}>
+            <h4>
+              Draft order
+              <span className="panel-note">Round {order.round}</span>
+            </h4>
+            <ol>
+              {order.seats.map((seat) => (
+                <li
+                  key={seat.player}
+                  className={`${seat.isUp ? 'is-up' : ''}${seat.player === me ? ' is-me' : ''}`}
+                  title={seat.isUp ? `${seat.name} is up` : undefined}
+                >
+                  <span className="draft-order-pos">{seat.order}</span>
+                  <span className="draft-order-who">
+                    <strong>{seat.name}</strong>
+                    {/* How far along they are, which is also what decides
+                        whose turn it is. */}
+                    <em>{seat.picks} drafted</em>
+                  </span>
+                  {/* What they took this round, for the seats that have been.
+                      The ones still to come show nothing rather than a dash:
+                      the gap is the point, and it is where the strip is
+                      waiting. */}
+                  {(() => {
+                    const id = takenInOrder[seat.player]?.[order.round - 1]
+                    const mon = id ? dex[id] : null
+                    if (!mon) return null
+                    return (
+                      <span className="draft-order-pick" title={mon.name}>
+                        {/* The sprite alone. The strip is a row of chips read
+                            at a glance for who is up, and a name on each one
+                            is wider than the name of the person who took it.
+                            The title says which, and the team below spells it
+                            out. */}
+                        <Sprite pokemon={mon} width={34} height={28} />
+                      </span>
+                    )
+                  })()}
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+      )}
+
       {!me ? (
         <p className="panel-note">
           {isSpectator(identity)
@@ -184,50 +234,6 @@ export function DraftTeams({ league, dex }: Props) {
         </p>
       ) : (
         <section className="panel draft-mine">
-          {order && (
-            <div className="draft-order" aria-label={`Draft order, round ${order.round}`}>
-              <h4>
-                Draft order
-                <span className="panel-note">Round {order.round}</span>
-              </h4>
-              <ol>
-                {order.seats.map((seat) => (
-                  <li
-                    key={seat.player}
-                    className={`${seat.isUp ? 'is-up' : ''}${seat.player === me ? ' is-me' : ''}`}
-                    title={seat.isUp ? `${seat.name} is up` : undefined}
-                  >
-                    <span className="draft-order-pos">{seat.order}</span>
-                    <span className="draft-order-who">
-                      <strong>{seat.name}</strong>
-                      {/* How far along they are, which is also what decides
-                          whose turn it is. */}
-                      <em>{seat.picks} drafted</em>
-                    </span>
-                    {/* What they took this round, for the seats that have been.
-                        The ones still to come show nothing rather than a dash:
-                        the gap is the point, and it is where the strip is
-                        waiting. */}
-                    {(() => {
-                      const id = takenInOrder[seat.player]?.[order.round - 1]
-                      const mon = id ? dex[id] : null
-                      if (!mon) return null
-                      return (
-                        <span className="draft-order-pick" title={mon.name}>
-                          {/* The sprite alone. The strip is a row of chips read
-                              at a glance for who is up, and a name on each one
-                              is wider than the name of the person who took it.
-                              The title says which, and the team below spells it
-                              out. */}
-                          <Sprite pokemon={mon} width={34} height={28} />
-                        </span>
-                      )
-                    })()}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
           <div className="draft-head">
             <h3>
               Your team

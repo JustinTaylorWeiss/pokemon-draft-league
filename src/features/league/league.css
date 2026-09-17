@@ -1143,6 +1143,10 @@
 /* A strip rather than a list: it is glanceable state, not something to read
    down. It scrolls sideways because a full league is twenty deep. */
 .draft-order { margin-bottom: 1rem; }
+/* On its own card now rather than at the top of your team's, so the margin that
+   separated it from what followed has nothing left to separate it from. */
+.draft-order-panel { margin-bottom: 1rem; }
+.draft-order-panel .draft-order { margin-bottom: 0; }
 .draft-order h4 {
   margin: 0 0 0.5rem; font-size: 0.72rem; font-weight: 700;
   letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
