@@ -158,7 +158,7 @@
   position: relative;
   /* Top-aligned so extra stat rows grow downward instead of pushing every
      other filter to the bottom of the panel. */
-  display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: flex-start;
+  display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: flex-start;
   padding: 0.85rem;
   border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
 }
@@ -193,11 +193,14 @@
   .filter-actions { margin-left: 0; }
 }
 .filter select { min-width: 6rem; }
-/* Both type dropdowns fixed to one width so they read as a matched pair. */
-.filter-type select { width: 8.5rem; min-width: 0; }
+/* Both type dropdowns fixed to one width so they read as a matched pair, and
+   only as wide as their longest option needs — "Fighting" plus the arrow — so
+   the count stays up on the same row instead of wrapping under it. */
+.filter-type select { width: 6rem; min-width: 0; padding-right: 1.4rem; }
 /* Ability and Move are datalist-backed, so they can be narrower than a plain
-   text field and still leave room for the count on the same row. */
-.filter-narrow input { width: 7.5rem; min-width: 0; }
+   text field and still leave room for the count on the same row — which is
+   what this width is for, so it is the one that gives when the row is tight. */
+.filter-narrow input { width: 6rem; min-width: 0; }
 /* Extra conditions stack under the first, each able to close itself. */
 .filter-stat { gap: 0.3rem; align-items: flex-start; }
 .stat-step {
