@@ -13,6 +13,7 @@ import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
 import type { LeagueTab } from './tabs'
 import { useAdvanced } from '../dex/advanced'
+import { useElementHeight } from '../../lib/useElementHeight'
 import './league.css'
 import { PokemonLink } from '../../components/PokemonLink'
 import { LoadingBall } from '../../components/LoadingBall'
@@ -1526,6 +1527,16 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
    */
   const [advanced, setAdvanced] = useState(false)
   const adv = useAdvanced('board')
+  /**
+   * How tall the pinned filters are, so the table's header can pin under them.
+   *
+   * Measured rather than assumed because it changes: the advanced row doubles
+   * it, and the whole lot wraps to three lines on a phone.
+   */
+  const [barRef, barHeight] = useElementHeight<HTMLDivElement>()
+  useEffect(() => {
+    document.documentElement.style.setProperty('--board-bar-h', `${barHeight ?? 0}px`)
+  }, [barHeight])
   // dir 0 is the board's own order — best tier first, strongest within it —
   // rather than "unsorted". It is what the board looks like before anyone
   // touches a column, so no column is marked as doing it.
@@ -1622,9 +1633,11 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
 
   return (
     <>
-      {/* Above the pinned bar rather than inside it: it is a row of nine
-          controls, and carrying that down the page would leave a third of the
-          screen pinned over a board people are scrolling. */}
+      {/* Everything that narrows the board, pinned together. The advanced row
+          is part of the same search as the bar under it, so it stays with it
+          rather than scrolling away and leaving a board filtered by controls
+          nobody can see. */}
+      <div className="board-bar" ref={barRef}>
       {advanced && (
         <div className="filters board-advanced">
           {adv.controls}
@@ -1738,9 +1751,10 @@ function Board({ league, dex }: { league: League; dex: Record<string, LeaguePoke
             beside the "draft mode enabled" marker in the bar above, which is
             the thing it turns on and off — and this row is filters. */}
       </div>
+      </div>
 
       <section className="panel">
-        <div className="table-scroll">
+        <div className="table-scroll board-scroll">
           <table className="stat-table board-table">
             <thead>
               <tr>

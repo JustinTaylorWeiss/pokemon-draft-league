@@ -295,7 +295,7 @@
  * the page: it is nine controls tall, and pinning it would hold a third of the
  * screen over a board people came here to scroll.
  */
-.board-advanced { margin-bottom: 0.75rem; }
+.board-advanced { margin-bottom: 0.6rem; }
 /*
  * The button that opens it, beside the search box it extends.
  *
@@ -347,12 +347,50 @@
  * The page's own background, because rows pass behind it, and the padding
  * that the shell would have given it above.
  */
+/*
+ * Everything that narrows the board, pinned as one block.
+ *
+ * The advanced row is part of the same search as the bar under it, so it stays
+ * with it: scrolling it away would leave a board filtered by controls nobody
+ * can see, and the ON marker on a toggle that has gone off screen says
+ * nothing. Pinned from the wrapper rather than from the bar so opening the row
+ * does not leave two sticky boxes fighting over one offset.
+ */
+.board-bar {
+  position: sticky; top: var(--bars-h); z-index: 20;
+  background: var(--bg); padding: 0.75rem 0; margin-top: -0.75rem;
+}
 .board-controls {
   /* Bottom-aligned, so the labels above the filters rise clear of a row that
      still lines up along one edge. */
   display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end;
-  position: sticky; top: var(--bars-h); z-index: 20;
-  background: var(--bg); padding: 0.75rem 0; margin-top: -0.75rem;
+}
+
+/*
+ * The column headings stay under the filters, so a row four hundred deep can
+ * still be read — which number is SPA and which is SPD is not something to
+ * hold in your head while scrolling.
+ *
+ * `position: sticky` sticks to the nearest scroll container, and `overflow-x:
+ * auto` makes one on both axes whether or not it was asked for. So the board's
+ * wrapper does not scroll at all above phone width: the table squeezes to
+ * 489px before it needs to, which is narrower than anything but a phone.
+ * Below 700px the scroller comes back and the header stops sticking, which is
+ * the trade — there is no pinned bar down there either.
+ */
+.board-scroll { overflow: visible; }
+.board-table thead th {
+  position: sticky; z-index: 15;
+  top: calc(var(--bars-h) + var(--board-bar-h, 0px));
+  background: var(--bg);
+  /* `border-collapse: collapse` hands the borders to the table, which leaves a
+     lifted header with none. Drawn back on as insets. */
+  box-shadow: inset 0 1px 0 var(--line), inset 0 -1px 0 var(--line);
+}
+
+@media (max-width: 700px) {
+  .board-scroll { overflow-x: auto; }
+  .board-table thead th { position: static; box-shadow: none; }
 }
 .board-controls > input[type="search"] {
   height: 2.2rem; padding: 0 0.7rem; flex: 0 1 18rem;
@@ -579,7 +617,7 @@
 
 @media (max-width: 700px) {
   /* The bars scroll away on a phone, so there is nothing to pin below. */
-  .board-controls { top: 0; }
+  .board-bar { top: 0; }
 }
 @media (max-width: 620px) {
   /* Wrapped onto their own line, the clocks read left to right like everything
