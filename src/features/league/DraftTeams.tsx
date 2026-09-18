@@ -521,12 +521,30 @@ export function DraftTeams({ league, dex }: Props) {
       <div className="draft-others">
         {others.map((p) => {
           const picks = [...(league.rosters[p.id] ?? [])].sort(byTierThenName)
+          /**
+           * What this team has spent, against what everyone gets.
+           *
+           * The same number your own panel leads with, because on a points
+           * season it is the whole shape of a draft: who can still afford a
+           * twenty and who is buying tens for the rest of the way. The costs
+           * are already on every row here, but a column of them is not a
+           * total, and adding eleven of them up is not reading.
+           */
+          const theirs = picks.reduce((total, pick) => total + (pick.points ?? 0), 0)
           return (
             <section key={p.id} className="panel draft-other">
               <header>
                 <strong>{p.name}</strong>
                 <span className="draft-other-count">{picks.length}</span>
                 <span className="panel-note">{p.team ?? '—'}</span>
+                {budget != null && (
+                  <span
+                    className={`draft-other-points${theirs > budget ? ' is-over' : ''}`}
+                    title={`${budget - theirs} of ${budget} left`}
+                  >
+                    {theirs}/{budget}
+                  </span>
+                )}
               </header>
               <ul>
                 {picks.map((pick) => {
