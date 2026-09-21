@@ -9,7 +9,7 @@ import { TeamsAndSpeed } from './TeamsAndSpeed'
 import { AnalysisCard } from './AnalysisCard'
 import './quick-matchup.css'
 import { LoadingBall } from '../../components/LoadingBall'
-import { takeMatchup } from './handoff'
+import { clearSolo, soloTeam, subscribeSolo } from './handoff'
 
 type Step = 'team1' | 'team2' | 'results'
 
@@ -61,39 +61,29 @@ export function QuickMatchup() {
   // is only one column, so the speed tiers move into the analysis card and the
   // teams card — roster list and all — is dropped rather than stacked.
   const singleColumn = useMediaQuery('(max-width: 1175px)')
+  /**
+   * The team being read on its own, sent here from the draft screen.
+   *
+   * Kept out of the two-team state entirely rather than loaded into side one:
+   * a coach looking at their own roster has not started building a matchup,
+   * and dropping their team into the builder would overwrite whatever they
+   * last had there to answer a question they did not ask.
+   */
+  const [solo, setSolo] = useState(soloTeam)
+  useEffect(() => subscribeSolo(() => setSolo(soloTeam())), [])
 
   useEffect(() => {
     loadCore().then((c) => {
       setCore(c)
       // Merged against no league: the saved ids resolve now, and the effect
       // below re-maps them through the real league once it arrives.
-      const raw = mergeDex(c.pokemon, null)
-      const saved = restoreTeams(raw)
-      if (saved) {
-        setTeamOne(saved.one)
-        setTeamTwo(saved.two)
-      }
-      /**
-       * A team sent from the draft screen replaces side one and stops at the
-       * builder, whatever was saved.
-       *
-       * At the builder rather than the analysis because the other side is
-       * whatever it was, and going straight to a verdict against an opponent
-       * chosen days ago would read as an answer about this team. Here you can
-       * see what landed and say who it is up against.
-       */
-      const sent = takeMatchup()
-      if (sent) {
-        setTeamOne({
-          name: sent.name,
-          members: sent.ids.filter((id) => raw[id]).map((id) => ({ id, pokemon: raw[id] })),
-        })
-        setStep('team1')
-        return
-      }
+      const saved = restoreTeams(mergeDex(c.pokemon, null))
+      if (!saved) return
+      setTeamOne(saved.one)
+      setTeamTwo(saved.two)
       // Both sides already filled means the last visit got as far as the
       // analysis; go straight back to it instead of re-walking the wizard.
-      if (saved?.one.members.length && saved.two.members.length) setStep('results')
+      if (saved.one.members.length && saved.two.members.length) setStep('results')
     }, (err: Error) => setError(err.message))
   }, [])
 
@@ -131,6 +121,15 @@ export function QuickMatchup() {
     setTeamTwo(rehydrate)
   }, [dex])
 
+  /** Built against the merged dex, so it carries the league's names and stats. */
+  const soloBuilt = useMemo((): Team | null => {
+    if (!solo || !dex) return null
+    return {
+      name: solo.name,
+      members: solo.ids.filter((id) => dex[id]).map((id) => ({ id, pokemon: dex[id] })),
+    }
+  }, [solo, dex])
+
   const [analyzed, other] = useMemo(
     () => (perspective === 'one' ? [teamOne, teamTwo] : [teamTwo, teamOne]),
     [perspective, teamOne, teamTwo],
@@ -138,6 +137,36 @@ export function QuickMatchup() {
 
   if (error) return <p className="error">Could not load data: {error}</p>
   if (!core || !dex) return <LoadingBall label="Loading dex…" />
+
+  if (soloBuilt) {
+    return (
+      <div className="results is-solo">
+        <div className="subbar subbar-bleed">
+          <div className="bar-inner matchup-bar">
+            <h2>{soloBuilt.name || 'Your team'}</h2>
+            <span className="panel-note">
+              {soloBuilt.members.length} Pokémon
+            </span>
+            {/* The way back to what this tool normally does. Whatever two-team
+                state was here is untouched, so it is still there. */}
+            <button type="button" className="btn ghost sm" onClick={clearSolo}>
+              Compare two teams
+            </button>
+          </div>
+        </div>
+
+        <div className="matchup-container">
+          {!singleColumn && <TeamsAndSpeed teamOne={soloBuilt} teamTwo={emptyTeam('')} solo />}
+          <AnalysisCard
+            analyzed={soloBuilt} other={emptyTeam('')}
+            chart={core.typechart} moves={core.moves} learnsets={learnsets}
+            teamOne={soloBuilt} teamTwo={emptyTeam('')} hostSpeedTiers={singleColumn}
+            solo
+          />
+        </div>
+      </div>
+    )
+  }
 
   if (step !== 'results') {
     return (

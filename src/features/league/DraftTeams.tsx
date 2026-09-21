@@ -8,7 +8,7 @@ import {
 } from '../../data/supabase'
 import { snakeDraft } from '../../lib/snakeDraft'
 import { isSpectator, myPlayerId, subscribeIdentity } from '../../data/identity'
-import { sendToMatchup } from '../quick-matchup/handoff'
+import { showSolo } from '../quick-matchup/handoff'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
 import { PokemonLink } from '../../components/PokemonLink'
@@ -352,13 +352,13 @@ export function DraftTeams({ league, dex }: Props) {
               {mine.length > 0 && (
                 <button
                   type="button" className="btn ghost sm draft-analyse"
-                  onClick={() => sendToMatchup({
+                  onClick={() => showSolo({
                     name: league.players.find((p) => p.id === me)?.team
                       || myName || 'My team',
                     ids: [...mine].sort(byPickOrder(me)).map((pick) => pick.pokemon),
                   })}
                 >
-                  Open in Quick Matchup
+                  Analyse in Quick Matchup
                 </button>
               )}
             </h3>

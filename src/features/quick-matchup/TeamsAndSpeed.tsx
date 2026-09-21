@@ -19,16 +19,18 @@ const TABS = [
 interface Props {
   teamOne: Team
   teamTwo: Team
+  /** One team, read on its own: one column, and the tab says so. */
+  solo?: boolean
 }
 
-export function TeamsAndSpeed({ teamOne, teamTwo }: Props) {
+export function TeamsAndSpeed({ teamOne, teamTwo, solo }: Props) {
   const [tab, setTab] = useState('teams')
   const speed = useSpeedTiersPanel(teamOne, teamTwo)
   const onSpeed = tab === 'speed'
 
   return (
     <Widget
-      tabs={TABS}
+      tabs={solo ? [{ key: 'teams', label: 'Team' }, TABS[1]] : TABS}
       active={tab}
       onTab={setTab}
       width={420}
@@ -36,7 +38,7 @@ export function TeamsAndSpeed({ teamOne, teamTwo }: Props) {
       actions={onSpeed ? speed.actions : undefined}
       footnote={onSpeed ? speed.footnote : undefined}
     >
-      {onSpeed ? speed.body : <TeamsBody teamOne={teamOne} teamTwo={teamTwo} />}
+      {onSpeed ? speed.body : <TeamsBody teamOne={teamOne} teamTwo={teamTwo} solo={solo} />}
     </Widget>
   )
 }

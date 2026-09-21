@@ -1,42 +1,50 @@
 /**
- * Sending a team to Quick Matchup from somewhere else in the app.
+ * One team, sent to Quick Matchup to be read on its own.
  *
- * The matchup tool can already pull any drafted roster in — it has a picker for
- * exactly that. What it cannot do is be reached from the team you are looking
- * at, so seeing your own roster analysed meant leaving the draft screen, going
- * to another tab, and finding your name in a list of twenty. This is that trip,
- * as a button.
+ * The matchup tool answers "how do these two sides meet". A coach looking at
+ * their own roster is asking something smaller and more common: what am I
+ * fast against, what am I weak to, what can I actually learn. Every one of
+ * those readings is about a single team — only Coverage needs somebody to
+ * cover — so the tool can answer it with one side filled and the other left
+ * out entirely.
  *
- * A message rather than a shared store: the two screens never exist at once —
- * switching view unmounts one and mounts the other — so there is no state to
- * keep in step, only a thing to hand over. `take` empties it, so a handoff is
- * spent once and a later visit to the tool gets whatever was last saved
- * instead of re-loading a team from a button pressed yesterday.
+ * Held here rather than passed: the draft screen and the matchup tool are
+ * never mounted at the same time, so there is nothing to hand over directly.
+ *
+ * Deliberately not consumed on read. A one-shot was the first attempt and it
+ * broke under StrictMode, which mounts twice — the first mount took the team,
+ * the second found nothing and restored the saved two-team state over the top.
+ * A value that simply stays set until something replaces or clears it cannot
+ * lose that race, however many times a component mounts.
  */
-export interface MatchupHandoff {
-  /** What the side is called once it lands — a coach's name, or their team's. */
+export interface SoloTeam {
+  /** What the side is called once it lands — a coach's team, or their name. */
   name: string
   /** Dex ids, in the order they should appear. */
   ids: string[]
 }
 
-let pending: MatchupHandoff | null = null
+let solo: SoloTeam | null = null
 const listeners = new Set<() => void>()
 
-/** Hands a team over and asks whoever owns the view to show the tool. */
-export function sendToMatchup(team: MatchupHandoff) {
-  pending = team
-  for (const fn of listeners) fn()
+const notify = () => { for (const fn of listeners) fn() }
+
+/** The team being read on its own, if the tool is in that mode. */
+export const soloTeam = () => solo
+
+/** Shows a team by itself, and asks whoever owns the view to bring the tool up. */
+export function showSolo(team: SoloTeam) {
+  solo = team
+  notify()
 }
 
-/** The team waiting, if any, clearing it on the way out. */
-export function takeMatchup(): MatchupHandoff | null {
-  const team = pending
-  pending = null
-  return team
+/** Back to comparing two sides, with whatever was last built there. */
+export function clearSolo() {
+  solo = null
+  notify()
 }
 
-export function subscribeMatchup(fn: () => void) {
+export function subscribeSolo(fn: () => void) {
   listeners.add(fn)
   return () => { listeners.delete(fn) }
 }

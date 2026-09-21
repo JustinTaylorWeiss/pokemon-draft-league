@@ -9,11 +9,16 @@ import { Sprite } from '../../components/Sprite'
  * mirrored — speed, name, sprite — so both teams read outward from the centre,
  * matching DraftZone's overview.
  */
-export function TeamsBody({ teamOne, teamTwo }: { teamOne: Team; teamTwo: Team }) {
+export function TeamsBody({ teamOne, teamTwo, solo }: {
+  teamOne: Team
+  teamTwo: Team
+  /** One team on its own: the second column would be an empty half. */
+  solo?: boolean
+}) {
   return (
-    <div className="overview-wrapper">
+    <div className={`overview-wrapper${solo ? ' is-solo' : ''}`}>
       <TeamColumn team={teamOne} side="one" />
-      <TeamColumn team={teamTwo} side="two" alternate />
+      {!solo && <TeamColumn team={teamTwo} side="two" alternate />}
     </div>
   )
 }

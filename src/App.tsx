@@ -9,7 +9,7 @@ import {
 } from './data/identity'
 import { ReportMatch } from './features/league/ReportMatch'
 import { DraftToggle } from './features/league/DraftToggle'
-import { subscribeMatchup } from './features/quick-matchup/handoff'
+import { soloTeam, subscribeSolo } from './features/quick-matchup/handoff'
 import { ManagePlayers } from './features/league/ManagePlayers'
 import {
   currentSeason, loadLeague, reloadSeason, SEASONS, setSeason, subscribeLeague,
@@ -67,9 +67,10 @@ export default function App() {
 
   /**
    * A team sent over from the draft screen brings the tool up with it. The
-   * view is owned here, so this is the only place that can answer.
+   * view is owned here, so this is the only place that can answer — and only
+   * on the way in, so clearing the solo team leaves you where you are.
    */
-  useEffect(() => subscribeMatchup(() => setView('matchup')), [])
+  useEffect(() => subscribeSolo(() => { if (soloTeam()) setView('matchup') }), [])
 
   // Who you are is stored per season, so switching seasons means re-reading it
   // — and usually finding nothing, which is what raises the question again.
