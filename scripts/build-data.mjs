@@ -171,6 +171,27 @@ async function main() {
       doublesTier: formats[id]?.doublesTier ?? p.doublesTier ?? null,
       ...(p.baseSpecies && { baseSpecies: p.baseSpecies }),
       ...(p.forme && { forme: p.forme }),
+      /**
+       * The forme this one turns into mid-battle, if it does.
+       *
+       * The difference between Aegislash-Blade and Deoxys-Attack. One is a
+       * Pokemon changing shape in front of you — Stance Change, Zero to Hero,
+       * Schooling — and the other is a different Pokemon you chose before the
+       * battle started. Showdown marks only the first, and marks it by naming
+       * what it reverts to; Megas carry `requiredItem` instead and alternate
+       * formes `changesFrom`, so neither is caught here.
+       *
+       * Megas are not this, whatever they are marked. Mega Evolution happens
+       * mid-battle too, and the Megas Legends Z-A introduced carry both marks
+       * where the older ones carry only the item — so the item is not what
+       * separates them and the forme being a Mega is. A Mega is a draft pick
+       * of its own here, with its own page; it is not a shape its base takes.
+       *
+       * Kept as ids, and always a list: Zygarde-Complete comes back from two.
+       */
+      ...(p.battleOnly && !isMega(p) && {
+        battleOnly: [p.battleOnly].flat().map(toId),
+      }),
       ...(p.otherFormes && { otherFormes: p.otherFormes }),
       ...(p.prevo && { prevo: p.prevo }),
       ...(p.evos && { evos: p.evos }),

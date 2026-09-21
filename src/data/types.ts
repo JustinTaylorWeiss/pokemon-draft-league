@@ -48,6 +48,12 @@ export interface Pokemon {
    * Set by scripts/build-data.mjs; read through `megaBaseId`.
    */
   megaBase?: string
+  /**
+   * The formes this one reverts to, for a shape taken mid-battle — Aegislash
+   * Blade, Palafin Hero, Zygarde Complete. Absent on a forme chosen before a
+   * battle, which is every Mega and every Deoxys.
+   */
+  battleOnly?: string[]
   otherFormes?: string[]
   prevo?: string
   evos?: string[]

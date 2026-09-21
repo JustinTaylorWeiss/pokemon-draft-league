@@ -97,31 +97,39 @@ export function PokemonModal() {
   const mon: LeaguePokemon | undefined = openId && merged ? merged[openId] : undefined
 
   /**
-   * The species' other statted formes, for the tabs over the stat card.
+   * The shapes this Pokemon takes mid-battle, for the tabs over the stat card.
    *
-   * One tab per distinct stat line rather than one per forme. Pikachu has
-   * seventeen entries and two stat lines — fourteen of them are hats — and a
-   * row of tabs that all say the same numbers is a row of tabs about nothing.
-   * Collapsed this way Deoxys keeps its four, Lycanroc its three, Venusaur its
-   * Mega, and Pikachu's caps fold back into Pikachu.
+   * Aegislash and its Blade forme, Palafin and its Hero forme, Darmanitan and
+   * Zen — one Pokemon with two stat lines, which it switches between while
+   * you watch. Not Deoxys, not Lycanroc, not a Mega: those are different
+   * Pokemon you pick before the battle, and each has its own page already.
+   * `battleOnly` is the line between the two, and it is drawn in the dataset.
    *
-   * The plainest name wins a shared line, so the tab reads "Pikachu" and not
-   * "Pikachu-Rock-Star". Order is the dex's own, which puts the base first.
+   * Still one tab per distinct stat line, because several of these change only
+   * a type — Castform's weather forms, Cramorant's — and a row of tabs that
+   * all say the same numbers is a row of tabs about nothing.
    */
   const statForms = useMemo(() => {
-    if (!merged || !mon) return []
-    const byLine = new Map<string, { id: string; mon: LeaguePokemon }>()
+    if (!merged || !mon || !openId) return []
+    // The shape it rests in: what this forme reverts to, or this forme itself.
+    const bases = mon.battleOnly?.length ? mon.battleOnly : [openId]
+    const group: { id: string; mon: LeaguePokemon }[] = []
     for (const [id, other] of Object.entries(merged)) {
-      if (other.num !== mon.num) continue
-      const key = statLine(other)
+      const isBase = bases.includes(id)
+      const revertsHere = other.battleOnly?.some((b) => bases.includes(b))
+      if (isBase || revertsHere) group.push({ id, mon: other })
+    }
+    const byLine = new Map<string, { id: string; mon: LeaguePokemon }>()
+    for (const entry of group) {
+      const key = statLine(entry.mon)
       const held = byLine.get(key)
-      if (!held || (other.forme ?? '').length < (held.mon.forme ?? '').length) {
-        byLine.set(key, { id, mon: other })
+      if (!held || (entry.mon.forme ?? '').length < (held.mon.forme ?? '').length) {
+        byLine.set(key, entry)
       }
     }
     // One line is no choice, and the card already shows it.
     return byLine.size > 1 ? [...byLine.values()] : []
-  }, [merged, mon])
+  }, [merged, mon, openId])
 
 
   /**
