@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { Fragment, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { StatKey } from '../../data/types'
 import { BST_ORDER, STAT_LABELS, summarize } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
@@ -22,6 +22,60 @@ function heat(value: number, neutral: number): string {
 }
 
 /** `neutral` is owned by the parent card so the slider can live in its header. */
+/**
+ * A Pokemon's abilities, as running text that stops where the cell does.
+ *
+ * Pills read as controls and they were not, and three of them on two lines
+ * wrapped into a row sized for two — so the third was sliced through the
+ * middle, which looked like a rendering fault rather than a limit. Plain
+ * underlined names flow like the sentence they are, and what does not fit is
+ * counted off rather than cut in half.
+ *
+ * Measured rather than guessed. How many fit depends on the column's width and
+ * on the names themselves — "Marvel Scale, Competitive, Cute Charm" against
+ * "Blaze" — so the only honest answer comes from asking the box whether it
+ * overflowed. It only ever drops names, one per pass, so it settles in at most
+ * two and cannot oscillate. The observer puts them all back when the column
+ * changes width, and the measuring starts again from there.
+ */
+function Abilities({ names }: { names: string[] }) {
+  const box = useRef<HTMLSpanElement>(null)
+  const [shown, setShown] = useState(names.length)
+  const all = names.join('\u0000')
+
+  // A different Pokemon, or a wider column, gets a fresh count to shrink from.
+  useLayoutEffect(() => { setShown(names.length) }, [all, names.length])
+  useLayoutEffect(() => {
+    const el = box.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setShown(names.length))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [names.length])
+
+  // Re-runs on its own result, which is the loop: drop one, look again, stop
+  // when it fits. Bounded by the count, since it only ever goes down.
+  useLayoutEffect(() => {
+    const el = box.current
+    // One name always stays, however narrow it gets: "+3 more" on its own
+    // names nothing.
+    if (el && shown > 1 && el.scrollHeight > el.clientHeight) setShown(shown - 1)
+  }, [shown, all])
+
+  const hidden = names.length - shown
+  return (
+    <span className="ability-lines" ref={box} title={names.join(', ')}>
+      {names.slice(0, shown).map((name, i) => (
+        <Fragment key={name}>
+          {i > 0 && ', '}
+          <span className="ability">{name}</span>
+        </Fragment>
+      ))}
+      {hidden > 0 && <span className="ability-more">{`, +${hidden} more\u2026`}</span>}
+    </span>
+  )
+}
+
 export function DraftSummaryBody({ team, neutral }: { team: Team; neutral: number }) {
 
   const rows = useMemo(
@@ -74,9 +128,6 @@ export function DraftSummaryBody({ team, neutral }: { team: Team; neutral: numbe
           </thead>
           <tbody>
             {rows.map(({ id, pokemon }) => {
-              // All of them: the column is wide enough now that three names fit
-              // the two lines it is held open to, so nothing has to be counted
-              // off behind a "+N more".
               const abilityNames = Object.values(pokemon.abilities)
               return (
                 <tr key={id} className="row-link" onClick={() => open(id)}>
@@ -100,13 +151,7 @@ export function DraftSummaryBody({ team, neutral }: { team: Team; neutral: numbe
                     <td className="col-value"><DraftValue mon={pokemon} /></td>
                   )}
                   <td className="col-abil">
-                    {/* Pills, and inert ones: no tooltip and nothing of their
-                        own to click. The row already opens the Pokémon, and a
-                        control inside it that looks separately clickable but
-                        does the same thing is just a smaller target for it. */}
-                    <span className="ability-lines">
-                      {abilityNames.map((name) => <span key={name}>{name}</span>)}
-                    </span>
+                    <Abilities names={abilityNames} />
                   </td>
                   {BST_ORDER.map((k: StatKey) => (
                     <td key={k} style={{ background: heat(pokemon.baseStats[k], neutral) }}>
