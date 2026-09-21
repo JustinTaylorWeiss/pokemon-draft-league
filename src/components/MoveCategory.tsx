@@ -9,7 +9,8 @@
  * Shaped like the badges the games use — a small filled tile, a white mark
  * inside it, one colour each — but drawn here rather than shipped: theirs are
  * Nintendo's artwork. The marks are this site's own hand: a struck point for
- * Physical, a core in a ring for Special, a turn back on itself for Status.
+ * Physical, a core in a ring for Special, three bars at three heights for
+ * Status.
  * Each carries the category's name as text for anyone who cannot see it.
  */
 export type Category = 'Physical' | 'Special' | 'Status'
@@ -35,16 +36,18 @@ const SHAPES: Record<Category, { key: string; path: React.ReactNode }> = {
       </>
     ),
   },
-  // Nothing struck, something changed: a turn back on itself.
+  // Nothing struck, numbers moved: three bars off one baseline, at three
+  // heights. Curves were tried first and lost — a turning arrow read as
+  // the letter C, a swirl as a blot — because eleven pixels is not enough
+  // to hold a curve's gap open. Straight edges survive the size, and a
+  // rectilinear mark is the one thing neither the star nor the ring is.
   Status: {
     key: 'status',
     path: (
       <>
-        <path
-          d="M12.5 9.2A4.8 4.8 0 1 1 11 4.6" fill="none"
-          stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"
-        />
-        <path d="M12.6 1.9V5.4H9.1Z" fill="currentColor" />
+        <rect x="1.4" y="8.6" width="3.4" height="5.8" fill="currentColor" />
+        <rect x="6.3" y="4.4" width="3.4" height="10" fill="currentColor" />
+        <rect x="11.2" y="6.6" width="3.4" height="7.8" fill="currentColor" />
       </>
     ),
   },
