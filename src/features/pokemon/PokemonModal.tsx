@@ -97,6 +97,34 @@ export function PokemonModal() {
   const mon: LeaguePokemon | undefined = openId && merged ? merged[openId] : undefined
 
   /**
+   * The species' other statted formes, for the tabs over the stat card.
+   *
+   * One tab per distinct stat line rather than one per forme. Pikachu has
+   * seventeen entries and two stat lines — fourteen of them are hats — and a
+   * row of tabs that all say the same numbers is a row of tabs about nothing.
+   * Collapsed this way Deoxys keeps its four, Lycanroc its three, Venusaur its
+   * Mega, and Pikachu's caps fold back into Pikachu.
+   *
+   * The plainest name wins a shared line, so the tab reads "Pikachu" and not
+   * "Pikachu-Rock-Star". Order is the dex's own, which puts the base first.
+   */
+  const statForms = useMemo(() => {
+    if (!merged || !mon) return []
+    const byLine = new Map<string, { id: string; mon: LeaguePokemon }>()
+    for (const [id, other] of Object.entries(merged)) {
+      if (other.num !== mon.num) continue
+      const key = statLine(other)
+      const held = byLine.get(key)
+      if (!held || (other.forme ?? '').length < (held.mon.forme ?? '').length) {
+        byLine.set(key, { id, mon: other })
+      }
+    }
+    // One line is no choice, and the card already shows it.
+    return byLine.size > 1 ? [...byLine.values()] : []
+  }, [merged, mon])
+
+
+  /**
    * Megas, keyed by the id of the forme each evolves from — which for four of
    * them is not the base species, so this goes through `megaBaseId` rather than
    * reading `baseSpecies` directly.
@@ -371,41 +399,7 @@ export function PokemonModal() {
               {/* Three across, so the set sits beside the stats it modifies
                   rather than below the fold. */}
               <div className="modal-row-3">
-              <section className="modal-card">
-                <h3>Base Stats</h3>
-                <ul className="stat-bars">
-                  {BST_ORDER.map((k) => (
-                    <li key={k}>
-                      <span className="stat-name">{STAT_LABELS[k]}</span>
-                      <span className="stat-num">{mon.baseStats[k]}</span>
-                      <span className="stat-track">
-                        <span className={`stat-fill stat-${k}`} style={{ width: `${Math.min(100, (mon.baseStats[k] / 200) * 100)}%` }} />
-                      </span>
-                    </li>
-                  ))}
-                  <li className="stat-total">
-                    <span className="stat-name">BST</span>
-                    <span className="stat-num">{mon.bst}</span>
-                    <span className={`stat-track${medianFinalBst ? ' has-median' : ''}`}>
-                      {medianFinalBst && (
-                        <span
-                          className="stat-fill stat-bst"
-                          style={{ width: `${Math.min(100, (mon.bst / (2 * medianFinalBst)) * 100)}%` }}
-                        />
-                      )}
-                    </span>
-                  </li>
-                </ul>
-                <p className="modal-hint">
-                  Speed at Lv 100: {statAt100(mon.baseStats.spe)} neutral, {statAt100(mon.baseStats.spe, 252, 1.1)} boosted.
-                </p>
-                {medianFinalBst && (
-                  <p className="modal-hint">
-                    BST bar is scaled so the halfway mark is {medianFinalBst}, the median
-                    for fully-evolved Pokémon.
-                  </p>
-                )}
-              </section>
+              <StatCard mon={mon} forms={statForms} median={medianFinalBst} />
 
               <section className="modal-card">
                 <h3>Abilities</h3>
@@ -534,6 +528,90 @@ const MoveRow = memo(function MoveRow(
     </tr>
   )
 })
+
+/** The stat line of one forme, keyed so two formes cannot be confused. */
+const statLine = (p: LeaguePokemon) => BST_ORDER.map((k) => p.baseStats[k]).join('/')
+
+/**
+ * Base stats, with a tab for each of the species' stat lines where it has more
+ * than one.
+ *
+ * The tabs change these numbers and nothing else. The rest of the page is
+ * about the Pokemon you opened — its types, its abilities, what it learns —
+ * and a Deoxys-Attack stat line is a thing to hold that page against, not a
+ * different page.
+ */
+function StatCard({ mon, forms, median }: {
+  mon: LeaguePokemon
+  forms: { id: string; mon: LeaguePokemon }[]
+  median: number | null
+}) {
+  const [picked, setPicked] = useState<string | null>(null)
+  // A different Pokemon starts on its own line again.
+  useEffect(() => { setPicked(null) }, [mon])
+
+  const shown = (picked ? forms.find((f) => f.id === picked)?.mon : null)
+    ?? forms.find((f) => statLine(f.mon) === statLine(mon))?.mon
+    ?? mon
+
+  return (
+    <section className="modal-card">
+      <h3>Base Stats</h3>
+      {/* Only where the species has more than one set of numbers. */}
+      {forms.length > 1 && (
+        <div className="forme-tabs" role="group" aria-label="Forme">
+          {forms.map((f) => (
+            <button
+              key={f.id} type="button"
+              className={f.mon === shown ? 'is-active' : ''}
+              aria-pressed={f.mon === shown}
+              onClick={() => setPicked(f.id)}
+              title={f.mon.name}
+            >
+              {f.mon.forme || 'Base'}
+            </button>
+          ))}
+        </div>
+      )}
+      <ul className="stat-bars">
+        {BST_ORDER.map((k) => (
+          <li key={k}>
+            <span className="stat-name">{STAT_LABELS[k]}</span>
+            <span className="stat-num">{shown.baseStats[k]}</span>
+            <span className="stat-track">
+              <span
+                className={`stat-fill stat-${k}`}
+                style={{ width: `${Math.min(100, (shown.baseStats[k] / 200) * 100)}%` }}
+              />
+            </span>
+          </li>
+        ))}
+        <li className="stat-total">
+          <span className="stat-name">BST</span>
+          <span className="stat-num">{shown.bst}</span>
+          <span className={`stat-track${median ? ' has-median' : ''}`}>
+            {median && (
+              <span
+                className="stat-fill stat-bst"
+                style={{ width: `${Math.min(100, (shown.bst / (2 * median)) * 100)}%` }}
+              />
+            )}
+          </span>
+        </li>
+      </ul>
+      <p className="modal-hint">
+        Speed at Lv 100: {statAt100(shown.baseStats.spe)} neutral,{' '}
+        {statAt100(shown.baseStats.spe, 252, 1.1)} boosted.
+      </p>
+      {median && (
+        <p className="modal-hint">
+          BST bar is scaled so the halfway mark is {median}, the median
+          for fully-evolved Pokémon.
+        </p>
+      )}
+    </section>
+  )
+}
 
 function EvoStep({ id, mon, current }: { id: string; mon: LeaguePokemon; current?: boolean }) {
   const { open } = usePokemonModal()

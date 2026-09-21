@@ -79,6 +79,25 @@
 }
 .modal-hint { margin: 0; font-size: 0.7rem; color: var(--muted); }
 
+/*
+ * Which forme's numbers the bars are showing.
+ *
+ * Wraps rather than scrolls: Deoxys has four and the card is narrow, and a row
+ * that scrolls sideways hides the forme you were looking for behind an edge.
+ */
+.forme-tabs { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.forme-tabs button {
+  font: inherit; font-size: 0.68rem; font-weight: 600;
+  padding: 0.12rem 0.45rem; border-radius: 999px; cursor: pointer;
+  background: none; color: var(--muted); border: 1px solid var(--line);
+  white-space: nowrap;
+}
+.forme-tabs button:hover { color: var(--fg); border-color: var(--fg); }
+.forme-tabs button.is-active {
+  color: var(--accent); border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
 /* ---- stats ---- */
 .stat-bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.3rem; }
 .stat-bars li { display: grid; grid-template-columns: 2.4rem 2.4rem 1fr; align-items: center; gap: 0.5rem; }
