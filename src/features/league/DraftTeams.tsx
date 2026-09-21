@@ -8,6 +8,7 @@ import {
 } from '../../data/supabase'
 import { snakeDraft } from '../../lib/snakeDraft'
 import { isSpectator, myPlayerId, subscribeIdentity } from '../../data/identity'
+import { sendToMatchup } from '../quick-matchup/handoff'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
 import { PokemonLink } from '../../components/PokemonLink'
@@ -222,6 +223,31 @@ export function DraftTeams({ league, dex }: Props) {
     byTier(a.tier, b.tier) || (dex[a.pokemon]?.name ?? '').localeCompare(dex[b.pokemon]?.name ?? '')
 
   /**
+   * A roster in the order it was drafted.
+   *
+   * Which is the order a draft is actually discussed in — "what did they take
+   * first" is a question about the board, where "what is their best tier" is a
+   * question about the list. The event log already says it, for the strip of
+   * picks at the top of this page, so it costs nothing to sort by.
+   *
+   * Only on the season being drafted on the site. The log is read for whatever
+   * season the database is pointed at, which for an archived one is the season
+   * it falls back to — those keep the tier order they have always had.
+   * Anything the log does not know sorts after what it does, in that same
+   * order, so a roster imported before the log existed is not scrambled.
+   */
+  const byPickOrder = (playerId: string) => {
+    const taken = editable ? takenInOrder[playerId] ?? [] : []
+    if (!taken.length) return byTierThenName
+    const at = (mon: string) => {
+      const i = taken.indexOf(mon)
+      return i < 0 ? Number.MAX_SAFE_INTEGER : i
+    }
+    return (a: { pokemon: string; tier: DraftTier }, b: typeof a) =>
+      at(a.pokemon) - at(b.pokemon) || byTierThenName(a, b)
+  }
+
+  /**
    * What the board has, matching the search.
    *
    * Taken and banned Pokémon are listed rather than filtered out. Hiding them
@@ -319,6 +345,22 @@ export function DraftTeams({ league, dex }: Props) {
                 {league.players.find((p) => p.id === me)?.name}
               </span>
               <span className="count">{mine.length} drafted</span>
+              {/* The tool can already pull any roster in; what it could not do
+                  was be reached from the team you are looking at. Offered only
+                  once there is something to look at — an empty team analysed
+                  is an empty page. */}
+              {mine.length > 0 && (
+                <button
+                  type="button" className="btn ghost sm draft-analyse"
+                  onClick={() => sendToMatchup({
+                    name: league.players.find((p) => p.id === me)?.team
+                      || myName || 'My team',
+                    ids: [...mine].sort(byPickOrder(me)).map((pick) => pick.pokemon),
+                  })}
+                >
+                  Open in Quick Matchup
+                </button>
+              )}
             </h3>
 
             {/* The rule, where the picking happens. A tier with no entry in the
@@ -390,7 +432,7 @@ export function DraftTeams({ league, dex }: Props) {
                   </tr>
                 </thead>
                 <tbody>
-                  {[...mine].sort(byTierThenName).map((pick) => {
+                  {[...mine].sort(byPickOrder(me)).map((pick) => {
                     const mon = dex[pick.pokemon]
                     // The hidden ability is the one keyed "H", and reads as such.
                     const abilities = Object.entries(mon?.abilities ?? {})
@@ -520,7 +562,7 @@ export function DraftTeams({ league, dex }: Props) {
       <h3 className="draft-others-head">{me ? 'Everyone else' : 'Teams'}</h3>
       <div className="draft-others">
         {others.map((p) => {
-          const picks = [...(league.rosters[p.id] ?? [])].sort(byTierThenName)
+          const picks = [...(league.rosters[p.id] ?? [])].sort(byPickOrder(p.id))
           /**
            * What this team has spent, against what everyone gets.
            *

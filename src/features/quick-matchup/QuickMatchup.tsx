@@ -9,6 +9,7 @@ import { TeamsAndSpeed } from './TeamsAndSpeed'
 import { AnalysisCard } from './AnalysisCard'
 import './quick-matchup.css'
 import { LoadingBall } from '../../components/LoadingBall'
+import { takeMatchup } from './handoff'
 
 type Step = 'team1' | 'team2' | 'results'
 
@@ -66,13 +67,33 @@ export function QuickMatchup() {
       setCore(c)
       // Merged against no league: the saved ids resolve now, and the effect
       // below re-maps them through the real league once it arrives.
-      const saved = restoreTeams(mergeDex(c.pokemon, null))
-      if (!saved) return
-      setTeamOne(saved.one)
-      setTeamTwo(saved.two)
+      const raw = mergeDex(c.pokemon, null)
+      const saved = restoreTeams(raw)
+      if (saved) {
+        setTeamOne(saved.one)
+        setTeamTwo(saved.two)
+      }
+      /**
+       * A team sent from the draft screen replaces side one and stops at the
+       * builder, whatever was saved.
+       *
+       * At the builder rather than the analysis because the other side is
+       * whatever it was, and going straight to a verdict against an opponent
+       * chosen days ago would read as an answer about this team. Here you can
+       * see what landed and say who it is up against.
+       */
+      const sent = takeMatchup()
+      if (sent) {
+        setTeamOne({
+          name: sent.name,
+          members: sent.ids.filter((id) => raw[id]).map((id) => ({ id, pokemon: raw[id] })),
+        })
+        setStep('team1')
+        return
+      }
       // Both sides already filled means the last visit got as far as the
       // analysis; go straight back to it instead of re-walking the wizard.
-      if (saved.one.members.length && saved.two.members.length) setStep('results')
+      if (saved?.one.members.length && saved.two.members.length) setStep('results')
     }, (err: Error) => setError(err.message))
   }, [])
 

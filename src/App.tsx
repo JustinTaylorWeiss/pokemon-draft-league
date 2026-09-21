@@ -9,6 +9,7 @@ import {
 } from './data/identity'
 import { ReportMatch } from './features/league/ReportMatch'
 import { DraftToggle } from './features/league/DraftToggle'
+import { subscribeMatchup } from './features/quick-matchup/handoff'
 import { ManagePlayers } from './features/league/ManagePlayers'
 import {
   currentSeason, loadLeague, reloadSeason, SEASONS, setSeason, subscribeLeague,
@@ -63,6 +64,12 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [rulesOpen])
   const [season, setSeasonId] = useState(() => currentSeason().id)
+
+  /**
+   * A team sent over from the draft screen brings the tool up with it. The
+   * view is owned here, so this is the only place that can answer.
+   */
+  useEffect(() => subscribeMatchup(() => setView('matchup')), [])
 
   // Who you are is stored per season, so switching seasons means re-reading it
   // — and usually finding nothing, which is what raises the question again.
