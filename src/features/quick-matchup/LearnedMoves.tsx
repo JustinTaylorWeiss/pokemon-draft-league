@@ -2,6 +2,7 @@ import { memo, useMemo, useState } from 'react'
 import type { LearnsetDex, MoveDex, Pokemon, TypeName } from '../../data/types'
 import { MOVE_TAGS, tagsFor, type MoveTag } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
+import { MoveCategory } from '../../components/MoveCategory'
 import type { Team } from './TeamEditor'
 import { PokemonLink } from '../../components/PokemonLink'
 import { useProgressiveList } from '../../lib/useProgressiveList'
@@ -129,7 +130,7 @@ const MoveCard = memo(function MoveCard({ row, byId }: { row: Row; byId: Record<
         <TypeChip type={row.type} />
       </div>
       <div className="move-meta">
-        <span>{row.category}</span>
+        <MoveCategory category={row.category} label />
         {row.basePower > 0 && <span>{row.basePower} BP</span>}
       </div>
       {row.tags.length > 0 && (

@@ -153,6 +153,35 @@
 .controls input { flex: 1 1 16rem; max-width: 24rem; }
 .count { color: var(--muted); font-size: 0.85rem; }
 
+/* Read aloud, never drawn. For a mark that carries a word only a reader of
+   the screen needs. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
+/*
+ * What a move does with its power, as a mark rather than a word.
+ *
+ * Sized to the row it sits in and coloured by category, so a movepool reads
+ * down the column instead of being read across it.
+ */
+.move-cat {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-size: 0.72rem; color: var(--muted); white-space: nowrap;
+}
+/* The badge the games put it in: a filled tile, wider than tall, with the
+   mark in white. The colour is the category; the shape is what it does. */
+.move-cat-badge {
+  display: inline-flex; align-items: center; justify-content: center; flex: none;
+  width: 1.85rem; height: 1rem; border-radius: 4px;
+  border: 1px solid rgb(0 0 0 / 0.35);
+}
+.move-cat-badge svg { width: 0.72rem; height: 0.72rem; color: #fff; }
+.move-cat.cat-physical .move-cat-badge { background: #c0532a; }
+.move-cat.cat-special .move-cat-badge { background: #3f6bb0; }
+.move-cat.cat-status .move-cat-badge { background: #68707e; }
+
 /* Each filter is its own labelled control rather than one overloaded box. */
 .filters {
   position: relative;

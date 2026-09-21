@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { LearnsetDex, MoveDex, SetDex, TypeChart, TypeName } from '../../data/types'
 import { attackingTypes, coverage } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
+import { MoveCategory } from '../../components/MoveCategory'
 import type { Team } from './TeamEditor'
 import { PokemonLink } from '../../components/PokemonLink'
 import { Sprite } from '../../components/Sprite'
@@ -150,12 +151,12 @@ export function CoverageBody({
 
               <div className="coverage-types">
                 <div className="coverage-line">
-                  <span className="cat-tag cat-physical">Phys</span>
+                  <span className="cat-tag"><MoveCategory category="Physical" /></span>
                   {[...available[r.id].physical].sort().map(chip('Physical'))}
                   {!available[r.id].physical.size && <em className="none">none</em>}
                 </div>
                 <div className="coverage-line">
-                  <span className="cat-tag cat-special">Spec</span>
+                  <span className="cat-tag"><MoveCategory category="Special" /></span>
                   {[...available[r.id].special].sort().map(chip('Special'))}
                   {!available[r.id].special.size && <em className="none">none</em>}
                 </div>

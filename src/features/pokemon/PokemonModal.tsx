@@ -13,6 +13,7 @@ import { DraftValue } from '../../components/DraftValue'
 import { BATTLE_TYPES, defensiveMultiplier } from '../../lib/matchup'
 import { BST_ORDER, STAT_LABELS, statAt100 } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
+import { MoveCategory } from '../../components/MoveCategory'
 import { useProgressiveList } from '../../lib/useProgressiveList'
 import { CommonSetCard } from './CommonSetCard'
 import { usePokemonModal } from './PokemonModalContext'
@@ -519,7 +520,7 @@ const MoveRow = memo(function MoveRow(
     <tr>
       <th scope="row" className="col-left">{move.name}</th>
       <td><TypeChip type={move.type} /></td>
-      <td className="cat">{move.category.slice(0, 4)}</td>
+      <td className="cat"><MoveCategory category={move.category} /></td>
       <td>{move.basePower || '—'}</td>
       <td>{move.accuracy === true ? '—' : `${move.accuracy}%`}</td>
       <td>{move.pp}</td>
