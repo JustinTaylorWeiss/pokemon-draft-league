@@ -342,10 +342,53 @@ async function main() {
     const hasPool = Object.values(own).some((sources) => sources.some((s) => isLearnable(s[0])))
     if (!hasPool) { learnOut[id] = { ...base, ...own }; topped++ }
   }
+
+  /*
+   * And a Pokemon learns what it learned before it evolved.
+   *
+   * Showdown files a learnset per species and leaves the chain to whoever
+   * reads it: Chimchar's entry has Fake Out as an egg move and Monferno's and
+   * Infernape's have nothing at all, because they get it by having been a
+   * Chimchar. Not walking that up cost every evolved Pokemon in the dex the
+   * moves only its earlier stages know.
+   *
+   * Shallowest first, so a stage inherits from a pre-evolution that has
+   * already inherited from its own — Infernape needs Monferno to have taken
+   * Chimchar's moves before it takes Monferno's. The pre-evolution's own
+   * sources come across unchanged: a move bred onto Chimchar is still an egg
+   * move on Infernape, and that is how it is obtained.
+   *
+   * Copied rather than merged in place, because the forme step above hands
+   * several ids the same object and writing through one would write through
+   * all of them.
+   */
+  const stepsToBase = (id, seen = new Set()) => {
+    const prevo = pokemon[id]?.prevo
+    if (!prevo || seen.has(id)) return 0
+    seen.add(id)
+    return 1 + stepsToBase(toId(prevo), seen)
+  }
+  let fromPrevo = 0
+  const shallowestFirst = Object.keys(pokemon).sort((a, b) => stepsToBase(a) - stepsToBase(b))
+  for (const id of shallowestFirst) {
+    const prevo = pokemon[id]?.prevo && learnOut[toId(pokemon[id].prevo)]
+    if (!prevo) continue
+    const own = { ...(learnOut[id] ?? {}) }
+    let added = 0
+    for (const [move, sources] of Object.entries(prevo)) {
+      if (own[move]) continue
+      own[move] = sources
+      added++
+    }
+    if (!added) continue
+    learnOut[id] = own
+    fromPrevo += added
+  }
   stats.learnsets = {
     kept: Object.keys(learnOut).length,
     inheritedFromBase: inherited,
     signatureToppedUp: topped,
+    movesFromPreEvolutions: fromPrevo,
     fromOlderGen,
     sourcesKept,
     sourcesDropped: sourcesTotal - sourcesKept,
