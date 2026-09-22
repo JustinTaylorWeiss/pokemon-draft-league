@@ -131,8 +131,13 @@
 .ability-desc { display: block; font-size: 0.78rem; color: var(--muted); line-height: 1.4; }
 
 /* ---- damage taken ---- */
-/* Nine across, so the eighteen types land as two even rows rather than
-   whatever auto-fill happens to produce at the current width. */
+/*
+ * Nine across, so the eighteen types land as two even rows rather than
+ * whatever auto-fill happens to produce at the current width. The column
+ * count steps down through the other even splits of eighteen — nine, six,
+ * three — as the screen narrows; the breakpoints below are where a column
+ * stops being wide enough for a type chip.
+ */
 .damage-grid {
   list-style: none; margin: 0; padding: 0; display: grid; gap: 0.3rem;
   grid-template-columns: repeat(9, minmax(0, 1fr));
@@ -142,6 +147,18 @@
   padding: 0.3rem 0.2rem; border: 1px solid var(--line); border-radius: 8px; font-size: 0.75rem;
   font-variant-numeric: tabular-nums;
 }
+/*
+ * A type chip holds a 6.6em floor so every type is the same width in a list.
+ * A grid cell is not a list: when the cell is narrower than the floor the
+ * chip is drawn straight over its neighbours, which is what a phone used to
+ * show here. `min()` keeps the floor wherever it fits — so the chips stay a
+ * matched set — and hands the cell the decision where it does not. It has to
+ * be written on min-width, which outranks max-width. Clipping the name is the
+ * last resort below the narrowest step, and beats spilling it across the
+ * next chip.
+ */
+.dmg .type-chip { min-width: min(6.6em, 100%); max-width: 100%; overflow: hidden; }
+.dmg .type-chip-text { overflow: hidden; text-overflow: ellipsis; }
 .dmg-0 { background: rgb(60 60 70 / 60%); color: var(--muted); }
 .dmg-025 { background: rgb(30 130 100 / 45%); }
 .dmg-05 { background: rgb(40 150 115 / 26%); }
@@ -302,6 +319,15 @@
   white-space: normal; color: var(--muted); font-size: 0.72rem; min-width: 16rem; line-height: 1.35;
 }
 
+/* Six across: below this a ninth column is narrower than a type chip. */
+@media (max-width: 860px) {
+  .damage-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
+/* Three across: below this a sixth column is narrower than a type chip. */
+@media (max-width: 580px) {
+  .damage-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
 @media (max-width: 900px) {
   .modal-grid { grid-template-columns: 1fr; }
   .move-controls { flex-wrap: wrap; }
@@ -321,8 +347,6 @@
   .modal-art { width: 96px; height: 96px; }
   .modal-title h2 { font-size: 1.25rem; }
   .modal-facts { gap: 0.35rem 0.9rem; }
-  /* Nine columns will not fit a phone; three rows of six is the next even split. */
-  .damage-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   /* The table is wider than a phone; let it scroll rather than squeeze. */
   .move-table { min-width: 40rem; }
   .move-table .effect { min-width: 12rem; }
