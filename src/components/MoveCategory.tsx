@@ -3,9 +3,9 @@
  *
  * The badge the games use, as closely as it can be made without shipping
  * theirs: a filled tile, wider than tall, one colour per category, the mark
- * and the short name in white inside it. The marks are drawn here — a burst
- * for Physical, a trail of spheres for Special, bars for Status — because the
- * games' are Nintendo's artwork.
+ * and the short name in white inside it. The marks follow the games' own —
+ * a burst for Physical, rings for Special, a split oval for Status — but are
+ * drawn here, because the games' are Nintendo's artwork.
  *
  * "Phys", "Spec" and "Stat" were the whole of it before, three grey
  * abbreviations of near-identical length that a two-hundred-row movepool made
@@ -28,31 +28,32 @@ const MARKS: Record<Category, { key: string; short: string; mark: React.ReactNod
       />
     ),
   },
-  // Energy thrown rather than landed: three spheres trailing off, each
-  // smaller than the last.
+  // Energy radiating rather than landing: a ring around a core, which is
+  // the games' rings of a thrown blast with one ring's worth of room.
   Special: {
     key: 'special',
     short: 'SPEC',
     mark: (
       <>
-        <circle cx="4.8" cy="11" r="3.5" fill="currentColor" />
-        <circle cx="10.4" cy="7" r="2.5" fill="currentColor" />
-        <circle cx="13.8" cy="3.8" r="1.7" fill="currentColor" />
+        <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="1.6" />
+        <circle cx="8" cy="8" r="2.4" fill="currentColor" />
       </>
     ),
   },
-  // Nothing struck, numbers moved: three bars off one baseline, rising.
-  // Curves were tried first and lost — a turning arrow read as the letter C,
-  // a swirl as a blot — because eleven pixels cannot hold a curve's gap open.
+  // Nothing struck, something turned over: the games' oval split by an
+  // S-curve, one half solid. Straight bars stood here first and read fine
+  // but read as nothing in particular — this is the shape the games taught.
   Status: {
     key: 'status',
     short: 'STAT',
     mark: (
-      <>
-        <rect x="1.4" y="9.6" width="3.4" height="4.8" fill="currentColor" />
-        <rect x="6.3" y="6.6" width="3.4" height="7.8" fill="currentColor" />
-        <rect x="11.2" y="3.6" width="3.4" height="10.8" fill="currentColor" />
-      </>
+      <g transform="translate(8 8) scale(1.26 1) translate(-8 -8)">
+        <circle cx="8" cy="8" r="5.3" fill="none" stroke="currentColor" strokeWidth="1.5" />
+        <path
+          d="M8 3.45A4.55 4.55 0 0 1 8 12.55 2.275 2.275 0 0 1 8 8 2.275 2.275 0 0 0 8 3.45Z"
+          fill="currentColor"
+        />
+      </g>
     ),
   },
 }
