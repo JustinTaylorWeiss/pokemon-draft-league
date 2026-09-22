@@ -130,7 +130,7 @@ const MoveCard = memo(function MoveCard({ row, byId }: { row: Row; byId: Record<
         <TypeChip type={row.type} />
       </div>
       <div className="move-meta">
-        <MoveCategory category={row.category} label />
+        <MoveCategory category={row.category} />
         {row.basePower > 0 && <span>{row.basePower} BP</span>}
       </div>
       {row.tags.length > 0 && (
