@@ -272,8 +272,8 @@ function MoveTip({ type, category, list }: { type: TypeName; category: Category;
   return (
     <>
       <div className="tip-head">
-        <TypeChip type={type} />
         <MoveCategory category={category} />
+        <TypeChip type={type} />
       </div>
       {shown.length ? (
         <ul className="tip-moves">
