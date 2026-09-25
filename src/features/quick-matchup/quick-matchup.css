@@ -744,11 +744,11 @@ button.type-chip { cursor: pointer; }
 @media (min-width: 1176px) {
   .shell:has(.results) {
     /*
-     * Everything above the shell, not just the top half of it. The two bars
-     * live in one sticky box that is a sibling of the shell, and `--topbar-h`
-     * measures only the first of them — so the page came out one sub-bar
-     * taller than the window and scrolled by that much, past nothing, with
-     * the cards sliding up under the bars. `--bars-h` is the whole box.
+     * Everything above the shell: `--bars-h` is the sticky box's measured
+     * height, whatever it is holding. On this view that is the topbar alone
+     * and the same number `--topbar-h` gives — the sub-bar only renders for
+     * the league — so this is not a fix for anything today, only the value
+     * that stays right if a second bar ever lands here.
      */
     height: calc(100dvh - var(--bars-h));
     padding-bottom: 1.25rem;
