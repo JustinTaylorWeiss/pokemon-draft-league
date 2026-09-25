@@ -257,12 +257,21 @@
 /* Shows both rosters at once, so it belongs to neither side: purple chrome,
    with the per-side blue/red inside carrying the team meaning. */
 .widget.both-teams { --team-accent: var(--team-both); }
+/* Both of this card's tabs are built to fit the column they are given, so a
+   sideways scrollbar here is always something overflowing that should have
+   wrapped — the tier rows below now do. Nothing is left to scroll to. */
+.widget.both-teams > .widget-body { overflow-x: hidden; }
 .speed-layout li {
   border: 1px solid var(--line); border-radius: 6px; font-size: 0.8rem;
   transition: opacity 0.12s, border-color 0.12s;
 }
+/* Wraps, because the badges are the variable part: a Pokemon with three
+   ability modifiers made a row wider than the column, and a flex item does
+   not shrink below its min-content, so the whole panel scrolled sideways to
+   fit one row. Wrapped, the speed still lands at the end of the last line. */
 .speed-layout li button {
   display: flex; align-items: center; gap: 0.35rem; width: 100%;
+  flex-wrap: wrap; row-gap: 0.2rem;
   padding: 0.28rem 0.4rem; background: none; border: 0; color: inherit;
   font: inherit; font-size: inherit; cursor: pointer; text-align: left;
 }
@@ -378,7 +387,9 @@ button.type-chip { cursor: pointer; }
 }
 .coverage-mon { display: flex; align-items: center; gap: 0.4rem; flex: 0 0 11rem; font-size: 0.85rem; font-weight: 600; }
 .coverage-mon img { image-rendering: pixelated; object-fit: contain; }
-.coverage-types { flex: 1 1 20rem; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0; }
+/* The gap carries the split between the two categories: at 0.25rem the two
+   rows of chips read as one block that happened to wrap. */
+.coverage-types { flex: 1 1 20rem; display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
 .coverage-line { display: flex; flex-wrap: wrap; gap: 0.2rem; align-items: center; }
 .cat-tag { display: inline-flex; width: 3.5rem; }
 .none { color: var(--muted); font-size: 0.75rem; }
@@ -389,6 +400,14 @@ button.type-chip { cursor: pointer; }
 .coverage-targets { display: flex; flex-wrap: wrap; gap: 0.15rem; }
 .coverage-targets img { image-rendering: pixelated; object-fit: contain; }
 .coverage-targets .miss { opacity: 0.3; filter: grayscale(1); }
+/* What a type chip is actually attacking with, on hover. */
+.tip-head { display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.45rem; }
+.tip-moves { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+.tip-moves li { display: flex; justify-content: space-between; gap: 1.2rem; color: var(--muted); }
+/* The moves it is on record as running, told apart from the rest it could. */
+.tip-moves .in-set { color: var(--fg); font-weight: 600; }
+.tip-power { font-variant-numeric: tabular-nums; }
+.tip-more, .tip-empty { margin: 0.4rem 0 0; color: var(--muted); }
 
 /* ---- learned moves ---- */
 /* Search takes the left half; the tag pills wrap into stacked rows on the right.
@@ -724,7 +743,14 @@ button.type-chip { cursor: pointer; }
    honest way to fit both on one screen, so the page scrolls normally again. */
 @media (min-width: 1176px) {
   .shell:has(.results) {
-    height: calc(100dvh - var(--topbar-h));
+    /*
+     * Everything above the shell, not just the top half of it. The two bars
+     * live in one sticky box that is a sibling of the shell, and `--topbar-h`
+     * measures only the first of them — so the page came out one sub-bar
+     * taller than the window and scrolled by that much, past nothing, with
+     * the cards sliding up under the bars. `--bars-h` is the whole box.
+     */
+    height: calc(100dvh - var(--bars-h));
     padding-bottom: 1.25rem;
     display: flex; flex-direction: column; min-height: 0;
     /* clip rather than hidden: the matchup bar bleeds to the full window width
@@ -739,8 +765,10 @@ button.type-chip { cursor: pointer; }
 
   /* Only the body scrolls, so the tab strip, its controls and the footnote all
      stay put while the content moves under them. */
+  /* Vertical only, so the horizontal rules further up still decide x per
+     card: the type chart wants to scroll sideways, the teams card never. */
   .shell:has(.results) .matchup-container > .widget > .widget-body {
-    flex: 1 1 auto; min-height: 0; overflow: auto; scrollbar-gutter: stable;
+    flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-gutter: stable;
   }
   /* Drawing the scrollbar is what makes it take up space. Left alone, this
      platform gives an overlay bar that reports zero width, so nothing reserves

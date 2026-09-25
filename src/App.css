@@ -166,6 +166,25 @@
  * Sized to the row it sits in and coloured by category, so a movepool reads
  * down the column instead of being read across it.
  */
+/* ---- hover tip ---- */
+/*
+ * Floated over the page from a portal on `body`, so no scrollport can clip
+ * it, and placed against its anchor's viewport rect by HoverTip. Under the
+ * modal backdrop's z-index on purpose: a tip left open behind a modal should
+ * go under it, not sit on top.
+ */
+.hover-tip {
+  position: fixed; z-index: 90; pointer-events: none;
+  max-width: min(20rem, calc(100vw - 1rem));
+  padding: 0.5rem 0.6rem; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--surface);
+  box-shadow: 0 10px 28px rgb(0 0 0 / 45%);
+  font-size: 0.75rem; line-height: 1.35;
+}
+/* The frame before it has been measured: laid out so it has a size to read,
+   but not yet anywhere the reader should see it. */
+.hover-tip.is-placing { left: 0; top: 0; opacity: 0; }
+
 /* The badge the games put it in: a filled tile, wider than tall, the mark
    and the short name in white on it. The colour is the category. */
 .move-cat {

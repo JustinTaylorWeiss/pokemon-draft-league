@@ -6,6 +6,10 @@ import { MoveCategory } from '../../components/MoveCategory'
 import type { Team } from './TeamEditor'
 import { PokemonLink } from '../../components/PokemonLink'
 import { Sprite } from '../../components/Sprite'
+import { HoverTip } from '../../components/HoverTip'
+
+type Category = 'Physical' | 'Special'
+interface TipMove { name: string; power: number; inSet: boolean }
 
 interface Props {
   attackers: Team
@@ -78,14 +82,13 @@ export function CoverageBody({
 
   /**
    * The moves behind each chip, so hovering a type says what it is actually
-   * attacking with. Set moves come first and are marked; the rest follow by
-   * base power, capped so a wide movepool does not produce a wall of text.
+   * attacking with. Set moves come first, then the rest by base power.
    */
-  const moveNames = useMemo(() => {
-    const out: Record<string, Record<string, string>> = {}
+  const moveList = useMemo(() => {
+    const out: Record<string, Record<string, TipMove[]>> = {}
     for (const m of attackers.members) {
       const setMoves = new Set(sets?.[m.id]?.moves ?? [])
-      const byKey: Record<string, { name: string; power: number; inSet: boolean }[]> = {}
+      const byKey: Record<string, TipMove[]> = {}
       for (const moveId of Object.keys(learnsets[m.id] ?? {})) {
         const move = moves[moveId]
         if (!move || move.category === 'Status' || move.basePower <= 0) continue
@@ -94,13 +97,10 @@ export function CoverageBody({
         const key = `${move.category}:${move.type}`
         ;(byKey[key] ??= []).push({ name: move.name, power: move.basePower, inSet })
       }
-      out[m.id] = {}
-      for (const [key, list] of Object.entries(byKey)) {
+      for (const list of Object.values(byKey)) {
         list.sort((a, b) => Number(b.inSet) - Number(a.inSet) || b.power - a.power)
-        const shown = list.slice(0, 4).map((x) => `${x.name} (${x.power})${x.inSet ? ' ★' : ''}`)
-        const extra = list.length - shown.length
-        out[m.id][key] = shown.join('\n') + (extra > 0 ? `\n+${extra} more` : '')
       }
+      out[m.id] = byKey
     }
     return out
   }, [attackers.members, learnsets, moves, minPower, sets])
@@ -137,6 +137,34 @@ export function CoverageBody({
     }
   }, [results, sets])
 
+  const [tip, setTip] = useState<
+    { rect: DOMRect; id: string; category: Category; type: TypeName } | null
+  >(null)
+
+  /**
+   * Guarded on the way out: moving from one chip to the next fires the new
+   * chip's enter before the old chip's leave in some orders, and an
+   * unconditional close would shut the tip that had just been opened.
+   */
+  const hover = (id: string, category: Category, type: TypeName) => (rect: DOMRect | null) =>
+    setTip((cur) => {
+      if (rect) return { rect, id, category, type }
+      return cur?.id === id && cur.category === category && cur.type === type ? null : cur
+    })
+
+  // A fixed box cannot follow its anchor, and everything around it scrolls.
+  // Capture, because the scroll that moves the chip is an inner one.
+  useEffect(() => {
+    if (!tip) return
+    const close = () => setTip(null)
+    window.addEventListener('scroll', close, true)
+    window.addEventListener('resize', close)
+    return () => {
+      window.removeEventListener('scroll', close, true)
+      window.removeEventListener('resize', close)
+    }
+  }, [tip])
+
   const toggle = (attackerId: string, type: TypeName) =>
     setCustom((prev) => {
       const next = new Set(prev[attackerId] ?? selected[attackerId])
@@ -149,18 +177,15 @@ export function CoverageBody({
 
   const row = (r: (typeof results)[number]) => {
     const on = selected[r.id]
-    const chip = (category: 'Physical' | 'Special') => (t: TypeName) => {
-      const list = moveNames[r.id]?.[`${category}:${t}`]
-      return (
-        <TypeChip
-          key={t}
-          type={t}
-          muted={!on?.has(t)}
-          onClick={() => toggle(r.id, t)}
-          title={list ? `${t} — ${category}\n${list}` : t}
-        />
-      )
-    }
+    const chip = (category: Category) => (t: TypeName) => (
+      <TypeChip
+        key={t}
+        type={t}
+        muted={!on?.has(t)}
+        onClick={() => toggle(r.id, t)}
+        onHover={hover(r.id, category, t)}
+      />
+    )
     return (
       <li key={r.id} className="coverage-row">
         <div className="coverage-mon">
@@ -221,6 +246,46 @@ export function CoverageBody({
           <ul className="coverage-list">{noSet.map(row)}</ul>
         </>
       )}
+      {tip && (
+        <HoverTip rect={tip.rect}>
+          <MoveTip
+            type={tip.type}
+            category={tip.category}
+            list={moveList[tip.id]?.[`${tip.category}:${tip.type}`] ?? []}
+          />
+        </HoverTip>
+      )}
+    </>
+  )
+}
+
+/** How many moves a tip lists before it starts counting the rest. */
+const TIP_LIMIT = 8
+
+/**
+ * One type's moves in one category: what the chip beside it actually stands
+ * for. The Pokémon's own set comes first and is lit, the rest of what it could
+ * learn follows dim, which is the same distinction the chips themselves make.
+ */
+function MoveTip({ type, category, list }: { type: TypeName; category: Category; list: TipMove[] }) {
+  const shown = list.slice(0, TIP_LIMIT)
+  return (
+    <>
+      <div className="tip-head">
+        <TypeChip type={type} />
+        <MoveCategory category={category} />
+      </div>
+      {shown.length ? (
+        <ul className="tip-moves">
+          {shown.map((m) => (
+            <li key={m.name} className={m.inSet ? 'in-set' : undefined}>
+              <span>{m.inSet ? '★ ' : ''}{m.name}</span>
+              <span className="tip-power">{m.power}</span>
+            </li>
+          ))}
+        </ul>
+      ) : <p className="tip-empty">Nothing at this power floor.</p>}
+      {list.length > shown.length && <p className="tip-more">{`+${list.length - shown.length} more`}</p>}
     </>
   )
 }
