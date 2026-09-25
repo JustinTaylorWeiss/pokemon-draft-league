@@ -26,6 +26,10 @@ interface Props {
  * everything the Pokémon can learn at the chosen power floor and can be toggled
  * off to ask "what if I only run these moves?" — the percentage recomputes
  * against the narrowed set.
+ *
+ * Ordered by that percentage, because the question the panel answers is which
+ * of your side gets through, and the answer should be readable off the top of
+ * the list rather than hunted for down it.
  */
 export function CoverageBody({
   attackers, defenders, chart, moves, learnsets, useAbilities, minPower, resetKey, sets,
@@ -111,6 +115,28 @@ export function CoverageBody({
     [defenders.members],
   )
 
+  /**
+   * Strongest first, with the Pokémon that have no most-used set on record
+   * held back into their own group below.
+   *
+   * Their percentage is answering a different question — what the whole
+   * movepool could do, not what the Pokémon is actually likely to be carrying
+   * — so it reads high and ranking it against the rest would put an unknown
+   * quantity above a known one. Saying it once over the group also beats the
+   * tag this used to carry on every row.
+   */
+  const { ranked, noSet } = useMemo(() => {
+    const byThreat = [...results].sort(
+      (a, b) => b.percent - a.percent || a.pokemon.name.localeCompare(b.pokemon.name),
+    )
+    // Still loading: nothing is known to be missing a set yet.
+    if (!sets) return { ranked: byThreat, noSet: [] as typeof byThreat }
+    return {
+      ranked: byThreat.filter((r) => sets[r.id]),
+      noSet: byThreat.filter((r) => !sets[r.id]),
+    }
+  }, [results, sets])
+
   const toggle = (attackerId: string, type: TypeName) =>
     setCustom((prev) => {
       const next = new Set(prev[attackerId] ?? selected[attackerId])
@@ -121,71 +147,80 @@ export function CoverageBody({
 
   if (!attackers.members.length || !defenders.members.length) return null
 
+  const row = (r: (typeof results)[number]) => {
+    const on = selected[r.id]
+    const chip = (category: 'Physical' | 'Special') => (t: TypeName) => {
+      const list = moveNames[r.id]?.[`${category}:${t}`]
+      return (
+        <TypeChip
+          key={t}
+          type={t}
+          muted={!on?.has(t)}
+          onClick={() => toggle(r.id, t)}
+          title={list ? `${t} — ${category}\n${list}` : t}
+        />
+      )
+    }
+    return (
+      <li key={r.id} className="coverage-row">
+        <div className="coverage-mon">
+          <PokemonLink id={r.id} title={r.pokemon.name}>
+            <Sprite pokemon={r.pokemon} width={64} height={52} />
+          </PokemonLink>
+          <span>
+            <PokemonLink id={r.id}>{r.pokemon.name}</PokemonLink>
+          </span>
+        </div>
+
+        <div className="coverage-types">
+          <div className="coverage-line">
+            <span className="cat-tag"><MoveCategory category="Physical" /></span>
+            {[...available[r.id].physical].sort().map(chip('Physical'))}
+            {!available[r.id].physical.size && <em className="none">none</em>}
+          </div>
+          <div className="coverage-line">
+            <span className="cat-tag"><MoveCategory category="Special" /></span>
+            {[...available[r.id].special].sort().map(chip('Special'))}
+            {!available[r.id].special.size && <em className="none">none</em>}
+          </div>
+        </div>
+
+        <div className="coverage-result">
+          <div className="coverage-bar" title={`${r.hits.length} of ${defenders.members.length} hit super effectively`}>
+            <span className="bar-hit" style={{ width: `${r.percent}%` }}>{r.percent > 14 ? `${r.percent}%` : ''}</span>
+            <span className="bar-miss">{r.percent <= 86 ? `${100 - r.percent}%` : ''}</span>
+          </div>
+          <span className="coverage-count">
+            threatens {r.hits.length}/{defenders.members.length}
+          </span>
+          <div className="coverage-targets">
+            {r.hits.map((id) => (
+              <PokemonLink key={id} id={id} title={`Hits ${byId[id]?.name}`}>
+                <Sprite pokemon={byId[id]} className="hit" width={38} height={32} />
+              </PokemonLink>
+            ))}
+            {r.misses.map((id) => (
+              <PokemonLink key={id} id={id} title={`No super-effective hit on ${byId[id]?.name}`}>
+                <Sprite pokemon={byId[id]} className="miss" width={38} height={32} />
+              </PokemonLink>
+            ))}
+          </div>
+        </div>
+      </li>
+    )
+  }
+
   return (
-    <ul className="coverage-list">
-        {results.map((r) => {
-          const on = selected[r.id]
-          const chip = (category: 'Physical' | 'Special') => (t: TypeName) => {
-            const list = moveNames[r.id]?.[`${category}:${t}`]
-            return (
-              <TypeChip
-                key={t}
-                type={t}
-                muted={!on?.has(t)}
-                onClick={() => toggle(r.id, t)}
-                title={list ? `${t} — ${category}\n${list}` : t}
-              />
-            )
-          }
-          return (
-            <li key={r.id} className="coverage-row">
-              <div className="coverage-mon">
-                <PokemonLink id={r.id} title={r.pokemon.name}>
-                  <Sprite pokemon={r.pokemon} width={64} height={52} />
-                </PokemonLink>
-                <span>
-                  <PokemonLink id={r.id}>{r.pokemon.name}</PokemonLink>
-                  {sets && !sets[r.id] && <em className="no-set" title="No common set on record — showing its full movepool">full pool</em>}
-                </span>
-              </div>
-
-              <div className="coverage-types">
-                <div className="coverage-line">
-                  <span className="cat-tag"><MoveCategory category="Physical" /></span>
-                  {[...available[r.id].physical].sort().map(chip('Physical'))}
-                  {!available[r.id].physical.size && <em className="none">none</em>}
-                </div>
-                <div className="coverage-line">
-                  <span className="cat-tag"><MoveCategory category="Special" /></span>
-                  {[...available[r.id].special].sort().map(chip('Special'))}
-                  {!available[r.id].special.size && <em className="none">none</em>}
-                </div>
-              </div>
-
-              <div className="coverage-result">
-                <div className="coverage-bar" title={`${r.hits.length} of ${defenders.members.length} hit super effectively`}>
-                  <span className="bar-hit" style={{ width: `${r.percent}%` }}>{r.percent > 14 ? `${r.percent}%` : ''}</span>
-                  <span className="bar-miss">{r.percent <= 86 ? `${100 - r.percent}%` : ''}</span>
-                </div>
-                <span className="coverage-count">
-                  threatens {r.hits.length}/{defenders.members.length}
-                </span>
-                <div className="coverage-targets">
-                  {r.hits.map((id) => (
-                    <PokemonLink key={id} id={id} title={`Hits ${byId[id]?.name}`}>
-                      <Sprite pokemon={byId[id]} className="hit" width={38} height={32} />
-                    </PokemonLink>
-                  ))}
-                  {r.misses.map((id) => (
-                    <PokemonLink key={id} id={id} title={`No super-effective hit on ${byId[id]?.name}`}>
-                      <Sprite pokemon={byId[id]} className="miss" width={38} height={32} />
-                    </PokemonLink>
-                  ))}
-                </div>
-              </div>
-            </li>
-          )
-      })}
-    </ul>
+    <>
+      {ranked.length > 0 && <ul className="coverage-list">{ranked.map(row)}</ul>}
+      {noSet.length > 0 && (
+        <>
+          <p className="coverage-group-head">
+            No most-used set on record — showing their full movepool
+          </p>
+          <ul className="coverage-list">{noSet.map(row)}</ul>
+        </>
+      )}
+    </>
   )
 }

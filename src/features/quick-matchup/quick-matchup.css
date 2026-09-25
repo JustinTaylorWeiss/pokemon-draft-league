@@ -367,6 +367,11 @@ button.type-chip { cursor: pointer; }
 .coverage-list {
   list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem;
 }
+/* Says once, over the group, what a tag on every row used to say. */
+.coverage-group-head {
+  margin: 0.9rem 0 0.5rem; padding-top: 0.75rem; border-top: 1px solid var(--line);
+  font-size: 0.72rem; color: var(--muted);
+}
 .coverage-row {
   display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
   padding: 0.5rem; border: 1px solid var(--line); border-radius: 10px;
