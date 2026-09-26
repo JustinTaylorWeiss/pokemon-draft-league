@@ -37,6 +37,15 @@ export function useFitToBox<T extends HTMLElement>(
    * two unreadable.
    */
   axis: 'both' | 'width' = 'both',
+  /**
+   * The panel's zoom slider, relative to the fitted size: 1 means "as large as
+   * fits". The fitted size is the baseline the reader sees as 100%, because the
+   * raw scale it works out to is an implementation detail — a panel reading
+   * 114% because that is what filled the card is a number nobody asked for.
+   * Above 1 the panel outgrows the card and the card scrolls, which is the
+   * point of being able to zoom in.
+   */
+  multiplier = 1,
 ): (el: T | null) => void {
   const [node, setNode] = useState<T | null>(null)
 
@@ -61,8 +70,9 @@ export function useFitToBox<T extends HTMLElement>(
       ? Math.min(MAX_SCALE, Math.max(MIN_SCALE, axis === 'width' ? byWidth : Math.min(byWidth, byHeight)))
       : 1
 
-    node.style.zoom = fitted === 1 ? '' : String(fitted)
-  }, [node, axis])
+    const applied = fitted * multiplier
+    node.style.zoom = applied === 1 ? '' : String(applied)
+  }, [node, axis, multiplier])
 
   useEffect(() => {
     const box = node?.parentElement

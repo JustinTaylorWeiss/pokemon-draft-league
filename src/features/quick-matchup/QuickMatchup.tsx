@@ -54,7 +54,6 @@ export function QuickMatchup() {
   const [step, setStep] = useState<Step>('team1')
   const [teamOne, setTeamOne] = useState<Team>(() => emptyTeam('Team 1'))
   const [teamTwo, setTeamTwo] = useState<Team>(() => emptyTeam('Team 2'))
-  const [perspective, setPerspective] = useState<'one' | 'two'>('one')
   /**
    * The team being read on its own, sent here from the draft screen.
    *
@@ -124,11 +123,6 @@ export function QuickMatchup() {
     }
   }, [solo, dex])
 
-  const [analyzed, other] = useMemo(
-    () => (perspective === 'one' ? [teamOne, teamTwo] : [teamTwo, teamOne]),
-    [perspective, teamOne, teamTwo],
-  )
-
   if (error) return <p className="error">Could not load data: {error}</p>
   if (!core || !dex) return <LoadingBall label="Loading dex…" />
 
@@ -151,7 +145,6 @@ export function QuickMatchup() {
 
         <div className="matchup-container">
           <AnalysisCard
-            analyzed={soloBuilt} other={emptyTeam('')}
             chart={core.typechart} moves={core.moves} learnsets={learnsets}
             teamOne={soloBuilt} teamTwo={emptyTeam('')} dex={dex}
             solo
@@ -176,7 +169,7 @@ export function QuickMatchup() {
   }
 
   return (
-    <div className={`results${perspective === 'two' ? ' viewing-two' : ''}`}>
+    <div className="results">
       {/* Its own bar under the main nav, matching the League Sheet's. */}
       <div className="subbar subbar-bleed">
         <div className="bar-inner matchup-bar">
@@ -184,23 +177,6 @@ export function QuickMatchup() {
           <button type="button" className="btn ghost sm" onClick={() => setStep('team1')}>
             Edit teams
           </button>
-          <div className="perspective">
-            <span>Analyzing</span>
-            <div className="segmented">
-              <button
-                type="button" className={perspective === 'one' ? 'is-active' : ''}
-                onClick={() => setPerspective('one')}
-              >
-                {teamOne.name || 'Team 1'}
-              </button>
-              <button
-                type="button" className={perspective === 'two' ? 'is-active' : ''}
-                onClick={() => setPerspective('two')}
-              >
-                {teamTwo.name || 'Team 2'}
-              </button>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -208,7 +184,6 @@ export function QuickMatchup() {
           tab's left half, and the speed tiers are a tab of this. */}
       <div className="matchup-container">
         <AnalysisCard
-          analyzed={analyzed} other={other}
           chart={core.typechart} moves={core.moves} learnsets={learnsets}
           teamOne={teamOne} teamTwo={teamTwo} dex={dex}
         />

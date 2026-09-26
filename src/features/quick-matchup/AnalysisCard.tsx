@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Widget } from '../../components/Widget'
 import type { LearnsetDex, MoveDex, SetDex, TypeChart } from '../../data/types'
 import { loadSets } from '../../data/load'
-import { DraftSummaryBody, DraftSummaryPair } from './DraftSummary'
+import { DraftSummaryBody } from './DraftSummary'
 import { DefensiveChartBody } from './DefensiveChart'
 import { buildMoveRows, LearnedMovesBody } from './LearnedMoves'
 import { CoverageBody } from './CoveragePanel'
 import { useSpeedTiersPanel } from './useSpeedTiersPanel'
+import { TeamName } from '../../components/TeamName'
+import { ZoomControl } from './ZoomControl'
 import type { LeagueDex } from '../../data/league'
 import type { Team } from './TeamEditor'
 import { LoadingBall } from '../../components/LoadingBall'
@@ -29,13 +31,11 @@ const TABS = [
 const MIN_POWER = 60
 
 interface Props {
-  analyzed: Team
-  other: Team
   chart: TypeChart
   moves: MoveDex
   /** Null until the largest data file finishes loading in the background. */
   learnsets: LearnsetDex | null
-  /** Both rosters: the speed tiers interleave them and the summary pairs them. */
+  /** Both rosters. Every tab reads both; none of them picks one. */
   teamOne: Team
   teamTwo: Team
   /** Speed tiers add the formes the Megas start in, which needs looking up. */
@@ -55,13 +55,15 @@ interface Props {
  * not looking at.
  */
 export function AnalysisCard({
-  analyzed, other, chart, moves, learnsets, teamOne, teamTwo, dex, solo,
+  chart, moves, learnsets, teamOne, teamTwo, dex, solo,
 }: Props) {
   const [tab, setTab] = useState('summary')
   const [neutral, setNeutral] = useState(80)
   const [defenseAbilities, setDefenseAbilities] = useState(true)
   const [coverageAbilities, setCoverageAbilities] = useState(true)
   const [resetKey, setResetKey] = useState(0)
+  // 1 means "as large as fits the card", which is where the chart starts.
+  const [typesZoom, setTypesZoom] = useState(1)
 
   const speed = useSpeedTiersPanel(teamOne, teamTwo, dex)
   // Coverage is the one reading that needs somebody on the other side: what a
@@ -78,14 +80,13 @@ export function AnalysisCard({
   // Built here rather than inside LearnedMovesBody: this component stays
   // mounted across tab switches, so the work survives leaving the tab and
   // coming back instead of being redone each time.
-  const moveRows = useMemo(
-    () => (learnsets ? buildMoveRows(analyzed, moves, learnsets) : []),
-    [analyzed, moves, learnsets],
-  )
-  const byId = useMemo(
-    () => Object.fromEntries(analyzed.members.map((m) => [m.id, m.pokemon])),
-    [analyzed.members],
-  )
+  const moveRows = useMemo(() => ({
+    one: learnsets ? buildMoveRows(teamOne, moves, learnsets) : [],
+    two: learnsets ? buildMoveRows(teamTwo, moves, learnsets) : [],
+  }), [teamOne, teamTwo, moves, learnsets])
+  const byId = useMemo(() => Object.fromEntries(
+    [...teamOne.members, ...teamTwo.members].map((m) => [m.id, m.pokemon]),
+  ), [teamOne.members, teamTwo.members])
 
   const actions = {
     summary: (
@@ -99,13 +100,16 @@ export function AnalysisCard({
       </label>
     ),
     types: (
-      <label className="toggle">
-        <input
-          type="checkbox" checked={defenseAbilities}
-          onChange={(e) => setDefenseAbilities(e.target.checked)}
-        />
-        <span>Abilities</span>
-      </label>
+      <>
+        <label className="toggle">
+          <input
+            type="checkbox" checked={defenseAbilities}
+            onChange={(e) => setDefenseAbilities(e.target.checked)}
+          />
+          <span>Abilities</span>
+        </label>
+        <ZoomControl value={typesZoom} onChange={setTypesZoom} />
+      </>
     ),
     coverage: (
       <>
@@ -133,29 +137,80 @@ export function AnalysisCard({
       tabs={tabs} active={tab} onTab={setTab} width={700}
       className="analysis-card" actions={actions} footnote={footnote}
     >
-      {tab === 'summary' && (solo
-        ? <DraftSummaryBody team={analyzed} neutral={neutral} />
-        : <DraftSummaryPair teamOne={teamOne} teamTwo={teamTwo} neutral={neutral} />)}
+      {tab === 'summary' && (
+        <TeamPair one={teamOne} two={teamTwo} abreast>
+          {(team) => <DraftSummaryBody team={team} neutral={neutral} />}
+        </TeamPair>
+      )}
       {tab === 'types' && (
-        <DefensiveChartBody
-          team={analyzed} chart={chart} useAbilities={defenseAbilities}
-        />
+        <TeamPair one={teamOne} two={teamTwo}>
+          {(team) => (
+            <DefensiveChartBody
+              team={team} chart={chart} useAbilities={defenseAbilities} zoom={typesZoom}
+            />
+          )}
+        </TeamPair>
       )}
       {/* Only these two need the learnsets, so the other tabs stay usable while
           that file is still downloading. */}
       {tab === 'moves' && (learnsets
-        ? <LearnedMovesBody team={analyzed} rows={moveRows} byId={byId} />
+        ? (
+          <TeamPair one={teamOne} two={teamTwo}>
+            {(team, side) => <LearnedMovesBody team={team} rows={moveRows[side]} byId={byId} />}
+          </TeamPair>
+        )
         : <LoadingBall label="Loading learnsets…" inline />)}
       {tab === 'speed' && speed.body}
       {tab === 'coverage' && (learnsets
         ? (
-          <CoverageBody
-            attackers={analyzed} defenders={other} chart={chart} moves={moves} learnsets={learnsets}
-            useAbilities={coverageAbilities} minPower={MIN_POWER} resetKey={resetKey}
-            sets={sets}
-          />
+          <TeamPair one={teamOne} two={teamTwo}>
+            {(team, side) => (
+              <CoverageBody
+                attackers={team} defenders={side === 'one' ? teamTwo : teamOne}
+                chart={chart} moves={moves} learnsets={learnsets}
+                useAbilities={coverageAbilities} minPower={MIN_POWER} resetKey={resetKey}
+                sets={sets}
+              />
+            )}
+          </TeamPair>
         )
         : <LoadingBall label="Loading learnsets…" inline />)}
     </Widget>
+  )
+}
+
+/**
+ * Both sides of a tab, each under its own name in its own colour.
+ *
+ * Every reading here used to be of one team, picked by a toggle in the bar
+ * above — so the comparison the tool exists for was a toggle and a memory
+ * apart. Both sides are on every tab now and the toggle is gone.
+ *
+ * `abreast` puts them in two columns where the content is narrow enough to
+ * take it. Everything else stacks: a nineteen-column chart cut in half is a
+ * chart nobody can read, and shrinking it to fit would only make that worse.
+ *
+ * One side on its own gets no heading — there is nothing to tell it from.
+ */
+function TeamPair({ one, two, abreast, children }: {
+  one: Team
+  two: Team
+  abreast?: boolean
+  children: (team: Team, side: 'one' | 'two') => ReactNode
+}) {
+  if (!two.members.length) return <>{children(one, 'one')}</>
+  const sides: ['one' | 'two', Team, string][] = [
+    ['one', one, one.name || 'Team 1'],
+    ['two', two, two.name || 'Team 2'],
+  ]
+  return (
+    <div className={`panel-pair${abreast ? ' is-abreast' : ''}`}>
+      {sides.map(([side, team, name]) => (
+        <section key={side} className={`panel-side accent-${side}`}>
+          <h3><TeamName name={name} /></h3>
+          {children(team, side)}
+        </section>
+      ))}
+    </div>
   )
 }

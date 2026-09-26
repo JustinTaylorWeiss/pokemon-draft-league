@@ -11,6 +11,8 @@ interface Props {
   team: Team
   chart: TypeChart
   useAbilities: boolean
+  /** The card's zoom slider: 1 is "as large as fits". */
+  zoom: number
 }
 
 /**
@@ -47,7 +49,7 @@ function cellClass(mult: number): string {
 const label = (m: number) => (m === 1 ? '' : m === 0 ? '0' : String(m))
 
 /** The Abilities toggle is owned by the parent card's header. */
-export function DefensiveChartBody({ team, chart, useAbilities }: Props) {
+export function DefensiveChartBody({ team, chart, useAbilities, zoom }: Props) {
 
   const { rows, summary } = useMemo(
     () => defensiveChart(chart, team.members, useAbilities),
@@ -57,7 +59,7 @@ export function DefensiveChartBody({ team, chart, useAbilities }: Props) {
   // Width only: all eighteen type columns stay on screen whatever the roster,
   // and a roster too tall for the card scrolls rather than shrinking the chart
   // until it cannot be read.
-  const fitRef = useFitToBox<HTMLDivElement>('width')
+  const fitRef = useFitToBox<HTMLDivElement>('width', zoom)
 
   if (!rows.length) return null
 
