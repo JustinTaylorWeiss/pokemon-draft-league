@@ -262,11 +262,46 @@
 .mx-strong-weak { background: rgb(200 50 60 / 60%); }
 
 /* ---- speed tiers ---- */
-/* Three even columns: what the species is worth on paper, what it is worth
-   fully invested, and every tier it can actually sit at. Even because none of
-   them is the one you read first — the comparison runs across. */
+/* ---- the rosters, second one mirrored ---- */
+/* Two columns while they fit, one below that. */
+.overview-wrapper {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px;
+}
+.team-container { min-width: 0; }
+.team-name-title {
+  font-weight: 700; font-size: 0.92rem; text-align: center; line-height: 1.25;
+  padding-bottom: 0.4rem; margin-bottom: 0.3rem;
+  border-bottom: 2px solid var(--team, var(--accent)); color: var(--team, var(--accent));
+}
+.team-body { display: flex; flex-direction: column; }
+.overview-row {
+  display: grid; grid-template-columns: 46px 1fr 2.2rem;
+  align-items: center; gap: 0.3rem; padding: 0.22rem 0.2rem;
+}
+.team-container.alternate .overview-row {
+  grid-template-columns: 2.2rem 1fr 46px;
+  direction: rtl;
+}
+.team-container.alternate .overview-row > * { direction: ltr; }
+.overview-row.header {
+  font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 0.2rem;
+}
+.overview-row .name-cell {
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.82rem;
+}
+.overview-row .speed-cell { text-align: right; font-variant-numeric: tabular-nums; font-size: 0.82rem; }
+.team-container.alternate .overview-row .speed-cell { text-align: left; }
+.overview-row .sprite-cell { display: flex; }
+.overview-row img { image-rendering: pixelated; object-fit: contain; }
+
+/* The rosters, then three even columns: what each species is worth on paper,
+   what it is worth fully invested, and every tier it can actually sit at.
+   Even because none of the three is the one you read first — the comparison
+   runs across. The rosters get more room for holding two teams inside. */
 .speed-layout { display: flex; gap: 0.6rem; }
 .speed-bases, .speed-max, .speed-groups { flex: 1 1 0; min-width: 0; }
+.speed-rosters { flex: 1.8 1 0; min-width: 0; }
 .speed-layout h3 { margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase; color: var(--team-both); letter-spacing: 0.05em; }
 .speed-layout h3 span { float: right; text-transform: none; font-size: 0.68rem; }
 .speed-layout ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
@@ -499,13 +534,16 @@ button.type-chip { cursor: pointer; }
 .matchup-meta dd { margin: 0; font-size: 0.85rem; font-weight: 600; }
 
 
-/* Widgets size to their content; this packs them into rows and centers the
-   leftovers, which is what produces the uneven two-up look. */
-.matchup-container {
-  display: flex; flex-wrap: wrap; gap: 16px;
-  justify-content: center; align-items: start;
-  min-width: 0;
-}
+/* No card: the tabs are in the page's bar and this is just the page under
+   them. Padding where the card's used to be, so the content is not against
+   the window's edge. */
+.analysis-body { min-width: 0; padding: 0 4px; }
+.analysis-note { margin: 0.6rem 4px 0; color: var(--muted); font-size: 0.72rem; }
+/* The tabs take the bar's own colour rather than the league's red. */
+.matchup-bar .sub-nav button.is-active { color: var(--team-accent, var(--accent)); }
+.matchup-bar .sub-nav button.is-active::after { background: var(--team-accent, var(--accent)); }
+/* Controls sit against the tabs, not a card header. */
+.matchup-bar .sub-actions { flex-wrap: wrap; row-gap: 0.4rem; }
 
 /* Cards run to their full height: no panel scrolls inside itself, so the page
    is the only scroller and a trackpad never gets trapped in a nested box. */
@@ -544,16 +582,6 @@ button.type-chip { cursor: pointer; }
   flex-wrap: wrap; row-gap: 0.4rem;
 }
 
-
-/* Asks for the 700px the tightened type chart needs, but grows into spare room
-   and shrinks on narrow screens. Without an explicit basis it would expand to
-   its tables' max-content and stop pairing with the teams card. */
-.analysis-card { flex: 1 1 700px; min-width: 0; max-width: 100%; }
-
-/* Four tabs is more than fits on one line at this card's narrower widths, so
-   the strip wraps instead of squeezing the labels to ellipses. */
-.analysis-card .widget-tabs { flex-wrap: wrap; }
-.analysis-card .widget-tabs button { flex: 1 1 auto; }
 
 /* Sits between the search box and the tag pills rather than up in the header. */
 .moves-count { flex: 0 0 auto; white-space: nowrap; font-size: 0.78rem; }
@@ -737,16 +765,11 @@ button.type-chip { cursor: pointer; }
     overflow-x: visible; overflow-y: clip;
   }
   .shell:has(.results) .results { flex: 1 1 auto; min-height: 0; }
-  .shell:has(.results) .matchup-container {
-    flex: 1 1 auto; min-height: 0; flex-wrap: nowrap; align-items: stretch;
-  }
-  .shell:has(.results) .matchup-container > .widget { height: 100%; }
 
-  /* Only the body scrolls, so the tab strip, its controls and the footnote all
-     stay put while the content moves under them. */
-  /* Vertical only, so the horizontal rules further up still decide x per
-     card: the type chart wants to scroll sideways, the teams card never. */
-  .shell:has(.results) .matchup-container > .widget > .widget-body {
+  /* Only the body scrolls, so the bar — tabs, controls and all — stays put
+     while the content moves under it. Vertical only: the panels inside decide
+     for themselves whether they scroll sideways. */
+  .shell:has(.results) .analysis-body {
     flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-gutter: stable;
   }
   /* Drawing the scrollbar is what makes it take up space. Left alone, this
@@ -754,16 +777,16 @@ button.type-chip { cursor: pointer; }
      room for it — `scrollbar-gutter` included — and it sits on top of the last
      column. Styling it also makes the fit measurements correct, since the width
      the panel is scaled into now excludes the bar. */
-  .shell:has(.results) .matchup-container > .widget > .widget-body::-webkit-scrollbar {
+  .shell:has(.results) .analysis-body::-webkit-scrollbar {
     width: 10px; height: 10px;
   }
-  .shell:has(.results) .matchup-container > .widget > .widget-body::-webkit-scrollbar-thumb {
+  .shell:has(.results) .analysis-body::-webkit-scrollbar-thumb {
     background: var(--line); border-radius: 5px;
   }
-  .shell:has(.results) .matchup-container > .widget > .widget-body::-webkit-scrollbar-thumb:hover {
+  .shell:has(.results) .analysis-body::-webkit-scrollbar-thumb:hover {
     background: var(--muted);
   }
-  .shell:has(.results) .matchup-container > .widget > .widget-body::-webkit-scrollbar-track {
+  .shell:has(.results) .analysis-body::-webkit-scrollbar-track {
     background: transparent;
   }
   /* The search and tags scroll away with the list rather than sticking. Pinned,
@@ -773,16 +796,8 @@ button.type-chip { cursor: pointer; }
      either. Not sticking is worth more than the header staying in view. */
 }
 
-/* Redundant now that one card fills the row on its own at every width, and
-   kept only because the card still carries a 700px intrinsic width that this
-   overrides below the breakpoint. */
-@media (max-width: 1175px) {
-  .matchup-container > .widget { width: 100% !important; flex-basis: 100%; }
-}
-
 /* ---- narrow screens ---- */
 @media (max-width: 900px) {
-  .matchup-container { gap: 12px; }
   .matchup-title, .bar-inner.matchup-bar { gap: 0.6rem; }
   .matchup-bar h2 { font-size: 1.05rem; }
   .coverage-left { flex-basis: 100%; }

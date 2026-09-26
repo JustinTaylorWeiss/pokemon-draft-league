@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { speedTiers, statAtLevel } from '../../lib/stats'
 import type { Team, TeamEntry } from './TeamEditor'
 import { Sprite } from '../../components/Sprite'
+import { TeamsBody } from './Overview'
 
 interface Props {
   teamOne: Team
@@ -51,6 +52,10 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
 
   if (!all.length) return null
 
+  /** The side as it was drafted, without the formes added for the chart. */
+  const drafted = (team: Team): Team =>
+    ({ ...team, members: team.members.filter((m) => !preMega.has(m.id)) })
+
   const toggle = (id: string) => onSelect(selected === id ? null : id)
   /** The only place it is said: why an undrafted forme is on the chart. */
   const title = (id: string, name: string) =>
@@ -60,6 +65,14 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
 
   return (
     <div className="speed-layout">
+        {/* The rosters as they were drafted, which is what the card that used
+            to sit beside this one showed. Pre-Mega formes are left out: this
+            is who is on the team, not who is on the chart. */}
+        <div className="speed-rosters">
+          <h3>Teams</h3>
+          <TeamsBody teamOne={drafted(teamOne)} teamTwo={drafted(teamTwo)} solo={!teamTwo.members.length} />
+        </div>
+
         <div className="speed-bases">
           <h3>Base</h3>
           <ul>

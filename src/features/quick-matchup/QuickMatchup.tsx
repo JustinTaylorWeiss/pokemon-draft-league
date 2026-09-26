@@ -129,27 +129,21 @@ export function QuickMatchup() {
   if (soloBuilt) {
     return (
       <div className="results is-solo">
-        <div className="subbar subbar-bleed">
-          <div className="bar-inner matchup-bar">
-            <h2>{soloBuilt.name || 'Your team'}</h2>
-            <span className="panel-note">
-              {soloBuilt.members.length} Pokémon
-            </span>
-            {/* The way back to what this tool normally does. Whatever two-team
-                state was here is untouched, so it is still there. */}
-            <button type="button" className="btn ghost sm" onClick={clearSolo}>
-              Compare two teams
-            </button>
-          </div>
-        </div>
-
-        <div className="matchup-container">
-          <AnalysisCard
-            chart={core.typechart} moves={core.moves} learnsets={learnsets}
-            teamOne={soloBuilt} teamTwo={emptyTeam('')} dex={dex}
-            solo
-          />
-        </div>
+        <AnalysisCard
+          chart={core.typechart} moves={core.moves} learnsets={learnsets}
+          teamOne={soloBuilt} teamTwo={emptyTeam('')} dex={dex}
+          solo
+          lead={(
+            <>
+              <h2>{soloBuilt.name || 'Your team'}</h2>
+              {/* The way back to what this tool normally does. Whatever
+                  two-team state was here is untouched, so it is still there. */}
+              <button type="button" className="btn ghost sm" onClick={clearSolo}>
+                Compare two teams
+              </button>
+            </>
+          )}
+        />
       </div>
     )
   }
@@ -170,24 +164,18 @@ export function QuickMatchup() {
 
   return (
     <div className="results">
-      {/* Its own bar under the main nav, matching the League Sheet's. */}
-      <div className="subbar subbar-bleed">
-        <div className="bar-inner matchup-bar">
-          <h2>Quick Matchup</h2>
+      {/* The bar is the card's, now that there is no card: AnalysisCard draws
+          it and this hands it the one control that belongs to the page. The
+          title went with the card — the main nav already says where you are. */}
+      <AnalysisCard
+        chart={core.typechart} moves={core.moves} learnsets={learnsets}
+        teamOne={teamOne} teamTwo={teamTwo} dex={dex}
+        lead={(
           <button type="button" className="btn ghost sm" onClick={() => setStep('team1')}>
             Edit teams
           </button>
-        </div>
-      </div>
-
-      {/* One card now: the roster list it used to sit beside is the summary
-          tab's left half, and the speed tiers are a tab of this. */}
-      <div className="matchup-container">
-        <AnalysisCard
-          chart={core.typechart} moves={core.moves} learnsets={learnsets}
-          teamOne={teamOne} teamTwo={teamTwo} dex={dex}
-        />
-      </div>
+        )}
+      />
     </div>
   )
 }

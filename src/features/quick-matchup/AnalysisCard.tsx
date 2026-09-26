@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { Widget } from '../../components/Widget'
 import type { LearnsetDex, MoveDex, SetDex, TypeChart } from '../../data/types'
 import { loadSets } from '../../data/load'
 import { DraftSummaryBody } from './DraftSummary'
@@ -41,6 +40,8 @@ interface Props {
   dex: LeagueDex
   /** One team, read on its own: no opponent, so no Coverage. */
   solo?: boolean
+  /** What sits at the left of the bar, before the tabs. The page's, not ours. */
+  lead?: ReactNode
 }
 
 /**
@@ -54,7 +55,7 @@ interface Props {
  * not looking at.
  */
 export function AnalysisCard({
-  chart, moves, learnsets, teamOne, teamTwo, dex, solo,
+  chart, moves, learnsets, teamOne, teamTwo, dex, solo, lead,
 }: Props) {
   const [tab, setTab] = useState('summary')
   const [neutral, setNeutral] = useState(80)
@@ -147,11 +148,34 @@ export function AnalysisCard({
   const header = actions || pairing ? <>{actions}{pairing}</> : undefined
 
   return (
-    <Widget
-      tabs={tabs} active={tab} onTab={setTab} width={700}
-      className="analysis-card" footnote={footnote}
-      actions={header}
-    >
+    <>
+      {/*
+        * The tabs live in the page's own bar rather than on a card of their
+        * own. A card inside a viewport-height shell was a frame drawn around
+        * the only thing on the screen: it cost a border, two lots of padding
+        * and a tab strip's worth of height, and bought nothing, since there
+        * was nothing for it to be distinguished from.
+        */}
+      <div className="subbar subbar-bleed">
+        <div className="bar-inner matchup-bar">
+          {lead}
+          <nav className="sub-nav" role="tablist">
+            {tabs.map((t) => (
+              <button
+                key={t.key} type="button" role="tab"
+                aria-selected={tab === t.key}
+                className={tab === t.key ? 'is-active' : ''}
+                onClick={() => setTab(t.key)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </nav>
+          {header && <div className="sub-actions">{header}</div>}
+        </div>
+      </div>
+
+      <div className="analysis-body">
       {tab === 'summary' && (
         <TeamPair one={teamOne} two={teamTwo} abreast={abreast}>
           {(team) => <DraftSummaryBody team={team} neutral={neutral} />}
@@ -188,7 +212,9 @@ export function AnalysisCard({
           </TeamPair>
         )
         : <LoadingBall label="Loading learnsets…" inline />)}
-    </Widget>
+      </div>
+      {footnote && <p className="widget-note analysis-note">{footnote}</p>}
+    </>
   )
 }
 
