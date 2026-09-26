@@ -523,7 +523,10 @@ button.type-chip { cursor: pointer; }
   width: 100vw; margin-left: calc(50% - 50vw); margin-right: calc(50% - 50vw);
   margin-top: -1.5rem; margin-bottom: 0.25rem;
 }
-.bar-inner.matchup-bar { gap: 1rem; flex-wrap: wrap; padding: 0.85rem 1.25rem; }
+/* No vertical padding of its own, so the tab buttons set the height and this
+   bar comes out exactly as tall as the league's — they are the same strip
+   under the same nav and were a third of an inch apart. */
+.bar-inner.matchup-bar { gap: 1rem; flex-wrap: wrap; padding: 0 1.25rem; }
 .matchup-bar h2 { margin: 0; font-size: 1.3rem; letter-spacing: -0.02em; white-space: nowrap; }
 
 .matchup-meta { display: flex; gap: 1.25rem; margin: 0; }

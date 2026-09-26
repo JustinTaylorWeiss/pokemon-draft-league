@@ -42,6 +42,8 @@ interface Props {
   solo?: boolean
   /** What sits at the left of the bar, before the tabs. The page's, not ours. */
   lead?: ReactNode
+  /** And what sits at the far right of it, past this card's own controls. */
+  trail?: ReactNode
 }
 
 /**
@@ -55,7 +57,7 @@ interface Props {
  * not looking at.
  */
 export function AnalysisCard({
-  chart, moves, learnsets, teamOne, teamTwo, dex, solo, lead,
+  chart, moves, learnsets, teamOne, teamTwo, dex, solo, lead, trail,
 }: Props) {
   const [tab, setTab] = useState('summary')
   const [neutral, setNeutral] = useState(80)
@@ -167,7 +169,7 @@ export function AnalysisCard({
               </button>
             ))}
           </nav>
-          {header && <div className="sub-actions">{header}</div>}
+          {(header || trail) && <div className="sub-actions">{header}{trail}</div>}
         </div>
       </div>
 

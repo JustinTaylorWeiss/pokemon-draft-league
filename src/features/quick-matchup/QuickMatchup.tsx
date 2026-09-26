@@ -165,12 +165,13 @@ export function QuickMatchup() {
   return (
     <div className="results">
       {/* The bar is the card's, now that there is no card: AnalysisCard draws
-          it and this hands it the one control that belongs to the page. The
-          title went with the card — the main nav already says where you are. */}
+          it and this hands it the one control that belongs to the page, at the
+          far end past the tab's own. The title went with the card — the main
+          nav already says where you are. */}
       <AnalysisCard
         chart={core.typechart} moves={core.moves} learnsets={learnsets}
         teamOne={teamOne} teamTwo={teamTwo} dex={dex}
-        lead={(
+        trail={(
           <button type="button" className="btn ghost sm" onClick={() => setStep('team1')}>
             Edit teams
           </button>
