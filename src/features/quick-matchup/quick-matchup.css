@@ -83,6 +83,18 @@
    decide how much of it they eat. They size to their content and centre rather
    than stretching, which was inflating three-digit stat columns to 77px. */
 .type-table { width: auto; margin: 0 auto; font-size: 0.78rem; }
+/* Both rosters at once, which is what the card beside this one used to be
+   for. Two runs of seven stat columns need real width; below that they stack
+   rather than shrink into a pair of unreadable tables. */
+.summary-pair { display: flex; gap: 1.1rem; align-items: start; }
+.summary-side { flex: 1 1 0; min-width: 0; }
+.summary-side > h3 {
+  margin: 0 0 0.5rem; text-align: center; font-size: 0.92rem; line-height: 1.25;
+  padding-bottom: 0.35rem; border-bottom: 2px solid var(--team, var(--accent));
+  color: var(--team, var(--accent));
+}
+@media (max-width: 1100px) { .summary-pair { display: block; } .summary-side + .summary-side { margin-top: 1.1rem; } }
+
 .summary-table { width: 100%; font-size: 0.78rem; }
 /* Stats are pinned so the slack lands on Name and Abilities rather than being
    shared out into three-digit columns wide enough for six. The width tracks the
@@ -254,13 +266,6 @@
 .speed-layout h3 span { float: right; text-transform: none; font-size: 0.68rem; }
 .speed-layout ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
 
-/* Shows both rosters at once, so it belongs to neither side: purple chrome,
-   with the per-side blue/red inside carrying the team meaning. */
-.widget.both-teams { --team-accent: var(--team-both); }
-/* Both of this card's tabs are built to fit the column they are given, so a
-   sideways scrollbar here is always something overflowing that should have
-   wrapped — the tier rows below now do. Nothing is left to scroll to. */
-.widget.both-teams > .widget-body { overflow-x: hidden; }
 .speed-layout li {
   border: 1px solid var(--line); border-radius: 6px; font-size: 0.8rem;
   transition: opacity 0.12s, border-color 0.12s;
@@ -521,40 +526,6 @@ button.type-chip { cursor: pointer; }
 .widget-note { margin: 0.6rem 16px 0; color: var(--muted); font-size: 0.72rem; }
 .widget-count { color: var(--muted); font-size: 0.78rem; }
 
-/* ---- overview: the two rosters, second one mirrored ---- */
-.overview { padding: 12px; }
-/* Two columns while they fit, one below that. */
-.overview-wrapper {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px;
-}
-.team-container { min-width: 0; }
-.team-name-title {
-  font-weight: 700; font-size: 0.92rem; text-align: center; line-height: 1.25;
-  padding-bottom: 0.4rem; margin-bottom: 0.3rem;
-  border-bottom: 2px solid var(--team, var(--accent)); color: var(--team, var(--accent));
-}
-.team-body { display: flex; flex-direction: column; }
-.overview-row {
-  display: grid; grid-template-columns: 46px 1fr 2.2rem;
-  align-items: center; gap: 0.3rem; padding: 0.22rem 0.2rem;
-}
-.team-container.alternate .overview-row {
-  grid-template-columns: 2.2rem 1fr 46px;
-  direction: rtl;
-}
-.team-container.alternate .overview-row > * { direction: ltr; }
-.overview-row.header {
-  font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em;
-  color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 0.2rem;
-}
-.overview-row .name-cell {
-  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.82rem;
-}
-.overview-row .speed-cell { text-align: right; font-variant-numeric: tabular-nums; font-size: 0.82rem; }
-.team-container.alternate .overview-row .speed-cell { text-align: left; }
-.overview-row .sprite-cell { display: flex; }
-.overview-row img { image-rendering: pixelated; object-fit: contain; }
-
 /* ---- widget tabs ---- */
 /* Each tab owns an equal share of the title bar and underlines its own half. */
 .widget-tabs { display: flex; width: 100%; margin-bottom: 8px; }
@@ -739,10 +710,17 @@ button.type-chip { cursor: pointer; }
 
 
 /* ---- fixed-viewport results ---- */
-/* Wherever the two cards sit side by side, the results page is an app shell:
-   it is exactly as tall as the viewport below the nav, nothing moves, and each
-   card scrolls its own body. Below that width the cards stack and there is no
-   honest way to fit both on one screen, so the page scrolls normally again. */
+/*
+ * Above this width the results page is an app shell: exactly as tall as the
+ * viewport below the nav, nothing moves, and the card scrolls its own body.
+ * Below it the page scrolls normally, which is what a phone wants.
+ *
+ * The number is inherited from when there were two cards and it was the width
+ * they fitted at (420 + 16 + 700). There is one card now, so nothing about the
+ * layout requires this particular figure any more — it could come down as far
+ * as a phone, and the only question is where a viewport-height box stops being
+ * the friendlier thing. Left where it was rather than moved on a guess.
+ */
 @media (min-width: 1176px) {
   .shell:has(.results) {
     /*
@@ -796,9 +774,9 @@ button.type-chip { cursor: pointer; }
      either. Not sticking is worth more than the header staying in view. */
 }
 
-/* Below the width where the teams card and the stacked column can sit side by
-   side (420 + 16 + 700 of content), everything goes full width rather than
-   leaving the teams card alone on a row with dead space beside it. */
+/* Redundant now that one card fills the row on its own at every width, and
+   kept only because the card still carries a 700px intrinsic width that this
+   overrides below the breakpoint. */
 @media (max-width: 1175px) {
   .matchup-container > .widget { width: 100% !important; flex-basis: 100%; }
 }

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Widget } from '../../components/Widget'
 import type { LearnsetDex, MoveDex, SetDex, TypeChart } from '../../data/types'
 import { loadSets } from '../../data/load'
-import { DraftSummaryBody } from './DraftSummary'
+import { DraftSummaryBody, DraftSummaryPair } from './DraftSummary'
 import { DefensiveChartBody } from './DefensiveChart'
 import { buildMoveRows, LearnedMovesBody } from './LearnedMoves'
 import { CoverageBody } from './CoveragePanel'
@@ -11,17 +11,19 @@ import type { LeagueDex } from '../../data/league'
 import type { Team } from './TeamEditor'
 import { LoadingBall } from '../../components/LoadingBall'
 
+/*
+ * Speed tiers sit third, after the two team-wide readings and before the move
+ * lists. They used to belong to a second card beside this one and moved here
+ * only when the screen was too narrow for two; that card is gone, so this is
+ * simply where they live.
+ */
 const TABS = [
   { key: 'summary', label: 'Draft Summary' },
   { key: 'types', label: 'Defensive Type Chart' },
+  { key: 'speed', label: 'Speed Tiers' },
   { key: 'moves', label: 'Learned Moves' },
   { key: 'coverage', label: 'Coverage' },
 ]
-
-/** Where the speed tiers sit once there is only one column to put them in:
-    third, after the two team-wide readings and before the move lists. */
-const SPEED_TAB = { key: 'speed', label: 'Speed Tiers' }
-const SPEED_TAB_INDEX = 2
 
 /** Chip pool floor. Below this, universal TMs hand out most of the type chart. */
 const MIN_POWER = 60
@@ -33,12 +35,11 @@ interface Props {
   moves: MoveDex
   /** Null until the largest data file finishes loading in the background. */
   learnsets: LearnsetDex | null
-  /** Both rosters, for the speed tiers this card hosts in one-column layouts. */
+  /** Both rosters: the speed tiers interleave them and the summary pairs them. */
   teamOne: Team
   teamTwo: Team
   /** Speed tiers add the formes the Megas start in, which needs looking up. */
   dex: LeagueDex
-  hostSpeedTiers: boolean
   /** One team, read on its own: no opponent, so no Coverage. */
   solo?: boolean
 }
@@ -54,7 +55,7 @@ interface Props {
  * not looking at.
  */
 export function AnalysisCard({
-  analyzed, other, chart, moves, learnsets, teamOne, teamTwo, dex, hostSpeedTiers, solo,
+  analyzed, other, chart, moves, learnsets, teamOne, teamTwo, dex, solo,
 }: Props) {
   const [tab, setTab] = useState('summary')
   const [neutral, setNeutral] = useState(80)
@@ -62,23 +63,14 @@ export function AnalysisCard({
   const [coverageAbilities, setCoverageAbilities] = useState(true)
   const [resetKey, setResetKey] = useState(0)
 
-  // Always built, shown only when this card is hosting it. The body is what
-  // does the work, and that is only rendered on its own tab.
   const speed = useSpeedTiersPanel(teamOne, teamTwo, dex)
   // Coverage is the one reading that needs somebody on the other side: what a
   // team hits is a fact about the team it is hitting. Every other tab here is
   // about the analysed team alone, so solo keeps them all and drops that one.
-  const base = solo ? TABS.filter((t) => t.key !== 'coverage') : TABS
-  const tabs = hostSpeedTiers
-    ? [...base.slice(0, SPEED_TAB_INDEX), SPEED_TAB, ...base.slice(SPEED_TAB_INDEX)]
-    : base
+  const tabs = solo ? TABS.filter((t) => t.key !== 'coverage') : TABS
   useEffect(() => {
     if (solo && tab === 'coverage') setTab(TABS[0].key)
   }, [solo, tab])
-  // A layout change can pull the tab out from under the reader.
-  useEffect(() => {
-    if (!hostSpeedTiers && tab === SPEED_TAB.key) setTab(TABS[0].key)
-  }, [hostSpeedTiers, tab])
 
   const [sets, setSets] = useState<SetDex | null>(null)
   useEffect(() => { loadSets().then(setSets, () => {}) }, [])
@@ -141,9 +133,9 @@ export function AnalysisCard({
       tabs={tabs} active={tab} onTab={setTab} width={700}
       className="analysis-card" actions={actions} footnote={footnote}
     >
-      {tab === 'summary' && (
-        <DraftSummaryBody team={analyzed} neutral={neutral} />
-      )}
+      {tab === 'summary' && (solo
+        ? <DraftSummaryBody team={analyzed} neutral={neutral} />
+        : <DraftSummaryPair teamOne={teamOne} teamTwo={teamTwo} neutral={neutral} />)}
       {tab === 'types' && (
         <DefensiveChartBody
           team={analyzed} chart={chart} useAbilities={defenseAbilities}

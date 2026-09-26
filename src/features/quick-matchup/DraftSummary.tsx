@@ -8,6 +8,7 @@ import { usePokemonModal } from '../pokemon/PokemonModalContext'
 import { useFitToBox } from '../../lib/useFitToBox'
 import { Sprite } from '../../components/Sprite'
 import { DraftValue } from '../../components/DraftValue'
+import { TeamName } from '../../components/TeamName'
 
 /**
  * Colors a stat relative to the neutral value: below is red, above is green.
@@ -182,6 +183,37 @@ export function DraftSummaryBody({ team, neutral }: { team: Team; neutral: numbe
             ))}
           </tfoot>
     </table>
+    </div>
+  )
+}
+
+/**
+ * Both rosters, a table each, side by side.
+ *
+ * The teams card that used to sit beside this one is gone, and this is where
+ * its job lands. Reading the two against each other is the whole point of the
+ * tool, and it was the one thing the layout would not let you do: the
+ * perspective toggle showed one side at a time and left the comparison to
+ * memory.
+ *
+ * They stack below the width where two runs of seven stat columns stop being
+ * legible side by side.
+ */
+export function DraftSummaryPair({ teamOne, teamTwo, neutral }: {
+  teamOne: Team
+  teamTwo: Team
+  neutral: number
+}) {
+  return (
+    <div className="summary-pair">
+      <section className="summary-side accent-one">
+        <h3><TeamName name={teamOne.name || 'Team 1'} /></h3>
+        <DraftSummaryBody team={teamOne} neutral={neutral} />
+      </section>
+      <section className="summary-side accent-two">
+        <h3><TeamName name={teamTwo.name || 'Team 2'} /></h3>
+        <DraftSummaryBody team={teamTwo} neutral={neutral} />
+      </section>
     </div>
   )
 }

@@ -4,8 +4,6 @@ import type { AbilityDex, LearnsetDex, MoveDex, PokemonDex, TypeChart } from '..
 import { loadLeague, mergeDex, subscribeLeague, type League, type LeagueDex } from '../../data/league'
 import type { Team } from './TeamEditor'
 import { MatchupBuilder } from './MatchupBuilder'
-import { useMediaQuery } from '../../lib/useMediaQuery'
-import { TeamsAndSpeed } from './TeamsAndSpeed'
 import { AnalysisCard } from './AnalysisCard'
 import './quick-matchup.css'
 import { LoadingBall } from '../../components/LoadingBall'
@@ -57,10 +55,6 @@ export function QuickMatchup() {
   const [teamOne, setTeamOne] = useState<Team>(() => emptyTeam('Team 1'))
   const [teamTwo, setTeamTwo] = useState<Team>(() => emptyTeam('Team 2'))
   const [perspective, setPerspective] = useState<'one' | 'two'>('one')
-  // Matches the breakpoint the stylesheet stacks the cards at. Below it there
-  // is only one column, so the speed tiers move into the analysis card and the
-  // teams card — roster list and all — is dropped rather than stacked.
-  const singleColumn = useMediaQuery('(max-width: 1175px)')
   /**
    * The team being read on its own, sent here from the draft screen.
    *
@@ -156,11 +150,10 @@ export function QuickMatchup() {
         </div>
 
         <div className="matchup-container">
-          {!singleColumn && <TeamsAndSpeed teamOne={soloBuilt} teamTwo={emptyTeam('')} dex={dex} solo />}
           <AnalysisCard
             analyzed={soloBuilt} other={emptyTeam('')}
             chart={core.typechart} moves={core.moves} learnsets={learnsets}
-            teamOne={soloBuilt} teamTwo={emptyTeam('')} dex={dex} hostSpeedTiers={singleColumn}
+            teamOne={soloBuilt} teamTwo={emptyTeam('')} dex={dex}
             solo
           />
         </div>
@@ -211,15 +204,13 @@ export function QuickMatchup() {
         </div>
       </div>
 
-      {/* Widgets carry their own intrinsic width and this container packs them,
-          so the page reads as an uneven two-up grid the way DraftZone's does. */}
+      {/* One card now: the roster list it used to sit beside is the summary
+          tab's left half, and the speed tiers are a tab of this. */}
       <div className="matchup-container">
-        {!singleColumn && <TeamsAndSpeed teamOne={teamOne} teamTwo={teamTwo} dex={dex} />}
-
         <AnalysisCard
           analyzed={analyzed} other={other}
           chart={core.typechart} moves={core.moves} learnsets={learnsets}
-          teamOne={teamOne} teamTwo={teamTwo} dex={dex} hostSpeedTiers={singleColumn}
+          teamOne={teamOne} teamTwo={teamTwo} dex={dex}
         />
       </div>
     </div>
