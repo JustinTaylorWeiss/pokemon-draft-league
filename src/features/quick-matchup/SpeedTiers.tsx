@@ -23,10 +23,9 @@ interface Props {
  * see who actually outruns whom. Each Pokémon appears once per spread and
  * multiplier combination its side has switched on.
  *
- * The rosters, then the base stat, what it comes to at this level with
- * nothing invested, what it comes to fully invested — 252 EVs, 31 IVs, a
- * positive nature, which is what most of a drafted team is running — and
- * then every tier the filters allow.
+ * The rosters, then the base stat, what it comes to invested at this level,
+ * what that becomes with a positive nature on top, and then every tier the
+ * filters allow.
  *
  * Selection and the filter live in the parent so the shared card header can own
  * them while this renders only the body.
@@ -92,22 +91,28 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
         </div>
 
         {/*
-          * Base, then the two ends of what it comes to at this level: 31 IVs
-          * and no EVs, and then everything. The heading spells the IVs out
-          * because they were always in this number and nothing said so — a
-          * column headed only with a level reads as the base stat scaled,
-          * which is fifteen points lower at 50 and thirty-one at 100.
+          * Base, then the invested stat at this level, then that with a
+          * positive nature on top.
+          *
+          * "+ IVs" is the league's shorthand for the invested number rather
+          * than a literal reading of the spread — it is 252 EVs and 31 IVs,
+          * and at Lv 50 the EVs are worth the 32 points that makes 170 into
+          * 202. The heading carries the league's words and the tooltip the
+          * actual spread, because the number people quote each other is this
+          * one and it should be labelled the way they say it.
           *
           * All three run in Base's order, since each is a function of it, so
           * a row reads straight across.
           */}
         <div className="speed-level">
-          <h3>Lv {level} <span className="is-inline">+ IVs</span></h3>
+          <h3 title={`252 EVs, 31 IVs, neutral nature, at level ${level}`}>
+            Lv {level} <span className="is-inline">+ IVs</span>
+          </h3>
           <ul>
             {bases.map((b) => (
               <li key={b.id} className={rowClass(b.id)}>
                 <button type="button" onClick={() => toggle(b.id)} title={title(b.id, b.pokemon.name)}>
-                  <strong>{statAtLevel(b.pokemon.baseStats.spe, 0, 1, false, 31, level)}</strong>
+                  <strong>{statAtLevel(b.pokemon.baseStats.spe, 252, 1, false, 31, level)}</strong>
                   <Sprite pokemon={b.pokemon} width={32} height={26} />
                 </button>
               </li>
