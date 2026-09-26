@@ -311,37 +311,15 @@ async function main() {
     }
     if (Object.keys(kept).length) learnOut[id] = kept
   }
-  // A forme learns what its parent forme learns, unless Showdown gives it a
-  // learnset of its own. That is how Showdown resolves one — it ships nothing
-  // under a Mega's id at all, and nothing under Squawkabilly-Blue's or
-  // Landorus-Therian's either — so the parent's moves are copied across. It is
-  // also the whole reason a Mega's base is kept even where the current games
-  // have dropped it: without it, sixty formes had no moves.
-  //
-  // `megaBase` where there is one, because a Mega that evolves from a forme
-  // inherits from that forme: Meowstic-F-Mega learns what Meowstic-F learns,
-  // and copying the male's movepool onto her was wrong in seven moves.
-  let inherited = 0
-  let topped = 0
-  for (const [id, p] of Object.entries(pokemon)) {
-    if (!p.baseSpecies) continue
-    const base = learnOut[p.megaBase ?? toId(p.baseSpecies)]
-    if (!base) continue
-    const own = learnOut[id]
-    if (!own) { learnOut[id] = base; inherited++; continue }
-
-    /*
-     * An entry holding no learnable source is not a movepool — it is the one
-     * move the forme is required to know, listed on its own. Rotom-Heat's is
-     * Overheat, Zacian-Crowned's is Behemoth Blade. Read as a pool it replaced
-     * the base's, so five Rotoms, two Necrozmas and two heroes of Galar each
-     * showed exactly one move and no way to file it.
-     *
-     * Added to the base's rather than replacing it, which is what it is.
-     */
-    const hasPool = Object.values(own).some((sources) => sources.some((s) => isLearnable(s[0])))
-    if (!hasPool) { learnOut[id] = { ...base, ...own }; topped++ }
-  }
+  /*
+   * What Showdown itself filed, before either step below adds to it. The forme
+   * step has to know whether a forme was given a movepool of its own, and once
+   * the pre-evolution step has run it can no longer tell from the entry alone:
+   * Maushold-Four and Dudunsparce-Three-Segment have no learnset and a prevo,
+   * so they end up holding Tandemaus's and Dunsparce's moves and looking like
+   * they came with a pool.
+   */
+  const filed = new Map(Object.entries(learnOut))
 
   /*
    * And a Pokemon learns what it learned before it evolved.
@@ -358,9 +336,12 @@ async function main() {
    * sources come across unchanged: a move bred onto Chimchar is still an egg
    * move on Infernape, and that is how it is obtained.
    *
-   * Copied rather than merged in place, because the forme step above hands
-   * several ids the same object and writing through one would write through
-   * all of them.
+   * Runs before the forme step below, not after. The other way round, a
+   * forme took a copy of its base's movepool and the base then grew: Raichu
+   * picked up eight moves from Pikachu that Raichu-Mega-Y never saw, and
+   * ninety-five formes were short four hundred and twenty-one moves between
+   * them. Nothing here reads a forme's entry, so there is nothing to lose by
+   * doing this first, and the formes then copy a finished pool.
    */
   const stepsToBase = (id, seen = new Set()) => {
     const prevo = pokemon[id]?.prevo
@@ -384,6 +365,41 @@ async function main() {
     learnOut[id] = own
     fromPrevo += added
   }
+  // A forme learns what its parent forme learns — all of it, pre-evolution
+  // moves included, which is why this comes after the step above — unless
+  // Showdown gives it a learnset of its own. That is how Showdown resolves one — it ships nothing
+  // under a Mega's id at all, and nothing under Squawkabilly-Blue's or
+  // Landorus-Therian's either — so the parent's moves are copied across. It is
+  // also the whole reason a Mega's base is kept even where the current games
+  // have dropped it: without it, sixty formes had no moves.
+  //
+  // `megaBase` where there is one, because a Mega that evolves from a forme
+  // inherits from that forme: Meowstic-F-Mega learns what Meowstic-F learns,
+  // and copying the male's movepool onto her was wrong in seven moves.
+  let inherited = 0
+  let topped = 0
+  for (const [id, p] of Object.entries(pokemon)) {
+    if (!p.baseSpecies) continue
+    const base = learnOut[p.megaBase ?? toId(p.baseSpecies)]
+    if (!base) continue
+    const own = filed.get(id)
+    // Base first, then whatever it is already holding — its pre-evolution's
+    // moves, for the two formes that have one.
+    if (!own) { learnOut[id] = { ...base, ...learnOut[id] }; inherited++; continue }
+
+    /*
+     * An entry holding no learnable source is not a movepool — it is the one
+     * move the forme is required to know, listed on its own. Rotom-Heat's is
+     * Overheat, Zacian-Crowned's is Behemoth Blade. Read as a pool it replaced
+     * the base's, so five Rotoms, two Necrozmas and two heroes of Galar each
+     * showed exactly one move and no way to file it.
+     *
+     * Added to the base's rather than replacing it, which is what it is.
+     */
+    const hasPool = Object.values(own).some((sources) => sources.some((s) => isLearnable(s[0])))
+    if (!hasPool) { learnOut[id] = { ...base, ...learnOut[id] }; topped++ }
+  }
+
   stats.learnsets = {
     kept: Object.keys(learnOut).length,
     inheritedFromBase: inherited,
