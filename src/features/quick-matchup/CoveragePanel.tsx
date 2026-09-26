@@ -21,8 +21,6 @@ interface Props {
   minPower: number
   /** Most-used sets; null while loading or when showing the full pool. */
   sets: SetDex | null
-  /** Bumping this clears every per-Pokémon type exclusion. */
-  resetKey: number
 }
 
 /**
@@ -36,12 +34,11 @@ interface Props {
  * the list rather than hunted for down it.
  */
 export function CoverageBody({
-  attackers, defenders, chart, moves, learnsets, useAbilities, minPower, resetKey, sets,
+  attackers, defenders, chart, moves, learnsets, useAbilities, minPower, sets,
 }: Props) {
   // A Pokémon appears here only once it has been toggled; until then it uses
   // the default selection below.
   const [custom, setCustom] = useState<Record<string, Set<TypeName>>>({})
-  useEffect(() => { setCustom({}) }, [resetKey])
 
   /** Every type the Pokémon could attack with, split by category. */
   const available = useMemo(() => {

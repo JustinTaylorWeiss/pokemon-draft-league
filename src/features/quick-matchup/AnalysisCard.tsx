@@ -61,7 +61,6 @@ export function AnalysisCard({
   const [neutral, setNeutral] = useState(80)
   const [defenseAbilities, setDefenseAbilities] = useState(true)
   const [coverageAbilities, setCoverageAbilities] = useState(true)
-  const [resetKey, setResetKey] = useState(0)
   /**
    * How the two teams sit on a tab. Side by side answers "how do these
    * compare"; one above the other gives each panel the card's full width,
@@ -115,16 +114,13 @@ export function AnalysisCard({
       </label>
     ),
     coverage: (
-      <>
-        <label className="toggle">
-          <input
-            type="checkbox" checked={coverageAbilities}
-            onChange={(e) => setCoverageAbilities(e.target.checked)}
-          />
-          <span>Abilities</span>
-        </label>
-        <button type="button" className="btn ghost sm" onClick={() => setResetKey((k) => k + 1)}>Reset</button>
-      </>
+      <label className="toggle">
+        <input
+          type="checkbox" checked={coverageAbilities}
+          onChange={(e) => setCoverageAbilities(e.target.checked)}
+        />
+        <span>Abilities</span>
+      </label>
     ),
     speed: speed.actions,
   }[tab]
@@ -205,8 +201,7 @@ export function AnalysisCard({
               <CoverageBody
                 attackers={team} defenders={side === 'one' ? teamTwo : teamOne}
                 chart={chart} moves={moves} learnsets={learnsets}
-                useAbilities={coverageAbilities} minPower={MIN_POWER} resetKey={resetKey}
-                sets={sets}
+                useAbilities={coverageAbilities} minPower={MIN_POWER} sets={sets}
               />
             )}
           </TeamPair>
