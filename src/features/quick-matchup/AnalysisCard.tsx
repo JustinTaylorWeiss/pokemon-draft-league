@@ -8,7 +8,6 @@ import { buildMoveRows, LearnedMovesBody } from './LearnedMoves'
 import { CoverageBody } from './CoveragePanel'
 import { useSpeedTiersPanel } from './useSpeedTiersPanel'
 import { TeamName } from '../../components/TeamName'
-import { ZoomControl } from './ZoomControl'
 import type { LeagueDex } from '../../data/league'
 import type { Team } from './TeamEditor'
 import { LoadingBall } from '../../components/LoadingBall'
@@ -62,8 +61,14 @@ export function AnalysisCard({
   const [defenseAbilities, setDefenseAbilities] = useState(true)
   const [coverageAbilities, setCoverageAbilities] = useState(true)
   const [resetKey, setResetKey] = useState(0)
-  // 1 means "as large as fits the card", which is where the chart starts.
-  const [typesZoom, setTypesZoom] = useState(1)
+  /**
+   * How the two teams sit on a tab. Side by side answers "how do these
+   * compare"; one above the other gives each panel the card's full width,
+   * which the type chart and the move grid would rather have. Neither is
+   * right for every tab or every window, so it is the reader's call, and it
+   * is one call for the card rather than one per tab.
+   */
+  const [abreast, setAbreast] = useState(true)
 
   const speed = useSpeedTiersPanel(teamOne, teamTwo, dex)
   // Coverage is the one reading that needs somebody on the other side: what a
@@ -100,16 +105,13 @@ export function AnalysisCard({
       </label>
     ),
     types: (
-      <>
-        <label className="toggle">
-          <input
-            type="checkbox" checked={defenseAbilities}
-            onChange={(e) => setDefenseAbilities(e.target.checked)}
-          />
-          <span>Abilities</span>
-        </label>
-        <ZoomControl value={typesZoom} onChange={setTypesZoom} />
-      </>
+      <label className="toggle">
+        <input
+          type="checkbox" checked={defenseAbilities}
+          onChange={(e) => setDefenseAbilities(e.target.checked)}
+        />
+        <span>Abilities</span>
+      </label>
     ),
     coverage: (
       <>
@@ -126,28 +128,39 @@ export function AnalysisCard({
     speed: speed.actions,
   }[tab]
 
+  // On every tab that shows the two teams as a pair, which is all of them bar
+  // the speed tiers — those interleave both sides into one list.
+  const pairing = teamTwo.members.length > 0 && tab !== 'speed' && (
+    <label className="toggle">
+      <input type="checkbox" checked={abreast} onChange={(e) => setAbreast(e.target.checked)} />
+      <span>Side by side</span>
+    </label>
+  )
+
   const footnote = {
     types: 'Delta is resists minus weaknesses. Negative columns are types this team struggles to switch into.',
     coverage: 'Lit types are the Pokémon’s most-used set; the dim ones are everything else it can learn. Click any to toggle.',
     speed: speed.footnote,
   }[tab]
 
+  // Nothing rather than an empty toolbar on a tab that has neither.
+  const header = actions || pairing ? <>{actions}{pairing}</> : undefined
+
   return (
     <Widget
       tabs={tabs} active={tab} onTab={setTab} width={700}
-      className="analysis-card" actions={actions} footnote={footnote}
+      className="analysis-card" footnote={footnote}
+      actions={header}
     >
       {tab === 'summary' && (
-        <TeamPair one={teamOne} two={teamTwo}>
+        <TeamPair one={teamOne} two={teamTwo} abreast={abreast}>
           {(team) => <DraftSummaryBody team={team} neutral={neutral} />}
         </TeamPair>
       )}
       {tab === 'types' && (
-        <TeamPair one={teamOne} two={teamTwo}>
+        <TeamPair one={teamOne} two={teamTwo} abreast={abreast}>
           {(team) => (
-            <DefensiveChartBody
-              team={team} chart={chart} useAbilities={defenseAbilities} zoom={typesZoom}
-            />
+            <DefensiveChartBody team={team} chart={chart} useAbilities={defenseAbilities} />
           )}
         </TeamPair>
       )}
@@ -155,7 +168,7 @@ export function AnalysisCard({
           that file is still downloading. */}
       {tab === 'moves' && (learnsets
         ? (
-          <TeamPair one={teamOne} two={teamTwo}>
+          <TeamPair one={teamOne} two={teamTwo} abreast={abreast}>
             {(team, side) => <LearnedMovesBody team={team} rows={moveRows[side]} byId={byId} />}
           </TeamPair>
         )
@@ -163,7 +176,7 @@ export function AnalysisCard({
       {tab === 'speed' && speed.body}
       {tab === 'coverage' && (learnsets
         ? (
-          <TeamPair one={teamOne} two={teamTwo}>
+          <TeamPair one={teamOne} two={teamTwo} abreast={abreast}>
             {(team, side) => (
               <CoverageBody
                 attackers={team} defenders={side === 'one' ? teamTwo : teamOne}
@@ -186,16 +199,17 @@ export function AnalysisCard({
  * above — so the comparison the tool exists for was a toggle and a memory
  * apart. Both sides are on every tab now and the toggle is gone.
  *
- * Left and right, always, so the comparison is a glance across rather than a
- * scroll down. The panels sized to their box take the halving themselves, and
- * the type chart — the one that feels it, at nineteen columns — has a zoom
- * slider for when half a card is tight. Only a phone stacks them.
+ * Left and right by default, so the comparison is a glance across rather than
+ * a scroll down; the header's switch stacks them instead, which is what the
+ * type chart and the move grid want when half a card is too tight. A phone
+ * stacks them either way, having no second column to offer.
  *
  * One side on its own gets no heading — there is nothing to tell it from.
  */
-function TeamPair({ one, two, children }: {
+function TeamPair({ one, two, abreast, children }: {
   one: Team
   two: Team
+  abreast: boolean
   children: (team: Team, side: 'one' | 'two') => ReactNode
 }) {
   if (!two.members.length) return <>{children(one, 'one')}</>
@@ -204,7 +218,7 @@ function TeamPair({ one, two, children }: {
     ['two', two, two.name || 'Team 2'],
   ]
   return (
-    <div className="panel-pair">
+    <div className={`panel-pair${abreast ? '' : ' is-stacked'}`}>
       {sides.map(([side, team, name]) => (
         <section key={side} className={`panel-side accent-${side}`}>
           <h3><TeamName name={name} /></h3>

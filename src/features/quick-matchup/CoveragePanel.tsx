@@ -188,13 +188,38 @@ export function CoverageBody({
     )
     return (
       <li key={r.id} className="coverage-row">
-        <div className="coverage-mon">
-          <PokemonLink id={r.id} title={r.pokemon.name}>
-            <Sprite pokemon={r.pokemon} width={64} height={52} />
-          </PokemonLink>
-          <span>
-            <PokemonLink id={r.id}>{r.pokemon.name}</PokemonLink>
-          </span>
+        {/* Who, how much, and which of them — the whole reading, in one
+            column, with the types it is worked out from beside it. */}
+        <div className="coverage-left">
+          <div className="coverage-mon">
+            <PokemonLink id={r.id} title={r.pokemon.name}>
+              <Sprite pokemon={r.pokemon} width={64} height={52} />
+            </PokemonLink>
+            <span>
+              <PokemonLink id={r.id}>{r.pokemon.name}</PokemonLink>
+            </span>
+          </div>
+          <div className="coverage-result">
+            <div className="coverage-bar" title={`${r.hits.length} of ${defenders.members.length} hit super effectively`}>
+              <span className="bar-hit" style={{ width: `${r.percent}%` }}>{r.percent > 14 ? `${r.percent}%` : ''}</span>
+              <span className="bar-miss">{r.percent <= 86 ? `${100 - r.percent}%` : ''}</span>
+            </div>
+            <span className="coverage-count">
+              threatens {r.hits.length}/{defenders.members.length}
+            </span>
+            <div className="coverage-targets">
+              {r.hits.map((id) => (
+                <PokemonLink key={id} id={id} title={`Hits ${byId[id]?.name}`}>
+                  <Sprite pokemon={byId[id]} className="hit" width={38} height={32} />
+                </PokemonLink>
+              ))}
+              {r.misses.map((id) => (
+                <PokemonLink key={id} id={id} title={`No super-effective hit on ${byId[id]?.name}`}>
+                  <Sprite pokemon={byId[id]} className="miss" width={38} height={32} />
+                </PokemonLink>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="coverage-types">
@@ -207,28 +232,6 @@ export function CoverageBody({
             <span className="cat-tag"><MoveCategory category="Special" /></span>
             {[...available[r.id].special].sort().map(chip('Special'))}
             {!available[r.id].special.size && <em className="none">none</em>}
-          </div>
-        </div>
-
-        <div className="coverage-result">
-          <div className="coverage-bar" title={`${r.hits.length} of ${defenders.members.length} hit super effectively`}>
-            <span className="bar-hit" style={{ width: `${r.percent}%` }}>{r.percent > 14 ? `${r.percent}%` : ''}</span>
-            <span className="bar-miss">{r.percent <= 86 ? `${100 - r.percent}%` : ''}</span>
-          </div>
-          <span className="coverage-count">
-            threatens {r.hits.length}/{defenders.members.length}
-          </span>
-          <div className="coverage-targets">
-            {r.hits.map((id) => (
-              <PokemonLink key={id} id={id} title={`Hits ${byId[id]?.name}`}>
-                <Sprite pokemon={byId[id]} className="hit" width={38} height={32} />
-              </PokemonLink>
-            ))}
-            {r.misses.map((id) => (
-              <PokemonLink key={id} id={id} title={`No super-effective hit on ${byId[id]?.name}`}>
-                <Sprite pokemon={byId[id]} className="miss" width={38} height={32} />
-              </PokemonLink>
-            ))}
           </div>
         </div>
       </li>

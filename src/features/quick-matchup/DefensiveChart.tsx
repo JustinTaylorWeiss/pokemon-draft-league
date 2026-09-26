@@ -11,9 +11,17 @@ interface Props {
   team: Team
   chart: TypeChart
   useAbilities: boolean
-  /** The card's zoom slider: 1 is "as large as fits". */
-  zoom: number
 }
+
+/**
+ * A tenth under the size that fills its column.
+ *
+ * Filling it exactly leaves the chart touching both edges, with the summary
+ * rows' labels hard against the frame; a tenth back is the difference between
+ * a table in a card and a table wedged into one. Fixed rather than offered on
+ * a slider, which asked the reader to settle a question that has one answer.
+ */
+const SCALE = 0.9
 
 /**
  * The three summary rows, drawn to the same square as the type chips and the
@@ -49,7 +57,7 @@ function cellClass(mult: number): string {
 const label = (m: number) => (m === 1 ? '' : m === 0 ? '0' : String(m))
 
 /** The Abilities toggle is owned by the parent card's header. */
-export function DefensiveChartBody({ team, chart, useAbilities, zoom }: Props) {
+export function DefensiveChartBody({ team, chart, useAbilities }: Props) {
 
   const { rows, summary } = useMemo(
     () => defensiveChart(chart, team.members, useAbilities),
@@ -59,7 +67,7 @@ export function DefensiveChartBody({ team, chart, useAbilities, zoom }: Props) {
   // Width only: all eighteen type columns stay on screen whatever the roster,
   // and a roster too tall for the card scrolls rather than shrinking the chart
   // until it cannot be read.
-  const fitRef = useFitToBox<HTMLDivElement>('width', zoom)
+  const fitRef = useFitToBox<HTMLDivElement>('width', SCALE)
 
   if (!rows.length) return null
 

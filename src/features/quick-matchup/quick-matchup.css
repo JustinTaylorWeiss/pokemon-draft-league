@@ -86,10 +86,10 @@
 .type-table { width: auto; margin: 0 auto; font-size: 0.78rem; }
 /* Both teams on one tab, which is what the toggle in the bar used to do one
    at a time: left and right, so the comparison is a glance across rather than
-   a scroll down. The panels that are sized to their box shrink into their half
-   on their own, and the type chart has a zoom slider for when half is tight.
-   Only a phone stacks them, where there is no second column to be had. */
+   a scroll down. `is-stacked` is the header's switch, for the tabs where half
+   a card is too tight. A phone stacks them either way. */
 .panel-pair { display: flex; gap: 1.1rem; align-items: start; }
+.panel-pair.is-stacked { flex-direction: column; gap: 1.4rem; }
 .panel-side { flex: 1 1 0; min-width: 0; }
 .panel-side > h3 {
   margin: 0 0 0.5rem; text-align: center; font-size: 0.92rem; line-height: 1.25;
@@ -262,9 +262,11 @@
 .mx-strong-weak { background: rgb(200 50 60 / 60%); }
 
 /* ---- speed tiers ---- */
+/* Three even columns: what the species is worth on paper, what it is worth
+   fully invested, and every tier it can actually sit at. Even because none of
+   them is the one you read first — the comparison runs across. */
 .speed-layout { display: flex; gap: 0.6rem; }
-.speed-bases { flex: 0 0 6.2rem; }
-.speed-groups { flex: 1 1 auto; min-width: 0; }
+.speed-bases, .speed-max, .speed-groups { flex: 1 1 0; min-width: 0; }
 .speed-layout h3 { margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase; color: var(--team-both); letter-spacing: 0.05em; }
 .speed-layout h3 span { float: right; text-transform: none; font-size: 0.68rem; }
 .speed-layout ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
@@ -283,15 +285,15 @@
   padding: 0.28rem 0.4rem; background: none; border: 0; color: inherit;
   font: inherit; font-size: inherit; cursor: pointer; text-align: left;
 }
-/* Bigger than the tier rows' sprites, since the base column has the room. */
-.speed-bases img { width: 42px; height: 42px; object-fit: contain; }
+/* Bigger than the tier rows' sprites, since these columns have the room. */
+.speed-bases img, .speed-max img { width: 42px; height: 42px; object-fit: contain; }
 .speed-groups img { width: 38px; height: 34px; object-fit: contain; }
 .speed-layout li.side-one { border-left: 3px solid var(--team-one); }
 .speed-layout li.side-two { border-left: 3px solid var(--team-two); }
 .speed-layout li.is-selected { border-color: var(--team-both); background: rgb(167 139 250 / 16%); }
 .speed-layout li.is-dimmed { opacity: 0.28; }
 .speed-layout strong { margin-left: auto; font-variant-numeric: tabular-nums; }
-.speed-bases li button { justify-content: space-between; }
+.speed-bases li button, .speed-max li button { justify-content: space-between; }
 .speed-layout img { image-rendering: pixelated; object-fit: contain; }
 .badge { font-size: 0.68rem; padding: 0.05rem 0.35rem; border-radius: 4px; background: var(--chip); color: var(--muted); }
 .badge-ability { color: var(--team-both); }
@@ -393,15 +395,20 @@ button.type-chip { cursor: pointer; }
   display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;
   padding: 0.5rem; border: 1px solid var(--line); border-radius: 10px;
 }
-.coverage-mon { display: flex; align-items: center; gap: 0.4rem; flex: 0 0 11rem; font-size: 0.85rem; font-weight: 600; }
+/* The answer on the left — who, how much of the other side, and which of them
+   — and the types it comes from on the right. The types are the working and
+   the only part that is interactive; reading the row should not mean stepping
+   over them to reach the number they produce. */
+.coverage-left { flex: 0 0 14rem; display: flex; flex-direction: column; gap: 0.45rem; min-width: 0; }
+.coverage-mon { display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 600; min-width: 0; }
 .coverage-mon img { image-rendering: pixelated; object-fit: contain; }
 /* The gap carries the split between the two categories: at 0.25rem the two
    rows of chips read as one block that happened to wrap. */
-.coverage-types { flex: 1 1 20rem; display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
+.coverage-types { flex: 1 1 16rem; display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
 .coverage-line { display: flex; flex-wrap: wrap; gap: 0.2rem; align-items: center; }
 .cat-tag { display: inline-flex; width: 3.5rem; }
 .none { color: var(--muted); font-size: 0.75rem; }
-.coverage-result { flex: 0 0 13rem; display: flex; flex-direction: column; gap: 0.3rem; }
+.coverage-result { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
 .coverage-bar { display: flex; height: 1.1rem; border-radius: 999px; overflow: hidden; background: var(--chip); font-size: 0.68rem; font-weight: 600; }
 .bar-hit { background: #2ea078; color: #04231a; display: grid; place-items: center; }
 .bar-miss { flex: 1; display: grid; place-items: center; color: var(--muted); }
@@ -418,17 +425,18 @@ button.type-chip { cursor: pointer; }
 .tip-more, .tip-empty { margin: 0.4rem 0 0; color: var(--muted); }
 
 /* ---- learned moves ---- */
-/* Search takes the left half; the tag pills wrap into stacked rows on the right.
-   The input keeps its own height and centres against the stack. */
+/* Search and its count on the first line, the tags across the full width
+   underneath. Beside the search they had half a card to wrap into and took
+   four rows of it, which pushed the grid itself below the fold. */
 .moves-controls {
-  display: flex; gap: 0.75rem; padding: 0 16px 0.9rem; align-items: center;
+  display: flex; flex-wrap: wrap; gap: 0.5rem 0.75rem;
+  padding: 0 16px 0.9rem; align-items: center;
 }
 .moves-controls input {
   flex: 1 1 0; min-width: 0; align-self: center;
   height: 2rem; padding: 0 0.7rem; font-size: 0.85rem;
 }
-/* The right half, wrapping into as many rows as the pills need. */
-.tag-row { flex: 1 1 0; min-width: 0; display: flex; flex-wrap: wrap; gap: 0.25rem; align-content: flex-start; }
+.tag-row { flex: 1 1 100%; min-width: 0; display: flex; flex-wrap: wrap; gap: 0.25rem; align-content: flex-start; }
 .tag-btn {
   display: inline-flex; align-items: center;
   font-size: 0.66rem; letter-spacing: 0.03em; padding: 0.2rem 0.5rem; border-radius: 999px;
@@ -461,7 +469,7 @@ button.type-chip { cursor: pointer; }
      says less than the names would — so the cap comes off and nothing is
      counted, which the measuring sees and leaves alone. */
   .summary-table .col-abil .ability-lines { max-height: none; }
-  .coverage-mon, .coverage-result { flex-basis: 100%; }
+  .coverage-left { flex-basis: 100%; }
   .rosters { flex-direction: column; }
 }
 
@@ -777,8 +785,7 @@ button.type-chip { cursor: pointer; }
   .matchup-container { gap: 12px; }
   .matchup-title, .bar-inner.matchup-bar { gap: 0.6rem; }
   .matchup-bar h2 { font-size: 1.05rem; }
-  .coverage-mon { flex-basis: 100%; }
-  .coverage-result { flex-basis: 100%; }
+  .coverage-left { flex-basis: 100%; }
   .move-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
   .moves-controls { flex-wrap: wrap; }
   .moves-controls input { flex-basis: 100%; }
