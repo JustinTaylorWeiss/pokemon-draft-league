@@ -23,9 +23,10 @@ interface Props {
  * see who actually outruns whom. Each Pokémon appears once per spread and
  * multiplier combination its side has switched on.
  *
- * Three columns: the base stat, what it comes to fully invested at this level
- * — 252 EVs, 31 IVs, a positive nature, which is what almost everything on a
- * drafted team is running — and then every tier the filters allow.
+ * The rosters, then the base stat, what it comes to at this level with
+ * nothing invested, what it comes to fully invested — 252 EVs, 31 IVs, a
+ * positive nature, which is what most of a drafted team is running — and
+ * then every tier the filters allow.
  *
  * Selection and the filter live in the parent so the shared card header can own
  * them while this renders only the body.
@@ -90,10 +91,27 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
           </ul>
         </div>
 
-        {/* The same order as Base, since the one is a function of the other —
-            so the two columns read across, stat against what it comes to. */}
+        {/*
+          * Base, then the two ends of what it comes to at this level: nothing
+          * invested, and everything. All three run in Base's order, since each
+          * is a function of it, so a row reads straight across.
+          */}
+        <div className="speed-level">
+          <h3>Lv {level}</h3>
+          <ul>
+            {bases.map((b) => (
+              <li key={b.id} className={rowClass(b.id)}>
+                <button type="button" onClick={() => toggle(b.id)} title={title(b.id, b.pokemon.name)}>
+                  <strong>{statAtLevel(b.pokemon.baseStats.spe, 0, 1, false, 31, level)}</strong>
+                  <Sprite pokemon={b.pokemon} width={32} height={26} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+
         <div className="speed-max">
-          <h3>Max</h3>
+          <h3>Max <span>Lv {level}</span></h3>
           <ul>
             {bases.map((b) => (
               <li key={b.id} className={rowClass(b.id)}>
