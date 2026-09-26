@@ -138,7 +138,7 @@ export function AnalysisCard({
       className="analysis-card" actions={actions} footnote={footnote}
     >
       {tab === 'summary' && (
-        <TeamPair one={teamOne} two={teamTwo} abreast>
+        <TeamPair one={teamOne} two={teamTwo}>
           {(team) => <DraftSummaryBody team={team} neutral={neutral} />}
         </TeamPair>
       )}
@@ -186,16 +186,16 @@ export function AnalysisCard({
  * above — so the comparison the tool exists for was a toggle and a memory
  * apart. Both sides are on every tab now and the toggle is gone.
  *
- * `abreast` puts them in two columns where the content is narrow enough to
- * take it. Everything else stacks: a nineteen-column chart cut in half is a
- * chart nobody can read, and shrinking it to fit would only make that worse.
+ * Left and right, always, so the comparison is a glance across rather than a
+ * scroll down. The panels sized to their box take the halving themselves, and
+ * the type chart — the one that feels it, at nineteen columns — has a zoom
+ * slider for when half a card is tight. Only a phone stacks them.
  *
  * One side on its own gets no heading — there is nothing to tell it from.
  */
-function TeamPair({ one, two, abreast, children }: {
+function TeamPair({ one, two, children }: {
   one: Team
   two: Team
-  abreast?: boolean
   children: (team: Team, side: 'one' | 'two') => ReactNode
 }) {
   if (!two.members.length) return <>{children(one, 'one')}</>
@@ -204,7 +204,7 @@ function TeamPair({ one, two, abreast, children }: {
     ['two', two, two.name || 'Team 2'],
   ]
   return (
-    <div className={`panel-pair${abreast ? ' is-abreast' : ''}`}>
+    <div className="panel-pair">
       {sides.map(([side, team, name]) => (
         <section key={side} className={`panel-side accent-${side}`}>
           <h3><TeamName name={name} /></h3>
