@@ -11,6 +11,8 @@ interface Props {
   filterTwo: Set<string>
   /** 50 for VGC, 100 for singles ladders. */
   level: number
+  /** Ids on the chart only as the forme a Mega starts in, so rows can say so. */
+  preMega: Set<string>
   selected: string | null
   onSelect: (id: string | null) => void
 }
@@ -23,7 +25,7 @@ interface Props {
  * Selection and the filter live in the parent so the shared card header can own
  * them while this renders only the body.
  */
-export function SpeedTiersBody({ teamOne, teamTwo, filterOne, filterTwo, level, selected, onSelect }: Props) {
+export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo, level, selected, onSelect }: Props) {
 
   const side = useMemo(() => {
     const map = new Map<string, 'one' | 'two'>()
@@ -46,6 +48,9 @@ export function SpeedTiersBody({ teamOne, teamTwo, filterOne, filterTwo, level, 
   if (!all.length) return null
 
   const toggle = (id: string) => onSelect(selected === id ? null : id)
+  /** A sprite alone does not say why an undrafted forme is on the chart. */
+  const title = (id: string, name: string) =>
+    preMega.has(id) ? `${name} — before it Mega Evolves` : name
   const rowClass = (id: string) =>
     `side-${side.get(id)}${selected === id ? ' is-selected' : selected ? ' is-dimmed' : ''}`
 
@@ -56,9 +61,10 @@ export function SpeedTiersBody({ teamOne, teamTwo, filterOne, filterTwo, level, 
           <ul>
             {bases.map((b) => (
               <li key={b.id} className={rowClass(b.id)}>
-                <button type="button" onClick={() => toggle(b.id)} title={b.pokemon.name}>
+                <button type="button" onClick={() => toggle(b.id)} title={title(b.id, b.pokemon.name)}>
                   <strong>{b.pokemon.baseStats.spe}</strong>
                   <Sprite pokemon={b.pokemon} width={32} height={26} />
+                  {preMega.has(b.id) && <span className="badge badge-base">pre</span>}
                 </button>
               </li>
             ))}
@@ -70,8 +76,9 @@ export function SpeedTiersBody({ teamOne, teamTwo, filterOne, filterTwo, level, 
           <ul>
             {all.map((t, i) => (
               <li key={`${t.id}-${t.investment}-${t.stage ?? ''}-${t.modifiers.join()}-${i}`} className={rowClass(t.id)}>
-                <button type="button" onClick={() => toggle(t.id)} title={t.pokemon.name}>
+                <button type="button" onClick={() => toggle(t.id)} title={title(t.id, t.pokemon.name)}>
                   <Sprite pokemon={t.pokemon} width={32} height={26} />
+                  {preMega.has(t.id) && <span className="badge badge-base">pre</span>}
                   <span className="badge">{t.investment}</span>
                   {t.stage && <span className="badge badge-stage">{t.stage}</span>}
                   {t.modifiers.map((m) => (

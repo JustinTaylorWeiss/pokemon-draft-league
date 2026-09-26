@@ -7,6 +7,7 @@ import { DefensiveChartBody } from './DefensiveChart'
 import { buildMoveRows, LearnedMovesBody } from './LearnedMoves'
 import { CoverageBody } from './CoveragePanel'
 import { useSpeedTiersPanel } from './useSpeedTiersPanel'
+import type { LeagueDex } from '../../data/league'
 import type { Team } from './TeamEditor'
 import { LoadingBall } from '../../components/LoadingBall'
 
@@ -35,6 +36,8 @@ interface Props {
   /** Both rosters, for the speed tiers this card hosts in one-column layouts. */
   teamOne: Team
   teamTwo: Team
+  /** Speed tiers add the formes the Megas start in, which needs looking up. */
+  dex: LeagueDex
   hostSpeedTiers: boolean
   /** One team, read on its own: no opponent, so no Coverage. */
   solo?: boolean
@@ -51,7 +54,7 @@ interface Props {
  * not looking at.
  */
 export function AnalysisCard({
-  analyzed, other, chart, moves, learnsets, teamOne, teamTwo, hostSpeedTiers, solo,
+  analyzed, other, chart, moves, learnsets, teamOne, teamTwo, dex, hostSpeedTiers, solo,
 }: Props) {
   const [tab, setTab] = useState('summary')
   const [neutral, setNeutral] = useState(80)
@@ -61,7 +64,7 @@ export function AnalysisCard({
 
   // Always built, shown only when this card is hosting it. The body is what
   // does the work, and that is only rendered on its own tab.
-  const speed = useSpeedTiersPanel(teamOne, teamTwo)
+  const speed = useSpeedTiersPanel(teamOne, teamTwo, dex)
   // Coverage is the one reading that needs somebody on the other side: what a
   // team hits is a fact about the team it is hitting. Every other tab here is
   // about the analysed team alone, so solo keeps them all and drops that one.

@@ -156,11 +156,11 @@ export function QuickMatchup() {
         </div>
 
         <div className="matchup-container">
-          {!singleColumn && <TeamsAndSpeed teamOne={soloBuilt} teamTwo={emptyTeam('')} solo />}
+          {!singleColumn && <TeamsAndSpeed teamOne={soloBuilt} teamTwo={emptyTeam('')} dex={dex} solo />}
           <AnalysisCard
             analyzed={soloBuilt} other={emptyTeam('')}
             chart={core.typechart} moves={core.moves} learnsets={learnsets}
-            teamOne={soloBuilt} teamTwo={emptyTeam('')} hostSpeedTiers={singleColumn}
+            teamOne={soloBuilt} teamTwo={emptyTeam('')} dex={dex} hostSpeedTiers={singleColumn}
             solo
           />
         </div>
@@ -214,12 +214,12 @@ export function QuickMatchup() {
       {/* Widgets carry their own intrinsic width and this container packs them,
           so the page reads as an uneven two-up grid the way DraftZone's does. */}
       <div className="matchup-container">
-        {!singleColumn && <TeamsAndSpeed teamOne={teamOne} teamTwo={teamTwo} />}
+        {!singleColumn && <TeamsAndSpeed teamOne={teamOne} teamTwo={teamTwo} dex={dex} />}
 
         <AnalysisCard
           analyzed={analyzed} other={other}
           chart={core.typechart} moves={core.moves} learnsets={learnsets}
-          teamOne={teamOne} teamTwo={teamTwo} hostSpeedTiers={singleColumn}
+          teamOne={teamOne} teamTwo={teamTwo} dex={dex} hostSpeedTiers={singleColumn}
         />
       </div>
     </div>

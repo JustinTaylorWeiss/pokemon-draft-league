@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Widget } from '../../components/Widget'
 import { TeamsBody } from './Overview'
 import { useSpeedTiersPanel } from './useSpeedTiersPanel'
+import type { LeagueDex } from '../../data/league'
 import type { Team } from './TeamEditor'
 
 const TABS = [
@@ -19,13 +20,14 @@ const TABS = [
 interface Props {
   teamOne: Team
   teamTwo: Team
+  dex: LeagueDex
   /** One team, read on its own: one column, and the tab says so. */
   solo?: boolean
 }
 
-export function TeamsAndSpeed({ teamOne, teamTwo, solo }: Props) {
+export function TeamsAndSpeed({ teamOne, teamTwo, dex, solo }: Props) {
   const [tab, setTab] = useState('teams')
-  const speed = useSpeedTiersPanel(teamOne, teamTwo)
+  const speed = useSpeedTiersPanel(teamOne, teamTwo, dex)
   const onSpeed = tab === 'speed'
 
   return (
