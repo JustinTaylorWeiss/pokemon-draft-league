@@ -1,4 +1,4 @@
-import { statAt100 } from '../../lib/stats'
+import { statAtLevel } from '../../lib/stats'
 import { TeamName } from '../../components/TeamName'
 import type { Team } from './TeamEditor'
 import { PokemonLink } from '../../components/PokemonLink'
@@ -8,22 +8,34 @@ import { Sprite } from '../../components/Sprite'
  * The two rosters side by side, sorted fastest first. The right column is
  * mirrored — speed, name, sprite — so both teams read outward from the centre,
  * matching DraftZone's overview.
+ *
+ * The speed follows the level the rest of the panel is read at rather than
+ * being fixed at 100: this sits beside three columns of tiers that move with
+ * that picker, and a column that did not move with them was the one number on
+ * the tab that meant something else.
  */
-export function TeamsBody({ teamOne, teamTwo, solo }: {
+export function TeamsBody({ teamOne, teamTwo, level, solo }: {
   teamOne: Team
   teamTwo: Team
+  /** 50 for VGC, 100 for singles ladders — the panel's own picker. */
+  level: number
   /** One team on its own: the second column would be an empty half. */
   solo?: boolean
 }) {
   return (
     <div className={`overview-wrapper${solo ? ' is-solo' : ''}`}>
-      <TeamColumn team={teamOne} side="one" />
-      {!solo && <TeamColumn team={teamTwo} side="two" alternate />}
+      <TeamColumn team={teamOne} side="one" level={level} />
+      {!solo && <TeamColumn team={teamTwo} side="two" level={level} alternate />}
     </div>
   )
 }
 
-function TeamColumn({ team, side, alternate }: { team: Team; side: 'one' | 'two'; alternate?: boolean }) {
+function TeamColumn({ team, side, level, alternate }: {
+  team: Team
+  side: 'one' | 'two'
+  level: number
+  alternate?: boolean
+}) {
   const rows = [...team.members].sort(
     (a, b) => b.pokemon.baseStats.spe - a.pokemon.baseStats.spe,
   )
@@ -49,8 +61,8 @@ function TeamColumn({ team, side, alternate }: { team: Team; side: 'one' | 'two'
             <span className="name-cell" title={m.pokemon.name}>
               <PokemonLink id={m.id}>{m.pokemon.name}</PokemonLink>
             </span>
-            <span className="speed-cell" title="Speed at Lv 100, 252 EVs, neutral nature">
-              {statAt100(m.pokemon.baseStats.spe)}
+            <span className="speed-cell" title={`Speed at Lv ${level}, 252 EVs, neutral nature`}>
+              {statAtLevel(m.pokemon.baseStats.spe, 252, 1, false, 31, level)}
             </span>
           </div>
         ))}

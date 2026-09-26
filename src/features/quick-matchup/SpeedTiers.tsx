@@ -70,7 +70,10 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
             is who is on the team, not who is on the chart. */}
         <div className="speed-rosters">
           <h3>Teams</h3>
-          <TeamsBody teamOne={drafted(teamOne)} teamTwo={drafted(teamTwo)} solo={!teamTwo.members.length} />
+          <TeamsBody
+            teamOne={drafted(teamOne)} teamTwo={drafted(teamTwo)}
+            level={level} solo={!teamTwo.members.length}
+          />
         </div>
 
         <div className="speed-bases">
