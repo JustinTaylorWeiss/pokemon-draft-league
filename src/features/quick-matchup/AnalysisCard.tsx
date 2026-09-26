@@ -130,10 +130,14 @@ export function AnalysisCard({
   // On every tab that shows the two teams as a pair, which is all of them bar
   // the speed tiers — those interleave both sides into one list.
   const pairing = teamTwo.members.length > 0 && tab !== 'speed' && (
-    <label className="toggle">
-      <input type="checkbox" checked={abreast} onChange={(e) => setAbreast(e.target.checked)} />
-      <span>Side by side</span>
-    </label>
+    // A button rather than a checkbox: it does not tick a condition, it puts
+    // the page one way or the other, and `aria-pressed` says which way it is.
+    <button
+      type="button" className="pill-toggle" aria-pressed={abreast}
+      onClick={() => setAbreast((on) => !on)}
+    >
+      Side by side
+    </button>
   )
 
   const footnote = {

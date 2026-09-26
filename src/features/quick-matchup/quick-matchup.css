@@ -547,6 +547,11 @@ button.type-chip { cursor: pointer; }
 .matchup-bar .sub-nav button.is-active::after { background: var(--team-accent, var(--accent)); }
 /* Controls sit against the tabs, not a card header. */
 .matchup-bar .sub-actions { flex-wrap: wrap; row-gap: 0.4rem; }
+/* Lit when it is on, in the bar's own accent, like the tab beneath it. */
+.pill-toggle[aria-pressed="true"] {
+  border-color: var(--team-accent, var(--accent));
+  color: var(--team-accent, var(--accent));
+}
 
 /* Cards run to their full height: no panel scrolls inside itself, so the page
    is the only scroller and a trackpad never gets trapped in a nested box. */
