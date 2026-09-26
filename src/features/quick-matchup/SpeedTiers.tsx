@@ -92,12 +92,17 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
         </div>
 
         {/*
-          * Base, then the two ends of what it comes to at this level: nothing
-          * invested, and everything. All three run in Base's order, since each
-          * is a function of it, so a row reads straight across.
+          * Base, then the two ends of what it comes to at this level: 31 IVs
+          * and no EVs, and then everything. The heading spells the IVs out
+          * because they were always in this number and nothing said so — a
+          * column headed only with a level reads as the base stat scaled,
+          * which is fifteen points lower at 50 and thirty-one at 100.
+          *
+          * All three run in Base's order, since each is a function of it, so
+          * a row reads straight across.
           */}
         <div className="speed-level">
-          <h3>Lv {level}</h3>
+          <h3>Lv {level} <span className="is-inline">+ IVs</span></h3>
           <ul>
             {bases.map((b) => (
               <li key={b.id} className={rowClass(b.id)}>
