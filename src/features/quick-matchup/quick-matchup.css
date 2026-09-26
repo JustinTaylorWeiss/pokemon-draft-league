@@ -638,7 +638,7 @@ button.type-chip { cursor: pointer; }
 .summary-table .row-link:hover td,
 .summary-table .row-link:hover th { background-image: linear-gradient(rgb(255 255 255 / 6%), rgb(255 255 255 / 6%)); }
 
-/* ---- Draft Summary neutral slider ----
+/* ---- Summary neutral slider ----
    The range input's intrinsic box does not centre against the text beside it,
    so the track and thumb are drawn explicitly at a known height. */
 .neutral-control {

@@ -18,7 +18,7 @@ import { LoadingBall } from '../../components/LoadingBall'
  * simply where they live.
  */
 const TABS = [
-  { key: 'summary', label: 'Draft Summary' },
+  { key: 'summary', label: 'Summary' },
   { key: 'types', label: 'Defensive Type Chart' },
   { key: 'speed', label: 'Speed Tiers' },
   { key: 'moves', label: 'Learned Moves' },
