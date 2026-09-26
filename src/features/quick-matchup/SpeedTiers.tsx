@@ -111,7 +111,7 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
         </div>
 
         <div className="speed-max">
-          <h3>Max <span>Lv {level}</span></h3>
+          <h3>Max <span className="is-inline">Lv {level}</span></h3>
           <ul>
             {bases.map((b) => (
               <li key={b.id} className={rowClass(b.id)}>

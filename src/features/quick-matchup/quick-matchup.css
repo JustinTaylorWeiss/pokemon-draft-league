@@ -305,6 +305,9 @@
 .speed-rosters { flex: 1.8 1 0; min-width: 0; }
 .speed-layout h3 { margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase; color: var(--team-both); letter-spacing: 0.05em; }
 .speed-layout h3 span { float: right; text-transform: none; font-size: 0.68rem; }
+/* Stays beside the word it qualifies. Held right it read as a second heading
+   for the column rather than the rest of the first one. */
+.speed-layout h3 span.is-inline { float: none; }
 .speed-layout ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
 
 .speed-layout li {
