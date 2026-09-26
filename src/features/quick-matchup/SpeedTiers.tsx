@@ -11,7 +11,7 @@ interface Props {
   filterTwo: Set<string>
   /** 50 for VGC, 100 for singles ladders. */
   level: number
-  /** Ids on the chart only as the forme a Mega starts in, so rows can say so. */
+  /** Ids on the chart only as the forme a Mega starts in, named so on hover. */
   preMega: Set<string>
   selected: string | null
   onSelect: (id: string | null) => void
@@ -48,7 +48,7 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
   if (!all.length) return null
 
   const toggle = (id: string) => onSelect(selected === id ? null : id)
-  /** A sprite alone does not say why an undrafted forme is on the chart. */
+  /** The only place it is said: why an undrafted forme is on the chart. */
   const title = (id: string, name: string) =>
     preMega.has(id) ? `${name} — before it Mega Evolves` : name
   const rowClass = (id: string) =>
@@ -64,7 +64,6 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
                 <button type="button" onClick={() => toggle(b.id)} title={title(b.id, b.pokemon.name)}>
                   <strong>{b.pokemon.baseStats.spe}</strong>
                   <Sprite pokemon={b.pokemon} width={32} height={26} />
-                  {preMega.has(b.id) && <span className="badge badge-base">pre</span>}
                 </button>
               </li>
             ))}
@@ -78,7 +77,6 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
               <li key={`${t.id}-${t.investment}-${t.stage ?? ''}-${t.modifiers.join()}-${i}`} className={rowClass(t.id)}>
                 <button type="button" onClick={() => toggle(t.id)} title={title(t.id, t.pokemon.name)}>
                   <Sprite pokemon={t.pokemon} width={32} height={26} />
-                  {preMega.has(t.id) && <span className="badge badge-base">pre</span>}
                   <span className="badge">{t.investment}</span>
                   {t.stage && <span className="badge badge-stage">{t.stage}</span>}
                   {t.modifiers.map((m) => (

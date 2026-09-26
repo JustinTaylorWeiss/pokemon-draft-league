@@ -292,8 +292,6 @@
 .speed-layout img { image-rendering: pixelated; object-fit: contain; }
 .badge { font-size: 0.68rem; padding: 0.05rem 0.35rem; border-radius: 4px; background: var(--chip); color: var(--muted); }
 .badge-ability { color: var(--team-both); }
-/* The forme a Mega starts in, which nobody drafted: says why it is here. */
-.badge-base { color: var(--fg); background: none; border: 1px solid var(--line); }
 
 /* ---- speed tiers filter ---- */
 /* A checkbox on each side of the label, so the two teams filter independently:
