@@ -542,16 +542,28 @@ button.type-chip { cursor: pointer; }
    the window's edge. */
 .analysis-body { min-width: 0; padding: 0 4px; }
 .analysis-note { margin: 0.6rem 4px 0; color: var(--muted); font-size: 0.72rem; }
-/* The tabs take the bar's own colour rather than the league's red. */
-.matchup-bar .sub-nav button.is-active { color: var(--team-accent, var(--accent)); }
-.matchup-bar .sub-nav button.is-active::after { background: var(--team-accent, var(--accent)); }
 /* Controls sit against the tabs, not a card header. */
 .matchup-bar .sub-actions { flex-wrap: wrap; row-gap: 0.4rem; }
-/* Lit when it is on, in the bar's own accent, like the tab beneath it. */
-.pill-toggle[aria-pressed="true"] {
-  border-color: var(--team-accent, var(--accent));
-  color: var(--team-accent, var(--accent));
+/*
+ * Filled when it is on, not merely tinted.
+ *
+ * Tinted was the bug: every pill in this bar tints to the accent on hover, so
+ * a toggle whose on-state was the same tint could not be read while the
+ * pointer was on it — and the pointer is always on it just after you click.
+ * Switching it off left it looking exactly as it had. Filled is a state the
+ * hover cannot produce, and hovering off now reaches for the foreground
+ * rather than the accent.
+ */
+.pill-toggle[aria-pressed="true"],
+.pill-toggle[aria-pressed="true"]:hover {
+  background: var(--nav-red);
+  border-color: var(--nav-red);
+  /* Near-black on it: the red is light enough that white text on it is the
+     weaker read of the two. */
+  color: var(--bg);
 }
+.pill-toggle[aria-pressed="true"]:hover { filter: brightness(1.08); }
+.pill-toggle[aria-pressed="false"]:hover { color: var(--fg); border-color: var(--muted); }
 
 /* Cards run to their full height: no panel scrolls inside itself, so the page
    is the only scroller and a trackpad never gets trapped in a nested box. */

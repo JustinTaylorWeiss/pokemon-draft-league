@@ -107,22 +107,20 @@ export function AnalysisCard({
       </label>
     ),
     types: (
-      <label className="toggle">
-        <input
-          type="checkbox" checked={defenseAbilities}
-          onChange={(e) => setDefenseAbilities(e.target.checked)}
-        />
-        <span>Abilities</span>
-      </label>
+      <button
+        type="button" className="pill-toggle" aria-pressed={defenseAbilities}
+        onClick={() => setDefenseAbilities((on) => !on)}
+      >
+        Abilities
+      </button>
     ),
     coverage: (
-      <label className="toggle">
-        <input
-          type="checkbox" checked={coverageAbilities}
-          onChange={(e) => setCoverageAbilities(e.target.checked)}
-        />
-        <span>Abilities</span>
-      </label>
+      <button
+        type="button" className="pill-toggle" aria-pressed={coverageAbilities}
+        onClick={() => setCoverageAbilities((on) => !on)}
+      >
+        Abilities
+      </button>
     ),
     speed: speed.actions,
   }[tab]

@@ -84,12 +84,19 @@
 
 /* Season picker: currently one option, but it is where other seasons or
    leagues will be selected. */
+/* Blue, not the neutral purple: it lives in the primary bar, which the nav
+   beside it already leads in blue, and it is the loudest thing in that bar. */
 .season-picker { min-width: 0; }
 .season-picker .drop-current {
-  color: var(--accent); border-radius: 10px; padding: 0.3rem 0.6rem;
+  color: var(--nav-blue); border-radius: 10px; padding: 0.3rem 0.6rem;
   font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em;
 }
-.season-picker .drop-caret { font-size: 1rem; color: var(--accent); }
+.season-picker .drop-caret { font-size: 1rem; color: var(--nav-blue); }
+.season-picker .drop-current:hover { border-color: var(--nav-blue); }
+.season-picker .drop-current:hover .drop-caret { color: var(--nav-blue); }
+.season-picker .drop-current:focus-visible { outline-color: var(--nav-blue); }
+.season-picker .drop-list button.is-current { color: var(--nav-blue); }
+.season-picker .drop-list button:focus-visible { outline-color: var(--nav-blue); }
 /* Anchored to its right edge: it is the last thing in the bar, and a list
    hanging off the left would run past the window. */
 .season-picker .drop-list { left: auto; right: 0; }
