@@ -1132,6 +1132,9 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
    own line, because a nature is half of what that number reads and the
    slider is the other half. */
 .ev-nature {
+  /* Centred by the box, not by the baseline: at these heights a line of
+     text left to sit on its own baseline rides high in the pill. */
+  display: inline-flex; align-items: center; justify-content: center;
   flex: 0 1 auto; min-width: 0; align-self: center; margin-left: auto;
   height: 1.25rem; padding: 0 0.45rem; line-height: 1;
   background: none; border: 1px solid var(--line); border-radius: 999px;
@@ -1416,7 +1419,7 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 /* Two stats to a row, three rows deep. */
 .ev-gear-assumes {
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 0.4rem 0.55rem;
+  gap: 0.7rem 0.55rem;
   padding-bottom: 0.45rem; border-bottom: 1px solid var(--line);
 }
 /*
@@ -1428,8 +1431,8 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
  * steps at a pixel each. Stacked, it gets the whole cell.
  */
 /* Air between the line and its bar: the slider's thumb stands proud of
-   the track it runs on, and a tenth of a rem put it under the pill. */
-.ev-assume-stat { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
+   the track it runs on, so it wants clear room under the pill. */
+.ev-assume-stat { display: flex; flex-direction: column; gap: 0.45rem; min-width: 0; }
 /* The stat, what it reads, and the nature that bends it, packed left on
    one line above the bar. A fixed height so the six bars sit level
    whatever is over them — HP has no nature button. */
