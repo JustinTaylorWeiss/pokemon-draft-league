@@ -233,7 +233,7 @@ export function AnalysisCard({
           <EvCalcBody
             teamOne={teamOne} teamTwo={teamTwo}
             chart={chart} moves={moves} learnsets={learnsets} sets={sets} played={played}
-            level={level}
+            dex={dex} level={level}
           />
         )
         : <LoadingBall label="Loading learnsets…" inline />)}

@@ -11,6 +11,7 @@ import { TypeChip } from '../../components/TypeChip'
 import { PokemonLink } from '../../components/PokemonLink'
 import { toId } from '../../data/load'
 import { DropPicker, type DropItem } from '../../components/DropPicker'
+import type { LeagueDex } from '../../data/league'
 import type { Team, TeamEntry } from './TeamEditor'
 
 /**
@@ -43,6 +44,25 @@ const natureIsLegal = (s: Spread) => {
 
 /** HP has no nature: no nature in the games touches it. */
 const takesNature = (stat: StatKey) => stat !== 'hp'
+
+/**
+ * The shapes a Pokémon takes mid-battle, where it takes more than one.
+ *
+ * Aegislash is 60 Defense in one stance and 150 in the other, and a spread
+ * chosen against one of those is not a spread for the other. Twenty-eight
+ * Pokémon have a second shape they change into without being a second draft
+ * pick; for everything else this comes back with one entry and no toggle.
+ *
+ * Found through `battleOnly`, which each changed forme carries pointing back
+ * at the one it reverts to.
+ */
+function battleFormes(id: string, dex: LeagueDex) {
+  const mon = dex[id]
+  if (!mon) return []
+  const base = mon.battleOnly?.[0] ?? id
+  const ids = [base, ...Object.keys(dex).filter((k) => dex[k].battleOnly?.includes(base))]
+  return [...new Set(ids)].filter((k) => dex[k]).map((k) => ({ id: k, pokemon: dex[k] }))
+}
 
 /** Short on the button, spelled out on hover. */
 const ASSUME_LABEL: Record<Assume, string> = { set: 'set', max: '252', 'max+': '252+' }
@@ -246,12 +266,14 @@ interface Props {
   sets: SetDex | null
   /** The damaging moves the format plays, for the Pokémon with no usage set. */
   played: string[]
+  /** For finding a Pokémon's other in-battle shapes, which are not on a team. */
+  dex: LeagueDex
   /** Owned by the card, so one picker in the bar serves this and the tiers. */
   level: number
 }
 
 export function EvCalcBody({
-  teamOne, teamTwo, chart, moves, learnsets, sets, played, level,
+  teamOne, teamTwo, chart, moves, learnsets, sets, played, dex, level,
 }: Props) {
   const [chosen, setChosen] = useState<string | null>(null)
   const [spread, setSpread] = useState<Spread>(emptySpread)
@@ -269,22 +291,33 @@ export function EvCalcBody({
   /** Moves named by hand, credited to every opponent that can learn one. */
   const [extra, setExtra] = useState<string[]>([])
   const [query, setQuery] = useState('')
+  /** Which shape to read it in, for the ones that have more than one. */
+  const [shape, setShape] = useState<string | null>(null)
 
   const sides: { key: 'one' | 'two'; team: Team }[] = [
     { key: 'one', team: teamOne }, { key: 'two', team: teamTwo },
   ]
-  const find = (id: string): { entry: TeamEntry; foes: TeamEntry[] } | null => {
-    for (const { team } of sides) {
-      const entry = team.members.find((m) => m.id === id)
-      if (entry) {
-        const other = team === teamOne ? teamTwo : teamOne
-        return { entry, foes: other.members }
+  const formes = useMemo(() => (chosen ? battleFormes(chosen, dex) : []), [chosen, dex])
+
+  /**
+   * The chosen Pokémon and the side facing it, wearing whichever shape is
+   * selected. Memoised because the plan hangs off it: rebuilt every render,
+   * every calculation below would be too.
+   */
+  const picked = useMemo((): { entry: TeamEntry; foes: TeamEntry[]; own: string } | null => {
+    if (!chosen) return null
+    for (const team of [teamOne, teamTwo]) {
+      const entry = team.members.find((m) => m.id === chosen)
+      if (!entry) continue
+      const other = team === teamOne ? teamTwo : teamOne
+      return {
+        entry: shape && dex[shape] ? { id: shape, pokemon: dex[shape] } : entry,
+        foes: other.members,
+        own: entry.id,
       }
     }
     return null
-  }
-
-  const picked = chosen ? find(chosen) : null
+  }, [chosen, shape, dex, teamOne, teamTwo])
 
   /** My own four, from the usage set where there is one and the pool where not. */
   const myMoves: Move[] = useMemo(() => {
@@ -353,6 +386,7 @@ export function EvCalcBody({
     // decision about which of the other side to weigh it against.
     setSpread(emptySpread())
     setOff(new Set())
+    setShape(null)
   }
 
   const addMove = (move: Move) => {
@@ -434,6 +468,25 @@ export function EvCalcBody({
           >
             <Sprite pokemon={picked.entry.pokemon} width={34} height={28} />
           </PokemonLink>
+        )}
+
+        {/* And which of its shapes to read it in, where it has more than one.
+            Aegislash is 60 Defense in one stance and 150 in the other. */}
+        {formes.length > 1 && (
+          <span className="ev-assume-seg ev-formes">
+            {formes.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                className="ev-seg"
+                aria-pressed={(shape ?? picked?.own) === f.id}
+                title={f.pokemon.name}
+                onClick={() => setShape(f.id)}
+              >
+                {f.pokemon.forme ?? 'Base'}
+              </button>
+            ))}
+          </span>
         )}
 
         {picked && picked.foes.length > 0 && (

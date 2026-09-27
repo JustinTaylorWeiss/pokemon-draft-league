@@ -923,6 +923,10 @@ button.type-chip { cursor: pointer; }
 .ev-open img { image-rendering: pixelated; object-fit: contain; }
 .ev-open:hover { border-color: var(--team-accent, var(--accent)); }
 
+/* Which shape to read it in. Uses the segment styling the assumptions use,
+   because it is the same kind of choice: one of a short fixed set. */
+.ev-formes .ev-seg { font-size: 0.66rem; }
+
 .ev-foes { display: flex; align-items: center; flex-wrap: wrap; gap: 0.15rem; }
 .ev-against {
   font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
