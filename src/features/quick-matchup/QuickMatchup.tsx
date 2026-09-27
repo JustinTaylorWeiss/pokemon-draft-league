@@ -16,6 +16,8 @@ interface Core {
   moves: MoveDex
   abilities: AbilityDex
   typechart: TypeChart
+  /** The damaging moves this format plays, ranked. See scripts/build-data.mjs. */
+  played: string[]
 }
 
 const STORAGE_KEY = 'quick-matchup:teams'
@@ -130,7 +132,7 @@ export function QuickMatchup() {
     return (
       <div className="results is-solo">
         <AnalysisCard
-          chart={core.typechart} moves={core.moves} learnsets={learnsets}
+          chart={core.typechart} moves={core.moves} learnsets={learnsets} played={core.played}
           teamOne={soloBuilt} teamTwo={emptyTeam('')} dex={dex}
           solo
           lead={(
@@ -169,7 +171,7 @@ export function QuickMatchup() {
           far end past the tab's own. The title went with the card — the main
           nav already says where you are. */}
       <AnalysisCard
-        chart={core.typechart} moves={core.moves} learnsets={learnsets}
+        chart={core.typechart} moves={core.moves} learnsets={learnsets} played={core.played}
         teamOne={teamOne} teamTwo={teamTwo} dex={dex}
         trail={(
           <button type="button" className="btn ghost sm" onClick={() => setStep('team1')}>

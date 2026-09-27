@@ -41,6 +41,8 @@ interface Props {
   teamTwo: Team
   /** Speed tiers add the formes the Megas start in, which needs looking up. */
   dex: LeagueDex
+  /** The damaging moves the format plays, for the Pokémon with no usage set. */
+  played: string[]
   /** One team, read on its own: no opponent, so no Coverage. */
   solo?: boolean
   /** What sits at the left of the bar, before the tabs. The page's, not ours. */
@@ -60,7 +62,7 @@ interface Props {
  * not looking at.
  */
 export function AnalysisCard({
-  chart, moves, learnsets, teamOne, teamTwo, dex, solo, lead, trail,
+  chart, moves, learnsets, teamOne, teamTwo, dex, played, solo, lead, trail,
 }: Props) {
   const [tab, setTab] = useState('summary')
   const [neutral, setNeutral] = useState(80)
@@ -230,7 +232,8 @@ export function AnalysisCard({
         ? (
           <EvCalcBody
             teamOne={teamOne} teamTwo={teamTwo}
-            chart={chart} moves={moves} learnsets={learnsets} sets={sets} level={level}
+            chart={chart} moves={moves} learnsets={learnsets} sets={sets} played={played}
+            level={level}
           />
         )
         : <LoadingBall label="Loading learnsets…" inline />)}
@@ -241,7 +244,7 @@ export function AnalysisCard({
               <CoverageBody
                 attackers={team} defenders={side === 'one' ? teamTwo : teamOne}
                 chart={chart} moves={moves} learnsets={learnsets}
-                useAbilities={coverageAbilities} minPower={MIN_POWER} sets={sets}
+                useAbilities={coverageAbilities} minPower={MIN_POWER} sets={sets} played={played}
               />
             )}
           </TeamPair>

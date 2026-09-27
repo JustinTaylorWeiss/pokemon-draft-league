@@ -590,6 +590,56 @@ async function main() {
   }
   stats.artwork = { formes: formes.length, matched: artMatched, speciesAsked: varieties.size }
 
+  // ---- The moves this regulation actually plays -----------------------------
+  /*
+   * The damaging moves that carry the format, ranked, cut where they account
+   * for nine tenths of every damaging slot in every usage set we have.
+   *
+   * Two things need this. Most of the board has no usage set — Megas do not
+   * appear in the formats Showdown publishes usage for — and both the
+   * coverage panel and the EV calculator have to guess what such a Pokemon is
+   * carrying. Guessing from its movepool alone picks the biggest number it
+   * can learn, which is how Garchomp ends up threatening with Double-Edge.
+   * Intersected with this list it picks the biggest number it can learn that
+   * anybody actually clicks, which is a different and much better guess.
+   *
+   * Ninety per cent is the point where the tail stops being moves and starts
+   * being one Pokemon's signature. It takes about 120 moves; the last ten per
+   * cent would take another 130.
+   *
+   * REGULATION-SPECIFIC. This is measured off the Gen 9 formats Showdown
+   * publishes usage for, which is the closest thing available to Champions
+   * Reg M-C and is not the same thing. A new regulation — a new legality
+   * list, a new set of Megas — is a new metagame and wants this rebuilt
+   * against whatever usage data exists for it by then. Nothing else in this
+   * file has that property, which is why it is said here.
+   */
+  const COVERAGE_TARGET = 0.9
+  const slotCount = new Map()
+  let damagingSlots = 0
+  for (const set of Object.values(sets)) {
+    for (const id of set.moves ?? []) {
+      const move = movesOut[id]
+      if (!move || move.category === 'Status' || move.basePower <= 0) continue
+      slotCount.set(id, (slotCount.get(id) ?? 0) + 1)
+      damagingSlots++
+    }
+  }
+  const byUse = [...slotCount.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+  const played = []
+  let covered = 0
+  for (const [id, n] of byUse) {
+    if (covered / damagingSlots >= COVERAGE_TARGET) break
+    played.push(id)
+    covered += n
+  }
+  stats.playedMoves = {
+    kept: played.length,
+    ofDistinct: byUse.length,
+    slotsCovered: damagingSlots ? Number((covered / damagingSlots).toFixed(4)) : 0,
+    fromSets: Object.keys(sets).length,
+  }
+
   // ---- Write ---------------------------------------------------------------
   await mkdir(OUT, { recursive: true })
   const files = {
@@ -600,6 +650,7 @@ async function main() {
     abilities: abilitiesOut,
     sets,
     items,
+    played,
   }
 
   console.log(`\n${'file'.padEnd(16)}${'raw'.padStart(12)}${'gzipped'.padStart(12)}`)

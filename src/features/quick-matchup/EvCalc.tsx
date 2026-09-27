@@ -41,28 +41,41 @@ const natureIsLegal = (s: Spread) => {
 const takesNature = (stat: StatKey) => stat !== 'hp'
 
 function ThresholdRow({ row, lit, target }: { row: Threshold; lit: boolean; target?: Pokemon }) {
+  const out = row.unreachable
   return (
-    <li className={`ev-row${lit ? ' is-lit' : ''}${row.unreachable ? ' is-out' : ''}`}>
-      <span className="ev-cost">{row.unreachable ? '—' : row.evs}</span>
+    <li className={`ev-row${lit ? ' is-lit' : ''}${out ? ' is-out' : ''}`}>
+      {/* The price in both currencies: what it costs in EVs, and what the
+          stat has to read for it. One of those is what you spend and the
+          other is what you are aiming at, and neither implies the other
+          without the arithmetic this tool exists to save. */}
+      <span className="ev-cost" title={out ? 'Out of reach' : `${row.evs} EVs — the stat reads ${row.statAt}`}>
+        <span className="ev-cost-evs">{out ? '—' : row.evs}</span>
+        <span className="ev-cost-stat">{out ? '—' : row.statAt}</span>
+      </span>
       {/* Which Pokémon this is about, read before the words. A column of
           twelve rows is a column of names otherwise. */}
       {target && <Sprite pokemon={target} className="ev-face" width={26} height={22} />}
       <span className="ev-what">
         <span className="ev-target">{row.targetName}</span>
-        <span className="ev-detail">
-          {row.outspeed != null
-            ? <>{row.tier} · {row.outspeed}</>
-            : <>{row.moveName} · {row.from}HKO {'→'} {row.to}HKO</>}
-        </span>
+        {row.outspeed != null ? (
+          <span className="ev-detail">{row.tier} · {row.outspeed}</span>
+        ) : (
+          <>
+            <span className="ev-detail">{row.moveName}</span>
+            <span className="ev-detail ev-swing">{row.from}HKO {'→'} {row.to}HKO</span>
+          </>
+        )}
       </span>
     </li>
   )
 }
 
 function StatColumn({
-  stat, value, spread, rows, faces, onEvs, onNature, note,
+  stat, bare, value, spread, rows, faces, onEvs, onNature, note,
 }: {
   stat: StatKey
+  /** The stat before any EVs go in, which is where every decision starts. */
+  bare: number
   value: number
   spread: Spread
   rows: Threshold[]
@@ -76,9 +89,16 @@ function StatColumn({
   const beyond = rows.filter((r) => r.unreachable)
   return (
     <section className="ev-col">
+      {/* Where it starts, before a single EV: the number every row below is
+          measured from. */}
       <header className="ev-col-head">
         <span className="ev-stat">{STAT_LABELS[stat]}</span>
-        <strong className="ev-value">{value}</strong>
+        <strong className="ev-value" title={`${STAT_LABELS[stat]} with no EVs`}>{bare}</strong>
+      </header>
+
+      {/* And what is being spent on it. */}
+      <div className="ev-spend">
+        <span className="ev-evs" title={`${evs} EVs`}>{evs}</span>
         {takesNature(stat) && (
           <span className="ev-natures">
             {NATURES.map((n) => (
@@ -95,7 +115,7 @@ function StatColumn({
             ))}
           </span>
         )}
-      </header>
+      </div>
 
       <label className="ev-slider">
         <input
@@ -103,7 +123,7 @@ function StatColumn({
           aria-label={`${STAT_LABELS[stat]} EVs`}
           onChange={(e) => onEvs(Number(e.target.value))}
         />
-        <output>{evs}</output>
+        <output title="Where the stat ends up">{value}</output>
       </label>
 
       {rows.length ? (
@@ -138,11 +158,15 @@ interface Props {
   moves: MoveDex
   learnsets: LearnsetDex | null
   sets: SetDex | null
+  /** The damaging moves the format plays, for the Pokémon with no usage set. */
+  played: string[]
   /** Owned by the card, so one picker in the bar serves this and the tiers. */
   level: number
 }
 
-export function EvCalcBody({ teamOne, teamTwo, chart, moves, learnsets, sets, level }: Props) {
+export function EvCalcBody({
+  teamOne, teamTwo, chart, moves, learnsets, sets, played, level,
+}: Props) {
   const [chosen, setChosen] = useState<string | null>(null)
   const [spread, setSpread] = useState<Spread>(emptySpread)
 
@@ -171,12 +195,12 @@ export function EvCalcBody({ teamOne, teamTwo, chart, moves, learnsets, sets, le
       .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0)
     if (known.length) return known
     // Same standing-in the other side gets, through the same door.
-    return opponentsFrom([picked.entry], null, moves, learnsets, level)[0].moves
-  }, [picked, sets, moves, learnsets, level])
+    return opponentsFrom([picked.entry], null, moves, learnsets, played, level)[0].moves
+  }, [picked, sets, moves, learnsets, played, level])
 
   const opponents = useMemo(
-    () => (picked ? opponentsFrom(picked.foes, sets, moves, learnsets, level) : []),
-    [picked, sets, moves, learnsets, level],
+    () => (picked ? opponentsFrom(picked.foes, sets, moves, learnsets, played, level) : []),
+    [picked, sets, moves, learnsets, played, level],
   )
 
   const plan = useMemo(() => {
@@ -195,6 +219,12 @@ export function EvCalcBody({ teamOne, teamTwo, chart, moves, learnsets, sets, le
       doubles: true,
     })
   }, [picked, myMoves, opponents, spread, chart, level, sets])
+
+  /** The same natures, none of the EVs — what each column counts up from. */
+  const bareSpread = useMemo(
+    () => ({ evs: emptySpread().evs, nature: spread.nature }),
+    [spread.nature],
+  )
 
   const faces = useMemo(
     () => Object.fromEntries(opponents.map((o) => [o.id, o.pokemon])),
@@ -270,6 +300,7 @@ export function EvCalcBody({ teamOne, teamTwo, chart, moves, learnsets, sets, le
               <StatColumn
                 key={stat}
                 stat={stat}
+                bare={statOfSpread(picked.entry.pokemon, level, bareSpread, stat)}
                 value={statOfSpread(picked.entry.pokemon, level, spread, stat)}
                 spread={spread}
                 rows={plan?.[stat] ?? []}

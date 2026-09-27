@@ -899,9 +899,19 @@ button.type-chip { cursor: pointer; }
 
 .ev-cols { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.5rem; }
 .ev-col { min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
-.ev-col-head { display: flex; align-items: baseline; gap: 0.35rem; flex-wrap: wrap; }
+/* The stat as it stands with no EVs in it, which is what the rows below are
+   measured from, and under a rule the EVs going into it. */
+.ev-col-head {
+  display: flex; align-items: baseline; gap: 0.35rem;
+  padding-bottom: 0.3rem; border-bottom: 1px solid var(--line);
+}
 .ev-stat { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; color: var(--muted); }
-.ev-value { font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+.ev-value { font-size: 0.95rem; font-variant-numeric: tabular-nums; margin-left: auto; }
+.ev-spend { display: flex; align-items: center; gap: 0.35rem; }
+.ev-evs {
+  font-size: 0.8rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  color: var(--team-accent, var(--accent));
+}
 .ev-natures { display: inline-flex; margin-left: auto; }
 .ev-nature {
   width: 1.15rem; height: 1.15rem; padding: 0; line-height: 1;
@@ -956,24 +966,35 @@ button.type-chip { cursor: pointer; }
   font-size: 0.68rem; color: var(--fg);
   transition: border-color 0.12s, background 0.12s;
 }
-.ev-row .ev-detail, .ev-row .ev-cost { color: var(--muted); }
+.ev-row .ev-detail, .ev-row .ev-cost-stat { color: var(--muted); }
 .ev-row.is-lit {
   border-color: #2ea078; background: rgb(46 160 120 / 12%);
 }
-.ev-row.is-lit .ev-cost { color: #2ea078; }
+.ev-row.is-lit .ev-cost-evs { color: #2ea078; }
 /* Out of reach: still readable, but the cost column has nothing to say. */
 .ev-row.is-out { border-style: dashed; }
 .ev-row.is-out .ev-target { color: var(--muted); }
 /* Set below what the stat can buy, with air between, because it is the other
    answer rather than the end of the same one. */
 .ev-beyond { margin-top: 0.5rem; }
+/* Two prices, one over the other: EVs spent, and the number the stat has to
+   reach. A rule between them, because they are not a sum. */
 .ev-cost {
-  flex: 0 0 1.7rem; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700;
+  flex: 0 0 2rem; display: flex; flex-direction: column; align-items: stretch;
+  text-align: center; font-variant-numeric: tabular-nums; line-height: 1.2;
+}
+.ev-cost-evs { font-weight: 700; }
+.ev-cost-stat {
+  font-size: 0.62rem; border-top: 1px solid var(--line); padding-top: 0.05rem;
 }
 .ev-face { flex: none; image-rendering: pixelated; object-fit: contain; align-self: center; }
 .ev-what { min-width: 0; display: flex; flex-direction: column; }
 .ev-target { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ev-detail { font-size: 0.64rem; }
+/* Its own line under the move, because it is the answer and the move is only
+   the question it was asked of. */
+.ev-swing { font-variant-numeric: tabular-nums; }
+.ev-row.is-lit .ev-swing { color: #2ea078; font-weight: 600; }
 .ev-none { margin: 0; font-size: 0.68rem; color: var(--muted); line-height: 1.4; }
 
 /* Six columns of this need real width; below it they go two and three up. */

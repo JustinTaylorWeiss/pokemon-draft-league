@@ -21,6 +21,8 @@ interface Props {
   minPower: number
   /** Most-used sets; null while loading or when showing the full pool. */
   sets: SetDex | null
+  /** The damaging moves the format plays, for the Pokémon with no set. */
+  played: string[] | null
 }
 
 /**
@@ -34,7 +36,7 @@ interface Props {
  * the list rather than hunted for down it.
  */
 export function CoverageBody({
-  attackers, defenders, chart, moves, learnsets, useAbilities, minPower, sets,
+  attackers, defenders, chart, moves, learnsets, useAbilities, minPower, sets, played,
 }: Props) {
   // A Pokémon appears here only once it has been toggled; until then it uses
   // the default selection below.
@@ -55,21 +57,29 @@ export function CoverageBody({
     return out
   }, [attackers.members, learnsets, moves, minPower, sets])
 
-  /** Ticked on load: what the Pokémon actually runs, per its most-used set. */
+  /**
+   * Ticked on load: what the Pokémon actually runs, per its most-used set.
+   *
+   * Without a set, the moves the format plays that it can learn — which is a
+   * far better guess than everything it could technically throw, and the
+   * thing that guess was standing in for all along. Only the whole pool if
+   * even that comes back empty.
+   */
+  const inPlay = useMemo(() => new Set(played ?? []), [played])
   const defaults = useMemo(() => {
     const out: Record<string, Set<TypeName>> = {}
     for (const m of attackers.members) {
       const set = sets?.[m.id]?.moves
-      if (set) {
-        const t = attackingTypes(learnsets[m.id], moves, 0, set)
-        out[m.id] = new Set([...t.physical, ...t.special])
-      } else {
-        // No set on record, so fall back to everything it can throw.
-        out[m.id] = new Set([...available[m.id].physical, ...available[m.id].special])
-      }
+        ?? (inPlay.size
+          ? Object.keys(learnsets[m.id] ?? {}).filter((id) => inPlay.has(id))
+          : null)
+      const t = set?.length ? attackingTypes(learnsets[m.id], moves, 0, set) : null
+      out[m.id] = t
+        ? new Set([...t.physical, ...t.special])
+        : new Set([...available[m.id].physical, ...available[m.id].special])
     }
     return out
-  }, [attackers.members, learnsets, moves, sets, available])
+  }, [attackers.members, learnsets, moves, sets, available, inPlay])
 
   const selected = useMemo(() => {
     const out: Record<string, Set<TypeName>> = {}

@@ -30,6 +30,12 @@ export const loadTypeChart = () => load<TypeChart>('typechart')
 export const loadLearnsets = () => load<LearnsetDex>('learnsets')
 export const loadSets = () => load<SetDex>('sets')
 export const loadItems = () => load<ItemDex>('items')
+/**
+ * The damaging moves this format actually plays, ranked, covering nine tenths
+ * of every damaging slot in the usage sets. Built by `scripts/build-data.mjs`
+ * and rebuilt per regulation — see the note there.
+ */
+export const loadPlayed = () => load<string[]>('played')
 
 /**
  * Showdown draws item icons from one sheet rather than per-item files — the
@@ -45,8 +51,9 @@ export function itemIconStyle(spritenum: number) {
 
 /** Everything except learnsets — enough to render the dex and matchup grids. */
 export function loadCore() {
-  return Promise.all([loadPokemon(), loadMoves(), loadAbilities(), loadTypeChart()])
-    .then(([pokemon, moves, abilities, typechart]) => ({ pokemon, moves, abilities, typechart }))
+  return Promise.all([loadPokemon(), loadMoves(), loadAbilities(), loadTypeChart(), loadPlayed()])
+    .then(([pokemon, moves, abilities, typechart, played]) =>
+      ({ pokemon, moves, abilities, typechart, played }))
 }
 
 /**

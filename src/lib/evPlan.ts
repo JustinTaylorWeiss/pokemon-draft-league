@@ -40,6 +40,8 @@ export interface Threshold {
   tier?: string
   /** Speed rows no amount of EVs reaches. One per Pokémon, listed apart. */
   unreachable?: boolean
+  /** What the stat reads at that many EVs — the number, not the price. */
+  statAt?: number
 }
 
 /**
@@ -124,24 +126,72 @@ const NOT_A_THREAT = /cannot move next turn|charges|first turn|turn 1/i
  *
  * One per type, because four Fire moves is one threat listed four times.
  */
-function likelyMoves(pokemon: Pokemon, learnset: Record<string, unknown> | undefined, moveDex: MoveDex): Move[] {
+function likelyMoves(
+  pokemon: Pokemon,
+  learnset: Record<string, unknown> | undefined,
+  moveDex: MoveDex,
+  played: string[] | null,
+): Move[] {
   if (!learnset) return []
-  // Weighted by the stat that throws it, so a physical attacker is not
-  // credited with the special move that happens to have the bigger number.
-  const score = (m: Move) =>
+  /*
+   * Weighted three ways: by the stat that throws it, so a physical attacker
+   * is not credited with the special move that happens to have the bigger
+   * number; by same-type, which is the half again it is worth; and by how
+   * often the move is actually clicked.
+   *
+   * That last one is the difference between a plausible set and a technically
+   * correct one. Garchomp can learn Double-Edge, and on raw damage it wins
+   * the Normal slot — but it sits 84th of 121 in usage where Stone Edge sits
+   * 15th, and nobody has ever run it. The weight runs from 2 at the top of
+   * the list to 1 at the bottom, which is enough to settle a near-tie and not
+   * enough to hand every Pokémon the same four moves.
+   */
+  const rank = new Map((played ?? []).map((id, i) => [id, i]))
+  const popularity = (id: string) => {
+    const at = rank.get(id)
+    return at == null ? 1 : 2 - at / Math.max(1, (played?.length ?? 1) - 1)
+  }
+  const score = (m: Move, id: string) =>
     m.basePower
     * (pokemon.types.includes(m.type) ? 1.5 : 1)
     * pokemon.baseStats[m.category === 'Physical' ? 'atk' : 'spa']
-  const best = new Map<string, Move>()
-  for (const id of Object.keys(learnset)) {
-    const move = moveDex[id]
-    if (!move || move.category === 'Status' || move.basePower < THREAT_POWER) continue
-    if (NOT_A_THREAT.test(move.shortDesc)) continue
-    const key = `${move.category}:${move.type}`
-    const held = best.get(key)
-    if (!held || score(move) > score(held)) best.set(key, move)
+    * popularity(id)
+
+  const pick = (ids: string[]) => {
+    const best = new Map<string, { move: Move; score: number }>()
+    for (const id of ids) {
+      const move = moveDex[id]
+      if (!move || move.category === 'Status' || move.basePower < THREAT_POWER) continue
+      if (NOT_A_THREAT.test(move.shortDesc)) continue
+      const key = `${move.category}:${move.type}`
+      const held = best.get(key)
+      const now = score(move, id)
+      if (!held || now > held.score) best.set(key, { move, score: now })
+    }
+    return [...best.values()]
+      .sort((a, b) => b.score - a.score)
+      .slice(0, THREAT_MOVES)
+      .map((x) => x.move)
   }
-  return [...best.values()].sort((a, b) => score(b) - score(a)).slice(0, THREAT_MOVES)
+
+  const learnable = Object.keys(learnset)
+  /*
+   * From the moves the format actually plays, where it can learn any of
+   * them. The movepool alone answers "what is the biggest number it could
+   * throw", which is how Garchomp comes out threatening with Double-Edge —
+   * a move it can learn and nobody has ever clicked. Narrowed to what people
+   * run first, the same scoring picks Earthquake.
+   *
+   * The whole pool is still the fallback: a Pokémon whose movepool and the
+   * played list do not overlap is rare, and an empty column would be worse
+   * than an unlikely one.
+   */
+  if (played?.length) {
+    const inPlay = new Set(played)
+    const chosen = pick(learnable.filter((id) => inPlay.has(id)))
+    if (chosen.length) return chosen
+  }
+  return pick(learnable)
 }
 
 /**
@@ -162,6 +212,7 @@ export function opponentsFrom(
   sets: SetDex | null,
   moveDex: MoveDex,
   learnsets: LearnsetDex | null,
+  played: string[] | null,
   level: number,
 ): Opponent[] {
   return members.map(({ id, pokemon }) => {
@@ -182,7 +233,7 @@ export function opponentsFrom(
     const known = (set?.moves ?? [])
       .map((m) => moveDex[m])
       .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0)
-    const moves = known.length ? known : likelyMoves(pokemon, learnsets?.[id], moveDex)
+    const moves = known.length ? known : likelyMoves(pokemon, learnsets?.[id], moveDex, played)
 
     return { id, pokemon, side, moves, guessed: !known.length }
   })
@@ -245,6 +296,10 @@ export function planFor(input: PlanInput): Plan {
   const { pokemon, moves, item, ability, spread, opponents, chart, level, doubles } = input
   const out: Plan = { hp: [], atk: [], def: [], spa: [], spd: [], spe: [] }
 
+  /** What the stat itself reads there, which is the other half of the price. */
+  const reads = (stat: StatKey, evs: number) =>
+    statAtLevel(pokemon.baseStats[stat], evs, spread.nature[stat], stat === 'hp', 31, level)
+
   /** Me, with one stat moved to the value being tried and the rest as they are. */
   const meAt = (stat: StatKey, evs: number): Side =>
     sideFrom(pokemon, level, { evs: { ...spread.evs, [stat]: evs }, nature: spread.nature }, item, ability)
@@ -256,7 +311,8 @@ export function planFor(input: PlanInput): Plan {
       for (const stat of stats) {
         for (const step of scan(stat, (evs) => damage(o.side, meAt(stat, evs), move, chart, doubles).worstCase)) {
           out[stat].push({
-            ...step, target: o.id, targetName: o.pokemon.name, move: move.name, moveName: move.name,
+            ...step, target: o.id, targetName: o.pokemon.name,
+            move: move.name, moveName: move.name, statAt: reads(stat, step.evs),
           })
         }
       }
@@ -267,7 +323,8 @@ export function planFor(input: PlanInput): Plan {
       const stat: StatKey = move.category === 'Physical' ? 'atk' : 'spa'
       for (const step of scan(stat, (evs) => damage(meAt(stat, evs), o.side, move, chart, doubles).worstCase)) {
         out[stat].push({
-          ...step, target: o.id, targetName: o.pokemon.name, move: move.name, moveName: move.name,
+          ...step, target: o.id, targetName: o.pokemon.name,
+          move: move.name, moveName: move.name, statAt: reads(stat, step.evs),
         })
       }
     }
@@ -275,24 +332,46 @@ export function planFor(input: PlanInput): Plan {
     // ---- getting there first, at each speed they might be built to ----
     const base = o.pokemon.baseStats.spe
     let firstMissed: { label: string; speed: number } | null = null
+    const priced: { label: string; speed: number; need: number }[] = []
     for (const tier of SPEED_TIERS) {
       const theirs = statAtLevel(base, tier.evs, tier.nature, false, 31, level)
       let need: number | null = null
       for (let ev = 0; ev <= EV_MAX; ev += EV_STEP) {
         if (statOf(meAt('spe', ev), 'spe') > theirs) { need = ev; break }
       }
-      if (need == null) {
-        // Only the cheapest one out of reach is worth saying. The three above
-        // it are out of reach for the same reason and add nothing.
-        firstMissed ??= { label: tier.label, speed: theirs }
-        continue
-      }
-      out.spe.push({
-        evs: need, target: o.id, targetName: o.pokemon.name, outspeed: theirs, tier: tier.label,
-      })
+      // Only the cheapest one out of reach is worth saying. The ones above it
+      // are out of reach for the same reason and add nothing.
+      if (need == null) { firstMissed ??= { label: tier.label, speed: theirs }; continue }
+      priced.push({ label: tier.label, speed: theirs, need })
     }
-    // Named even so: "this one cannot be caught" answers the same question,
-    // and leaving it out looks like the Pokémon was forgotten.
+
+    /*
+     * Tiers that cost the same are one row, named for the highest of them.
+     *
+     * Four rows all reading "0 EVs" is four ways of saying the same thing —
+     * and for anything slow enough, all four tiers cost nothing, which filled
+     * the column with Pokémon there was no decision to make about. One row
+     * saying it is beaten at any spread says all of it.
+     */
+    const all = priced.length === SPEED_TIERS.length
+    for (let i = 0; i < priced.length; i++) {
+      const cost = priced[i].need
+      let last = i
+      while (last + 1 < priced.length && priced[last + 1].need === cost) last++
+      const top = priced[last]
+      out.spe.push({
+        evs: cost,
+        target: o.id,
+        targetName: o.pokemon.name,
+        outspeed: top.speed,
+        tier: all && i === 0 && last === priced.length - 1 ? 'any spread' : top.label,
+        statAt: reads('spe', cost),
+      })
+      i = last
+    }
+
+    // Named even when it cannot be done: "this one cannot be caught" answers
+    // the same question, and leaving it out looks like it was forgotten.
     if (firstMissed) {
       out.spe.push({
         evs: Infinity, target: o.id, targetName: o.pokemon.name,
