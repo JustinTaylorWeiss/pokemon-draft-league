@@ -16,7 +16,7 @@ import { MoveCategory } from '../../components/MoveCategory'
 import { PokemonLink } from '../../components/PokemonLink'
 import { toId } from '../../data/load'
 import { DropPicker, type DropItem } from '../../components/DropPicker'
-import { isMega, type LeagueDex } from '../../data/league'
+import { isMega, megaBaseId, type LeagueDex } from '../../data/league'
 import type { Team, TeamEntry } from './TeamEditor'
 
 /**
@@ -80,6 +80,30 @@ function battleFormes(id: string, dex: LeagueDex) {
   if (!mon) return []
   const base = mon.battleOnly?.[0] ?? id
   const ids = [base, ...Object.keys(dex).filter((k) => dex[k].battleOnly?.includes(base))]
+
+  /*
+   * And its Mega, or the thing it is the Mega of.
+   *
+   * Not a battle forme in this data — a Mega is drafted separately and
+   * points back at its base rather than through `battleOnly` — but it
+   * is the same question being asked: which shape is this Pokémon in
+   * while the numbers are being read. Whichever half was drafted, the
+   * turn before the stone and the turn after are both real turns, and
+   * Charizard has two of the second kind.
+   *
+   * Through `megaBaseId` rather than the base species, because four of
+   * them evolve from a forme: Meowstic-F-Mega comes from Meowstic-F and
+   * Meowstic-M-Mega from the plain one, and both say only "Meowstic".
+   */
+  if (isMega(mon)) {
+    const from = megaBaseId(mon)
+    if (from && dex[from]) ids.push(from)
+  } else {
+    for (const k of Object.keys(dex)) {
+      if (isMega(dex[k]) && megaBaseId(dex[k]) === id) ids.push(k)
+    }
+  }
+
   return [...new Set(ids)].filter((k) => dex[k]).map((k) => ({ id: k, pokemon: dex[k] }))
 }
 
@@ -1254,10 +1278,12 @@ function GearPicker({
             )}
             {/* Everything said about this one, unsaid — the spread it is
                 credited with, its ability, its item, any IV, any move
-                named or struck off, and being hidden. Shown only where
-                one of those has happened: a reset with nothing to reset
-                is a button that does nothing and looks like it does. */}
-            {open === 'kit' && said && (
+                named or struck off. In both panels, because it undoes
+                what both of them set and either is somewhere to be
+                standing when you want it. Shown only where one of those
+                has happened: a reset with nothing to reset is a button
+                that does nothing and looks like it does. */}
+            {said && (
               <button
                 type="button"
                 className="ev-gear-reset"
