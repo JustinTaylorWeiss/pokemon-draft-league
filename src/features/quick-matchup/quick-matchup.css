@@ -1422,7 +1422,10 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
  */
 .ev-assume-stat {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  /* Laid out like a column heading: the stat, the number it names beside
+     it, and the nature that bends it at the far end. Same three things in
+     the same three places, so the panel reads the way the columns do. */
+  grid-template-columns: auto minmax(0, 1fr) auto;
   /* A fixed first row, so the six sliders sit at the same height whatever
      is above them — HP has no nature button and its line would otherwise
      be shorter than the other five and pull its slider up. */
@@ -1434,7 +1437,7 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   text-transform: uppercase; color: var(--muted);
 }
 .ev-assume-stat > b {
-  font-size: 0.7rem; text-align: right;
+  font-size: 0.7rem; justify-self: start;
   font-variant-numeric: tabular-nums; color: var(--fg);
 }
 /* Full width of the cell and no wider. A range input carries an intrinsic
@@ -1443,6 +1446,8 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 .ev-assume-stat input[type="range"] {
   grid-column: 1 / -1; width: 100%; min-width: 0;
 }
+.ev-assume-stat .ev-nature,
+.ev-assume-stat > i { justify-self: end; }
 .ev-assume-stat .ev-nature { width: 1.05rem; height: 1.05rem; padding: 0; border-radius: 4px; }
 /* A mark at each end of the bar, where the step past the EVs sets the
    nature. Painted on the track rather than added as elements, so it
