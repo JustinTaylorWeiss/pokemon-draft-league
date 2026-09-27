@@ -1,13 +1,13 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../../data/types'
-import { STAT_LABELS, natureMultiplier } from '../../lib/stats'
+import { STAT_LABELS } from '../../lib/stats'
 import {
   GIVEABLE_ITEMS, MODELLED_ABILITIES, itemEffect, itemMatters, typeBoosted,
 } from '../../lib/damage'
 import {
   ASSUME_BARE, EV_BUDGET, EV_MAX, EV_STATS, EV_STEP, IV_MAX, SET_SIZE, assumeFrom,
   emptySpread, lowered,
-  opponentsFrom, planFor, spent, statOfSpread, usualMoves, usualSpread,
+  opponentsFrom, planFor, spent, statOfSpread, usualMoves,
   type Assume, type Assumptions, type Shot, type Spread, type Threshold,
 } from '../../lib/evPlan'
 import { Sprite } from '../../components/Sprite'
@@ -88,11 +88,8 @@ function battleFormes(id: string, dex: LeagueDex) {
 const SPRITE_W = 56
 const SPRITE_H = 46
 
-const ASSUME_LABEL: Record<Assume, string> = {
-  set: 'Set', ivs: '31', max: '252', 'max+': '252+',
-}
+const ASSUME_LABEL: Record<Assume, string> = { ivs: '31', max: '252', 'max+': '252+' }
 const ASSUME_MEANS: Record<Assume, string> = {
-  set: 'the spread it is most often seen in',
   ivs: 'perfect IVs and nothing else — no EVs, neutral nature',
   max: 'maximum EVs',
   'max+': 'maximum EVs and a boosting nature',
@@ -105,29 +102,12 @@ const ASSUME_MEANS: Record<Assume, string> = {
  * means clicking through the one you do not, and which comes next is only
  * learnable by trying. Laid out, the choice is the control.
  */
-function AssumePicker({ label, value, states, onPick, usual, stat }: {
+function AssumePicker({ label, value, states, onPick }: {
   label: string
   value: Assume
   states: Assume[]
   onPick: (next: Assume) => void
-  /** The spread the `set` state means, for saying what it comes to. */
-  usual?: { evs: Partial<Record<StatKey, number>>; nature?: string }
-  stat?: StatKey
 }) {
-  /*
-   * What "Set" comes to for this stat, on the segment itself.
-   *
-   * The other three say their own number and this one cannot: a spread is
-   * six numbers and a nature, and which of them this stat gets is the
-   * whole question. So the segment is labelled and the figure is on it.
-   */
-  const says = (state: Assume) => {
-    if (state !== 'set' || !usual || !stat) return ASSUME_MEANS[state]
-    const evs = usual.evs[stat] ?? 0
-    const nature = stat === 'hp' ? 1 : natureMultiplier(usual.nature, stat)
-    const bend = nature > 1 ? ', boosted' : nature < 1 ? ', hindered' : ''
-    return `Its usual spread: ${evs} EVs${bend}`
-  }
   return (
     <span className="ev-assume">
       <span className="ev-assume-what">{label}</span>
@@ -138,7 +118,7 @@ function AssumePicker({ label, value, states, onPick, usual, stat }: {
             type="button"
             className="ev-seg"
             aria-pressed={value === state}
-            title={`${label}: ${says(state)}`}
+            title={`${label}: ${ASSUME_MEANS[state]}`}
             onClick={() => onPick(state)}
           >
             {ASSUME_LABEL[state]}
@@ -575,7 +555,7 @@ export interface Gear {
  * defensive row at once.
  */
 function GearPicker({
-  pokemon, ability: usualAbilityName, gear, onChange, assume, onAssume, base, usual,
+  pokemon, ability: usualAbilityName, gear, onChange, assume, onAssume, base,
   out, onHide, learnset, moves, played, named, onNamed, carrying,
 }: {
   pokemon: Pokemon
@@ -603,13 +583,11 @@ function GearPicker({
   assume?: Assumptions
   onAssume?: (next: Assumptions) => void
   /**
-   * What it is credited with before anyone touches it — its usual spread,
-   * or the bare floor where usage has none. A pill means departing from
-   * this, not departing from zero.
+   * What it is credited with before anyone touches it — how usage says it
+   * is built, or the bare floor where usage has nothing. A pill means
+   * departing from this, not departing from zero.
    */
   base?: Assumptions
-  /** That spread's own numbers, for labelling the segment that means it. */
-  usual?: { evs: Partial<Record<StatKey, number>>; nature?: string }
   /**
    * Whether this one is left out of the columns. Opponents only: a spread
    * is chosen against the Pokémon you expect to be across from, and that is
@@ -860,19 +838,11 @@ function GearPicker({
                     pair, and the two a spread is usually described by. */}
                 <div className="ev-assume-row">
                   <AssumePicker
-                    label="HP"
-                    value={assume.hp}
-                    states={usual ? ['set', 'ivs', 'max'] : ['ivs', 'max']}
-                    usual={usual}
-                    stat="hp"
-                    onPick={(hp) => onAssume({ ...assume, hp: hp as 'set' | 'ivs' | 'max' })}
+                    label="HP" value={assume.hp} states={['ivs', 'max']}
+                    onPick={(hp) => onAssume({ ...assume, hp: hp as 'ivs' | 'max' })}
                   />
                   <AssumePicker
-                    label={STAT_LABELS.spe}
-                    value={assume.spe}
-                    states={usual ? ['set', 'ivs', 'max', 'max+'] : ['ivs', 'max', 'max+']}
-                    usual={usual}
-                    stat="spe"
+                    label={STAT_LABELS.spe} value={assume.spe} states={['ivs', 'max', 'max+']}
                     onPick={(spe) => onAssume({ ...assume, spe })}
                   />
                 </div>
@@ -888,9 +858,7 @@ function GearPicker({
                         key={stat}
                         label={STAT_LABELS[stat]}
                         value={assume[stat]}
-                        states={usual ? ['set', 'ivs', 'max', 'max+'] : ['ivs', 'max', 'max+']}
-                        usual={usual}
-                        stat={stat}
+                        states={['ivs', 'max', 'max+']}
                         onPick={(next) => onAssume({ ...assume, [stat]: next })}
                       />
                     ))}
@@ -1500,7 +1468,6 @@ export function EvCalcBody({
                       pokemon={m.pokemon}
                       ability={usualAbility(m.id, m.pokemon)}
                       base={assumeFrom(sets?.[m.id])}
-                      usual={usualSpread(sets?.[m.id])}
                       gear={gear[m.id]} onChange={(g) => give(m.id, g)}
                       assume={credit(m.id)}
                       onAssume={(next) => setAssume((prev) => ({ ...prev, [m.id]: next }))}

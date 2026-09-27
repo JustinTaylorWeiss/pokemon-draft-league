@@ -189,11 +189,11 @@ export const lowered = (ivs?: Partial<Record<StatKey, number>>): [StatKey, numbe
  * version" is the question a spread is actually chosen to answer, and the
  * set cannot be asked it.
  *
- * Four states. `set` is the spread it is most often seen in, taken from
- * usage — the one it starts on, because a Pokémon across from you is far
- * more likely to be built the way it is usually built than to have nothing
- * anywhere. `ivs` strips that back to perfect IVs and no more, which is the
- * floor of what it could be; `max` and `max+` are the ceiling.
+ * Three states: `ivs` is perfect IVs and no more, the floor of what it
+ * could be; `max` and `max+` are the ceiling. Which one a Pokémon starts
+ * on is read off the spread usage says it runs, because one across from
+ * you is far likelier to be built the way it is usually built than to have
+ * nothing anywhere.
  *
  * One answer per stat, not one per pair. Defense and Special Defense used
  * to move together, and so did Attack and Special Attack, which is wrong
@@ -208,10 +208,10 @@ export const lowered = (ivs?: Partial<Record<StatKey, number>>): [StatKey, numbe
  * them and "what if it were +Def" is a fair question to ask of a Pokémon
  * you are also asking "what if it were +SpD" about.
  */
-export type Assume = 'set' | 'ivs' | 'max' | 'max+'
+export type Assume = 'ivs' | 'max' | 'max+'
 export interface Assumptions {
   /** HP takes no nature, so it has no `max+`. */
-  hp: 'set' | 'ivs' | 'max'
+  hp: 'ivs' | 'max'
   def: Assume
   spd: Assume
   atk: Assume
@@ -227,9 +227,6 @@ export interface Assumptions {
 
 export const ASSUME_BARE: Assumptions = {
   hp: 'ivs', def: 'ivs', spd: 'ivs', atk: 'ivs', spa: 'ivs', spe: 'ivs',
-}
-export const ASSUME_SET: Assumptions = {
-  hp: 'set', def: 'set', spd: 'set', atk: 'set', spa: 'set', spe: 'set',
 }
 
 /**
@@ -251,10 +248,34 @@ export function usualSpread(
   return { evs: spread.evs, nature: spread.nature }
 }
 
-/** What to start an opponent on: how it is usually built, or nothing. */
-export const assumeFrom = (
-  set: Parameters<typeof usualSpread>[0],
-): Assumptions => (usualSpread(set) ? ASSUME_SET : ASSUME_BARE)
+/**
+ * Which of the three each stat starts on, read off the spread it usually
+ * runs.
+ *
+ * Rounded to the three rather than credited exactly, because the three are
+ * what the toggle can say and a fourth state showing 96 beside 31 and 252
+ * was a number pretending to be a choice. Half of 252 is the line between
+ * invested and not, which is the line a spread is described by: an
+ * Incineroar with 252 HP, 96 Defense and 160 Special Defense on a Careful
+ * nature comes out as max HP, bare Defense, max+ Special Defense — which
+ * is how anyone would describe it out loud.
+ */
+export function assumeFrom(set: Parameters<typeof usualSpread>[0]): Assumptions {
+  const built = usualSpread(set)
+  if (!built) return ASSUME_BARE
+  const stat = (k: StatKey): Assume => {
+    if ((built.evs[k] ?? 0) < EV_MAX / 2) return 'ivs'
+    return natureMultiplier(built.nature, k) > 1 ? 'max+' : 'max'
+  }
+  return {
+    hp: (built.evs.hp ?? 0) < EV_MAX / 2 ? 'ivs' : 'max',
+    def: stat('def'),
+    spd: stat('spd'),
+    atk: stat('atk'),
+    spa: stat('spa'),
+    spe: stat('spe'),
+  }
+}
 
 export interface Opponent {
   id: string
@@ -267,8 +288,6 @@ export interface Opponent {
    * and the format. They are asked for, so they are listed apart.
    */
   named: string[]
-  /** The spread it is usually seen in, where usage has one worth believing. */
-  usual?: { evs: Partial<Record<StatKey, number>>; nature?: string }
   /** Which of the Speed tiers it is reckoned to be running. */
   speed: Assume
   /** True when there was no usage set and the movepool stood in for one. */
@@ -483,19 +502,11 @@ export function opponentsFrom(
      * the spread here rather than leaving whatever was on the side.
      */
     const credit = assume[id] ?? assumeFrom(set)
-    const built = usualSpread(set)
-    /** What one answer comes to, in EVs and in a nature multiplier. */
-    const asked = (choice: Assume, stat: StatKey): [number, number] => {
-      if (choice === 'set') {
-        return [built?.evs[stat] ?? 0, natureMultiplier(built?.nature, stat)]
-      }
-      return [choice === 'ivs' ? 0 : EV_MAX, choice === 'max+' ? 1.1 : 1]
-    }
-    side.evs = { ...side.evs, hp: asked(credit.hp, 'hp')[0] }
+    side.evs = { ...side.evs, hp: credit.hp === 'max' ? EV_MAX : 0 }
     for (const stat of ['def', 'spd', 'atk', 'spa'] as const) {
-      const [evs, nature] = asked(credit[stat], stat)
-      side.evs = { ...side.evs, [stat]: evs }
-      side.natureBy = { ...side.natureBy, [stat]: nature }
+      const choice = credit[stat]
+      side.evs = { ...side.evs, [stat]: choice === 'ivs' ? 0 : EV_MAX }
+      side.natureBy = { ...side.natureBy, [stat]: choice === 'max+' ? 1.1 : 1 }
     }
 
     const known = (set?.moves ?? [])
@@ -532,7 +543,6 @@ export function opponentsFrom(
       side,
       moves: [...byName.values()],
       named: named.map((m) => m.name),
-      usual: built,
       speed: credit.spe,
       guessed: !known.length,
     }
@@ -718,23 +728,13 @@ export function planFor(input: PlanInput): Plan {
     // given one was outrun on paper and not in the game.
     const scarfed = o.side.item === 'Choice Scarf' ? [o.side.item] : []
     /*
-     * Its usual Speed is a tier of its own, ahead of the four guesses,
-     * and whichever tier the toggle names is the one it is reckoned to
-     * be. That row is marked and sorted first; the rest stay, because
-     * "what if it is faster than that" is the question the column exists
-     * to answer and the toggle is an opinion rather than a fact.
+     * Whichever tier the toggle names is the one it is reckoned to be.
+     * That row is marked and sorted first; the rest stay, because "what if
+     * it is faster than that" is the question the column exists to answer
+     * and the toggle is an opinion rather than a fact.
      */
     const ranks: Record<string, Assume> = { '31': 'ivs', '252': 'max', '252+': 'max+' }
-    const tiers = [
-      ...(o.usual ? [{
-        label: 'Set',
-        evs: o.usual.evs.spe ?? 0,
-        nature: natureMultiplier(o.usual.nature, 'spe'),
-        state: 'set' as Assume,
-      }] : []),
-      ...SPEED_TIERS.map((t) => ({ ...t, state: ranks[t.label] })),
-    ]
-    for (const tier of tiers) {
+    for (const tier of SPEED_TIERS.map((t) => ({ ...t, state: ranks[t.label] }))) {
       const theirs = statOf(
         { ...o.side, evs: { ...o.side.evs, spe: tier.evs }, natureBy: { spe: tier.nature } },
         'spe',
