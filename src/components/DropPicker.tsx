@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 
 /**
  * A picker whose list always opens below it.
@@ -17,6 +17,14 @@ export interface DropItem {
   label: string
   /** A second line under the label — a team, a format, a hint. */
   note?: string | null
+  /** A picture beside the label, in the button and in the list. */
+  icon?: ReactNode
+  /**
+   * A heading this item sits under. Items sharing one must be adjacent —
+   * the list prints a heading wherever the group changes rather than
+   * gathering them, so the caller keeps control of the order.
+   */
+  group?: string
 }
 
 export function DropPicker({
@@ -59,25 +67,32 @@ export function DropPicker({
         aria-label={ariaLabel}
         onClick={() => setOpen((v) => !v)}
       >
+        {current?.icon}
         <span className="drop-label">{current?.label ?? placeholder}</span>
         <span className="drop-caret" aria-hidden="true">▾</span>
       </button>
 
       {open && (
         <ul className="drop-list" role="listbox">
-          {items.map((item) => (
-            <li key={item.id}>
-              <button
-                type="button"
-                role="option"
-                aria-selected={item.id === value}
-                className={item.id === value ? 'is-current' : undefined}
-                onClick={() => { onPick(item); setOpen(false) }}
-              >
-                {item.label}
-                {item.note && <em>{item.note}</em>}
-              </button>
-            </li>
+          {items.map((item, i) => (
+            <Fragment key={item.id}>
+              {item.group && item.group !== items[i - 1]?.group && (
+                <li className="drop-group" role="presentation">{item.group}</li>
+              )}
+              <li>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={item.id === value}
+                  className={item.id === value ? 'is-current' : undefined}
+                  onClick={() => { onPick(item); setOpen(false) }}
+                >
+                  {item.icon}
+                  <span className="drop-label">{item.label}</span>
+                  {item.note && <em>{item.note}</em>}
+                </button>
+              </li>
+            </Fragment>
           ))}
         </ul>
       )}

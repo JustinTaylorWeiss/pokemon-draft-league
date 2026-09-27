@@ -1,5 +1,5 @@
 import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../data/types'
-import { damage, statOf, type Side } from './damage'
+import { damage, koCurve, statOf, type Side } from './damage'
 import { statAtLevel } from './stats'
 
 /**
@@ -42,6 +42,20 @@ export interface Threshold {
   unreachable?: boolean
   /** What the stat reads at that many EVs — the number, not the price. */
   statAt?: number
+  /**
+   * How likely the outcome is as things stand — not at the threshold, now.
+   *
+   * The hit count is the guaranteed one, and on its own it is half the
+   * story: ninety-two EVs that turn a guaranteed 2HKO into a guaranteed
+   * 3HKO have bought very little if the 2HKO still lands seven times in
+   * eight, and have bought the matchup if it never lands at all.
+   *
+   * Moves with the slider, so the number falls as you defend and rises as
+   * you invest. `at` is the hit count it refers to: the one being escaped on
+   * a defensive row, the one being reached on an attacking one.
+   */
+  chance?: number
+  at?: number
   /**
    * Speed rows: the least EVs that match their number exactly.
    *
@@ -273,10 +287,32 @@ interface PlanInput {
  * from a 2HKO to a 3HKO and on to a 4HKO inside the range, and both are worth
  * knowing before deciding where to stop.
  */
-function scan(stat: StatKey, at: (evs: number) => number): { evs: number; from: number; to: number }[] {
+function scan(
+  stat: StatKey,
+  at: (evs: number) => number,
+  /**
+   * Where this pairing stands with nothing invested in any of the stats that
+   * could help it — so a step another stat has already paid for is still
+   * listed here, at no cost, rather than vanishing.
+   *
+   * HP, Defense and Special Defense all buy the same thing. Putting 252 into
+   * HP used to empty the Defense column of everything it had made moot,
+   * which reads as the tool losing interest rather than as the job being
+   * done. They stay, priced at nothing and lit.
+   */
+  floor = at(0),
+): { evs: number; from: number; to: number }[] {
   const base = at(0)
   if (!Number.isFinite(base)) return []
   const found: { evs: number; from: number; to: number }[] = []
+  if (Number.isFinite(floor)) {
+    const [lo, hi] = stat === 'atk' || stat === 'spa' ? [base, floor] : [floor, base]
+    for (let v = lo; v < hi; v++) {
+      found.push(stat === 'atk' || stat === 'spa'
+        ? { evs: 0, from: v + 1, to: v }
+        : { evs: 0, from: v, to: v + 1 })
+    }
+  }
   const better = stat === 'atk' || stat === 'spa'
     ? (a: number, b: number) => a < b
     : (a: number, b: number) => a > b
@@ -284,6 +320,8 @@ function scan(stat: StatKey, at: (evs: number) => number): { evs: number; from: 
   const worthSaying = stat === 'atk' || stat === 'spa'
     ? (step: { to: number }) => step.to <= MEANINGFUL_HITS
     : (step: { from: number }) => step.from <= MEANINGFUL_HITS
+
+  for (let i = found.length - 1; i >= 0; i--) if (!worthSaying(found[i])) found.splice(i, 1)
 
   let last = base
   for (let ev = EV_STEP; ev <= EV_MAX; ev += EV_STEP) {
@@ -311,16 +349,36 @@ export function planFor(input: PlanInput): Plan {
   /** Me, with one stat moved to the value being tried and the rest as they are. */
   const meAt = (stat: StatKey, evs: number): Side =>
     sideFrom(pokemon, level, { evs: { ...spread.evs, [stat]: evs }, nature: spread.nature }, item, ability)
+  /** And me exactly as the sliders have me, for the live odds. */
+  const meNow = sideFrom(pokemon, level, spread, item, ability)
+  /** And with nothing in the three stats that share the work of taking a hit. */
+  const meBare = sideFrom(
+    pokemon,
+    level,
+    { evs: { ...spread.evs, hp: 0, def: 0, spd: 0 }, nature: spread.nature },
+    item,
+    ability,
+  )
 
   for (const o of opponents) {
     // ---- taking hits: HP, Defense, Special Defense ----
     for (const move of o.moves) {
       const stats: StatKey[] = move.category === 'Physical' ? ['hp', 'def'] : ['hp', 'spd']
       for (const stat of stats) {
-        for (const step of scan(stat, (evs) => damage(o.side, meAt(stat, evs), move, chart, doubles).worstCase)) {
+        // One walk of the odds per pairing rather than one per row: every row
+        // for this move is reading the same curve at a different point.
+        const curve = koCurve(damage(o.side, meNow, move, chart, doubles), MEANINGFUL_HITS)
+        const floor = damage(o.side, meBare, move, chart, doubles).worstCase
+        for (const step of scan(
+          stat,
+          (evs) => damage(o.side, meAt(stat, evs), move, chart, doubles).worstCase,
+          floor,
+        )) {
           out[stat].push({
             ...step, target: o.id, targetName: o.pokemon.name,
             move: move.name, moveName: move.name, statAt: reads(stat, step.evs),
+            // The outcome being escaped, and how often it still happens.
+            at: step.from, chance: curve[step.from - 1] ?? 0,
           })
         }
       }
@@ -329,10 +387,13 @@ export function planFor(input: PlanInput): Plan {
     // ---- landing them: Attack, Special Attack ----
     for (const move of moves) {
       const stat: StatKey = move.category === 'Physical' ? 'atk' : 'spa'
+      const curve = koCurve(damage(meNow, o.side, move, chart, doubles), MEANINGFUL_HITS)
       for (const step of scan(stat, (evs) => damage(meAt(stat, evs), o.side, move, chart, doubles).worstCase)) {
         out[stat].push({
           ...step, target: o.id, targetName: o.pokemon.name,
           move: move.name, moveName: move.name, statAt: reads(stat, step.evs),
+          // The outcome being reached, and how often it happens already.
+          at: step.to, chance: curve[step.to - 1] ?? 0,
         })
       }
     }

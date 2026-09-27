@@ -6,7 +6,7 @@ import {
   statOfSpread, type Spread, type Threshold,
 } from '../../lib/evPlan'
 import { Sprite } from '../../components/Sprite'
-import { TeamName } from '../../components/TeamName'
+import { DropPicker, type DropItem } from '../../components/DropPicker'
 import type { Team, TeamEntry } from './TeamEditor'
 
 /**
@@ -40,6 +40,17 @@ const natureIsLegal = (s: Spread) => {
 /** HP has no nature: no nature in the games touches it. */
 const takesNature = (stat: StatKey) => stat !== 'hp'
 
+/**
+ * Odds as a player says them. "Guaranteed" and "never" rather than 100% and
+ * 0%, because those two are the only ones you can actually plan on and a
+ * number reads as one more thing to weigh.
+ */
+function odds(p: number): string {
+  if (p >= 0.9995) return 'always'
+  if (p <= 0.0005) return 'never'
+  return `${(p * 100).toFixed(p < 0.1 ? 1 : 0)}%`
+}
+
 function ThresholdRow({
   row, lit, tied, target,
 }: { row: Threshold; lit: boolean; tied: boolean; target?: Pokemon }) {
@@ -66,7 +77,14 @@ function ThresholdRow({
         ) : (
           <>
             <span className="ev-detail">{row.moveName}</span>
-            <span className="ev-detail ev-swing">{row.from}HKO {'→'} {row.to}HKO</span>
+            <span className="ev-detail ev-swing">
+              {row.from}HKO {'→'} {row.to}HKO
+              {row.chance != null && row.at != null && (
+                <em className="ev-odds" title={`${odds(row.chance)} to ${row.at}HKO as it stands`}>
+                  {odds(row.chance)} {row.at}HKO
+                </em>
+              )}
+            </span>
           </>
         )}
       </span>
@@ -174,6 +192,15 @@ export function EvCalcBody({
 }: Props) {
   const [chosen, setChosen] = useState<string | null>(null)
   const [spread, setSpread] = useState<Spread>(emptySpread)
+  /**
+   * Opponents switched off.
+   *
+   * A spread is chosen against the Pokémon you expect to be across from, and
+   * that is rarely all six — a column showing what it takes to survive
+   * something you are never bringing this into is a row between you and the
+   * ones that matter.
+   */
+  const [off, setOff] = useState<Set<string>>(() => new Set())
 
   const sides: { key: 'one' | 'two'; team: Team }[] = [
     { key: 'one', team: teamOne }, { key: 'two', team: teamTwo },
@@ -204,9 +231,29 @@ export function EvCalcBody({
   }, [picked, sets, moves, learnsets, played, level])
 
   const opponents = useMemo(
-    () => (picked ? opponentsFrom(picked.foes, sets, moves, learnsets, played, level) : []),
-    [picked, sets, moves, learnsets, played, level],
+    () => (picked
+      ? opponentsFrom(picked.foes.filter((m) => !off.has(m.id)), sets, moves, learnsets, played, level)
+      : []),
+    [picked, off, sets, moves, learnsets, played, level],
   )
+
+  /** Everything on either side, for the picker. */
+  const items: DropItem[] = sides.flatMap(({ key, team }) => team.members.map((m) => ({
+    id: m.id,
+    label: m.pokemon.name,
+    // The coach's name heads the section rather than trailing every row in
+    // it: it is the same six times over, and six times is a list of coaches.
+    group: team.name || (key === 'one' ? 'Team 1' : 'Team 2'),
+    icon: <Sprite pokemon={m.pokemon} width={28} height={24} />,
+  })))
+
+  const choose = (id: string) => {
+    setChosen(id)
+    // A spread belongs to the Pokémon it was chosen for, and so does a
+    // decision about which of the other side to weigh it against.
+    setSpread(emptySpread())
+    setOff(new Set())
+  }
 
   const plan = useMemo(() => {
     if (!picked) return null
@@ -258,47 +305,55 @@ export function EvCalcBody({
 
   return (
     <div className="ev-calc">
-      <div className="ev-pick">
-        {sides.map(({ key, team }) => team.members.length > 0 && (
-          <div key={key} className={`ev-pick-side panel-side accent-${key}`}>
-            <h3><TeamName name={team.name || (key === 'one' ? 'Team 1' : 'Team 2')} /></h3>
-            <span className="ev-pick-mons">
-              {team.members.map((m) => (
-                <button
-                  key={m.id}
-                  type="button"
-                  className={`ev-mon${chosen === m.id ? ' is-chosen' : ''}`}
-                  title={m.pokemon.name}
-                  aria-pressed={chosen === m.id}
-                  onClick={() => {
-                    setChosen(m.id)
-                    // A spread belongs to the Pokemon it was chosen for.
-                    setSpread(emptySpread())
-                  }}
-                >
-                  <Sprite pokemon={m.pokemon} width={44} height={36} />
-                </button>
-              ))}
-            </span>
+      <div className="ev-bar">
+        <DropPicker
+          className="ev-picker"
+          items={items}
+          value={chosen ?? ''}
+          onPick={(item) => choose(item.id)}
+          ariaLabel="Pokémon to build a spread for"
+          placeholder="Pick a Pokémon"
+        />
+
+        {picked && picked.foes.length > 0 && (
+          <div className="ev-foes">
+            <span className="ev-against">against</span>
+            {picked.foes.map((m) => (
+              <button
+                key={m.id}
+                type="button"
+                className={`ev-foe${off.has(m.id) ? ' is-off' : ''}`}
+                title={`${m.pokemon.name} — ${off.has(m.id) ? 'not counted' : 'counted'}`}
+                aria-pressed={!off.has(m.id)}
+                onClick={() => setOff((prev) => {
+                  const next = new Set(prev)
+                  if (next.has(m.id)) next.delete(m.id)
+                  else next.add(m.id)
+                  return next
+                })}
+              >
+                <Sprite pokemon={m.pokemon} width={40} height={33} />
+              </button>
+            ))}
           </div>
-        ))}
+        )}
+
+        {picked && (
+          <span className={`ev-budget${left === 0 ? ' ev-full' : ''}`}>
+            {used} of {EV_BUDGET} EVs{left > 0 ? ` · ${left} left` : ' · all spent'}
+            {used > 0 && (
+              <button type="button" className="link-btn" onClick={() => setSpread(emptySpread())}>
+                Clear
+              </button>
+            )}
+          </span>
+        )}
       </div>
 
       {!picked ? (
         <p className="ev-hint">Pick a Pokémon to see what its EVs would buy against the other side.</p>
       ) : (
         <>
-          <div className="ev-budget">
-            <strong>{picked.entry.pokemon.name}</strong>
-            <span className={left === 0 ? 'ev-full' : undefined}>
-              {used} of {EV_BUDGET} EVs{left > 0 ? ` · ${left} left` : ' · all spent'}
-            </span>
-            {used > 0 && (
-              <button type="button" className="link-btn" onClick={() => setSpread(emptySpread())}>
-                Clear
-              </button>
-            )}
-          </div>
 
           <div className="ev-cols">
             {EV_STATS.map((stat) => (

@@ -161,3 +161,51 @@ export function damage(
  * dice are kind.
  */
 export const hitsToKO = (hit: Hit) => hit.worstCase
+
+/**
+ * The odds of it happening in `hits` or fewer, over every sequence of rolls.
+ *
+ * "Guaranteed" is one end of the story and the other end matters as much:
+ * ninety-two EVs that turn a guaranteed 2HKO into a guaranteed 3HKO have
+ * bought very little if the 2HKO still lands seven times in eight, and have
+ * bought the matchup if it never lands at all. The hit count alone cannot
+ * tell those apart.
+ *
+ * Counted rather than sampled. Each hit is one of sixteen equally likely
+ * rolls, so the exact answer is a walk over the distribution of damage so
+ * far — capped at the HP, since a Pokémon that is down stays down, which is
+ * also what keeps it cheap: a few thousand steps rather than sixteen to the
+ * power of the hit count.
+ *
+ * Every hit count up to `upTo` comes out of the one walk, because each is the
+ * one before it carried a step further. Asking separately for the chance at
+ * one hit, two and three would be three walks over the same ground.
+ */
+export function koCurve(hit: Hit, upTo: number): number[] {
+  const curve: number[] = []
+  if (!hit.rolls.length || upTo < 1) return curve
+  const each = 1 / hit.rolls.length
+  let alive = new Float64Array(hit.hp)
+  alive[0] = 1
+  let ko = 0
+
+  for (let h = 0; h < upTo; h++) {
+    const next = new Float64Array(hit.hp)
+    for (let dealt = 0; dealt < hit.hp; dealt++) {
+      const reached = alive[dealt]
+      if (!reached) continue
+      const share = reached * each
+      for (const roll of hit.rolls) {
+        const total = dealt + roll
+        if (total >= hit.hp) ko += share
+        else next[total] += share
+      }
+    }
+    alive = next
+    curve.push(ko)
+  }
+  return curve
+}
+
+/** One point off the curve, for a caller that only wants the one. */
+export const koChance = (hit: Hit, hits: number) => koCurve(hit, hits)[hits - 1] ?? 0
