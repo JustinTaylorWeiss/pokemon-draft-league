@@ -727,7 +727,7 @@ export function EvCalcBody({
               className="ev-open"
               title={`Open ${picked.entry.pokemon.name}`}
             >
-              <Sprite pokemon={picked.entry.pokemon} width={40} height={33} />
+              <Sprite pokemon={picked.entry.pokemon} width={62} height={52} />
             </PokemonLink>
             <GearPicker
               pokemon={picked.entry.pokemon}
@@ -754,7 +754,7 @@ export function EvCalcBody({
                     return next
                   })}
                 >
-                  <Sprite pokemon={m.pokemon} width={40} height={33} />
+                  <Sprite pokemon={m.pokemon} width={62} height={52} />
                 </button>
                 <GearPicker
                   pokemon={m.pokemon}

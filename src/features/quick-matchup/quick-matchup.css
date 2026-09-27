@@ -933,7 +933,7 @@ button.type-chip { cursor: pointer; }
 
 /* Tops aligned, not middles: a Mega has no gear button under it, so its
    slot is shorter, and centring the row hung its sprite below the rest. */
-.ev-foes { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 0.15rem; }
+.ev-foes { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 0.15rem 0.3rem; }
 .ev-against {
   font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
   color: var(--muted); margin-right: 0.3rem;
@@ -1152,20 +1152,21 @@ button.type-chip { cursor: pointer; }
  * on the row. Closed it is a plus; open it is two selects; chosen it is what
  * was chosen, which is the only state worth reading at a glance.
  */
+/* Wide enough for the sprite and for a chip under it to say something
+   before it has to trail off. */
 .ev-mine, .ev-foe-slot {
   display: inline-flex; flex-direction: column; align-items: center;
-  justify-content: flex-start; gap: 0.1rem;
+  justify-content: flex-start; gap: 0.1rem; width: 5.4rem;
 }
 .ev-gear { position: relative; display: inline-flex; }
 /* An ability and an item are two facts, not one: stacked, each is read on
    its own line rather than found inside a string. */
 .ev-gear-open {
   display: flex; flex-direction: column; align-items: center;
-  max-width: 6.5rem; padding: 0 0.3rem; line-height: 1.25;
+  max-width: 100%; padding: 0 0.3rem; line-height: 1.25;
   background: none; border: 1px dashed var(--line); border-radius: 999px;
   color: var(--muted); font: inherit; font-size: 0.6rem; cursor: pointer;
 }
-.ev-gear-open { max-width: 7.5rem; }
 .ev-gear-open > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* The plus keeps its place at the bottom whether or not there is anything
    above it, so the thing you click is always where you left it. */
