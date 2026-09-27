@@ -85,8 +85,8 @@ function battleFormes(id: string, dex: LeagueDex) {
 
 /** Short on the button, spelled out on hover. */
 /** How big the Pokemon along the top are drawn. */
-const SPRITE_W = 56
-const SPRITE_H = 46
+const SPRITE_W = 64
+const SPRITE_H = 53
 
 const ASSUME_LABEL: Record<Assume, string> = { ivs: '31', max: '252', 'max+': '252+' }
 const ASSUME_MEANS: Record<Assume, string> = {

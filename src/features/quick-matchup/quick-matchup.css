@@ -1318,13 +1318,13 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
  */
 /* Just wider than the sprite, so a chip under it has a little room to say
    something before trailing off and the six of them still sit close. */
-/* Wide enough for three pills under the sprite rather than for the sprite
-   alone: "Choice Specs" is the longest thing that regularly goes there and
-   it wants five rems at this size. Anything longer still truncates, with
-   the whole of it on hover. */
+/* Wide enough for the spread on one line rather than for the sprite alone:
+   "252 HP 252+ SpD" is what usually goes there and it wants six rems at
+   this size, which is also room for a bigger picture. Anything longer
+   still truncates, with the whole of it on hover. */
 .ev-mine, .ev-foe-slot {
   display: inline-flex; flex-direction: column; align-items: center;
-  justify-content: flex-start; gap: 0.1rem; width: 5rem;
+  justify-content: flex-start; gap: 0.1rem; width: 6rem;
 }
 /* Full width of the slot, so every pill under a sprite is the same width.
    Ragged right edges down a column of six read as six different kinds of
@@ -1345,9 +1345,12 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   font: inherit; font-size: 0.6rem; font-weight: 600; cursor: pointer;
 }
 .ev-gear-chip:hover { border-color: var(--fg); }
-/* The spread runs to two or three stats and is the one pill worth reading
-   in full, so it wraps where the others cut off. */
-.ev-gear-chip.is-spread { white-space: normal; line-height: 1.15; padding: 0.12rem 0.35rem; }
+/* The spread runs to two or three stats, so it is set a size smaller and
+   tighter to keep it on one line. Four of them still truncate, which is
+   rare enough not to shape the rest around. */
+.ev-gear-chip.is-spread {
+  font-size: 0.55rem; letter-spacing: -0.01em; padding: 0.08rem 0.28rem;
+}
 /* The count of what did not fit. Dashed and grey, because it is not a
    thing this Pokemon has — it is the panel saying there is more inside. */
 .ev-gear-chip.is-more {
@@ -1607,6 +1610,6 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 @media (max-width: 460px) {
   .ev-cols { grid-template-columns: repeat(1, minmax(0, 1fr)); }
   .ev-col + .ev-col { border-left: 0; padding-left: 0; padding-top: 0.6rem; border-top: 1px solid var(--line); }
-  .ev-mine, .ev-foe-slot { width: 4.4rem; }
+  .ev-mine, .ev-foe-slot { width: 5.2rem; }
   .ev-foes { gap: 0.3rem 0.1rem; }
 }
