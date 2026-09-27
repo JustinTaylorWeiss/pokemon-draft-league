@@ -43,6 +43,13 @@ export interface Pokemon {
   baseSpecies?: string
   forme?: string
   /**
+   * Where a forme's picture actually is, when the derived still-sprite URL is
+   * a 404 — 'ani' for the animated one, 'art' for PokeAPI's drawing. Absent on
+   * everything with an ordinary sprite, which is all but thirty-three of them.
+   * Asked at build time by scripts/build-data.mjs.
+   */
+  spriteKind?: 'ani' | 'art'
+  /**
    * For a Mega that evolves from a forme rather than from the base species, the
    * id of that forme. Absent on the eighty-nine whose parent is the species.
    * Set by scripts/build-data.mjs; read through `megaBaseId`.

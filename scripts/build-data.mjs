@@ -590,6 +590,59 @@ async function main() {
   }
   stats.artwork = { formes: formes.length, matched: artMatched, speciesAsked: varieties.size }
 
+  // ---- Which sprite each forme actually has --------------------------------
+  /*
+   * Showdown's sprite URLs are derivable from the name, so the app has always
+   * derived them — and for sixteen formes the derived one is a 404. They are
+   * the Megas Legends Z-A announced, which nobody has drawn in the Gen 5
+   * still style yet; most of them do have an animated sprite, and the rest
+   * have artwork at PokeAPI.
+   *
+   * The component could find that out on its own, and did: still, then the
+   * same URL cache-busted, then animated, then artwork, each step waiting on
+   * the one before it to fail. Two failed requests before a picture appears
+   * is slow on a good connection, and under `loading="lazy"` the retries are
+   * deferred along with everything else, so a sprite could sit blank until
+   * something on the page nudged it. Raichu-Mega-Y was one of them.
+   *
+   * Asked once here instead. The retry chain stays for the request that
+   * genuinely drops; this only says where to start.
+   */
+  const spriteName = (p) => (p.forme && p.baseSpecies
+    ? `${toId(p.baseSpecies)}-${toId(p.forme)}`
+    : toId(p.name))
+  const exists = async (url) => {
+    try {
+      return (await fetch(url, { method: 'HEAD' })).ok
+    } catch {
+      // A build that cannot reach the sprite host should not invent an answer:
+      // saying nothing leaves the component's own chain to work it out.
+      return true
+    }
+  }
+
+  const spriteQueue = [...formes]
+  const spriteKinds = { ani: 0, art: 0 }
+  await Promise.all(Array.from({ length: 8 }, async () => {
+    while (spriteQueue.length) {
+      const [, p] = spriteQueue.shift()
+      const name = spriteName(p)
+      if (await exists(`https://play.pokemonshowdown.com/sprites/gen5/${name}.png`)) continue
+      if (await exists(`https://play.pokemonshowdown.com/sprites/ani/${name}.gif`)) {
+        p.spriteKind = 'ani'
+        spriteKinds.ani++
+        continue
+      }
+      // Only where the drawing is the forme's own: thirty-one of them wear
+      // their base's, and showing that would be showing the wrong Pokemon.
+      if (p.artId != null) {
+        p.spriteKind = 'art'
+        spriteKinds.art++
+      }
+    }
+  }))
+  stats.sprites = { formesChecked: formes.length, ...spriteKinds }
+
   // ---- The moves this regulation actually plays -----------------------------
   /*
    * The damaging moves that carry the format, ranked, cut where they account

@@ -10,20 +10,26 @@ import type { Pokemon } from '../data/types'
  * browser's broken-image glyph from then on and never tries again, which reads
  * as "this Pokémon is broken" rather than "that request failed".
  *
- * Four attempts, each for a different reason:
+ * Four attempts, each for a different reason — though most Pokémon that need
+ * a later one start there rather than working their way down. The build asks
+ * which sprite each forme actually has and records it as `spriteKind`; two
+ * failed requests before a picture appears is slow on a good connection, and
+ * under `loading="lazy"` those retries are deferred along with everything
+ * else, so a sprite could sit blank until something nudged the page. The
+ * chain below is what is left for a request that genuinely drops.
  *
  *  0. the still sprite, which is what almost everything has;
  *  1. the same URL cache-busted, which covers a dropped connection — a failed
  *     response can be cached, and a plain retry never leaves the browser;
  *  2. the animated one, which covers a Pokémon Showdown has drawn but has no
- *     still for. That is not hypothetical: of the 93 Mega and Primal formes,
- *     16 have no still sprite, and 11 of those do have an animated one. They
- *     are the Megas announced for Legends Z-A, which nobody has drawn in the
- *     older style yet;
- *  3. the official artwork, for the five Megas — Heatran, Darkrai, Zygarde,
- *     Magearna and Zeraora — Showdown has not drawn in either style. PokeAPI
- *     has each of them, so a real picture of the right Pokémon exists and only
- *     this component was not looking at it.
+ *     still for. That is not hypothetical: of the 354 formes the build checks,
+ *     33 have no still sprite and 22 of those do have an animated one. They
+ *     are mostly the Megas announced for Legends Z-A, which nobody has drawn
+ *     in the older style yet;
+ *  3. the official artwork, for the remaining 11 — Heatran, Darkrai, Zygarde,
+ *     Magearna and Zeraora among them — that Showdown has not drawn in either
+ *     style. PokeAPI has each of them, so a real picture of the right Pokémon
+ *     exists and only this component was not looking at it.
  *
  * That last one is taken ONLY where the drawing is the Pokémon's own. Thirty-one
  * formes have no artwork of their own and wear their base's: every Arceus plate,
@@ -40,10 +46,12 @@ export function Sprite({
   className?: string
 }) {
   const still = spriteUrl(pokemon)
-  const [tries, setTries] = useState(0)
+  // Straight to the one that exists, where the build found out which that is.
+  const start = pokemon.spriteKind === 'art' ? 3 : pokemon.spriteKind === 'ani' ? 2 : 0
+  const [tries, setTries] = useState(start)
 
   // A different Pokémon in the same slot starts over.
-  useEffect(() => { setTries(0) }, [still])
+  useEffect(() => { setTries(start) }, [still, start])
 
   /**
    * Whether the artwork is this Pokémon's and not its base's. A species is
