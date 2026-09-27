@@ -609,8 +609,9 @@ function GearPicker({
    */
   const raised = assume ? [
     assume.hp === 'max' ? 'HP 252' : null,
-    assume.bulk === 'ivs' ? null : `Def ${ASSUME_LABEL[assume.bulk]}`,
-    assume.power === 'ivs' ? null : `Atk ${ASSUME_LABEL[assume.power]}`,
+    ...(['def', 'spd', 'atk', 'spa'] as const)
+      .filter((k) => assume[k] !== 'ivs')
+      .map((k) => `${STAT_LABELS[k]} ${ASSUME_LABEL[assume[k]]}`),
   ].filter(Boolean) as string[] : []
   // Only the dropped ones. Everything is 31 unless somebody said otherwise,
   // so a pill for each of six perfect IVs would be six pills saying nothing.
@@ -827,14 +828,24 @@ function GearPicker({
                   label="HP" value={assume.hp} states={['ivs', 'max']}
                   onPick={(hp) => onAssume({ ...assume, hp: hp as 'ivs' | 'max' })}
                 />
-                <AssumePicker
-                  label="Def / SpD" value={assume.bulk} states={['ivs', 'max', 'max+']}
-                  onPick={(bulk) => onAssume({ ...assume, bulk })}
-                />
-                <AssumePicker
-                  label="Atk / SpA" value={assume.power} states={['ivs', 'max', 'max+']}
-                  onPick={(power) => onAssume({ ...assume, power })}
-                />
+                {/* The two defences on one line and the two attacks on the
+                    next. They are separate questions — an Incineroar puts
+                    everything in Attack and nothing in Special Attack, and
+                    in HP and Defense and nothing in Special Defense — but
+                    they are read in pairs, so they sit in pairs. */}
+                {([['def', 'spd'], ['atk', 'spa']] as const).map((pair) => (
+                  <div key={pair[0]} className="ev-assume-row">
+                    {pair.map((stat) => (
+                      <AssumePicker
+                        key={stat}
+                        label={STAT_LABELS[stat]}
+                        value={assume[stat]}
+                        states={['ivs', 'max', 'max+']}
+                        onPick={(next) => onAssume({ ...assume, [stat]: next })}
+                      />
+                    ))}
+                  </div>
+                ))}
               </div>
             )}
             {/* Dropped IVs. Two of the six are dropped on purpose and often:
@@ -1512,9 +1523,12 @@ export function EvCalcBody({
                 set on record, so that second list is all there is for {guessed.length === 1 ? 'it' : 'them'}</>
             )}
             . Weather, terrain, screens, boosts and Intimidate are not counted.
-            {Object.values(assume).some((a) => a.bulk === 'max+' || a.power === 'max+') && (
-              <> A boosting nature is credited to whichever of the pair each
-                calculation reads, which no single Pokémon could have both of.</>
+            {Object.values(assume)
+              .some((a) => (['def', 'spd', 'atk', 'spa'] as const)
+                .filter((k) => a[k] === 'max+').length > 1) && (
+              <> More than one stat on the same Pokémon has been given a
+                boosting nature, which no single Pokémon could have — each
+                calculation reads one of them, so each is answered on its own.</>
             )}
           </p>
         </>

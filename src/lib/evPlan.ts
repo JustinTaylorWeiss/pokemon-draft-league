@@ -192,20 +192,32 @@ export const lowered = (ivs?: Partial<Record<StatKey, number>>): [StatKey, numbe
  * a guess at the bottom of a scale of guesses is the one place it does not
  * belong. From there, everything, and everything with the nature on it.
  *
- * `max+` puts the boosting nature on whichever stat is being tested, both
- * defences or both attacks. No real Pokémon has both, and no real Pokémon
- * needs to: each calculation only reads one of them, and the assumption is
- * about that one.
+ * One answer per stat, not one per pair. Defense and Special Defense used
+ * to move together, and so did Attack and Special Attack, which is wrong
+ * about almost every Pokémon that gets built: an Incineroar invests in
+ * Attack and not Special Attack, and in HP and Defense and not Special
+ * Defense. Asking about the pair meant either crediting it with a spread
+ * nobody runs or crediting it with nothing.
+ *
+ * Nothing stops all four being given a boosting nature, which no single
+ * Pokémon could have. The panel says so where it happens rather than
+ * refusing the combination, because each calculation only reads one of
+ * them and "what if it were +Def" is a fair question to ask of a Pokémon
+ * you are also asking "what if it were +SpD" about.
  */
 export type Assume = 'ivs' | 'max' | 'max+'
 export interface Assumptions {
   /** HP takes no nature, so it has no `max+`. */
   hp: 'ivs' | 'max'
-  bulk: Assume
-  power: Assume
+  def: Assume
+  spd: Assume
+  atk: Assume
+  spa: Assume
 }
 
-export const ASSUME_BARE: Assumptions = { hp: 'ivs', bulk: 'ivs', power: 'ivs' }
+export const ASSUME_BARE: Assumptions = {
+  hp: 'ivs', def: 'ivs', spd: 'ivs', atk: 'ivs', spa: 'ivs',
+}
 
 export interface Opponent {
   id: string
@@ -431,14 +443,10 @@ export function opponentsFrom(
      */
     const credit = assume[id] ?? ASSUME_BARE
     side.evs = { ...side.evs, hp: credit.hp === 'max' ? EV_MAX : 0 }
-    for (const [choice, stats] of [
-      [credit.bulk, ['def', 'spd']],
-      [credit.power, ['atk', 'spa']],
-    ] as [Assume, StatKey[]][]) {
-      const evs = choice === 'ivs' ? 0 : EV_MAX
-      const nature = choice === 'max+' ? 1.1 : 1
-      side.evs = { ...side.evs, ...Object.fromEntries(stats.map((k) => [k, evs])) }
-      side.natureBy = { ...side.natureBy, ...Object.fromEntries(stats.map((k) => [k, nature])) }
+    for (const stat of ['def', 'spd', 'atk', 'spa'] as const) {
+      const choice = credit[stat]
+      side.evs = { ...side.evs, [stat]: choice === 'ivs' ? 0 : EV_MAX }
+      side.natureBy = { ...side.natureBy, [stat]: choice === 'max+' ? 1.1 : 1 }
     }
 
     const known = (set?.moves ?? [])

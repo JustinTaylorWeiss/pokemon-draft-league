@@ -1390,7 +1390,13 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   display: flex; flex-direction: column; gap: 0.35rem;
   padding-bottom: 0.45rem; border-bottom: 1px solid var(--line);
 }
-.ev-gear-assumes .ev-assume { flex-direction: row; align-items: center; justify-content: space-between; }
+.ev-gear-assumes > .ev-assume { flex-direction: row; align-items: center; justify-content: space-between; }
+/* Two stats read as a pair sit as a pair, each with its label over its
+   segments: side by side there is no room for a word beside them. */
+.ev-assume-row { display: flex; gap: 0.4rem; }
+.ev-assume-row .ev-assume { flex: 1 1 0; min-width: 0; align-items: stretch; }
+.ev-assume-row .ev-assume-seg { width: 100%; }
+.ev-assume-row .ev-seg { flex: 1 1 0; min-width: 0; padding: 0.12rem 0.2rem; }
 .ev-gear-pop label { display: flex; flex-direction: column; gap: 0.15rem; }
 /* The label over each control, and only that. As `.ev-gear-pop span` it
    also caught the word inside every category badge in the move list —
