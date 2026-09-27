@@ -985,152 +985,11 @@ export function EvCalcBody({
           used to push the picker's row taller while the space next to the
           budget and the search sat empty. Now the sprites run down into it. */}
       <div className="ev-bar">
-        <div className="ev-side">
-          <DropPicker
-            className="ev-picker"
-            items={choices}
-            value={chosen ?? ''}
-            onPick={(item) => choose(item.id)}
-            ariaLabel="Pokémon to build a spread for"
-            placeholder="Pick a Pokémon"
-          />
-
-          {/* And which of its shapes to read it in, where it has more than one.
-              Aegislash is 60 Defense in one stance and 150 in the other. */}
-          {formes.length > 1 && (
-            <span className="ev-assume-seg ev-formes">
-              {formes.map((f) => (
-                <button
-                  key={f.id}
-                  type="button"
-                  className="ev-seg"
-                  aria-pressed={(shape ?? picked?.own) === f.id}
-                  title={f.pokemon.name}
-                  onClick={() => { setShape(f.id); forgetSet() }}
-                >
-                  {f.pokemon.forme ?? 'Base'}
-                </button>
-              ))}
-            </span>
-          )}
-
-          {/* Its four, which the Attack and Special Attack columns are the
-              case for. Behind a button rather than always open: it is
-              answered once per Pokemon and right most of the time, and the
-              columns are what the tab is for. */}
+        <div className="ev-ours">
+          {/* Its picture beside the controls that are about it. The picker
+              opens the list; this opens the Pokémon, the way a sprite does
+              everywhere else on the site. */}
           {picked && (
-            <div className="ev-set">
-              <button
-                type="button"
-                className="ev-set-open"
-                aria-expanded={movesOpen}
-                onClick={() => setMovesOpen((v) => !v)}
-              >
-                Choose move set
-                <em>{myMoves.length}/{SET_SIZE}</em>
-              </button>
-
-              {movesOpen && (
-                <>
-                  <button
-                    type="button" className="ev-gear-away" aria-label="Close"
-                    onClick={() => setMovesOpen(false)}
-                  />
-                  <div className="ev-set-pop">
-                    <p className="ev-set-head">
-                      <span>{picked.entry.pokemon.name}</span>
-                      {myset && (
-                        <button type="button" className="link-btn" onClick={forgetSet}>
-                          Usual set
-                        </button>
-                      )}
-                    </p>
-
-                    {/* The slots as they stand, each its own way out of
-                        itself. Empty ones are drawn rather than left out, so
-                        the number still to choose is a thing you can see. */}
-                    <ol className="ev-set-slots">
-                      {Array.from({ length: SET_SIZE }, (_, i) => {
-                        const move = myMoves[i]
-                        return (
-                          <li key={i}>
-                            {move ? (
-                              <button
-                                type="button"
-                                className="ev-set-slot"
-                                title={`Drop ${move.name}`}
-                                onClick={() => dropFromSet(toId(move.name))}
-                              >
-                                <MoveCategory category={move.category} />
-                                <span className="ev-set-name">{move.name}</span>
-                                <TypeChip type={move.type} />
-                                <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
-                              </button>
-                            ) : (
-                              <span className="ev-set-slot is-empty">Empty</span>
-                            )}
-                          </li>
-                        )
-                      })}
-                    </ol>
-
-                    <input
-                      type="search" value={moveQuery} placeholder="Search its moves…"
-                      aria-label={`Search ${picked.entry.pokemon.name}'s moves`}
-                      onChange={(e) => setMoveQuery(e.target.value)}
-                    />
-
-                    {/* Damaging only. These four fill the Attack and Special
-                        Attack columns, and a status move puts nothing in
-                        either — offering one would be offering a slot that
-                        changes no number on the page. */}
-                    <ul className="ev-set-list">
-                      {movePool.map((m) => (
-                        <li key={m.name}>
-                          <button
-                            type="button"
-                            className={setIds.includes(toId(m.name)) ? 'is-chosen' : undefined}
-                            disabled={!setIds.includes(toId(m.name)) && setIds.length >= SET_SIZE}
-                            onClick={() => (setIds.includes(toId(m.name))
-                              ? dropFromSet(toId(m.name))
-                              : addToSet(m))}
-                          >
-                            <MoveCategory category={m.category} />
-                            <span className="ev-set-name">{m.name}</span>
-                            <em>{m.type} · {m.basePower}</em>
-                          </button>
-                        </li>
-                      ))}
-                      {movePool.length === 0 && (
-                        <li className="ev-set-none">Nothing matches.</li>
-                      )}
-                    </ul>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* What is left to spend, drawn rather than counted out. Five
-              hundred and eight is a number you have to subtract from; a
-              bar is a thing you can see the end of. */}
-          {picked && (
-            <span className={`ev-budget${left === 0 ? ' is-full' : ''}`}>
-              <span className="ev-budget-bar">
-                <span style={{ width: `${(used / EV_BUDGET) * 100}%` }} />
-              </span>
-              <span className="ev-budget-read">
-                {used}<i>/{EV_BUDGET}</i>
-              </span>
-            </span>
-          )}
-        </div>
-
-        {picked && (
-          <div className="ev-mons">
-            {/* Its picture last, after the shape that decides which picture it
-                is. The picker opens the list; this opens the Pokémon, the way a
-                sprite does everywhere else on the site. */}
             <span className="ev-mine">
               <PokemonLink
                 id={picked.entry.id}
@@ -1145,7 +1004,152 @@ export function EvCalcBody({
                 gear={gear[picked.entry.id]} onChange={(g) => give(picked.entry.id, g)}
               />
             </span>
+          )}
 
+          <div className="ev-side">
+            <DropPicker
+              className="ev-picker"
+              items={choices}
+              value={chosen ?? ''}
+              onPick={(item) => choose(item.id)}
+              ariaLabel="Pokémon to build a spread for"
+              placeholder="Pick a Pokémon"
+            />
+
+            {/* And which of its shapes to read it in, where it has more than one.
+                Aegislash is 60 Defense in one stance and 150 in the other. */}
+            {formes.length > 1 && (
+              <span className="ev-assume-seg ev-formes">
+                {formes.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    className="ev-seg"
+                    aria-pressed={(shape ?? picked?.own) === f.id}
+                    title={f.pokemon.name}
+                    onClick={() => { setShape(f.id); forgetSet() }}
+                  >
+                    {f.pokemon.forme ?? 'Base'}
+                  </button>
+                ))}
+              </span>
+            )}
+
+            {/* Its four, which the Attack and Special Attack columns are the
+                case for. Behind a button rather than always open: it is
+                answered once per Pokemon and right most of the time, and the
+                columns are what the tab is for. */}
+            {picked && (
+              <div className="ev-set">
+                <button
+                  type="button"
+                  className="ev-set-open"
+                  aria-expanded={movesOpen}
+                  onClick={() => setMovesOpen((v) => !v)}
+                >
+                  Choose move set
+                  <em>{myMoves.length}/{SET_SIZE}</em>
+                </button>
+
+                {movesOpen && (
+                  <>
+                    <button
+                      type="button" className="ev-gear-away" aria-label="Close"
+                      onClick={() => setMovesOpen(false)}
+                    />
+                    <div className="ev-set-pop">
+                      <p className="ev-set-head">
+                        <span>{picked.entry.pokemon.name}</span>
+                        {myset && (
+                          <button type="button" className="link-btn" onClick={forgetSet}>
+                            Usual set
+                          </button>
+                        )}
+                      </p>
+
+                      {/* The slots as they stand, each its own way out of
+                          itself. Empty ones are drawn rather than left out, so
+                          the number still to choose is a thing you can see. */}
+                      <ol className="ev-set-slots">
+                        {Array.from({ length: SET_SIZE }, (_, i) => {
+                          const move = myMoves[i]
+                          return (
+                            <li key={i}>
+                              {move ? (
+                                <button
+                                  type="button"
+                                  className="ev-set-slot"
+                                  title={`Drop ${move.name}`}
+                                  onClick={() => dropFromSet(toId(move.name))}
+                                >
+                                  <MoveCategory category={move.category} />
+                                  <span className="ev-set-name">{move.name}</span>
+                                  <TypeChip type={move.type} />
+                                  <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
+                                </button>
+                              ) : (
+                                <span className="ev-set-slot is-empty">Empty</span>
+                              )}
+                            </li>
+                          )
+                        })}
+                      </ol>
+
+                      <input
+                        type="search" value={moveQuery} placeholder="Search its moves…"
+                        aria-label={`Search ${picked.entry.pokemon.name}'s moves`}
+                        onChange={(e) => setMoveQuery(e.target.value)}
+                      />
+
+                      {/* Damaging only. These four fill the Attack and Special
+                          Attack columns, and a status move puts nothing in
+                          either — offering one would be offering a slot that
+                          changes no number on the page. */}
+                      <ul className="ev-set-list">
+                        {movePool.map((m) => (
+                          <li key={m.name}>
+                            <button
+                              type="button"
+                              className={setIds.includes(toId(m.name)) ? 'is-chosen' : undefined}
+                              disabled={!setIds.includes(toId(m.name)) && setIds.length >= SET_SIZE}
+                              onClick={() => (setIds.includes(toId(m.name))
+                                ? dropFromSet(toId(m.name))
+                                : addToSet(m))}
+                            >
+                              <MoveCategory category={m.category} />
+                              <span className="ev-set-name">{m.name}</span>
+                              <em>{m.type} · {m.basePower}</em>
+                            </button>
+                          </li>
+                        ))}
+                        {movePool.length === 0 && (
+                          <li className="ev-set-none">Nothing matches.</li>
+                        )}
+                      </ul>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* What is left to spend, drawn rather than counted out. Five
+                hundred and eight is a number you have to subtract from; a
+                bar is a thing you can see the end of. */}
+            {picked && (
+              <span className={`ev-budget${left === 0 ? ' is-full' : ''}`}>
+                <span className="ev-budget-bar">
+                  <span style={{ width: `${(used / EV_BUDGET) * 100}%` }} />
+                </span>
+                <span className="ev-budget-read">
+                  {used}<i>/{EV_BUDGET}</i>
+                </span>
+              </span>
+            )}
+          </div>
+        </div>
+
+        {picked && (
+          <div className="ev-mons">
             {picked.foes.length > 0 && (
               <div className="ev-foes">
                 {picked.foes.map((m) => (

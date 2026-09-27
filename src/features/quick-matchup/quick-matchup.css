@@ -925,13 +925,18 @@ button.type-chip { cursor: pointer; }
  * choose four moves.
  */
 .ev-bar { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0.6rem; }
-.ev-side {
-  display: flex; flex-direction: column; align-items: flex-start;
-  justify-content: space-between;
-  flex: none; gap: 0.5rem; min-height: 9rem; padding: 0.6rem;
+/* The Pokemon the sliders are for, beside the controls that are about it. */
+.ev-ours {
+  display: flex; align-items: flex-start; flex: none; gap: 0.6rem;
+  padding: 0.6rem;
   border: 1px solid color-mix(in oklab, var(--nav-blue), transparent 60%);
   border-radius: 10px;
   background: color-mix(in oklab, var(--nav-blue), transparent 94%);
+}
+.ev-side {
+  display: flex; flex-direction: column; align-items: flex-start;
+  justify-content: space-between;
+  flex: none; gap: 0.5rem; min-height: 9rem;
 }
 .ev-mons {
   display: flex; align-items: flex-start; flex-wrap: wrap;
@@ -985,7 +990,7 @@ button.type-chip { cursor: pointer; }
    because the focus ring it draws when selected sits outside its box. */
 .ev-added {
   display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem;
-  flex: none; width: var(--ev-control); padding-top: 0.15rem;
+  flex: none; width: var(--ev-control); margin-left: auto; padding-top: 0.15rem;
 }
 /* The label over its segments rather than beside them: three of these in a
    row read as one long sentence otherwise, and which words belong to which
