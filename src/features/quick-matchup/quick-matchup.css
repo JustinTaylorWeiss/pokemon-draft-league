@@ -1613,7 +1613,18 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 }
 /* Said in full. "Click to change IVs" is an instruction, and an
    instruction with its end cut off is not one. */
-.ev-gear-fold em { font-style: normal; white-space: nowrap; }
+/*
+ * Clipped rather than allowed to push the pill out of its column.
+ *
+ * "Click to change IVs" did not fit half of a nineteen-rem panel, and a
+ * nowrap line with nothing to stop it simply ran past the border and
+ * under the badge beside it — which is what looked like two controls
+ * overlapping. The label is shorter now and this is the backstop.
+ */
+.ev-gear-fold em {
+  font-style: normal; white-space: nowrap;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis;
+}
 .ev-gear-fold i { margin-left: auto; font-style: normal; font-size: 0.6rem; }
 .ev-gear-fold:hover { border-color: var(--fg); color: var(--fg); }
 .ev-gear-fold[aria-expanded="true"] {

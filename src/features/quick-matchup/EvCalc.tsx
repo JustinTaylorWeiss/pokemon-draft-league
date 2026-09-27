@@ -977,7 +977,7 @@ function GearPicker({
                 {/* What it says depends on whether there is anything to
                     report: the ones that are not 31, or an invitation,
                     since all-31 is the state nobody needs telling about. */}
-                <em>{dropped.length ? dropped.join(' · ') : 'Click to change IVs'}</em>
+                <em>{dropped.length ? dropped.join(' · ') : 'Change IVs'}</em>
                 <i aria-hidden="true">{ivsOpen ? '\u25b4' : '\u25be'}</i>
               </button>
               {/* What the six bars above come to, beside the IVs rather
