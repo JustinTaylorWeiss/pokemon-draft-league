@@ -41,7 +41,7 @@ function withMegaBases(team: Team, dex: LeagueDex): { team: Team; added: string[
  * the layout: beside the teams list when there is room for two columns, and as
  * a tab of the analysis card when there is not.
  */
-export function useSpeedTiersPanel(teamOne: Team, teamTwo: Team, dex: LeagueDex): {
+export function useSpeedTiersPanel(teamOne: Team, teamTwo: Team, dex: LeagueDex, level: number): {
   actions: ReactNode
   body: ReactNode
   footnote: string
@@ -51,9 +51,6 @@ export function useSpeedTiersPanel(teamOne: Team, teamTwo: Team, dex: LeagueDex)
   const preMega = useMemo(() => new Set([...one.added, ...two.added]), [one.added, two.added])
 
   const [selected, setSelected] = useState<string | null>(null)
-  // This league plays doubles at 50, which is what the numbers should mean by
-  // default; 100 is there for anyone reading singles tiers across.
-  const [level, setLevel] = useState(50)
 
   // Both the row list and the defaults come off the combined roster, so the two
   // columns start symmetric the way DraftZone's do.
@@ -92,24 +89,13 @@ export function useSpeedTiersPanel(teamOne: Team, teamTwo: Team, dex: LeagueDex)
 
   return {
     actions: (
-      <>
-        {/* Level first: every column on the tab is read at it, and the filter
-            decides which rows appear within that. */}
-        <label className="level-picker">
-          <span>Lv</span>
-          <select value={level} onChange={(e) => setLevel(Number(e.target.value))}>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
-        </label>
-        <SpeedFilter
-          rows={rows}
-          oneName={teamOne.name || 'Team 1'}
-          twoName={teamTwo.name || 'Team 2'}
-          filterOne={filterOne} filterTwo={filterTwo}
-          onChange={setFilter} onReset={reset}
-        />
-      </>
+      <SpeedFilter
+        rows={rows}
+        oneName={teamOne.name || 'Team 1'}
+        twoName={teamTwo.name || 'Team 2'}
+        filterOne={filterOne} filterTwo={filterTwo}
+        onChange={setFilter} onReset={reset}
+      />
     ),
     body: (
       <SpeedTiersBody

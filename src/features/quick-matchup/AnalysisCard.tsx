@@ -74,8 +74,15 @@ export function AnalysisCard({
    * is one call for the card rather than one per tab.
    */
   const [abreast, setAbreast] = useState(true)
+  /**
+   * One level for the card, not one per tab. The speed tiers and the EV
+   * calculator are answering the same question at the same level, and two
+   * pickers that could disagree is two chances to read the wrong number.
+   * The league plays at 50; 100 is there for reading singles across.
+   */
+  const [level, setLevel] = useState(50)
 
-  const speed = useSpeedTiersPanel(teamOne, teamTwo, dex)
+  const speed = useSpeedTiersPanel(teamOne, teamTwo, dex, level)
   // Coverage is the one reading that needs somebody on the other side: what a
   // team hits is a fact about the team it is hitting. Every other tab here is
   // about the analysed team alone, so solo keeps them all and drops that one.
@@ -100,6 +107,18 @@ export function AnalysisCard({
   const byId = useMemo(() => Object.fromEntries(
     [...teamOne.members, ...teamTwo.members].map((m) => [m.id, m.pokemon]),
   ), [teamOne.members, teamTwo.members])
+
+  // Level first on the tabs that read at one: every number on them is read
+  // at it, and the controls beside it only narrow what is shown within that.
+  const levelPicker = (
+    <label className="level-picker">
+      <span>Lv</span>
+      <select value={level} onChange={(e) => setLevel(Number(e.target.value))}>
+        <option value={50}>50</option>
+        <option value={100}>100</option>
+      </select>
+    </label>
+  )
 
   const actions = {
     summary: (
@@ -128,7 +147,8 @@ export function AnalysisCard({
         Abilities
       </button>
     ),
-    speed: speed.actions,
+    speed: <>{levelPicker}{speed.actions}</>,
+    evs: levelPicker,
   }[tab]
 
   // On every tab that shows the two teams as a pair, which is all of them bar
@@ -210,7 +230,7 @@ export function AnalysisCard({
         ? (
           <EvCalcBody
             teamOne={teamOne} teamTwo={teamTwo}
-            chart={chart} moves={moves} learnsets={learnsets} sets={sets}
+            chart={chart} moves={moves} learnsets={learnsets} sets={sets} level={level}
           />
         )
         : <LoadingBall label="Loading learnsets…" inline />)}

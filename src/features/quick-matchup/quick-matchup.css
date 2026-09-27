@@ -876,12 +876,11 @@ button.type-chip { cursor: pointer; }
  */
 .ev-calc { display: flex; flex-direction: column; gap: 0.9rem; }
 
-.ev-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.4rem; }
-.ev-pick-side { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
-.ev-pick-name {
-  font-size: 0.78rem; font-weight: 700; color: var(--team, var(--accent)); white-space: nowrap;
-}
-.ev-pick-mons { display: flex; flex-wrap: wrap; gap: 0.15rem; }
+/* Each side under its own name, the same heading every other tab gives it —
+   `.panel-side` carries the rule, so the two cannot drift apart. */
+.ev-pick { display: flex; align-items: start; gap: 1.1rem; }
+.ev-pick-side { min-width: 0; }
+.ev-pick-mons { display: flex; flex-wrap: wrap; gap: 0.15rem; justify-content: center; }
 .ev-mon {
   background: none; border: 1px solid transparent; border-radius: 8px;
   padding: 0.1rem; cursor: pointer; line-height: 0;
@@ -892,12 +891,11 @@ button.type-chip { cursor: pointer; }
    a box drawn round it, and every sprite here already sits in one. */
 .ev-mon.is-chosen { border-color: var(--team-accent, var(--accent)); background: var(--chip); }
 .ev-mon:not(.is-chosen) img { opacity: 0.55; }
-.ev-level { margin-left: auto; }
 
 .ev-hint, .ev-note { margin: 0; color: var(--muted); font-size: 0.75rem; line-height: 1.45; }
 .ev-budget { display: flex; align-items: baseline; gap: 0.6rem; font-size: 0.82rem; }
 .ev-budget > span { color: var(--muted); font-variant-numeric: tabular-nums; }
-.ev-over { color: #e05563 !important; font-weight: 600; }
+.ev-full { color: var(--fg) !important; }
 
 .ev-cols { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.5rem; }
 .ev-col { min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
@@ -944,19 +942,35 @@ button.type-chip { cursor: pointer; }
 }
 
 .ev-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+/*
+ * Unbought rows are not dimmed, they are just unmarked.
+ *
+ * Fading them was the obvious way to say "not yet" and the wrong one: every
+ * row here is something to read and decide on, and half of them at 45% was a
+ * list you had to lean into. The mark is the border and the weight, which
+ * costs the unlit rows no legibility at all.
+ */
 .ev-row {
   display: flex; gap: 0.35rem; align-items: baseline;
   padding: 0.22rem 0.3rem; border: 1px solid var(--line); border-radius: 6px;
-  font-size: 0.68rem; color: var(--muted);
-  /* Dim until paid for. Everything in this list is something you could buy;
-     the lit ones are what the slider has actually bought. */
-  opacity: 0.45; transition: opacity 0.12s, border-color 0.12s;
+  font-size: 0.68rem; color: var(--fg);
+  transition: border-color 0.12s, background 0.12s;
 }
-.ev-row.is-lit { opacity: 1; border-color: #2ea078; color: var(--fg); }
-.ev-row.is-out { opacity: 0.3; }
+.ev-row .ev-detail, .ev-row .ev-cost { color: var(--muted); }
+.ev-row.is-lit {
+  border-color: #2ea078; background: rgb(46 160 120 / 12%);
+}
+.ev-row.is-lit .ev-cost { color: #2ea078; }
+/* Out of reach: still readable, but the cost column has nothing to say. */
+.ev-row.is-out { border-style: dashed; }
+.ev-row.is-out .ev-target { color: var(--muted); }
+/* Set below what the stat can buy, with air between, because it is the other
+   answer rather than the end of the same one. */
+.ev-beyond { margin-top: 0.5rem; }
 .ev-cost {
   flex: 0 0 1.7rem; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700;
 }
+.ev-face { flex: none; image-rendering: pixelated; object-fit: contain; align-self: center; }
 .ev-what { min-width: 0; display: flex; flex-direction: column; }
 .ev-target { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ev-detail { font-size: 0.64rem; }
@@ -964,4 +978,5 @@ button.type-chip { cursor: pointer; }
 
 /* Six columns of this need real width; below it they go two and three up. */
 @media (max-width: 1100px) { .ev-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 900px) { .ev-pick { flex-direction: column; } }
 @media (max-width: 700px) { .ev-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

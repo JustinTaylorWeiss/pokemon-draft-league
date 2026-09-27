@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import type { LearnsetDex, Move, MoveDex, SetDex, StatKey, TypeChart } from '../../data/types'
+import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../../data/types'
 import { STAT_LABELS } from '../../lib/stats'
 import {
   EV_BUDGET, EV_MAX, EV_STATS, EV_STEP, emptySpread, opponentsFrom, planFor, spent,
@@ -40,33 +40,40 @@ const natureIsLegal = (s: Spread) => {
 /** HP has no nature: no nature in the games touches it. */
 const takesNature = (stat: StatKey) => stat !== 'hp'
 
-function ThresholdRow({ row, lit }: { row: Threshold; lit: boolean }) {
-  const unreachable = !Number.isFinite(row.evs)
+function ThresholdRow({ row, lit, target }: { row: Threshold; lit: boolean; target?: Pokemon }) {
   return (
-    <li className={`ev-row${lit ? ' is-lit' : ''}${unreachable ? ' is-out' : ''}`}>
-      <span className="ev-cost">{unreachable ? '—' : row.evs}</span>
+    <li className={`ev-row${lit ? ' is-lit' : ''}${row.unreachable ? ' is-out' : ''}`}>
+      <span className="ev-cost">{row.unreachable ? '—' : row.evs}</span>
+      {/* Which Pokémon this is about, read before the words. A column of
+          twelve rows is a column of names otherwise. */}
+      {target && <Sprite pokemon={target} className="ev-face" width={26} height={22} />}
       <span className="ev-what">
         <span className="ev-target">{row.targetName}</span>
-        {row.outspeed != null
-          ? <span className="ev-detail">{unreachable ? 'out of reach' : 'outsped'} · {row.outspeed}</span>
-          : <span className="ev-detail">{row.moveName} · {row.from}HKO {'→'} {row.to}HKO</span>}
+        <span className="ev-detail">
+          {row.outspeed != null
+            ? <>{row.tier} · {row.outspeed}</>
+            : <>{row.moveName} · {row.from}HKO {'→'} {row.to}HKO</>}
+        </span>
       </span>
     </li>
   )
 }
 
 function StatColumn({
-  stat, value, spread, rows, onEvs, onNature, note,
+  stat, value, spread, rows, faces, onEvs, onNature, note,
 }: {
   stat: StatKey
   value: number
   spread: Spread
   rows: Threshold[]
+  faces: Record<string, Pokemon>
   onEvs: (n: number) => void
   onNature: (mult: number) => void
   note?: string
 }) {
   const evs = spread.evs[stat]
+  const reachable = rows.filter((r) => !r.unreachable)
+  const beyond = rows.filter((r) => r.unreachable)
   return (
     <section className="ev-col">
       <header className="ev-col-head">
@@ -100,11 +107,25 @@ function StatColumn({
       </label>
 
       {rows.length ? (
-        <ul className="ev-rows">
-          {rows.map((r, i) => (
-            <ThresholdRow key={`${r.target}-${r.move ?? 'spe'}-${i}`} row={r} lit={evs >= r.evs} />
-          ))}
-        </ul>
+        <>
+          <ul className="ev-rows">
+            {reachable.map((r, i) => (
+              <ThresholdRow
+                key={`${r.target}-${r.move ?? r.tier}-${i}`}
+                row={r} lit={evs >= r.evs} target={faces[r.target]}
+              />
+            ))}
+          </ul>
+          {/* Held apart, because these are not more of the list above. That
+              list is what the stat can buy; this is what it cannot. */}
+          {beyond.length > 0 && (
+            <ul className="ev-rows ev-beyond">
+              {beyond.map((r, i) => (
+                <ThresholdRow key={`${r.target}-out-${i}`} row={r} lit={false} target={faces[r.target]} />
+              ))}
+            </ul>
+          )}
+        </>
       ) : <p className="ev-none">{note ?? 'Nothing here to buy.'}</p>}
     </section>
   )
@@ -117,13 +138,13 @@ interface Props {
   moves: MoveDex
   learnsets: LearnsetDex | null
   sets: SetDex | null
+  /** Owned by the card, so one picker in the bar serves this and the tiers. */
+  level: number
 }
 
-export function EvCalcBody({ teamOne, teamTwo, chart, moves, learnsets, sets }: Props) {
+export function EvCalcBody({ teamOne, teamTwo, chart, moves, learnsets, sets, level }: Props) {
   const [chosen, setChosen] = useState<string | null>(null)
   const [spread, setSpread] = useState<Spread>(emptySpread)
-  // The league plays at 50; 100 is here for anyone reading singles across.
-  const [level, setLevel] = useState(50)
 
   const sides: { key: 'one' | 'two'; team: Team }[] = [
     { key: 'one', team: teamOne }, { key: 'two', team: teamTwo },
@@ -175,12 +196,23 @@ export function EvCalcBody({ teamOne, teamTwo, chart, moves, learnsets, sets }: 
     })
   }, [picked, myMoves, opponents, spread, chart, level, sets])
 
+  const faces = useMemo(
+    () => Object.fromEntries(opponents.map((o) => [o.id, o.pokemon])),
+    [opponents],
+  )
+
   const used = spent(spread)
   const left = EV_BUDGET - used
   const guessed = opponents.filter((o) => o.guessed)
 
+  // Capped at what is left rather than allowed to go over and be corrected
+  // afterwards: an illegal spread is not a step on the way to a legal one,
+  // and a slider that stops is a clearer way to say so than a warning is.
   const setEvs = (stat: StatKey, n: number) =>
-    setSpread((s) => ({ ...s, evs: { ...s.evs, [stat]: n } }))
+    setSpread((s) => {
+      const elsewhere = spent(s) - s.evs[stat]
+      return { ...s, evs: { ...s.evs, [stat]: Math.max(0, Math.min(n, EV_MAX, EV_BUDGET - elsewhere)) } }
+    })
   const setNature = (stat: StatKey, mult: number) =>
     setSpread((s) => {
       const next = { ...s, nature: { ...s.nature, [stat]: mult } }
@@ -193,10 +225,8 @@ export function EvCalcBody({ teamOne, teamTwo, chart, moves, learnsets, sets }: 
     <div className="ev-calc">
       <div className="ev-pick">
         {sides.map(({ key, team }) => team.members.length > 0 && (
-          <div key={key} className={`ev-pick-side accent-${key}`}>
-            <span className="ev-pick-name">
-              <TeamName name={team.name || (key === 'one' ? 'Team 1' : 'Team 2')} />
-            </span>
+          <div key={key} className={`ev-pick-side panel-side accent-${key}`}>
+            <h3><TeamName name={team.name || (key === 'one' ? 'Team 1' : 'Team 2')} /></h3>
             <span className="ev-pick-mons">
               {team.members.map((m) => (
                 <button
@@ -217,14 +247,6 @@ export function EvCalcBody({ teamOne, teamTwo, chart, moves, learnsets, sets }: 
             </span>
           </div>
         ))}
-
-        <label className="level-picker ev-level">
-          <span>Lv</span>
-          <select value={level} onChange={(e) => setLevel(Number(e.target.value))}>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
-        </label>
       </div>
 
       {!picked ? (
@@ -233,8 +255,8 @@ export function EvCalcBody({ teamOne, teamTwo, chart, moves, learnsets, sets }: 
         <>
           <div className="ev-budget">
             <strong>{picked.entry.pokemon.name}</strong>
-            <span className={left < 0 ? 'ev-over' : undefined}>
-              {used} of {EV_BUDGET} EVs{left < 0 ? ` — ${-left} over` : ''}
+            <span className={left === 0 ? 'ev-full' : undefined}>
+              {used} of {EV_BUDGET} EVs{left > 0 ? ` · ${left} left` : ' · all spent'}
             </span>
             {used > 0 && (
               <button type="button" className="link-btn" onClick={() => setSpread(emptySpread())}>
@@ -251,6 +273,7 @@ export function EvCalcBody({ teamOne, teamTwo, chart, moves, learnsets, sets }: 
                 value={statOfSpread(picked.entry.pokemon, level, spread, stat)}
                 spread={spread}
                 rows={plan?.[stat] ?? []}
+                faces={faces}
                 onEvs={(n) => setEvs(stat, n)}
                 onNature={(m) => setNature(stat, m)}
                 note={(stat === 'atk' || stat === 'spa') && !myMoves.some(

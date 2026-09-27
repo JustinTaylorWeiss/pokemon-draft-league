@@ -34,9 +34,30 @@ export interface Threshold {
   /** Hits to knock out, before and after. Speed rows leave these out. */
   from?: number
   to?: number
-  /** Speed rows: the number to beat, and whether this only ties it. */
+  /** Speed rows: the number to beat. */
   outspeed?: number
+  /** Speed rows: which investment of theirs this number belongs to. */
+  tier?: string
+  /** Speed rows no amount of EVs reaches. One per Pokémon, listed apart. */
+  unreachable?: boolean
 }
+
+/**
+ * The four speeds a Pokémon is actually seen at.
+ *
+ * A usage set gives one spread and the Pokémon in front of you may not be
+ * running it — Speed is the stat people change. So rather than one number
+ * per opponent, each is read at the four investments anyone actually picks,
+ * and the column says what it costs to get past each of them. Outrunning the
+ * uninvested version of something is a real and much cheaper win, and a
+ * single row hid that it was on offer.
+ */
+const SPEED_TIERS: { label: string; evs: number; nature: number }[] = [
+  { label: 'IVs only', evs: 0, nature: 1 },
+  { label: 'nature', evs: 0, nature: 1.1 },
+  { label: 'max EVs', evs: EV_MAX, nature: 1 },
+  { label: 'max EVs + nature', evs: EV_MAX, nature: 1.1 },
+]
 
 export interface Spread {
   evs: Record<StatKey, number>
@@ -251,21 +272,38 @@ export function planFor(input: PlanInput): Plan {
       }
     }
 
-    // ---- getting there first ----
-    // Listed even when it cannot be done: "no amount of Speed catches this"
-    // is the answer to the same question, and leaving the row out looks like
-    // the Pokémon was forgotten rather than considered.
-    const theirs = statOf(o.side, 'spe')
-    let need: number | null = null
-    for (let ev = 0; ev <= EV_MAX; ev += EV_STEP) {
-      if (statOf(meAt('spe', ev), 'spe') > theirs) { need = ev; break }
+    // ---- getting there first, at each speed they might be built to ----
+    const base = o.pokemon.baseStats.spe
+    let firstMissed: { label: string; speed: number } | null = null
+    for (const tier of SPEED_TIERS) {
+      const theirs = statAtLevel(base, tier.evs, tier.nature, false, 31, level)
+      let need: number | null = null
+      for (let ev = 0; ev <= EV_MAX; ev += EV_STEP) {
+        if (statOf(meAt('spe', ev), 'spe') > theirs) { need = ev; break }
+      }
+      if (need == null) {
+        // Only the cheapest one out of reach is worth saying. The three above
+        // it are out of reach for the same reason and add nothing.
+        firstMissed ??= { label: tier.label, speed: theirs }
+        continue
+      }
+      out.spe.push({
+        evs: need, target: o.id, targetName: o.pokemon.name, outspeed: theirs, tier: tier.label,
+      })
     }
-    out.spe.push({
-      evs: need ?? Infinity, target: o.id, targetName: o.pokemon.name, outspeed: theirs,
-    })
+    // Named even so: "this one cannot be caught" answers the same question,
+    // and leaving it out looks like the Pokémon was forgotten.
+    if (firstMissed) {
+      out.spe.push({
+        evs: Infinity, target: o.id, targetName: o.pokemon.name,
+        outspeed: firstMissed.speed, tier: firstMissed.label, unreachable: true,
+      })
+    }
   }
 
   for (const stat of EV_STATS) {
+    // Infinity sorts last on its own, which puts the out-of-reach rows after
+    // everything buyable without a second rule.
     out[stat].sort((a, b) => a.evs - b.evs || a.targetName.localeCompare(b.targetName))
   }
   return out
