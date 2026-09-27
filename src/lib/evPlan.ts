@@ -343,52 +343,50 @@ interface PlanInput {
  * from a 2HKO to a 3HKO and on to a 4HKO inside the range, and both are worth
  * knowing before deciding where to stop.
  */
-function scan(
+/**
+ * Every hit count this pairing could ever be moved to, and what each one
+ * costs from here.
+ *
+ * The rows are the range, not the current state. A column used to list what
+ * the stat could still buy given everything else as it stood, which meant
+ * rows appeared and vanished as the other sliders moved — and a list that
+ * changes under you while you are reading it is a list you cannot compare
+ * against itself. The set of rows is now fixed by what is achievable under
+ * any spread at all, so only the prices move.
+ *
+ * `reachable` is the whole 0-252 sweep of this stat with everything else as
+ * it is. A target inside it has a price; a target that needs another stat's
+ * help as well has none yet, and says so.
+ */
+function priced(
   stat: StatKey,
-  at: (evs: number) => number,
-  /**
-   * Where this pairing stands with nothing invested in any of the stats that
-   * could help it — so a step another stat has already paid for is still
-   * listed here, at no cost, rather than vanishing.
-   *
-   * HP, Defense and Special Defense all buy the same thing. Putting 252 into
-   * HP used to empty the Defense column of everything it had made moot,
-   * which reads as the tool losing interest rather than as the job being
-   * done. They stay, priced at nothing and lit.
-   */
-  floor = at(0),
-): { evs: number; from: number; to: number }[] {
-  const base = at(0)
-  if (!Number.isFinite(base)) return []
-  const found: { evs: number; from: number; to: number }[] = []
-  if (Number.isFinite(floor)) {
-    const [lo, hi] = stat === 'atk' || stat === 'spa' ? [base, floor] : [floor, base]
-    for (let v = lo; v < hi; v++) {
-      found.push(stat === 'atk' || stat === 'spa'
-        ? { evs: 0, from: v + 1, to: v }
-        : { evs: 0, from: v, to: v + 1 })
-    }
+  /** Hit count for this stat at each EV step, everything else as it stands. */
+  reachable: number[],
+  /** The worst and best this pairing can be made, over every spread. */
+  span: { worst: number; best: number },
+): { evs: number; from: number; to: number; unreachable?: boolean }[] {
+  const offensive = stat === 'atk' || stat === 'spa'
+  if (!Number.isFinite(span.worst) || !Number.isFinite(span.best)) return []
+
+  // Counting towards the better end, which is up when taking hits and down
+  // when landing them.
+  const targets: number[] = []
+  if (offensive) for (let t = span.worst - 1; t >= span.best; t--) targets.push(t)
+  else for (let t = span.worst + 1; t <= span.best; t++) targets.push(t)
+
+  const reaches = (v: number, t: number) => (offensive ? v <= t : v >= t)
+  const rows = []
+  for (const target of targets) {
+    if ((offensive ? target : target - 1) > MEANINGFUL_HITS) continue
+    const step = reachable.findIndex((v) => Number.isFinite(v) && reaches(v, target))
+    rows.push({
+      evs: step < 0 ? Infinity : step * EV_STEP,
+      from: offensive ? target + 1 : target - 1,
+      to: target,
+      ...(step < 0 && { unreachable: true }),
+    })
   }
-  const better = stat === 'atk' || stat === 'spa'
-    ? (a: number, b: number) => a < b
-    : (a: number, b: number) => a > b
-
-  const worthSaying = stat === 'atk' || stat === 'spa'
-    ? (step: { to: number }) => step.to <= MEANINGFUL_HITS
-    : (step: { from: number }) => step.from <= MEANINGFUL_HITS
-
-  for (let i = found.length - 1; i >= 0; i--) if (!worthSaying(found[i])) found.splice(i, 1)
-
-  let last = base
-  for (let ev = EV_STEP; ev <= EV_MAX; ev += EV_STEP) {
-    const now = at(ev)
-    if (Number.isFinite(now) && better(now, last)) {
-      const step = { evs: ev, from: last, to: now }
-      if (worthSaying(step)) found.push(step)
-      last = now
-    }
-  }
-  return found
+  return rows
 }
 
 /** The plan: one list of thresholds per stat, in EV order. */
@@ -407,32 +405,50 @@ export function planFor(input: PlanInput): Plan {
     sideFrom(pokemon, level, { evs: { ...spread.evs, [stat]: evs }, nature: spread.nature }, item, ability)
   /** And me exactly as the sliders have me, for the live odds. */
   const meNow = sideFrom(pokemon, level, spread, item, ability)
-  /** And with nothing in the three stats that share the work of taking a hit. */
-  const meBare = sideFrom(
+  /**
+   * The two ends of what this Pokémon could be built into, which is what
+   * decides the rows: nothing anywhere and every nature hindering, against
+   * everything everywhere and every nature boosting.
+   *
+   * Neither is a legal spread and neither needs to be. They are the bounds
+   * of the question "could any spread do this", and the answer to that is
+   * what the column lists.
+   */
+  const bound = (evs: number, nature: number) => sideFrom(
     pokemon,
     level,
-    { evs: { ...spread.evs, hp: 0, def: 0, spd: 0 }, nature: spread.nature },
+    {
+      evs: Object.fromEntries(EV_STATS.map((k) => [k, evs])) as Record<StatKey, number>,
+      nature: Object.fromEntries(EV_STATS.map((k) => [k, nature])) as Record<StatKey, number>,
+    },
     item,
     ability,
   )
+  const worstMe = bound(0, 0.9)
+  const bestMe = bound(EV_MAX, 1.1)
+
+  /** This stat across its whole range, everything else as the sliders have it. */
+  const sweep = (at: (evs: number) => number) =>
+    Array.from({ length: EV_MAX / EV_STEP + 1 }, (_, i) => at(i * EV_STEP))
 
   for (const o of opponents) {
     // ---- taking hits: HP, Defense, Special Defense ----
     for (const move of o.moves) {
       const stats: StatKey[] = move.category === 'Physical' ? ['hp', 'def'] : ['hp', 'spd']
+      // One walk of the odds per move rather than one per row: every row for
+      // it is reading the same curve at a different point.
+      const curve = koCurve(damage(o.side, meNow, move, chart, doubles), MEANINGFUL_HITS)
+      const span = {
+        worst: damage(o.side, worstMe, move, chart, doubles).worstCase,
+        best: damage(o.side, bestMe, move, chart, doubles).worstCase,
+      }
       for (const stat of stats) {
-        // One walk of the odds per pairing rather than one per row: every row
-        // for this move is reading the same curve at a different point.
-        const curve = koCurve(damage(o.side, meNow, move, chart, doubles), MEANINGFUL_HITS)
-        const floor = damage(o.side, meBare, move, chart, doubles).worstCase
-        for (const step of scan(
-          stat,
-          (evs) => damage(o.side, meAt(stat, evs), move, chart, doubles).worstCase,
-          floor,
-        )) {
+        const reachable = sweep((evs) => damage(o.side, meAt(stat, evs), move, chart, doubles).worstCase)
+        for (const step of priced(stat, reachable, span)) {
           out[stat].push({
             ...step, target: o.id, targetName: o.pokemon.name,
-            move: move.name, moveName: move.name, statAt: reads(stat, step.evs),
+            move: move.name, moveName: move.name,
+            statAt: Number.isFinite(step.evs) ? reads(stat, step.evs) : undefined,
             // The outcome being escaped, and how often it still happens.
             at: step.from, chance: curve[step.from - 1] ?? 0,
           })
@@ -444,10 +460,16 @@ export function planFor(input: PlanInput): Plan {
     for (const move of moves) {
       const stat: StatKey = move.category === 'Physical' ? 'atk' : 'spa'
       const curve = koCurve(damage(meNow, o.side, move, chart, doubles), MEANINGFUL_HITS)
-      for (const step of scan(stat, (evs) => damage(meAt(stat, evs), o.side, move, chart, doubles).worstCase)) {
+      const span = {
+        worst: damage(worstMe, o.side, move, chart, doubles).worstCase,
+        best: damage(bestMe, o.side, move, chart, doubles).worstCase,
+      }
+      const reachable = sweep((evs) => damage(meAt(stat, evs), o.side, move, chart, doubles).worstCase)
+      for (const step of priced(stat, reachable, span)) {
         out[stat].push({
           ...step, target: o.id, targetName: o.pokemon.name,
-          move: move.name, moveName: move.name, statAt: reads(stat, step.evs),
+          move: move.name, moveName: move.name,
+          statAt: Number.isFinite(step.evs) ? reads(stat, step.evs) : undefined,
           // The outcome being reached, and how often it happens already.
           at: step.to, chance: curve[step.to - 1] ?? 0,
         })
@@ -457,7 +479,7 @@ export function planFor(input: PlanInput): Plan {
     // ---- getting there first, at each speed they might be built to ----
     const base = o.pokemon.baseStats.spe
     let firstMissed: { label: string; speed: number } | null = null
-    const priced: { label: string; speed: number; need: number; tie?: number }[] = []
+    const catchable: { label: string; speed: number; need: number; tie?: number }[] = []
     for (const tier of SPEED_TIERS) {
       const theirs = statAtLevel(base, tier.evs, tier.nature, false, 31, level)
       let need: number | null = null
@@ -471,7 +493,7 @@ export function planFor(input: PlanInput): Plan {
       for (let ev = 0; ev <= EV_MAX; ev += EV_STEP) {
         if (statOf(meAt('spe', ev), 'spe') === theirs) { tie = ev; break }
       }
-      priced.push({ label: tier.label, speed: theirs, need, tie })
+      catchable.push({ label: tier.label, speed: theirs, need, tie })
     }
 
     /*
@@ -482,18 +504,18 @@ export function planFor(input: PlanInput): Plan {
      * the column with Pokémon there was no decision to make about. One row
      * saying it is beaten at any spread says all of it.
      */
-    const all = priced.length === SPEED_TIERS.length
-    for (let i = 0; i < priced.length; i++) {
-      const cost = priced[i].need
+    const all = catchable.length === SPEED_TIERS.length
+    for (let i = 0; i < catchable.length; i++) {
+      const cost = catchable[i].need
       let last = i
-      while (last + 1 < priced.length && priced[last + 1].need === cost) last++
-      const top = priced[last]
+      while (last + 1 < catchable.length && catchable[last + 1].need === cost) last++
+      const top = catchable[last]
       out.spe.push({
         evs: cost,
         target: o.id,
         targetName: o.pokemon.name,
         outspeed: top.speed,
-        tier: all && i === 0 && last === priced.length - 1 ? 'any spread' : top.label,
+        tier: all && i === 0 && last === catchable.length - 1 ? 'any spread' : top.label,
         statAt: reads('spe', cost),
         tieAt: top.tie,
       })
