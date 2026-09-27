@@ -1350,12 +1350,9 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   font: inherit; font-size: 0.6rem; font-weight: 600; cursor: pointer;
 }
 .ev-gear-chip:hover { border-color: var(--fg); }
-/* The spread runs to two or three stats, so it is set a size smaller and
-   tighter to keep it on one line. Four of them still truncate, which is
-   rare enough not to shape the rest around. */
-.ev-gear-chip.is-spread {
-  font-size: 0.55rem; letter-spacing: -0.01em; padding: 0.08rem 0.28rem;
-}
+/* Three stat names fit at the size the other pills use now that the
+   figures have come off, so it reads at that size. */
+.ev-gear-chip.is-spread { letter-spacing: 0.01em; }
 /* The count of what did not fit. Dashed and grey, because it is not a
    thing this Pokemon has — it is the panel saying there is more inside. */
 .ev-gear-chip.is-more {

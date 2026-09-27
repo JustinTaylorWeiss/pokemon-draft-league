@@ -633,17 +633,21 @@ function GearPicker({
    * nobody would otherwise know. One pill, because it is one fact.
    */
   /*
-   * Only what it is putting into a stat, and only the nature that helps.
+   * Which stats it is putting EVs into, most first, and nothing else.
    *
-   * A minus is the other end of a plus and never chosen for itself — a
-   * spread is quoted by what it invests in, and "0− SpA" is a fact about
-   * the nature already named by the plus somewhere else on the line.
+   * Not the numbers. Under a sprite they were five or six digits of
+   * precision nobody reads at that size, and what the pill is for is
+   * knowing at a glance whether the Pokémon across from you is bulky or
+   * fast — which is the order, not the figures. The panel has the figures.
+   *
+   * The plus stays: it is which stat the nature helps, which the order
+   * cannot say. A minus is the other end of that plus and never chosen
+   * for itself.
    */
   const invested = assume
-    ? EV_STATS.filter((k) => assume.evs[k] > 0 || assume.nature[k] > 1)
-      // A hard space inside each pair and a soft one between them, so the
-      // pill breaks between stats and never between a number and its stat.
-      .map((k) => `${assume.evs[k]}${assume.nature[k] > 1 ? '+' : ''}\u00a0${STAT_LABELS[k]}`)
+    ? EV_STATS.filter((k) => assume.evs[k] > 0)
+      .sort((a, b) => assume.evs[b] - assume.evs[a] || EV_STATS.indexOf(a) - EV_STATS.indexOf(b))
+      .map((k) => `${STAT_LABELS[k]}${assume.nature[k] > 1 ? '+' : ''}`)
     : []
   /*
    * And a pill saying so where there is nothing, which is not the same as
