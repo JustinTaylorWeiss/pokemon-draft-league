@@ -1,7 +1,9 @@
 .wizard, /* Every card tints to the team being analyzed. */
-/* Neither side's colour: every tab holds both teams, so the card's chrome is
-   the neutral accent and the blue and red are carried inside, per panel. */
-.results { display: flex; flex-direction: column; gap: 1rem; --team-accent: var(--team-both); }
+/* Red, the secondary bar's own: this page's chrome hangs off that bar and
+   everything in it — the tabs, the pills, the slider — should read as one
+   set. The blue and red that mean team one and team two are carried inside
+   the panels, per side, and are a separate thing from this. */
+.results { display: flex; flex-direction: column; gap: 1rem; --team-accent: var(--nav-red); }
 
 /* ---- wizard ---- */
 .steps { display: flex; gap: 0.5rem; list-style: none; margin: 0; padding: 0; }
@@ -529,8 +531,11 @@ button.type-chip { cursor: pointer; }
    the window's edge. */
 .analysis-body { min-width: 0; padding: 0 4px; }
 .analysis-note { margin: 0.6rem 4px 0; color: var(--muted); font-size: 0.72rem; }
-/* Controls sit against the tabs, not a card header. */
+/* Controls sit against the tabs, not a card header, and take the bar's red
+   rather than the app's purple on hover and focus. */
 .matchup-bar .sub-actions { flex-wrap: wrap; row-gap: 0.4rem; }
+.matchup-bar .sub-actions button:hover { color: var(--nav-red); border-color: var(--nav-red); }
+.matchup-bar .sub-actions button:focus-visible { outline-color: var(--nav-red); }
 /*
  * Filled when it is on, not merely tinted.
  *
@@ -550,7 +555,9 @@ button.type-chip { cursor: pointer; }
   color: var(--bg);
 }
 .pill-toggle[aria-pressed="true"]:hover { filter: brightness(1.08); }
-.pill-toggle[aria-pressed="false"]:hover { color: var(--fg); border-color: var(--muted); }
+/* Safe to reach for the accent again now that "on" is a fill rather than a
+   tint — an outline and a filled pill cannot be mistaken for each other. */
+.pill-toggle[aria-pressed="false"]:hover { color: var(--nav-red); border-color: var(--nav-red); }
 
 /* Cards run to their full height: no panel scrolls inside itself, so the page
    is the only scroller and a trackpad never gets trapped in a nested box. */
