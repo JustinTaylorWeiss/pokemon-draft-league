@@ -393,17 +393,29 @@ function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
 
   return (
     <span className="ev-gear">
+      {/* What has been said, and the way to say more — two buttons rather
+          than one, so the plus can keep its own shape instead of stretching
+          to whatever is written above it. Either opens the same panel. */}
+      {chosen.length > 0 && (
+        <button
+          type="button"
+          className="ev-gear-chip"
+          aria-expanded={open}
+          title={chosen.join(' · ')}
+          onClick={() => setOpen((v) => !v)}
+        >
+          {chosen.map((what) => <span key={what}>{what}</span>)}
+        </button>
+      )}
       <button
         type="button"
         className={`ev-gear-open${chosen.length ? ' has-gear' : ''}`}
         aria-expanded={open}
-        title={chosen.length ? chosen.join(' · ') : `Give ${pokemon.name} an item or ability`}
+        aria-label={`Give ${pokemon.name} an item or ability`}
+        title={`Give ${pokemon.name} an item or ability`}
         onClick={() => setOpen((v) => !v)}
       >
-        {chosen.map((what) => <span key={what}>{what}</span>)}
-        {/* Always last, so the way in sits below whatever has been said
-            rather than being replaced by it. */}
-        <span className="ev-gear-more" aria-hidden="true">+</span>
+        +
       </button>
 
       {open && (
