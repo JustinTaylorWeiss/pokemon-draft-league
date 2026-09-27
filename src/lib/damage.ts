@@ -58,6 +58,9 @@ const ITEM_TYPE: Record<string, TypeName> = {
   'Wellspring Mask': 'Water', 'Cornerstone Mask': 'Rock',
 }
 
+/** Which type an item lends its fifth to, for anywhere that groups them. */
+export const typeBoosted = (item: string): TypeName | undefined => ITEM_TYPE[item]
+
 /** Items that change how hard a hit is taken. */
 const ITEM_DEFENSE: Record<string, { stat: StatKey; mult: number }> = {
   'Assault Vest': { stat: 'spd', mult: 1.5 },

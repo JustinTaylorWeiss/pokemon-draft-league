@@ -294,8 +294,11 @@ export function opponentsFrom(
     const evs: Partial<Record<StatKey, number>> = spread?.evs ?? {}
     const physical = pokemon.baseStats.atk >= pokemon.baseStats.spa
 
+    // No item unless one is given by hand, the same as the Pokémon the
+    // spread is being built for: a Choice Band is half again on every
+    // physical row and a set's word is not enough to apply it unasked.
     const side: Side = spread
-      ? { pokemon, level, evs: { ...evs }, nature: spread.nature, item: spread.item, ability: spread.ability }
+      ? { pokemon, level, evs: { ...evs }, nature: spread.nature, ability: spread.ability }
       : {
         pokemon,
         level,

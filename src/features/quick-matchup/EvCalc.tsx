@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../../data/types'
 import { STAT_LABELS } from '../../lib/stats'
-import { MODELLED_ABILITIES, itemMatters } from '../../lib/damage'
+import { MODELLED_ABILITIES, itemMatters, typeBoosted } from '../../lib/damage'
 import {
   ASSUME_SET, EV_BUDGET, EV_MAX, EV_STATS, EV_STEP, emptySpread, opponentsFrom, planFor,
   spent, statOfSpread, type Assume, type Assumptions, type Spread, type Threshold,
@@ -314,16 +314,27 @@ function GearPicker({ pokemon, items, gear, onChange }: {
   // damage maths uses, so they cannot drift apart from it.
   const abilities = [...new Set(Object.values(pokemon.abilities))]
     .filter((a) => MODELLED_ABILITIES.has(a))
-  const names = useMemo(
-    () => Object.values(items)
+  /*
+   * The type boosters kept apart from the rest.
+   *
+   * Twenty-two of the twenty-nine are the same item — a fifth to one type —
+   * and listed together they bury the seven that do something else. Each
+   * says which type it lends to, since half of them are named after a
+   * mineral rather than the type it belongs to.
+   */
+  const { plain, boosters } = useMemo(() => {
+    const usable = Object.values(items)
       .map((i) => i.name)
       .filter((n) => itemMatters(n, pokemon))
-      .sort((a, b) => a.localeCompare(b)),
-    [items, pokemon],
-  )
+      .sort((a, b) => a.localeCompare(b))
+    return {
+      plain: usable.filter((n) => !typeBoosted(n)),
+      boosters: usable.filter((n) => typeBoosted(n)),
+    }
+  }, [items, pokemon])
 
   // Nothing either list can offer, so nothing to open.
-  if (!abilities.length && !names.length) return null
+  if (!abilities.length && !plain.length && !boosters.length) return null
 
   return (
     <span className="ev-gear">
@@ -361,8 +372,15 @@ function GearPicker({ pokemon, items, gear, onChange }: {
                 value={gear?.item ?? ''}
                 onChange={(e) => onChange({ ...gear, item: e.target.value })}
               >
-                <option value="">its set{'’'}s</option>
-                {names.map((n) => <option key={n} value={n}>{n}</option>)}
+                <option value="">none</option>
+                {plain.map((n) => <option key={n} value={n}>{n}</option>)}
+                {boosters.length > 0 && (
+                  <optgroup label="Type boosters">
+                    {boosters.map((n) => (
+                      <option key={n} value={n}>{n} — {typeBoosted(n)}</option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             </label>
             {chosen.length > 0 && (
@@ -529,7 +547,10 @@ export function EvCalcBody({
     return planFor({
       pokemon: picked.entry.pokemon,
       moves: myMoves,
-      item: worn?.item || set?.item,
+      // No item until one is given. A set's item is a guess about a build,
+      // and unlike its moves and its spread it is worth a third of the
+      // damage on its own — too much to apply without being asked.
+      item: worn?.item || undefined,
       ability: worn?.ability || set?.ability,
       spread,
       opponents,
