@@ -625,7 +625,16 @@ function GearPicker({
   out?: boolean
   onHide?: (next: boolean) => void
 }) {
-  const [open, setOpen] = useState(false)
+  /**
+   * Two panels, not one.
+   *
+   * The spread is a set of numbers somebody sits and tunes; the item, the
+   * ability, the moves and whether to count the Pokémon at all are single
+   * choices made once. Together they made a panel you had to scroll past
+   * half of to reach the other half. The pill opens the spread, because
+   * that is what the pill says; the button opens the rest.
+   */
+  const [open, setOpen] = useState<'spread' | 'kit' | null>(null)
   const [find, setFind] = useState('')
   /*
    * Six number boxes, folded away.
@@ -636,6 +645,7 @@ function GearPicker({
    * the reason the panel was opened.
    */
   const [ivsOpen, setIvsOpen] = useState(() => lowered(gear?.ivs).length > 0)
+  const toggle = (which: 'spread' | 'kit') => setOpen((v) => (v === which ? null : which))
   /*
    * What has been said about this Pokemon, on the button itself: the spread
    * it is credited with first, then what it is holding. Closed, the button
@@ -853,25 +863,28 @@ function GearPicker({
       {/* What has been said, and the way to say more — two buttons rather
           than one, so the plus can keep its own shape instead of stretching
           to whatever is written above it. Either opens the same panel. */}
-      {shown.map((what) => (
-        <button
-          key={what}
-          type="button"
-          className={`ev-gear-chip${what === raised[0] ? ' is-spread' : ''}`}
-          aria-expanded={open}
-          title={what}
-          onClick={() => setOpen((v) => !v)}
-        >
-          {what}
-        </button>
-      ))}
+      {shown.map((what) => {
+        const spreadPill = what === raised[0]
+        return (
+          <button
+            key={what}
+            type="button"
+            className={`ev-gear-chip${spreadPill ? ' is-spread' : ''}`}
+            aria-expanded={open === (spreadPill ? 'spread' : 'kit')}
+            title={spreadPill ? `${what} \u2014 click to change` : what}
+            onClick={() => toggle(spreadPill ? 'spread' : 'kit')}
+          >
+            {what}
+          </button>
+        )
+      })}
       {hidden.length > 0 && (
         <button
           type="button"
           className="ev-gear-chip is-more"
-          aria-expanded={open}
-          title={hidden.join(' · ')}
-          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open === 'kit'}
+          title={hidden.join(' \u00b7 ')}
+          onClick={() => toggle('kit')}
         >
           {hidden.length} more
         </button>
@@ -879,24 +892,25 @@ function GearPicker({
       <button
         type="button"
         className={`ev-gear-open${chosen.length ? ' has-gear' : ''}`}
-        aria-expanded={open}
-        aria-label={`Settings for ${pokemon.name}`}
-        title={`Settings for ${pokemon.name}`}
-        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open === 'kit'}
+        title={`What ${pokemon.name} is bringing`}
+        onClick={() => toggle('kit')}
       >
-        {'\u22ef'}
+        Edit loadout
       </button>
 
       {open && (
         <>
           {/* Click anywhere else and it closes, which is what a reader
               expects of something that opened over the page. */}
-          <button type="button" className="ev-gear-away" aria-label="Close" onClick={() => setOpen(false)} />
+          <button
+            type="button" className="ev-gear-away" aria-label="Close"
+            onClick={() => setOpen(null)}
+          />
           <div className="ev-gear-pop">
-            {/* In or out of the columns, above everything about how it is
-                built: whether to count it at all comes before what to
-                count it as. */}
-            {onHide && (
+            {/* In or out of the columns, above everything it is bringing:
+                whether to count it at all comes before what to count. */}
+            {open === 'kit' && onHide && (
               <button
                 type="button"
                 className="ev-hide"
@@ -910,7 +924,7 @@ function GearPicker({
                 the whole side: they are not all built the same way, and a
                 spread chosen against "everything at 252" is chosen against a
                 team nobody brought. */}
-            {assume && onAssume && (
+            {open === 'spread' && assume && onAssume && (
               <div className="ev-gear-assumes">
                 {EV_STATS.map((stat) => (
                   <AssumeStat
@@ -938,6 +952,7 @@ function GearPicker({
                 zero Attack takes a third off Foul Play and confusion, zero
                 Speed is how anything gets under a Trick Room. The other four
                 are here because leaving them out would mean explaining why. */}
+            {open === 'spread' && (
             <div className="ev-gear-ivs">
               <div className="ev-gear-line">
               <button
@@ -983,7 +998,8 @@ function GearPicker({
               </div>
               )}
             </div>
-            {abilities.length > 0 && (
+            )}
+            {open === 'kit' && abilities.length > 0 && (
               <label>
                 <span>Ability</span>
                 {/* No blank option: it already has an ability, and "its
@@ -1000,7 +1016,7 @@ function GearPicker({
                 </select>
               </label>
             )}
-            {!mega && (
+            {open === 'kit' && !mega && (
             <label>
               <span>Item</span>
               <select
@@ -1024,7 +1040,7 @@ function GearPicker({
             {/* Anything it might be carrying that its set does not say.
                 Its own movepool and nothing else: a move it cannot learn
                 is not a thing it might bring. */}
-            {onNamed && moves && (
+            {open === 'kit' && onNamed && moves && (
               <div className="ev-gear-moves">
                 <span>Moves in the columns</span>
                 {carrying && carrying.length > 0 ? (
@@ -1084,7 +1100,7 @@ function GearPicker({
                 named or struck off, and being hidden. Shown only where
                 one of those has happened: a reset with nothing to reset
                 is a button that does nothing and looks like it does. */}
-            {said && (
+            {open === 'kit' && said && (
               <button
                 type="button"
                 className="ev-gear-reset"
