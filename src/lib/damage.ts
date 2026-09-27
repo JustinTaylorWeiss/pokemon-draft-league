@@ -210,6 +210,17 @@ export function statOf(side: Side, stat: StatKey): number {
 export interface Hit {
   /** Every roll, lowest first. Empty when the move cannot damage at all. */
   rolls: number[]
+  /**
+   * The items and abilities that changed this number, named as they were
+   * applied.
+   *
+   * Collected here rather than worked out again by whoever displays it: the
+   * rules for when a Choice Band counts and when a plate does are in this
+   * function, and a second copy of them elsewhere is a second copy that can
+   * be wrong. A row saying "3HKO" is a different row when a Life Orb is the
+   * reason.
+   */
+  via: string[]
   /** The defender's HP, so a caller can talk in fractions of it. */
   hp: number
   /** Hits to knock out if every roll is the lowest, and if every roll is the highest. */
@@ -218,7 +229,8 @@ export interface Hit {
 }
 
 /** A move that does nothing to this target — immune, or not a damaging move. */
-const NO_HIT = (hp: number): Hit => ({ rolls: [], hp, worstCase: Infinity, bestCase: Infinity })
+const NO_HIT = (hp: number, via: string[] = []): Hit =>
+  ({ rolls: [], hp, via, worstCase: Infinity, bestCase: Infinity })
 
 /**
  * How hard `move` lands, thrown by `attacker` at `defender`.
@@ -237,11 +249,31 @@ export function damage(
   if (move.category === 'Status' || move.basePower <= 0) return NO_HIT(hp)
 
   const effect = defensiveMultiplier(chart, move.type, defender.pokemon, true)
-  if (effect === 0) return NO_HIT(hp)
+  if (effect === 0) {
+    // Named even here: an ability is why nothing lands, and that is the most
+    // worth saying of all.
+    const why = defender.ability && MODELLED_ABILITIES.has(defender.ability) ? [defender.ability] : []
+    return NO_HIT(hp, why)
+  }
 
   const physical = move.category === 'Physical'
   const atk = statOf(attacker, physical ? 'atk' : 'spa')
   const def = statOf(defender, physical ? 'def' : 'spd')
+
+  const via: string[] = []
+  // What each side brought that this particular hit reads. The stat above
+  // has already taken the ones that work on a stat; these are named so a
+  // row can say why its number is what it is.
+  const note = (what: string | undefined) => { if (what && !via.includes(what)) via.push(what) }
+  if (attacker.ability && MODELLED_ABILITIES.has(attacker.ability)) note(attacker.ability)
+  if (defender.ability && MODELLED_ABILITIES.has(defender.ability)) note(defender.ability)
+  if (physical && attacker.item === 'Choice Band') note(attacker.item)
+  if (!physical && attacker.item === 'Choice Specs') note(attacker.item)
+  if (physical && attacker.item === 'Muscle Band') note(attacker.item)
+  if (!physical && attacker.item === 'Wise Glasses') note(attacker.item)
+  if (attacker.item === 'Light Ball' && (attacker.pokemon.baseSpecies ?? attacker.pokemon.name) === 'Pikachu') note(attacker.item)
+  if (defender.item === 'Eviolite' && defender.pokemon.evos?.length) note(defender.item)
+  if (!physical && defender.item === 'Assault Vest') note(defender.item)
 
   // The games' own order: three integer divisions, then the modifiers.
   let base = Math.floor(
@@ -257,13 +289,16 @@ export function damage(
     : 1
 
   const boost = attacker.item ? ITEM_ATTACK[attacker.item] : undefined
+  if (attacker.item === 'Life Orb') note(attacker.item)
   const typed = attacker.item && ITEM_TYPE[attacker.item] === move.type ? 1.2 : 1
+  if (typed !== 1) note(attacker.item)
   const itemMult = (boost && (!boost.category || boost.category === move.category) ? boost.mult : 1)
     * typed
   // Multiscale reads the defender's HP, and here the defender is always at
   // full: these are first-hit questions. Half damage, and it says so.
   const shield = defender.ability === 'Multiscale' || defender.ability === 'Shadow Shield' ? 0.5 : 1
   const belt = attacker.item === 'Expert Belt' && effect > 1 ? 1.2 : 1
+  if (belt !== 1) note(attacker.item)
   const after = itemMult * shield * belt
 
   const rolls: number[] = []
@@ -278,6 +313,7 @@ export function damage(
   return {
     rolls,
     hp,
+    via,
     // Lowest roll every time is the most hits it can take; highest, the fewest.
     worstCase: Math.ceil(hp / rolls[0]),
     bestCase: Math.ceil(hp / rolls[rolls.length - 1]),

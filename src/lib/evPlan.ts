@@ -62,6 +62,8 @@ export interface Threshold {
    */
   chance?: number
   at?: number
+  /** The items and abilities this row's number depends on, if any. */
+  via?: string[]
   /**
    * Speed rows: the least EVs that match their number exactly.
    *
@@ -495,7 +497,8 @@ export function planFor(input: PlanInput): Plan {
       const stats: StatKey[] = move.category === 'Physical' ? ['hp', 'def'] : ['hp', 'spd']
       // One walk of the odds per move rather than one per row: every row for
       // it is reading the same curve at a different point.
-      const curve = koCurve(damage(o.side, meNow, move, chart, doubles), MEANINGFUL_HITS)
+      const live = damage(o.side, meNow, move, chart, doubles)
+      const curve = koCurve(live, MEANINGFUL_HITS)
       const span = {
         worst: damage(o.side, worstMe, move, chart, doubles).worstCase,
         best: damage(o.side, bestMe, move, chart, doubles).worstCase,
@@ -510,6 +513,7 @@ export function planFor(input: PlanInput): Plan {
               damage(o.side, withStat(meNow, stat, v), move, chart, doubles).worstCase >= step.to),
             // The outcome being escaped, and how often it still happens.
             at: step.from, chance: curve[step.from - 1] ?? 0,
+            via: live.via,
           })
         }
       }
@@ -518,7 +522,8 @@ export function planFor(input: PlanInput): Plan {
     // ---- landing them: Attack, Special Attack ----
     for (const move of moves) {
       const stat: StatKey = move.category === 'Physical' ? 'atk' : 'spa'
-      const curve = koCurve(damage(meNow, o.side, move, chart, doubles), MEANINGFUL_HITS)
+      const live = damage(meNow, o.side, move, chart, doubles)
+      const curve = koCurve(live, MEANINGFUL_HITS)
       const span = {
         worst: damage(worstMe, o.side, move, chart, doubles).worstCase,
         best: damage(bestMe, o.side, move, chart, doubles).worstCase,
@@ -532,16 +537,23 @@ export function planFor(input: PlanInput): Plan {
             damage(withStat(meNow, stat, v), o.side, move, chart, doubles).worstCase <= step.to),
           // The outcome being reached, and how often it happens already.
           at: step.to, chance: curve[step.to - 1] ?? 0,
+          via: live.via,
         })
       }
     }
 
     // ---- getting there first, at each speed they might be built to ----
-    const base = o.pokemon.baseStats.spe
     let firstMissed: { label: string; speed: number } | null = null
     const catchable: { label: string; speed: number; need: number; tie?: number }[] = []
+    // Through `statOf`, not the bare formula: a Choice Scarf is half again
+    // on Speed and the tiers were reading straight past it, so an opponent
+    // given one was outrun on paper and not in the game.
+    const scarfed = o.side.item === 'Choice Scarf' ? [o.side.item] : []
     for (const tier of SPEED_TIERS) {
-      const theirs = statAtLevel(base, tier.evs, tier.nature, false, 31, level)
+      const theirs = statOf(
+        { ...o.side, evs: { ...o.side.evs, spe: tier.evs }, natureBy: { spe: tier.nature } },
+        'spe',
+      )
       let need: number | null = null
       for (let ev = 0; ev <= EV_MAX; ev += EV_STEP) {
         if (statOf(meAt('spe', ev), 'spe') > theirs) { need = ev; break }
@@ -578,6 +590,7 @@ export function planFor(input: PlanInput): Plan {
         tier: all && i === 0 && last === catchable.length - 1 ? 'any spread' : top.label,
         statAt: top.speed + 1,
         tieAt: top.tie,
+        via: scarfed,
       })
       i = last
     }
@@ -588,6 +601,7 @@ export function planFor(input: PlanInput): Plan {
       out.spe.push({
         evs: Infinity, target: o.id, targetName: o.pokemon.name,
         outspeed: firstMissed.speed, tier: firstMissed.label, unreachable: true,
+        via: scarfed,
       })
     }
   }

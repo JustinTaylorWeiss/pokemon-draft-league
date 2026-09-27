@@ -1119,6 +1119,11 @@ button.type-chip { cursor: pointer; }
 .ev-what { min-width: 0; display: flex; flex-direction: column; }
 .ev-target { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ev-detail { font-size: 0.64rem; }
+/* The item or ability behind the number, where there is one. */
+.ev-via {
+  font-size: 0.6rem; color: var(--team-accent, var(--accent));
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 /* Its own line under the move, because it is the answer and the move is only
    the question it was asked of. */
 .ev-swing {

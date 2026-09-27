@@ -139,6 +139,13 @@ function ThresholdRow({
       {target && <Sprite pokemon={target} className="ev-face" width={26} height={22} />}
       <span className="ev-what">
         <span className="ev-target">{row.targetName}</span>
+        {/* What is making this number what it is, where anything is. A row
+            reading 3HKO is a different row when a Life Orb is the reason. */}
+        {row.via?.length ? (
+          <span className="ev-via" title={`Because of ${row.via.join(' and ')}`}>
+            {row.via.join(' · ')}
+          </span>
+        ) : null}
         {row.outspeed != null ? (
           <span className="ev-detail">
             {row.tier} · {row.outspeed}{tied ? ' · tied' : ''}
