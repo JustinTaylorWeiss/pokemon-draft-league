@@ -934,9 +934,9 @@ button.type-chip { cursor: pointer; }
   background: color-mix(in oklab, var(--nav-blue), transparent 94%);
 }
 .ev-side {
-  display: flex; flex-direction: column; align-items: flex-start;
+  display: flex; flex-direction: column; align-items: stretch;
   justify-content: space-between;
-  flex: none; gap: 0.5rem; min-height: 9rem;
+  flex: none; gap: 0.5rem; min-height: 9rem; width: var(--ev-control);
 }
 /*
  * Two columns and no wrapping: the sprites take what is left and wrap among
