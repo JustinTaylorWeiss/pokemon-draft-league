@@ -1427,7 +1427,9 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
  * the three of those had taken theirs, and a slider four rems wide is 64
  * steps at a pixel each. Stacked, it gets the whole cell.
  */
-.ev-assume-stat { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+/* Air between the line and its bar: the slider's thumb stands proud of
+   the track it runs on, and a tenth of a rem put it under the pill. */
+.ev-assume-stat { display: flex; flex-direction: column; gap: 0.3rem; min-width: 0; }
 /* The stat, what it reads, and the nature that bends it, packed left on
    one line above the bar. A fixed height so the six bars sit level
    whatever is over them — HP has no nature button. */
