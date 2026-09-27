@@ -5,8 +5,8 @@ import {
   GIVEABLE_ITEMS, MODELLED_ABILITIES, itemEffect, itemMatters, typeBoosted,
 } from '../../lib/damage'
 import {
-  ASSUME_BARE, EV_BUDGET, EV_MAX, EV_STATS, EV_STEP, SET_SIZE, emptySpread, opponentsFrom,
-  planFor, spent, statOfSpread, usualMoves,
+  ASSUME_BARE, EV_BUDGET, EV_MAX, EV_STATS, EV_STEP, IV_MAX, SET_SIZE, emptySpread, lowered,
+  opponentsFrom, planFor, spent, statOfSpread, usualMoves,
   type Assume, type Assumptions, type Shot, type Spread, type Threshold,
 } from '../../lib/evPlan'
 import { Sprite } from '../../components/Sprite'
@@ -409,7 +409,12 @@ function StatRows({ stat, evs, rows, faces, note }: {
 }
 
 /** What a Pokémon has been given by hand, over whatever its set said. */
-export interface Gear { item?: string; ability?: string }
+export interface Gear {
+  item?: string
+  ability?: string
+  /** Only the ones dropped below 31; the rest are assumed perfect. */
+  ivs?: Partial<Record<StatKey, number>>
+}
 
 /**
  * An item and an ability, chosen for one Pokémon.
@@ -452,7 +457,10 @@ function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
     assume.bulk === 'ivs' ? null : `Def ${ASSUME_LABEL[assume.bulk]}`,
     assume.power === 'ivs' ? null : `Atk ${ASSUME_LABEL[assume.power]}`,
   ].filter(Boolean) as string[] : []
-  const chosen = [...raised, gear?.ability, gear?.item].filter(Boolean) as string[]
+  // Only the dropped ones. Everything is 31 unless somebody said otherwise,
+  // so a pill for each of six perfect IVs would be six pills saying nothing.
+  const dropped = lowered(gear?.ivs).map(([stat, iv]) => `${STAT_LABELS[stat]} ${iv} IV`)
+  const chosen = [...raised, ...dropped, gear?.ability, gear?.item].filter(Boolean) as string[]
 
   /*
    * A Mega has neither to give. The stone is in its item slot, and its
@@ -582,6 +590,34 @@ function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
                 </select>
               </label>
             )}
+            {/* Dropped IVs. Two of the six are dropped on purpose and often:
+                zero Attack takes a third off Foul Play and confusion, zero
+                Speed is how anything gets under a Trick Room. The other four
+                are here because leaving them out would mean explaining why. */}
+            <div className="ev-gear-ivs">
+              <span>IVs</span>
+              <div>
+                {EV_STATS.map((stat) => (
+                  <label key={stat} className="ev-iv">
+                    <span>{STAT_LABELS[stat]}</span>
+                    <input
+                      type="number" min={0} max={IV_MAX} step={1}
+                      value={gear?.ivs?.[stat] ?? IV_MAX}
+                      aria-label={`${STAT_LABELS[stat]} IVs`}
+                      onChange={(e) => {
+                        const n = Math.max(0, Math.min(IV_MAX, Math.round(Number(e.target.value) || 0)))
+                        const ivs = { ...gear?.ivs }
+                        // Thirty-one is the absence of a choice, not a choice
+                        // of 31: stored, it would print a pill saying so.
+                        if (n >= IV_MAX) delete ivs[stat]
+                        else ivs[stat] = n
+                        onChange({ ...gear, ivs: Object.keys(ivs).length ? ivs : undefined })
+                      }}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
             {!mega && (
             <label>
               <span>Item</span>
@@ -819,6 +855,7 @@ export function EvCalcBody({
     return planFor({
       pokemon: picked.entry.pokemon,
       moves: myMoves,
+      ivs: worn?.ivs,
       // No item until one is given. A set's item is a guess about a build,
       // and unlike its moves and its spread it is worth a third of the
       // damage on its own — too much to apply without being asked.
@@ -835,6 +872,9 @@ export function EvCalcBody({
       doubles: true,
     })
   }, [picked, myMoves, opponents, spread, chart, level, sets, gear])
+
+  /** Any of this one's own dropped below 31, which every stat above reads. */
+  const myIvs = picked ? gear[picked.entry.id]?.ivs : undefined
 
   /** The same natures, none of the EVs — what each column counts up from. */
   const bareSpread = useMemo(
@@ -1131,8 +1171,8 @@ export function EvCalcBody({
             <StatHead
               key={stat}
               stat={stat}
-              bare={statOfSpread(picked.entry.pokemon, level, bareSpread, stat)}
-              value={statOfSpread(picked.entry.pokemon, level, spread, stat)}
+              bare={statOfSpread(picked.entry.pokemon, level, bareSpread, stat, myIvs)}
+              value={statOfSpread(picked.entry.pokemon, level, spread, stat, myIvs)}
               spread={spread}
               onEvs={(n) => setEvs(stat, n)}
               onNature={(m) => setNature(stat, m)}

@@ -173,6 +173,15 @@ export interface Side {
    * number, not a spread, and it does not change when the spread does.
    */
   flat?: Partial<Record<StatKey, number>>
+  /**
+   * IVs, where any of them is not the 31 everything is assumed to have.
+   *
+   * Worth having for the two that are deliberately dropped: a zero in
+   * Attack takes a third off what Foul Play and confusion do, and a zero in
+   * Speed is how anything gets under a Trick Room. Both change a number
+   * here, so both belong in the arithmetic rather than in a footnote.
+   */
+  ivs?: Partial<Record<StatKey, number>>
 }
 
 /** A stat as it actually is, for one side. Speed included, for the tier list. */
@@ -182,7 +191,7 @@ export function statOf(side: Side, stat: StatKey): number {
   const base = side.pokemon.baseStats[stat]
   const ev = side.evs[stat] ?? 0
   const nature = side.natureBy?.[stat] ?? natureMultiplier(side.nature, stat)
-  const raw = statAtLevel(base, ev, nature, stat === 'hp', 31, side.level)
+  const raw = statAtLevel(base, ev, nature, stat === 'hp', side.ivs?.[stat] ?? 31, side.level)
   if (stat === 'hp') return raw
 
   const ability = side.ability ?? ''

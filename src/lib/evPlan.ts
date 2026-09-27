@@ -151,10 +151,16 @@ export const spent = (s: Spread) => EV_STATS.reduce((n, k) => n + s.evs[k], 0)
  * name, which means the two can never be read as disagreeing.
  */
 export function sideFrom(
-  pokemon: Pokemon, level: number, s: Spread, item?: string, ability?: string,
+  pokemon: Pokemon, level: number, s: Spread,
+  item?: string, ability?: string, ivs?: Partial<Record<StatKey, number>>,
 ): Side {
-  return { pokemon, level, evs: s.evs, natureBy: s.nature, item, ability }
+  return { pokemon, level, evs: s.evs, natureBy: s.nature, item, ability, ivs }
 }
+
+/** A Pokémon's IVs where any of them has been dropped below 31. */
+export const IV_MAX = 31
+export const lowered = (ivs?: Partial<Record<StatKey, number>>): [StatKey, number][] =>
+  EV_STATS.filter((k) => (ivs?.[k] ?? IV_MAX) < IV_MAX).map((k) => [k, ivs?.[k] ?? IV_MAX])
 
 /**
  * What to credit the other side with, where you do not want to take their
@@ -367,8 +373,10 @@ export function opponentsFrom(
    * Ice Beam" asked of the whole team at once.
    */
   extra: string[] = [],
-  /** An item or an ability chosen by hand, over whatever the set said. */
-  gear: Record<string, { item?: string; ability?: string }> = {},
+  /** An item, an ability or dropped IVs chosen by hand, over the set's word. */
+  gear: Record<string, {
+    item?: string; ability?: string; ivs?: Partial<Record<StatKey, number>>
+  }> = {},
 ): Opponent[] {
   return members.map(({ id, pokemon }) => {
     const set = sets?.[id]
@@ -391,6 +399,7 @@ export function opponentsFrom(
     const worn = gear[id]
     if (worn?.item !== undefined) side.item = worn.item || undefined
     if (worn?.ability !== undefined) side.ability = worn.ability || undefined
+    if (worn?.ivs) side.ivs = worn.ivs
 
     /*
      * Built as asked, not as its set was. Every one of these five stats is
@@ -449,6 +458,8 @@ interface PlanInput {
   moves: Move[]
   item?: string
   ability?: string
+  /** Any of its own dropped below 31. */
+  ivs?: Partial<Record<StatKey, number>>
   spread: Spread
   opponents: Opponent[]
   chart: TypeChart
@@ -460,7 +471,7 @@ interface PlanInput {
 export type Plan = Record<StatKey, Threshold[]>
 
 export function planFor(input: PlanInput): Plan {
-  const { pokemon, moves, item, ability, spread, opponents, chart, level, doubles } = input
+  const { pokemon, moves, item, ability, ivs, spread, opponents, chart, level, doubles } = input
   const out: Plan = { hp: [], atk: [], def: [], spa: [], spd: [], spe: [] }
 
   /**
@@ -474,9 +485,13 @@ export function planFor(input: PlanInput): Plan {
 
   /** Me, with one stat moved to the value being tried and the rest as they are. */
   const meAt = (stat: StatKey, evs: number): Side =>
-    sideFrom(pokemon, level, { evs: { ...spread.evs, [stat]: evs }, nature: spread.nature }, item, ability)
+    sideFrom(
+      pokemon, level,
+      { evs: { ...spread.evs, [stat]: evs }, nature: spread.nature },
+      item, ability, ivs,
+    )
   /** And me exactly as the sliders have me, for the live odds. */
-  const meNow = sideFrom(pokemon, level, spread, item, ability)
+  const meNow = sideFrom(pokemon, level, spread, item, ability, ivs)
   /**
    * The best this Pokémon could ever be built into: everything everywhere,
    * every nature boosting.
@@ -494,6 +509,7 @@ export function planFor(input: PlanInput): Plan {
     },
     item,
     ability,
+    ivs,
   )
   const bestMe = bound(EV_MAX, 1.1)
 
@@ -732,6 +748,12 @@ export function planFor(input: PlanInput): Plan {
 }
 
 /** The stat as the panel should print it, for the readout under each slider. */
-export function statOfSpread(pokemon: Pokemon, level: number, s: Spread, stat: StatKey): number {
-  return statAtLevel(pokemon.baseStats[stat], s.evs[stat], s.nature[stat], stat === 'hp', 31, level)
+export function statOfSpread(
+  pokemon: Pokemon, level: number, s: Spread, stat: StatKey,
+  ivs?: Partial<Record<StatKey, number>>,
+): number {
+  return statAtLevel(
+    pokemon.baseStats[stat], s.evs[stat], s.nature[stat], stat === 'hp',
+    ivs?.[stat] ?? IV_MAX, level,
+  )
 }
