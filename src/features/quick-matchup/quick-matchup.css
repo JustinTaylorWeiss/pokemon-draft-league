@@ -23,6 +23,17 @@
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .btn.ghost { background: none; border: 1px solid var(--line); color: var(--fg); font-weight: 500; }
 .btn.sm { padding: 0.3rem 0.8rem; font-size: 0.85rem; }
+/* These answered the pointer with nothing at all — a filled pill and an
+   outlined one that both sat perfectly still under the cursor. The filled one
+   lifts; the outlined one takes the page's accent, red on both the pages
+   these appear on. */
+.btn:hover:not(:disabled) { filter: brightness(1.1); }
+.btn.ghost:hover:not(:disabled) {
+  filter: none;
+  border-color: var(--team-accent, var(--nav-red));
+  color: var(--team-accent, var(--nav-red));
+}
+.btn:focus-visible { outline: 2px solid var(--team-accent, var(--nav-red)); outline-offset: 1px; }
 
 /* ---- team editor ---- */
 .team-editor { display: flex; flex-direction: column; gap: 0.75rem; }
