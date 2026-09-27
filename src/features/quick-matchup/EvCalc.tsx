@@ -110,33 +110,6 @@ function AssumeStat({ stat, spread, onEvs, onNature }: {
   const now = NATURES.find((n) => n.mult === nature) ?? NATURES[1]
   const next = cycle[(cycle.findIndex((n) => n.mult === now.mult) + 1) % cycle.length]
 
-  /*
-   * A notch past each end of the EV range, for the nature.
-   *
-   * The two spreads anyone reaches for most are nothing with a hindering
-   * nature and everything with a boosting one, and both took a drag and
-   * then a click on a button a quarter of a rem wide. Dragging off the
-   * end of the bar is the same two decisions in one gesture.
-   *
-   * Only the ends, because a nature is not more EVs: Incineroar runs 160
-   * Special Defense on a Careful nature, and anything in between still
-   * goes through the button. The bar shows where it is either way.
-   */
-  const LOW = -EV_STEP
-  const HIGH = EV_MAX + EV_STEP
-  const at = nature > 1 && evs === EV_MAX ? HIGH
-    : nature < 1 && evs === 0 ? LOW
-      : evs
-  const slide = (n: number) => {
-    if (n >= HIGH) { onEvs(EV_MAX); if (nature <= 1) onNature(1.1); return }
-    if (n <= LOW) { onEvs(0); if (nature >= 1) onNature(0.9); return }
-    // Coming back off a notch takes the nature off with it; a nature set
-    // from the button in the middle of the range is left alone.
-    if (at === HIGH && nature > 1) onNature(1)
-    if (at === LOW && nature < 1) onNature(1)
-    onEvs(n)
-  }
-
   return (
     <label className="ev-assume-stat">
       {/* The stat, what it reads, and the nature that bends it, all packed
@@ -167,18 +140,14 @@ function AssumeStat({ stat, spread, onEvs, onNature }: {
           </button>
         )}
       </span>
+      {/* EVs and nothing else. The bar ran a step past each end to set
+          the nature, which put two decisions on one control and a step
+          that looked like 256 EVs at the end of a bar that stops at
+          252 — the pill above says the nature. */}
       <input
-        type="range"
-        min={takesNature(stat) ? LOW : 0}
-        max={takesNature(stat) ? HIGH : EV_MAX}
-        step={EV_STEP}
-        value={at}
+        type="range" min={0} max={EV_MAX} step={EV_STEP} value={evs}
         aria-label={`${STAT_LABELS[stat]} EVs`}
-        aria-valuetext={at === HIGH ? `${EV_MAX} EVs and a boosting nature`
-          : at === LOW ? 'no EVs and a hindering nature'
-            : `${evs} EVs`}
-        className={takesNature(stat) ? 'has-notches' : undefined}
-        onChange={(e) => slide(Number(e.target.value))}
+        onChange={(e) => onEvs(Number(e.target.value))}
       />
     </label>
   )

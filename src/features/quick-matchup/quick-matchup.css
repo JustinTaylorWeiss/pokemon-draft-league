@@ -1193,27 +1193,6 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   width: 12px; height: 12px; border-radius: 50%;
   background: var(--team-accent, var(--accent)); border: 0;
 }
-/* A mark at each end of the bar, where the step past the EVs sets the
-   nature. Painted on the track rather than added as elements, so it
-   travels with the bar at any width. Lost in a careless line-range edit
-   two commits after it was added; back, and composed with the track's
-   own line rather than replacing it. */
-.ev-assume-stat input.has-notches::-webkit-slider-runnable-track {
-  background:
-    linear-gradient(90deg,
-      var(--muted) 0 3px,
-      transparent 3px calc(100% - 3px),
-      var(--muted) calc(100% - 3px) 100%) center / 100% 9px no-repeat,
-    linear-gradient(var(--chip), var(--chip)) center / 100% 4px no-repeat;
-}
-.ev-assume-stat input.has-notches::-moz-range-track {
-  background:
-    linear-gradient(90deg,
-      var(--muted) 0 3px,
-      transparent 3px calc(100% - 3px),
-      var(--muted) calc(100% - 3px) 100%),
-    var(--chip);
-}
 
 
 .ev-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; }
