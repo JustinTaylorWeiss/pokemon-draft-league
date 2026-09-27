@@ -1,5 +1,5 @@
 import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../data/types'
-import { damage, koCurve, statOf, type Hit, type Side } from './damage'
+import { damage, koCurve, statOf, type Side } from './damage'
 import { statAtLevel } from './stats'
 
 /**
@@ -40,6 +40,15 @@ export interface Shot {
   hits: number
   /** And on the best, which is the one `chance` gives the odds of. */
   soonest: number
+  /**
+   * Attacking rows: the fewest hits any spread at all could guarantee.
+   *
+   * The bound of "could I do better", answered over every EV and every
+   * nature rather than over what is left in the budget. Where the guaranteed
+   * count already equals it, this stat has nothing more to give against that
+   * Pokémon and the row says so.
+   */
+  peak?: number
 }
 
 export interface Threshold {
@@ -440,64 +449,6 @@ interface PlanInput {
   doubles: boolean
 }
 
-/**
- * Every threshold in one stat, given the rest of the spread as it stands.
- *
- * Scanned rather than solved. The damage formula floors at four separate
- * points and the stat formula at two more, so the relationship between an EV
- * and a hit is a staircase with no closed form — and there are only 64 steps
- * to try, which is nothing.
- *
- * The scan reports every step it finds, not just the first: a stat can cross
- * from a 2HKO to a 3HKO and on to a 4HKO inside the range, and both are worth
- * knowing before deciding where to stop.
- */
-/**
- * Every hit count this pairing could ever be moved to, and what each one
- * costs from here.
- *
- * The rows are the range, not the current state. A column used to list what
- * the stat could still buy given everything else as it stood, which meant
- * rows appeared and vanished as the other sliders moved — and a list that
- * changes under you while you are reading it is a list you cannot compare
- * against itself. The set of rows is now fixed by what is achievable under
- * any spread at all, so only the prices move.
- *
- * `reachable` is the whole 0-252 sweep of this stat with everything else as
- * it is. A target inside it has a price; a target that needs another stat's
- * help as well has none yet, and says so.
- */
-function priced(
-  stat: StatKey,
-  /** Hit count for this stat at each EV step, everything else as it stands. */
-  reachable: number[],
-  /** The worst and best this pairing can be made, over every spread. */
-  span: { worst: number; best: number },
-): { evs: number; from: number; to: number; unreachable?: boolean }[] {
-  const offensive = stat === 'atk' || stat === 'spa'
-  if (!Number.isFinite(span.worst) || !Number.isFinite(span.best)) return []
-
-  // Counting towards the better end, which is up when taking hits and down
-  // when landing them.
-  const targets: number[] = []
-  if (offensive) for (let t = span.worst - 1; t >= span.best; t--) targets.push(t)
-  else for (let t = span.worst + 1; t <= span.best; t++) targets.push(t)
-
-  const reaches = (v: number, t: number) => (offensive ? v <= t : v >= t)
-  const rows = []
-  for (const target of targets) {
-    if ((offensive ? target : target - 1) > MEANINGFUL_HITS) continue
-    const step = reachable.findIndex((v) => Number.isFinite(v) && reaches(v, target))
-    rows.push({
-      evs: step < 0 ? Infinity : step * EV_STEP,
-      from: offensive ? target + 1 : target - 1,
-      to: target,
-      ...(step < 0 && { unreachable: true }),
-    })
-  }
-  return rows
-}
-
 /** The plan: one list of thresholds per stat, in EV order. */
 export type Plan = Record<StatKey, Threshold[]>
 
@@ -513,19 +464,6 @@ export function planFor(input: PlanInput): Plan {
    * stays true when the spread changes, where "44 EVs" is only true of this
    * one. Binary, since a hit count only moves one way as a stat rises.
    */
-  const needs = (reaches: (statValue: number) => boolean) => {
-    let lo = 1
-    let hi = 1500
-    if (!reaches(hi)) return undefined
-    while (lo < hi) {
-      const mid = (lo + hi) >> 1
-      if (reaches(mid)) hi = mid
-      else lo = mid + 1
-    }
-    return lo
-  }
-  const withStat = (side: Side, stat: StatKey, value: number): Side =>
-    ({ ...side, flat: { ...side.flat, [stat]: value } })
 
   /** Me, with one stat moved to the value being tried and the rest as they are. */
   const meAt = (stat: StatKey, evs: number): Side =>
@@ -533,13 +471,12 @@ export function planFor(input: PlanInput): Plan {
   /** And me exactly as the sliders have me, for the live odds. */
   const meNow = sideFrom(pokemon, level, spread, item, ability)
   /**
-   * The two ends of what this Pokémon could be built into, which is what
-   * decides the rows: nothing anywhere and every nature hindering, against
-   * everything everywhere and every nature boosting.
+   * The best this Pokémon could ever be built into: everything everywhere,
+   * every nature boosting.
    *
-   * Neither is a legal spread and neither needs to be. They are the bounds
-   * of the question "could any spread do this", and the answer to that is
-   * what the column lists.
+   * Not a legal spread and it does not need to be. It is the bound of the
+   * question "could any spread do better than this", which is the one thing
+   * an attacking row goes green for.
    */
   const bound = (evs: number, nature: number) => sideFrom(
     pokemon,
@@ -551,39 +488,77 @@ export function planFor(input: PlanInput): Plan {
     item,
     ability,
   )
-  const worstMe = bound(0, 0.9)
   const bestMe = bound(EV_MAX, 1.1)
 
-  /** This stat across its whole range, everything else as the sliders have it. */
-  const sweep = (at: (evs: number) => number) =>
-    Array.from({ length: EV_MAX / EV_STEP + 1 }, (_, i) => at(i * EV_STEP))
+
+  /**
+   * One reading of a pairing, from whoever is throwing to whoever is taking.
+   *
+   * The same four facts in both directions — the move, the roll range as a
+   * share of the defender's HP, the guaranteed hit count and the soonest one
+   * with its odds — because it is the same question asked from either end.
+   */
+  const readMove = (from: Side, to: Side, move: Move): Threshold & { shot: Shot } => {
+    const live = damage(from, to, move, chart, doubles)
+    const curve = koCurve(live, MEANINGFUL_HITS)
+    return {
+      // No price. Both halves of the panel used to carry one — "this many
+      // EVs buys that hit count" — and neither shows it now: see ShotRow.
+      evs: 0,
+      target: '',
+      targetName: '',
+      move: move.name,
+      moveName: move.name,
+      at: live.bestCase,
+      chance: curve[live.bestCase - 1] ?? 0,
+      via: live.via,
+      shot: {
+        low: live.hp ? ((live.rolls[0] ?? 0) / live.hp) * 100 : 0,
+        high: live.hp ? ((live.rolls[live.rolls.length - 1] ?? 0) / live.hp) * 100 : 0,
+        hits: live.worstCase,
+        soonest: live.bestCase,
+      },
+    }
+  }
+
+  /**
+   * The worst of several, for the columns that show one row per Pokémon.
+   *
+   * Which move they would actually click: soonest to the knockout, and the
+   * bigger number where two are equally soon.
+   */
+  const worstOf = (from: Side, to: Side, candidates: Move[]) => {
+    let best: (Threshold & { shot: Shot }) | null = null
+    for (const move of candidates) {
+      const row = readMove(from, to, move)
+      if (!best
+        || row.shot.soonest < best.shot.soonest
+        || (row.shot.soonest === best.shot.soonest && row.shot.high > best.shot.high)) {
+        best = row
+      }
+    }
+    return best
+  }
 
   for (const o of opponents) {
-    // ---- taking hits: HP, Defense, Special Defense ----
-    for (const move of o.moves) {
-      const stats: StatKey[] = move.category === 'Physical' ? ['hp', 'def'] : ['hp', 'spd']
-      // One walk of the odds per move rather than one per row: every row for
-      // it is reading the same curve at a different point.
-      const live = damage(o.side, meNow, move, chart, doubles)
-      const curve = koCurve(live, MEANINGFUL_HITS)
-      const span = {
-        worst: damage(o.side, worstMe, move, chart, doubles).worstCase,
-        best: damage(o.side, bestMe, move, chart, doubles).worstCase,
-      }
-      for (const stat of stats) {
-        const reachable = sweep((evs) => damage(o.side, meAt(stat, evs), move, chart, doubles).worstCase)
-        for (const step of priced(stat, reachable, span)) {
-          out[stat].push({
-            ...step, target: o.id, targetName: o.pokemon.name,
-            move: move.name, moveName: move.name,
-            statAt: needs((v) =>
-              damage(o.side, withStat(meNow, stat, v), move, chart, doubles).worstCase >= step.to),
-            // The outcome being escaped, and how often it still happens.
-            at: step.from, chance: curve[step.from - 1] ?? 0,
-            via: live.via,
-          })
-        }
-      }
+    /*
+     * ---- taking hits: HP, Defense, Special Defense ----
+     *
+     * One row per Pokémon over there, the same as the attacking columns and
+     * for the same reason: with both sides' moves settled, the question is
+     * flat. What is the worst thing this one can throw at me, what does it
+     * do, and how does that move as I spend.
+     *
+     * Defense reads their physical moves and Special Defense their special
+     * ones; HP reads everything, because it is the stat that answers both
+     * and the row worth seeing there is whichever hurts most.
+     */
+    for (const stat of ['hp', 'def', 'spd'] as const) {
+      const category = stat === 'def' ? 'Physical' : stat === 'spd' ? 'Special' : null
+      const theirs = category ? o.moves.filter((m) => m.category === category) : o.moves
+      const row = worstOf(o.side, meNow, theirs)
+      if (!row) continue
+      out[stat].push({ ...row, target: o.id, targetName: o.pokemon.name })
     }
 
     /*
@@ -601,67 +576,31 @@ export function planFor(input: PlanInput): Plan {
      * The move shown is the one it would actually click: fewest hits to the
      * knockout, and the bigger number where two need the same count.
      */
+    /*
+     * Every move in the set against every Pokémon over there, not the best
+     * one against each.
+     *
+     * The four are chosen by hand, so all four are moves this Pokémon is
+     * carrying and every one of them is a click someone might make. Which
+     * is strongest against a given target is the thing the numbers are
+     * there to answer, and answering it in advance by showing only the
+     * winner hides what the other three would have done.
+     */
     for (const stat of ['atk', 'spa'] as const) {
       const category = stat === 'atk' ? 'Physical' : 'Special'
-      const mine = moves.filter((m) => m.category === category)
-      if (!mine.length) continue
-
-      let best: { move: Move; live: Hit } | null = null
-      for (const move of mine) {
-        const live = damage(meNow, o.side, move, chart, doubles)
-        const top = (h: Hit) => h.rolls[h.rolls.length - 1] ?? 0
-        if (!best
-          || live.worstCase < best.live.worstCase
-          || (live.worstCase === best.live.worstCase && top(live) > top(best.live))) {
-          best = { move, live }
-        }
+      for (const move of moves.filter((m) => m.category === category)) {
+        // Everything everywhere, every nature boosting. Not a legal spread
+        // and it does not need to be: it is the bound of "could any spread
+        // do better than this", which is what the row goes green for.
+        const peak = damage(bestMe, o.side, move, chart, doubles).worstCase
+        const row = readMove(meNow, o.side, move)
+        out[stat].push({
+          ...row,
+          target: o.id,
+          targetName: o.pokemon.name,
+          shot: { ...row.shot, peak },
+        })
       }
-      if (!best) continue
-      const { move, live } = best
-      const hits = live.worstCase
-      const soonest = live.bestCase
-      const curve = koCurve(live, MEANINGFUL_HITS)
-
-      /*
-       * The next EV total that changes anything here.
-       *
-       * Either end of the roll counts as a change, and the best one does
-       * most of the work: guaranteeing a knockout one hit sooner means all
-       * sixteen rolls have to kill, which for most pairings no amount of
-       * Attack reaches, so pricing only that printed a dash on every row.
-       * Making the one-shot possible at all is both reachable and the thing
-       * a coach is actually buying.
-       */
-      const sweepWorst = sweep((evs) => damage(meAt(stat, evs), o.side, move, chart, doubles).worstCase)
-      const sweepBest = sweep((evs) => damage(meAt(stat, evs), o.side, move, chart, doubles).bestCase)
-      const moves_ = (worst: number, best: number) => best < soonest || worst < hits
-      const step = Number.isFinite(hits)
-        ? sweepWorst.findIndex((_, i) => moves_(sweepWorst[i], sweepBest[i]))
-        : -1
-
-      out[stat].push({
-        // No `unreachable` flag even where there is no next step: these rows
-        // are readings, and a Pokémon already being one-shot does not belong
-        // under a heading that means "this cannot be done".
-        evs: step < 0 ? Infinity : step * EV_STEP,
-        target: o.id,
-        targetName: o.pokemon.name,
-        move: move.name,
-        moveName: move.name,
-        statAt: step < 0 ? undefined : needs((v) => {
-          const h = damage(withStat(meNow, stat, v), o.side, move, chart, doubles)
-          return moves_(h.worstCase, h.bestCase)
-        }),
-        at: soonest,
-        chance: curve[soonest - 1] ?? 0,
-        via: live.via,
-        shot: {
-          low: live.hp ? ((live.rolls[0] ?? 0) / live.hp) * 100 : 0,
-          high: live.hp ? ((live.rolls[live.rolls.length - 1] ?? 0) / live.hp) * 100 : 0,
-          hits,
-          soonest,
-        },
-      })
     }
 
     // ---- getting there first, at each speed they might be built to ----
@@ -740,13 +679,33 @@ export function planFor(input: PlanInput): Plan {
      * Infinity sorts last on its own, which puts the out-of-reach rows after
      * everything buyable without a second rule.
      */
-    // Readings sort by how close the Pokemon is to falling, which is the
-    // order you read them in. Thresholds sort by what they cost, which is
-    // the order you buy them in.
-    if (stat === 'atk' || stat === 'spa') {
-      out[stat].sort((a, b) => (a.shot?.hits ?? Infinity) - (b.shot?.hits ?? Infinity)
+    /*
+     * Readings sort by how near the knockout is — theirs going down the
+     * attacking columns, mine going down the defensive ones.
+     *
+     * By Pokémon first, because the attacking columns carry a row per move
+     * and four rows about one Pokémon scattered down the list are four
+     * rows you have to gather by eye. The group goes where its best row
+     * would have gone, so the order of the Pokémon is unchanged from when
+     * each had only one.
+     *
+     * Speed is still a list of purchases and sorts by what each costs.
+     */
+    if (stat !== 'spe') {
+      const nearest = (a: Threshold, b: Threshold) =>
+        (a.shot?.soonest ?? Infinity) - (b.shot?.soonest ?? Infinity)
+        || (a.shot?.hits ?? Infinity) - (b.shot?.hits ?? Infinity)
         || (b.shot?.high ?? 0) - (a.shot?.high ?? 0)
-        || a.targetName.localeCompare(b.targetName))
+      const best = new Map<string, Threshold>()
+      for (const r of out[stat]) {
+        const held = best.get(r.target)
+        if (!held || nearest(r, held) < 0) best.set(r.target, r)
+      }
+      const lead = (r: Threshold) => best.get(r.target) ?? r
+      out[stat].sort((a, b) => nearest(lead(a), lead(b))
+        || a.targetName.localeCompare(b.targetName)
+        || nearest(a, b)
+        || (a.moveName ?? '').localeCompare(b.moveName ?? ''))
       continue
     }
     out[stat].sort((a, b) => a.evs - b.evs

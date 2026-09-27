@@ -335,23 +335,32 @@ function StatRows({ stat, evs, rows, faces, note }: {
    */
   const defensive = stat === 'hp' || stat === 'def' || stat === 'spd'
   /*
-   * An offensive reading is lit on the same rule as a defensive one, read
-   * the other way round: there, green means the hit more often than not
-   * fails to land; here, that the knockout more often than not does. Both
-   * move continuously with the slider rather than jumping at a threshold,
-   * which is what these rows are for.
+   * The two sides go green for different reasons, because they are answers
+   * to different questions.
    *
-   * Where every roll agrees there is no coin to flip and the reading is
-   * certain, so a guaranteed knockout counts as one that lands.
+   * Taking a hit, green is the odds: the knockout at the soonest count more
+   * often than not fails to land. "Guaranteed 3HKO" is a statement about one
+   * roll in sixteen, and a wall that still falls in two seven times out of
+   * eight is not a wall.
+   *
+   * Landing one, green is certainty and nothing less: the guaranteed hit
+   * count is the fewest any spread at all could guarantee. A percentage
+   * that has crept up is not a breakpoint, and the thing worth marking is
+   * the one place where there is nothing left to buy.
    */
   const certainty = (r: Threshold) =>
     (r.shot && r.shot.soonest === r.shot.hits ? 1 : r.chance ?? 0)
   const lit = (r: Threshold) => {
-    if (r.shot) return Number.isFinite(r.shot.soonest) && certainty(r) > 0.5 + EPSILON
+    if (r.shot) {
+      if (!defensive) {
+        return Number.isFinite(r.shot.hits) && r.shot.hits === r.shot.peak
+      }
+      return !Number.isFinite(r.shot.soonest) || certainty(r) < 0.5 - EPSILON
+    }
     return defensive && r.chance != null ? r.chance < 0.5 - EPSILON : evs >= r.evs
   }
   const tied = (r: Threshold) => {
-    if (r.shot) return Math.abs(certainty(r) - 0.5) <= EPSILON
+    if (r.shot) return defensive && Math.abs(certainty(r) - 0.5) <= EPSILON
     return defensive && r.chance != null
       ? Math.abs(r.chance - 0.5) <= EPSILON
       : r.tieAt != null && evs >= r.tieAt && evs < r.evs
