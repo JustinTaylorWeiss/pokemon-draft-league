@@ -139,7 +139,29 @@ function AssumeStat({ stat, spread, onEvs, onNature }: {
 
   return (
     <label className="ev-assume-stat">
-      <span>{STAT_LABELS[stat]}</span>
+      {/* The stat, what it reads, and the nature that bends it, all packed
+          left on one line with the bar under them. Laid out rather than
+          left to the grid to place: with the bar written between them it
+          took the second row and pushed the number and the nature down to
+          a third, under the thing they label. */}
+      <span className="ev-assume-head">
+        <em>{STAT_LABELS[stat]}</em>
+        <b>{evs}{nature > 1 ? '+' : nature < 1 ? '\u2212' : ''}</b>
+        {takesNature(stat) && (
+          <button
+            type="button"
+            className="ev-nature"
+            aria-pressed={now.mult !== 1}
+            disabled={cycle.length < 2}
+            title={cycle.length > 1
+              ? `${now.title} \u2014 click for ${next.title.toLowerCase()}`
+              : `${now.title} \u2014 the other two are spoken for`}
+            onClick={() => onNature(next.mult)}
+          >
+            {now.mult === 1 ? '\u00b7' : now.mult > 1 ? '+' : '\u2212'}
+          </button>
+        )}
+      </span>
       <input
         type="range"
         min={takesNature(stat) ? LOW : 0}
@@ -153,21 +175,6 @@ function AssumeStat({ stat, spread, onEvs, onNature }: {
         className={takesNature(stat) ? 'has-notches' : undefined}
         onChange={(e) => slide(Number(e.target.value))}
       />
-      <b>{evs}{nature > 1 ? '+' : nature < 1 ? '\u2212' : ''}</b>
-      {takesNature(stat) ? (
-        <button
-          type="button"
-          className="ev-nature"
-          aria-pressed={now.mult !== 1}
-          disabled={cycle.length < 2}
-          title={cycle.length > 1
-            ? `${now.title} \u2014 click for ${next.title.toLowerCase()}`
-            : `${now.title} \u2014 the other two are spoken for`}
-          onClick={() => onNature(next.mult)}
-        >
-          {now.mult === 1 ? '\u00b7' : now.mult > 1 ? '+' : '\u2212'}
-        </button>
-      ) : <i aria-hidden="true" />}
     </label>
   )
 }
