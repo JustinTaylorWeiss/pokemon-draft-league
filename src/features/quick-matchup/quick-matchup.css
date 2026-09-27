@@ -263,12 +263,18 @@
 
 /* ---- speed tiers ---- */
 
-/* Four even columns: what each species is worth on paper, what that is at
-   this level on IVs alone, what it is fully invested, and every tier it can
-   actually sit at. Even because none of them is the one you read first — the
-   comparison runs across. */
+/* Five even columns: what each species is worth on paper, the same at this
+   level with IVs, with max EVs on top, with a nature on top of that, and
+   every tier it can actually sit at. Even because none of them is the one you
+   read first — the comparison runs across. */
 .speed-layout { display: flex; gap: 0.6rem; }
-.speed-bases, .speed-level, .speed-max, .speed-groups { flex: 1 1 0; min-width: 0; }
+.speed-bases, .speed-level, .speed-evs, .speed-max, .speed-groups {
+  flex: 1 1 0; min-width: 0;
+}
+/* The headings spell their spreads out and so wrap to different depths. A
+   floor under them keeps every list starting on the same line, which is the
+   whole point of standing these columns next to each other. */
+.speed-layout h3 { min-height: 3.2rem; }
 .speed-layout h3 { margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase; color: var(--team-both); letter-spacing: 0.05em; }
 .speed-layout h3 span { float: right; text-transform: none; font-size: 0.68rem; }
 /* Stays beside the word it qualifies. Held right it read as a second heading
@@ -291,14 +297,15 @@
   font: inherit; font-size: inherit; cursor: pointer; text-align: left;
 }
 /* Bigger than the tier rows' sprites, since these columns have the room. */
-.speed-bases img, .speed-level img, .speed-max img { width: 42px; height: 42px; object-fit: contain; }
+.speed-bases img, .speed-level img, .speed-evs img, .speed-max img { width: 42px; height: 42px; object-fit: contain; }
 .speed-groups img { width: 38px; height: 34px; object-fit: contain; }
 .speed-layout li.side-one { border-left: 3px solid var(--team-one); }
 .speed-layout li.side-two { border-left: 3px solid var(--team-two); }
 .speed-layout li.is-selected { border-color: var(--team-both); background: rgb(167 139 250 / 16%); }
 .speed-layout li.is-dimmed { opacity: 0.28; }
 .speed-layout strong { margin-left: auto; font-variant-numeric: tabular-nums; }
-.speed-bases li button, .speed-level li button, .speed-max li button { justify-content: space-between; }
+.speed-bases li button, .speed-level li button,
+.speed-evs li button, .speed-max li button { justify-content: space-between; }
 .speed-layout img { image-rendering: pixelated; object-fit: contain; }
 .badge { font-size: 0.68rem; padding: 0.05rem 0.35rem; border-radius: 4px; background: var(--chip); color: var(--muted); }
 .badge-ability { color: var(--team-both); }

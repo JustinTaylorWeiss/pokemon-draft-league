@@ -22,8 +22,9 @@ interface Props {
  * see who actually outruns whom. Each Pokémon appears once per spread and
  * multiplier combination its side has switched on.
  *
- * Four columns: the base stat, what it is at this level on perfect IVs
- * alone, what it is fully invested, and then every tier the filters allow.
+ * Five columns: the base stat, then what it is at this level on IVs alone,
+ * with max EVs on top, and with a positive nature on top of that — and then
+ * every tier the filters allow.
  *
  * Selection and the filter live in the parent so the shared card header can own
  * them while this renders only the body.
@@ -74,13 +75,15 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
         </div>
 
         {/*
-          * Base, then what that is at this level with perfect IVs and nothing
-          * else — no EVs, no nature — and then the fully invested figure.
-          * Three points on the same line, which is what makes them worth
-          * putting side by side.
+          * The same Pokemon's Speed with one more thing added each time:
+          * perfect IVs, then max EVs on top of those, then a positive nature
+          * on top of both. Each heading spells out what is in it, because a
+          * column of Speeds is worthless if you have to remember which spread
+          * it belongs to — and four of them side by side is exactly the
+          * arithmetic a draft argument runs on.
           *
-          * All three run in Base's order, since each is a function of it, so
-          * a row reads straight across.
+          * All of them run in Base's order, since each is a function of it,
+          * so a row reads straight across.
           */}
         <div className="speed-level">
           <h3 title={`31 IVs, no EVs, neutral nature, at level ${level}`}>
@@ -98,8 +101,26 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
           </ul>
         </div>
 
+        <div className="speed-evs">
+          <h3 title={`252 EVs, 31 IVs, neutral nature, at level ${level}`}>
+            Lv {level} <span className="is-inline">+ IVs + Max EVs</span>
+          </h3>
+          <ul>
+            {bases.map((b) => (
+              <li key={b.id} className={rowClass(b.id)}>
+                <button type="button" onClick={() => toggle(b.id)} title={title(b.id, b.pokemon.name)}>
+                  <strong>{statAtLevel(b.pokemon.baseStats.spe, 252, 1, false, 31, level)}</strong>
+                  <Sprite pokemon={b.pokemon} width={32} height={26} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+
         <div className="speed-max">
-          <h3>Max <span className="is-inline">Lv {level}</span></h3>
+          <h3 title={`252 EVs, 31 IVs, a positive nature, at level ${level}`}>
+            Lv {level} <span className="is-inline">+ IVs + Max EVs + Nature</span>
+          </h3>
           <ul>
             {bases.map((b) => (
               <li key={b.id} className={rowClass(b.id)}>
