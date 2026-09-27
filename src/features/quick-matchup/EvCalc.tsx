@@ -158,7 +158,7 @@ function AssumeStat({ stat, spread, onEvs, onNature }: {
               : `${now.title} \u2014 the other two are spoken for`}
             onClick={() => onNature(next.mult)}
           >
-            {now.mult === 1 ? '\u00b7' : now.mult > 1 ? '+' : '\u2212'}
+            {now.label}
           </button>
         )}
       </span>
@@ -938,19 +938,21 @@ function GearPicker({
                     key={stat}
                     stat={stat}
                     spread={assume}
-                    onEvs={(n) => onAssume({ ...assume, evs: { ...assume.evs, [stat]: n } })}
+                    // Held to 508, the same as the spread being built on
+                    // the other side. A slider that stops is a clearer way
+                    // of saying there is nothing left than a total that
+                    // goes red after the fact.
+                    onEvs={(n) => {
+                      const elsewhere = spent(assume) - assume.evs[stat]
+                      const room = Math.max(0, Math.min(n, EV_BUDGET - elsewhere))
+                      onAssume({ ...assume, evs: { ...assume.evs, [stat]: room } })
+                    }}
                     onNature={(mult) => {
                       const step = { ...assume, nature: { ...assume.nature, [stat]: mult } }
                       if (natureIsLegal(step)) onAssume(step)
                     }}
                   />
                 ))}
-                {/* What it comes to. Nothing stops it going over — "what if
-                    it were max in this one" is asked a stat at a time — but
-                    an impossible spread should look impossible. */}
-                <p className={`ev-assume-total${spent(assume) > EV_BUDGET ? ' is-over' : ''}`}>
-                  {spent(assume)} / {EV_BUDGET} EVs
-                </p>
               </div>
             )}
             {/* Dropped IVs. Two of the six are dropped on purpose and often:
@@ -958,6 +960,7 @@ function GearPicker({
                 Speed is how anything gets under a Trick Room. The other four
                 are here because leaving them out would mean explaining why. */}
             <div className="ev-gear-ivs">
+              <div className="ev-gear-line">
               <button
                 type="button"
                 className="ev-gear-fold"
@@ -970,6 +973,13 @@ function GearPicker({
                 <em>{dropped.length ? dropped.join(' · ') : 'Click to change IVs'}</em>
                 <i aria-hidden="true">{ivsOpen ? '\u25b4' : '\u25be'}</i>
               </button>
+              {/* What the six bars above come to, beside the IVs rather
+                  than under them: two lines of small print about the same
+                  spread, so one line. */}
+              {assume && (
+                <p className="ev-assume-total">{spent(assume)} / {EV_BUDGET}</p>
+              )}
+              </div>
               {ivsOpen && (
               <div>
                 {EV_STATS.map((stat) => (
@@ -1632,11 +1642,7 @@ export function EvCalcBody({
                 set on record, so that second list is all there is for {guessed.length === 1 ? 'it' : 'them'}</>
             )}
             . Weather, terrain, screens, boosts and Intimidate are not counted.
-            {Object.values(assume).some((a) => spent(a) > EV_BUDGET) && (
-              <> One of them has been credited with more than 508 EVs, which no
-                single Pokémon could carry — each column reads the stats it needs,
-                so each question is answered on its own.</>
-            )}
+
           </p>
         </>
       )}

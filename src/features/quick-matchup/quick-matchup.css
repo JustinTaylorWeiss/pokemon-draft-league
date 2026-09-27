@@ -1389,7 +1389,7 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 .ev-gear-pop {
   position: absolute; top: calc(100% + 0.4rem); left: 50%; transform: translateX(-50%);
   z-index: 21; display: flex; flex-direction: column; gap: 0.45rem;
-  padding: 0.55rem; width: 16.5rem; max-width: 80vw;
+  padding: 0.55rem; width: 19rem; max-width: 84vw;
   background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
   box-shadow: 0 10px 28px rgb(0 0 0 / 45%);
 }
@@ -1422,56 +1422,37 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
  * the three of those had taken theirs, and a slider four rems wide is 64
  * steps at a pixel each. Stacked, it gets the whole cell.
  */
-.ev-assume-stat {
-  display: grid;
-  /* Laid out like a column heading: the stat, the number it names beside
-     it, and the nature that bends it at the far end. Same three things in
-     the same three places, so the panel reads the way the columns do. */
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  /* A fixed first row, so the six sliders sit at the same height whatever
-     is above them — HP has no nature button and its line would otherwise
-     be shorter than the other five and pull its slider up. */
-  grid-template-rows: 1.05rem auto;
-  align-items: center; gap: 0.1rem 0.3rem; min-width: 0;
+.ev-assume-stat { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; }
+/* The stat, what it reads, and the nature that bends it, packed left on
+   one line above the bar. A fixed height so the six bars sit level
+   whatever is over them — HP has no nature button. */
+.ev-assume-head {
+  display: flex; align-items: center; gap: 0.35rem; height: 1.25rem; min-width: 0;
 }
-.ev-assume-stat > span {
-  font-size: 0.58rem; font-weight: 700; letter-spacing: 0.05em;
+.ev-assume-head > em {
+  font-style: normal; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.05em;
   text-transform: uppercase; color: var(--muted);
 }
-.ev-assume-stat > b {
-  font-size: 0.7rem; justify-self: start;
-  font-variant-numeric: tabular-nums; color: var(--fg);
+.ev-assume-head > b {
+  font-size: 0.7rem; font-variant-numeric: tabular-nums; color: var(--fg);
 }
 /* Full width of the cell and no wider. A range input carries an intrinsic
    width of about 130px, which in a seven-rem cell is an overflowing
    control lying across the one beside it. */
-.ev-assume-stat input[type="range"] {
-  grid-column: 1 / -1; width: 100%; min-width: 0;
-}
-.ev-assume-stat .ev-nature,
-.ev-assume-stat > i { justify-self: end; }
-.ev-assume-stat .ev-nature { width: 1.05rem; height: 1.05rem; padding: 0; border-radius: 4px; }
-/* A mark at each end of the bar, where the step past the EVs sets the
-   nature. Painted on the track rather than added as elements, so it
-   travels with the bar at any width. */
-.ev-assume-stat input.has-notches::-webkit-slider-runnable-track,
-.ev-assume-stat input.has-notches::-moz-range-track {
-  background:
-    linear-gradient(90deg,
-      var(--muted) 0 3px,
-      transparent 3px calc(100% - 3px),
-      var(--muted) calc(100% - 3px) 100%),
-    var(--chip);
-}
-/* HP has no nature, and its cell should still be the shape of the others. */
-.ev-assume-stat > i { display: block; width: 1.05rem; height: 1.05rem; }
+.ev-assume-stat input[type="range"] { width: 100%; min-width: 0; }
+/* The same pill the columns put over their sliders, saying the same word:
+   one control, one shape, whichever side of the tab it is on. */
+.ev-assume-head .ev-nature { margin-left: auto; }
 /* What the six come to. Over 508 is not a build, and says so rather than
    being refused: the question is often asked one stat at a time. */
+/* Beside the IV line, not under the bars: two pieces of small print about
+   the same spread, so one line. */
+.ev-gear-line { display: flex; align-items: center; gap: 0.5rem; }
+.ev-gear-line .ev-gear-fold { flex: 1 1 auto; min-width: 0; }
 .ev-assume-total {
-  grid-column: 1 / -1; margin: 0.1rem 0 0; text-align: right;
+  flex: none; margin: 0; white-space: nowrap;
   font-size: 0.62rem; color: var(--muted); font-variant-numeric: tabular-nums;
 }
-.ev-assume-total.is-over { color: #e05563; font-weight: 600; }
 .ev-gear-pop label { display: flex; flex-direction: column; gap: 0.15rem; }
 /* The label over each control, and only that. As `.ev-gear-pop span` it
    also caught the word inside every category badge in the move list —
