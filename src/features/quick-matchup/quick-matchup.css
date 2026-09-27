@@ -923,9 +923,11 @@ button.type-chip { cursor: pointer; }
   display: flex; flex-direction: column; align-items: flex-start;
   flex: none; gap: 0.5rem;
 }
+/* The gap here is the one either side of "against", so it is the whole of
+   the spacing between the three things in this row. */
 .ev-mons {
   display: flex; align-items: flex-start; flex-wrap: wrap;
-  flex: 1 1 18rem; gap: 0.5rem 0.9rem;
+  flex: 1 1 18rem; gap: 0.5rem 0.6rem;
 }
 .ev-picker .drop-current { width: var(--ev-control); font-size: 0.9rem; gap: 0.4rem; }
 .ev-picker .drop-label { flex: 1 1 auto; text-align: left; }
@@ -956,7 +958,7 @@ button.type-chip { cursor: pointer; }
   display: inline-flex; align-items: center;
   height: calc(var(--ev-sprite-h) + 0.2rem + 2px);
   font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--muted); margin-right: 0.3rem;
+  color: var(--muted);
 }
 .ev-foe {
   background: none; border: 1px solid transparent; border-radius: 8px;

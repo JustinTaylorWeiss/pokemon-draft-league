@@ -1065,9 +1065,14 @@ export function EvCalcBody({
               />
             </span>
 
+            {/* Between the two, and a child of neither. Inside the foe list
+                it had the gap of one parent on its left and of the other on
+                its right, which is two different gaps around one word. Out
+                here both sides are the same gap by construction. */}
+            {picked.foes.length > 0 && <span className="ev-against">against</span>}
+
             {picked.foes.length > 0 && (
               <div className="ev-foes">
-                <span className="ev-against">against</span>
                 {picked.foes.map((m) => (
                   <span key={m.id} className="ev-foe-slot">
                     <button
