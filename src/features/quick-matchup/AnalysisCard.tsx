@@ -5,6 +5,7 @@ import { DraftSummaryBody } from './DraftSummary'
 import { DefensiveChartBody } from './DefensiveChart'
 import { buildMoveRows, LearnedMovesBody } from './LearnedMoves'
 import { CoverageBody } from './CoveragePanel'
+import { EvCalcBody } from './EvCalc'
 import { useSpeedTiersPanel } from './useSpeedTiersPanel'
 import { TeamName } from '../../components/TeamName'
 import type { LeagueDex } from '../../data/league'
@@ -23,6 +24,8 @@ const TABS = [
   { key: 'speed', label: 'Speed Tiers' },
   { key: 'moves', label: 'Learned Moves' },
   { key: 'coverage', label: 'Coverage' },
+  // Last, because it is the one you open having decided everything else.
+  { key: 'evs', label: 'EV Calc' },
 ]
 
 /** Chip pool floor. Below this, universal TMs hand out most of the type chart. */
@@ -76,9 +79,12 @@ export function AnalysisCard({
   // Coverage is the one reading that needs somebody on the other side: what a
   // team hits is a fact about the team it is hitting. Every other tab here is
   // about the analysed team alone, so solo keeps them all and drops that one.
-  const tabs = solo ? TABS.filter((t) => t.key !== 'coverage') : TABS
+  // Coverage and the EV calculator both need somebody on the other side:
+  // what a team hits, and what to build against, are facts about the team it
+  // is facing. The rest are about the analysed team alone.
+  const tabs = solo ? TABS.filter((t) => t.key !== 'coverage' && t.key !== 'evs') : TABS
   useEffect(() => {
-    if (solo && tab === 'coverage') setTab(TABS[0].key)
+    if (solo && (tab === 'coverage' || tab === 'evs')) setTab(TABS[0].key)
   }, [solo, tab])
 
   const [sets, setSets] = useState<SetDex | null>(null)
@@ -127,7 +133,7 @@ export function AnalysisCard({
 
   // On every tab that shows the two teams as a pair, which is all of them bar
   // the speed tiers — those interleave both sides into one list.
-  const pairing = teamTwo.members.length > 0 && tab !== 'speed' && (
+  const pairing = teamTwo.members.length > 0 && tab !== 'speed' && tab !== 'evs' && (
     // A button rather than a checkbox: it does not tick a condition, it puts
     // the page one way or the other, and `aria-pressed` says which way it is.
     <button
@@ -198,6 +204,16 @@ export function AnalysisCard({
         )
         : <LoadingBall label="Loading learnsets…" inline />)}
       {tab === 'speed' && speed.body}
+      {/* Not a pair: it reads one Pokemon against the whole of the other side,
+          and picks which from either team itself. */}
+      {tab === 'evs' && (learnsets
+        ? (
+          <EvCalcBody
+            teamOne={teamOne} teamTwo={teamTwo}
+            chart={chart} moves={moves} learnsets={learnsets} sets={sets}
+          />
+        )
+        : <LoadingBall label="Loading learnsets…" inline />)}
       {tab === 'coverage' && (learnsets
         ? (
           <TeamPair one={teamOne} two={teamTwo} abreast={abreast}>

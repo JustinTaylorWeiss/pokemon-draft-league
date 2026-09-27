@@ -865,3 +865,103 @@ button.type-chip { cursor: pointer; }
 /* The league's own valuation of a drafted Pokemon — a cost or a tier. */
 .summary-table .col-value { width: 3.2rem; text-align: center; }
 .agg-spent { margin-left: 0.6rem; font-weight: 700; color: var(--fg); text-transform: none; }
+
+/* ---- EV calculator ---- */
+/*
+ * Six columns of thresholds, one per stat, each with the slider that pays for
+ * them. Even width and scrolling their own lists: the lists are different
+ * lengths by nature — a Pokemon can have nine things Special Attack buys and
+ * nothing at all for Attack — and letting the tallest set the height of the
+ * panel would put the sliders a screen apart from each other.
+ */
+.ev-calc { display: flex; flex-direction: column; gap: 0.9rem; }
+
+.ev-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1.4rem; }
+.ev-pick-side { display: flex; align-items: center; gap: 0.5rem; min-width: 0; }
+.ev-pick-name {
+  font-size: 0.78rem; font-weight: 700; color: var(--team, var(--accent)); white-space: nowrap;
+}
+.ev-pick-mons { display: flex; flex-wrap: wrap; gap: 0.15rem; }
+.ev-mon {
+  background: none; border: 1px solid transparent; border-radius: 8px;
+  padding: 0.1rem; cursor: pointer; line-height: 0;
+}
+.ev-mon img { image-rendering: pixelated; object-fit: contain; }
+.ev-mon:hover { border-color: var(--line); }
+/* The chosen one is lit rather than outlined: an outline on a sprite reads as
+   a box drawn round it, and every sprite here already sits in one. */
+.ev-mon.is-chosen { border-color: var(--team-accent, var(--accent)); background: var(--chip); }
+.ev-mon:not(.is-chosen) img { opacity: 0.55; }
+.ev-level { margin-left: auto; }
+
+.ev-hint, .ev-note { margin: 0; color: var(--muted); font-size: 0.75rem; line-height: 1.45; }
+.ev-budget { display: flex; align-items: baseline; gap: 0.6rem; font-size: 0.82rem; }
+.ev-budget > span { color: var(--muted); font-variant-numeric: tabular-nums; }
+.ev-over { color: #e05563 !important; font-weight: 600; }
+
+.ev-cols { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.5rem; }
+.ev-col { min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.ev-col-head { display: flex; align-items: baseline; gap: 0.35rem; flex-wrap: wrap; }
+.ev-stat { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; color: var(--muted); }
+.ev-value { font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+.ev-natures { display: inline-flex; margin-left: auto; }
+.ev-nature {
+  width: 1.15rem; height: 1.15rem; padding: 0; line-height: 1;
+  background: none; border: 1px solid var(--line); color: var(--muted);
+  font: inherit; font-size: 0.7rem; cursor: pointer;
+}
+.ev-nature:first-child { border-radius: 4px 0 0 4px; }
+.ev-nature:last-child { border-radius: 0 4px 4px 0; }
+.ev-nature + .ev-nature { border-left: 0; }
+.ev-nature[aria-pressed="true"] {
+  background: var(--team-accent, var(--accent)); border-color: var(--team-accent, var(--accent));
+  color: var(--bg);
+}
+
+.ev-slider { display: flex; align-items: center; gap: 0.35rem; }
+.ev-slider input[type="range"] {
+  appearance: none; -webkit-appearance: none;
+  margin: 0; padding: 0; flex: 1 1 0; min-width: 0; height: 0.85rem;
+  background: transparent; cursor: pointer;
+}
+.ev-slider input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 999px; background: var(--chip);
+}
+.ev-slider input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--team-accent, var(--accent)); border: 0; margin-top: -4px;
+}
+.ev-slider input[type="range"]::-moz-range-track {
+  height: 4px; border-radius: 999px; background: var(--chip);
+}
+.ev-slider input[type="range"]::-moz-range-thumb {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--team-accent, var(--accent)); border: 0;
+}
+.ev-slider output {
+  flex: 0 0 1.8rem; text-align: right; font-size: 0.72rem;
+  font-variant-numeric: tabular-nums; color: var(--muted);
+}
+
+.ev-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+.ev-row {
+  display: flex; gap: 0.35rem; align-items: baseline;
+  padding: 0.22rem 0.3rem; border: 1px solid var(--line); border-radius: 6px;
+  font-size: 0.68rem; color: var(--muted);
+  /* Dim until paid for. Everything in this list is something you could buy;
+     the lit ones are what the slider has actually bought. */
+  opacity: 0.45; transition: opacity 0.12s, border-color 0.12s;
+}
+.ev-row.is-lit { opacity: 1; border-color: #2ea078; color: var(--fg); }
+.ev-row.is-out { opacity: 0.3; }
+.ev-cost {
+  flex: 0 0 1.7rem; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700;
+}
+.ev-what { min-width: 0; display: flex; flex-direction: column; }
+.ev-target { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ev-detail { font-size: 0.64rem; }
+.ev-none { margin: 0; font-size: 0.68rem; color: var(--muted); line-height: 1.4; }
+
+/* Six columns of this need real width; below it they go two and three up. */
+@media (max-width: 1100px) { .ev-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .ev-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
