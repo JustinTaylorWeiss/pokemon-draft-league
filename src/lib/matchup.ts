@@ -37,6 +37,17 @@ const ABILITY_DEFENSE: Record<string, Partial<Record<TypeName, number>>> = {
 const SUPER_EFFECTIVE_REDUCERS = new Set(['Filter', 'Solid Rock', 'Prism Armor'])
 
 /**
+ * Every ability the type maths above reads, for anywhere that needs to know
+ * which ones are worth offering. Read off the tables rather than typed out
+ * again, so it cannot fall behind them.
+ */
+export const DEFENSIVE_ABILITIES: ReadonlySet<string> = new Set([
+  ...Object.keys(ABILITY_DEFENSE),
+  ...SUPER_EFFECTIVE_REDUCERS,
+  'Wonder Guard',
+])
+
+/**
  * Damage multiplier for one attacking type against one Pokémon.
  * `useAbilities` mirrors DraftZone's toggle: off gives raw type math.
  */

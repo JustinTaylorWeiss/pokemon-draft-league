@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../../data/types'
 import { STAT_LABELS } from '../../lib/stats'
+import { MODELLED_ABILITIES, itemMatters } from '../../lib/damage'
 import {
   ASSUME_SET, EV_BUDGET, EV_MAX, EV_STATS, EV_STEP, emptySpread, opponentsFrom, planFor,
   spent, statOfSpread, type Assume, type Assumptions, type Spread, type Threshold,
@@ -305,12 +306,24 @@ function GearPicker({ pokemon, items, gear, onChange }: {
   onChange: (next: Gear) => void
 }) {
   const [open, setOpen] = useState(false)
-  const abilities = [...new Set(Object.values(pokemon.abilities))]
   const chosen = [gear?.ability, gear?.item].filter(Boolean)
+
+  // Only what this calculation reads. An ability that changes nothing here
+  // is a control that does nothing, and there is no way to tell from the
+  // name which is which — the two lists are built from the same tables the
+  // damage maths uses, so they cannot drift apart from it.
+  const abilities = [...new Set(Object.values(pokemon.abilities))]
+    .filter((a) => MODELLED_ABILITIES.has(a))
   const names = useMemo(
-    () => Object.values(items).map((i) => i.name).sort((a, b) => a.localeCompare(b)),
-    [items],
+    () => Object.values(items)
+      .map((i) => i.name)
+      .filter((n) => itemMatters(n, pokemon))
+      .sort((a, b) => a.localeCompare(b)),
+    [items, pokemon],
   )
+
+  // Nothing either list can offer, so nothing to open.
+  if (!abilities.length && !names.length) return null
 
   return (
     <span className="ev-gear">
@@ -330,16 +343,18 @@ function GearPicker({ pokemon, items, gear, onChange }: {
               expects of something that opened over the page. */}
           <button type="button" className="ev-gear-away" aria-label="Close" onClick={() => setOpen(false)} />
           <div className="ev-gear-pop">
-            <label>
-              <span>Ability</span>
-              <select
-                value={gear?.ability ?? ''}
-                onChange={(e) => onChange({ ...gear, ability: e.target.value })}
-              >
-                <option value="">its set{'’'}s</option>
-                {abilities.map((a) => <option key={a} value={a}>{a}</option>)}
-              </select>
-            </label>
+            {abilities.length > 0 && (
+              <label>
+                <span>Ability</span>
+                <select
+                  value={gear?.ability ?? ''}
+                  onChange={(e) => onChange({ ...gear, ability: e.target.value })}
+                >
+                  <option value="">its set{'’'}s</option>
+                  {abilities.map((a) => <option key={a} value={a}>{a}</option>)}
+                </select>
+              </label>
+            )}
             <label>
               <span>Item</span>
               <select

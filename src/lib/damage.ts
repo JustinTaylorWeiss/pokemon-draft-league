@@ -1,5 +1,5 @@
 import type { Move, Pokemon, StatKey, TypeChart, TypeName } from '../data/types'
-import { defensiveMultiplier } from './matchup'
+import { DEFENSIVE_ABILITIES, defensiveMultiplier } from './matchup'
 import { natureMultiplier, statAtLevel } from './stats'
 
 /**
@@ -61,6 +61,36 @@ const ITEM_TYPE: Record<string, TypeName> = {
 /** Items that change how hard a hit is taken. */
 const ITEM_DEFENSE: Record<string, { stat: StatKey; mult: number }> = {
   'Assault Vest': { stat: 'spd', mult: 1.5 },
+}
+
+/**
+ * Every ability and item this calculation actually reads.
+ *
+ * For the picker that hands them out: offering a Pokémon an ability that
+ * changes nothing here is offering it a control that does nothing, and the
+ * reader cannot tell which is which by looking. Built from the tables
+ * themselves so it cannot drift out of step with them.
+ *
+ * `itemMatters` is per Pokémon, because two of them are: Eviolite does
+ * nothing to something fully grown, and a Light Ball is Pikachu's alone.
+ */
+export const MODELLED_ABILITIES: ReadonlySet<string> = new Set([
+  ...DEFENSIVE_ABILITIES,
+  'Adaptability', 'Huge Power', 'Pure Power', 'Fur Coat', 'Ice Scales',
+  'Multiscale', 'Shadow Shield',
+])
+
+const ALWAYS_MATTERS = new Set([
+  ...Object.keys(ITEM_ATTACK),
+  ...Object.keys(ITEM_TYPE),
+  ...Object.keys(ITEM_DEFENSE),
+  'Expert Belt', 'Choice Scarf', 'Air Balloon',
+])
+
+export function itemMatters(item: string, pokemon: Pokemon): boolean {
+  if (item === 'Eviolite') return Boolean(pokemon.evos?.length)
+  if (item === 'Light Ball') return (pokemon.baseSpecies ?? pokemon.name) === 'Pikachu'
+  return ALWAYS_MATTERS.has(item)
 }
 
 export interface Side {
