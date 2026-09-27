@@ -999,6 +999,73 @@ button.type-chip { cursor: pointer; }
   color: var(--bg); font-weight: 600;
 }
 
+/* Its four, chosen behind a button. The same width as everything else down
+   this column; the panel it opens is wider than that, because a move's name,
+   its category and its type do not fit in twelve rems. */
+.ev-set { position: relative; width: var(--ev-control); }
+.ev-set-open {
+  display: flex; align-items: center; justify-content: space-between; gap: 0.4rem;
+  width: 100%; height: 1.55rem; padding: 0 0.5rem 0 0.7rem;
+  background: var(--chip); border: 1px solid var(--line); border-radius: 999px;
+  color: var(--fg); font: inherit; font-size: 0.75rem; cursor: pointer;
+}
+.ev-set-open:hover { border-color: var(--team-accent, var(--accent)); }
+.ev-set-open em {
+  font-style: normal; font-size: 0.68rem; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.ev-set-pop {
+  position: absolute; top: calc(100% + 0.3rem); left: 0; z-index: 21;
+  display: flex; flex-direction: column; gap: 0.4rem;
+  padding: 0.55rem; width: 17rem; max-width: 80vw;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 45%);
+}
+.ev-set-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem;
+  margin: 0; font-size: 0.75rem; font-weight: 700;
+}
+.ev-set-head .link-btn { font-size: 0.68rem; font-weight: 500; }
+.ev-set-slots { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+/* One row per slot, filled or not, so how many are left to choose is
+   something you can see rather than something you count. */
+.ev-set-slot {
+  display: flex; align-items: center; gap: 0.35rem; width: 100%;
+  padding: 0.2rem 0.3rem 0.2rem 0.35rem; border-radius: 7px;
+  background: var(--chip); border: 1px solid var(--line); color: var(--fg);
+  font: inherit; font-size: 0.72rem; text-align: left;
+}
+button.ev-set-slot { cursor: pointer; }
+button.ev-set-slot:hover { border-color: #e05563; }
+button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
+.ev-set-slot.is-empty {
+  color: var(--muted); border-style: dashed; background: none;
+  justify-content: center; font-size: 0.68rem;
+}
+.ev-set-slot .type-chip { min-width: 0; font-size: 0.58rem; padding: 0.05rem 0.35rem; margin-left: auto; }
+.ev-set-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ev-set-pop input {
+  height: 1.5rem; padding: 0 0.5rem; font-size: 0.75rem;
+  background: var(--chip); border: 1px solid var(--line); border-radius: 999px;
+  color: var(--fg); font-family: inherit;
+}
+.ev-set-pop input:focus-visible { outline: 2px solid var(--team-accent, var(--accent)); outline-offset: 1px; }
+.ev-set-list {
+  list-style: none; margin: 0; padding: 0;
+  max-height: 13rem; overflow-y: auto;
+}
+.ev-set-list button {
+  width: 100%; display: flex; align-items: center; gap: 0.4rem;
+  background: none; border: 0; border-radius: 6px; cursor: pointer;
+  padding: 0.24rem 0.35rem; font: inherit; font-size: 0.74rem;
+  color: var(--fg); text-align: left;
+}
+.ev-set-list button:hover:not(:disabled) { background: var(--chip); }
+.ev-set-list button:disabled { opacity: 0.4; cursor: default; }
+.ev-set-list button.is-chosen { color: var(--team-accent, var(--accent)); font-weight: 600; }
+.ev-set-list em { font-style: normal; font-size: 0.64rem; color: var(--muted); margin-left: auto; white-space: nowrap; }
+.ev-set-none { padding: 0.3rem 0.35rem; color: var(--muted); font-size: 0.72rem; }
+
 .ev-add { position: relative; display: inline-flex; }
 .ev-add input {
   height: 1.55rem; width: var(--ev-control); padding: 0 0.5rem; font-size: 0.75rem;

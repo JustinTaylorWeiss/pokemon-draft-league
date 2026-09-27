@@ -5,8 +5,9 @@ import {
   GIVEABLE_ITEMS, MODELLED_ABILITIES, itemEffect, itemMatters, typeBoosted,
 } from '../../lib/damage'
 import {
-  ASSUME_BARE, EV_BUDGET, EV_MAX, EV_STATS, EV_STEP, emptySpread, opponentsFrom, planFor,
-  spent, statOfSpread, type Assume, type Assumptions, type Spread, type Threshold,
+  ASSUME_BARE, EV_BUDGET, EV_MAX, EV_STATS, EV_STEP, SET_SIZE, emptySpread, opponentsFrom,
+  planFor, spent, statOfSpread, usualMoves,
+  type Assume, type Assumptions, type Spread, type Threshold,
 } from '../../lib/evPlan'
 import { Sprite } from '../../components/Sprite'
 import { MoveCategory } from '../../components/MoveCategory'
@@ -540,6 +541,17 @@ export function EvCalcBody({
   const [query, setQuery] = useState('')
   /** Which shape to read it in, for the ones that have more than one. */
   const [shape, setShape] = useState<string | null>(null)
+  /**
+   * The four it is throwing, where somebody has said.
+   *
+   * Null is not "no moves" but "nobody has said" — the set it is usually
+   * seen with stands in until then, so the Attack and Special Attack
+   * columns are populated before the overlay has ever been opened, and
+   * opening it and closing it again changes nothing.
+   */
+  const [myset, setMyset] = useState<string[] | null>(null)
+  const [movesOpen, setMovesOpen] = useState(false)
+  const [moveQuery, setMoveQuery] = useState('')
   /** Items and abilities given out by hand, on either side. */
   const [gear, setGear] = useState<Record<string, Gear>>({})
   const give = (id: string, next: Gear) => setGear((prev) => ({ ...prev, [id]: next }))
@@ -579,21 +591,45 @@ export function EvCalcBody({
     return null
   }, [chosen, shape, dex, teamOne, teamTwo])
 
-  /** My own four, from the usage set where there is one and the pool where not. */
-  const myMoves: Move[] = useMemo(() => {
-    if (!picked) return []
-    const set = sets?.[picked.entry.id]
-    const known = (set?.moves ?? [])
-      .map((m) => moves[m])
-      .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0)
+  /** The four it would be seen with, standing in until somebody says otherwise. */
+  const usual: Move[] = useMemo(() => (picked
+    ? usualMoves(
+      picked.entry.pokemon, sets?.[picked.entry.id],
+      learnsets?.[picked.entry.id], moves, played,
+    )
+    : []), [picked, sets, learnsets, moves, played])
 
-    // Same standing-in the other side gets, and the same named moves, through
-    // the same door — a move named by hand belongs to whoever can learn it,
-    // and that includes this one.
-    return opponentsFrom(
-      [picked.entry], known.length ? sets : null, moves, learnsets, played, level, {}, extra,
-    )[0].moves
-  }, [picked, sets, moves, learnsets, played, level, extra])
+  /**
+   * My own four. Exactly four, and exactly the ones named: the Attack and
+   * Special Attack columns are the case for spending EVs on a move, and a
+   * case built on a move this Pokémon is not carrying is not a case.
+   */
+  const myMoves: Move[] = useMemo(() => (myset
+    ? myset.map((id) => moves[id]).filter((m): m is Move => Boolean(m))
+    : usual), [myset, usual, moves])
+  const setIds = useMemo(() => myMoves.map((m) => toId(m.name)), [myMoves])
+
+  /**
+   * What it could be throwing instead, popular first.
+   *
+   * Its whole damaging movepool, ordered by how often the format clicks each
+   * one, so the four or five worth considering are at the top and the long
+   * tail of universal TMs is below them rather than mixed in alphabetically.
+   */
+  const movePool = useMemo(() => {
+    if (!picked || !movesOpen) return []
+    const rank = new Map(played.map((id, i) => [id, i]))
+    const q = moveQuery.trim().toLowerCase()
+    return Object.keys(learnsets?.[picked.entry.id] ?? {})
+      .map((id) => moves[id])
+      .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0
+        && (!q || m.name.toLowerCase().includes(q)))
+      .sort((a, b) => (rank.get(toId(a.name)) ?? played.length)
+        - (rank.get(toId(b.name)) ?? played.length)
+        || b.basePower - a.basePower
+        || a.name.localeCompare(b.name))
+      .slice(0, 60)
+  }, [picked, movesOpen, moveQuery, learnsets, moves, played])
 
   const opponents = useMemo(
     () => (picked
@@ -621,15 +657,16 @@ export function EvCalcBody({
    * Filtered against the other side rather than the whole move list: a move
    * none of them has is a move that would be added to nobody, and offering
    * it is offering a button that does nothing.
+   *
+   * The other side only. This Pokémon's own four are chosen in the overlay
+   * under the picker now, and a second way in that quietly made it five
+   * would undercut the first.
    */
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (q.length < 2 || !picked) return []
     const legal = new Set<string>()
-    // Both sides: a move added to this Pokémon fills out what it can threaten
-    // with, and one added to theirs fills out what it has to survive. Which
-    // of those happens is decided by who can learn it, not by who typed it.
-    for (const m of [picked.entry, ...picked.foes]) {
+    for (const m of picked.foes) {
       for (const id of Object.keys(learnsets?.[m.id] ?? {})) legal.add(id)
     }
     return [...legal]
@@ -647,6 +684,22 @@ export function EvCalcBody({
     setSpread(emptySpread())
     setOff(new Set())
     setShape(null)
+    forgetSet()
+  }
+
+  /** Back to whatever the new Pokémon, or the new shape, is usually seen with. */
+  const forgetSet = () => {
+    setMyset(null)
+    setMovesOpen(false)
+    setMoveQuery('')
+  }
+
+  const dropFromSet = (id: string) => setMyset(setIds.filter((x) => x !== id))
+  const addToSet = (move: Move) => {
+    const id = toId(move.name)
+    if (setIds.includes(id) || setIds.length >= SET_SIZE) return
+    setMyset([...setIds, id])
+    setMoveQuery('')
   }
 
   const addMove = (move: Move) => {
@@ -740,12 +793,109 @@ export function EvCalcBody({
                   className="ev-seg"
                   aria-pressed={(shape ?? picked?.own) === f.id}
                   title={f.pokemon.name}
-                  onClick={() => setShape(f.id)}
+                  onClick={() => { setShape(f.id); forgetSet() }}
                 >
                   {f.pokemon.forme ?? 'Base'}
                 </button>
               ))}
             </span>
+          )}
+
+          {/* Its four, which the Attack and Special Attack columns are the
+              case for. Behind a button rather than always open: it is
+              answered once per Pokemon and right most of the time, and the
+              columns are what the tab is for. */}
+          {picked && (
+            <div className="ev-set">
+              <button
+                type="button"
+                className="ev-set-open"
+                aria-expanded={movesOpen}
+                onClick={() => setMovesOpen((v) => !v)}
+              >
+                Choose move set
+                <em>{myMoves.length}/{SET_SIZE}</em>
+              </button>
+
+              {movesOpen && (
+                <>
+                  <button
+                    type="button" className="ev-gear-away" aria-label="Close"
+                    onClick={() => setMovesOpen(false)}
+                  />
+                  <div className="ev-set-pop">
+                    <p className="ev-set-head">
+                      <span>{picked.entry.pokemon.name}</span>
+                      {myset && (
+                        <button type="button" className="link-btn" onClick={forgetSet}>
+                          Usual set
+                        </button>
+                      )}
+                    </p>
+
+                    {/* The slots as they stand, each its own way out of
+                        itself. Empty ones are drawn rather than left out, so
+                        the number still to choose is a thing you can see. */}
+                    <ol className="ev-set-slots">
+                      {Array.from({ length: SET_SIZE }, (_, i) => {
+                        const move = myMoves[i]
+                        return (
+                          <li key={i}>
+                            {move ? (
+                              <button
+                                type="button"
+                                className="ev-set-slot"
+                                title={`Drop ${move.name}`}
+                                onClick={() => dropFromSet(toId(move.name))}
+                              >
+                                <MoveCategory category={move.category} />
+                                <span className="ev-set-name">{move.name}</span>
+                                <TypeChip type={move.type} />
+                                <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
+                              </button>
+                            ) : (
+                              <span className="ev-set-slot is-empty">Empty</span>
+                            )}
+                          </li>
+                        )
+                      })}
+                    </ol>
+
+                    <input
+                      type="search" value={moveQuery} placeholder="Search its moves…"
+                      aria-label={`Search ${picked.entry.pokemon.name}'s moves`}
+                      onChange={(e) => setMoveQuery(e.target.value)}
+                    />
+
+                    {/* Damaging only. These four fill the Attack and Special
+                        Attack columns, and a status move puts nothing in
+                        either — offering one would be offering a slot that
+                        changes no number on the page. */}
+                    <ul className="ev-set-list">
+                      {movePool.map((m) => (
+                        <li key={m.name}>
+                          <button
+                            type="button"
+                            className={setIds.includes(toId(m.name)) ? 'is-chosen' : undefined}
+                            disabled={!setIds.includes(toId(m.name)) && setIds.length >= SET_SIZE}
+                            onClick={() => (setIds.includes(toId(m.name))
+                              ? dropFromSet(toId(m.name))
+                              : addToSet(m))}
+                          >
+                            <MoveCategory category={m.category} />
+                            <span className="ev-set-name">{m.name}</span>
+                            <em>{m.type} · {m.basePower}</em>
+                          </button>
+                        </li>
+                      ))}
+                      {movePool.length === 0 && (
+                        <li className="ev-set-none">Nothing matches.</li>
+                      )}
+                    </ul>
+                  </div>
+                </>
+              )}
+            </div>
           )}
 
           {picked && (

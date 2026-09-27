@@ -261,6 +261,42 @@ function likelyMoves(
   return pick(learnable)
 }
 
+/** How many moves a set holds. Four, everywhere, forever. */
+export const SET_SIZE = 4
+
+/**
+ * The four this Pokémon is usually seen throwing.
+ *
+ * Its most-used set first, in the order that set lists them, and then topped
+ * up from what the format plays that it can learn. Two reasons for the
+ * topping up: a set is four moves and some of them are Protect and Tailwind,
+ * so the damaging half can be one or two; and a few hundred Pokémon have no
+ * usage set at all, for whom the played list is the only thing there is.
+ *
+ * Damaging only. These four exist to fill the Attack and Special Attack
+ * columns, and a status move puts nothing in either.
+ */
+export function usualMoves(
+  pokemon: Pokemon,
+  set: { moves: string[] } | undefined,
+  learnset: Record<string, unknown> | undefined,
+  moveDex: MoveDex,
+  played: string[] | null,
+  limit = SET_SIZE,
+): Move[] {
+  const out: Move[] = []
+  const seen = new Set<string>()
+  const take = (m: Move | undefined) => {
+    if (!m || seen.has(m.name) || out.length >= limit) return
+    if (m.category === 'Status' || m.basePower <= 0) return
+    seen.add(m.name)
+    out.push(m)
+  }
+  for (const id of set?.moves ?? []) take(moveDex[id])
+  for (const m of likelyMoves(pokemon, learnset, moveDex, played)) take(m)
+  return out
+}
+
 /**
  * The other team, each member dressed in the set it is most often seen in.
  *
