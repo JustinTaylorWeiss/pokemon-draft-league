@@ -50,12 +50,19 @@ export const DEFENSIVE_ABILITIES: ReadonlySet<string> = new Set([
 /**
  * Damage multiplier for one attacking type against one Pokémon.
  * `useAbilities` mirrors DraftZone's toggle: off gives raw type math.
+ *
+ * `only` is for a caller that knows which ability this Pokémon has. Without
+ * it every ability the species can have is read, which is the right answer
+ * for a draft chart — "this could be Levitate" is what a coach needs to see
+ * before picking — and the wrong one for a damage calculation, where the
+ * Pokémon in front of you has exactly one and it is known.
  */
 export function defensiveMultiplier(
   chart: TypeChart,
   attacking: TypeName,
   pokemon: Pokemon,
   useAbilities = true,
+  only?: string,
 ): number {
   let mult = pokemon.types.reduce(
     (acc, def) => acc * (chart.chart[attacking]?.[def] ?? 1),
@@ -63,7 +70,7 @@ export function defensiveMultiplier(
   )
   if (!useAbilities) return mult
 
-  const abilities = Object.values(pokemon.abilities)
+  const abilities = only != null ? [only] : Object.values(pokemon.abilities)
 
   // Wonder Guard overrides everything else it could stack with.
   if (abilities.includes('Wonder Guard')) return mult > 1 ? mult : 0

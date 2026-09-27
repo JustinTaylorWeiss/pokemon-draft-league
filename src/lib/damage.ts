@@ -233,47 +233,42 @@ const NO_HIT = (hp: number, via: string[] = []): Hit =>
   ({ rolls: [], hp, via, worstCase: Infinity, bestCase: Infinity })
 
 /**
- * How hard `move` lands, thrown by `attacker` at `defender`.
+ * The numbers alone, with nothing said about why they are what they are.
  *
- * `doubles` only matters for the moves that hit more than one Pokémon, which
- * take a quarter off in a format where there is more than one to hit.
+ * Split out so `damage` can ask it the same question with one thing taken
+ * away, which is how it works out what to credit.
  */
-export function damage(
+function core(
   attacker: Side,
   defender: Side,
   move: Move,
   chart: TypeChart,
   doubles: boolean,
-): Hit {
+): { rolls: number[]; hp: number } {
   const hp = statOf(defender, 'hp')
-  if (move.category === 'Status' || move.basePower <= 0) return NO_HIT(hp)
+  if (move.category === 'Status' || move.basePower <= 0) return { rolls: [], hp }
 
-  const effect = defensiveMultiplier(chart, move.type, defender.pokemon, true)
-  if (effect === 0) {
-    // Named even here: an ability is why nothing lands, and that is the most
-    // worth saying of all.
-    const why = defender.ability && MODELLED_ABILITIES.has(defender.ability) ? [defender.ability] : []
-    return NO_HIT(hp, why)
-  }
+  /*
+   * The one it has, and only that one — an empty string where it has none.
+   *
+   * Every ability the species could have is the right reading for a draft
+   * chart, where "this could be Levitate" is what a coach needs before
+   * picking, and the wrong one here, where the Pokémon in front of you has
+   * exactly one and it is known. Reading all of them made a Rotom-Heat
+   * immune to Ground on the strength of a Levitate it is not running.
+   *
+   * Empty rather than absent so that taking an ability away means taking it
+   * away. Passing nothing would fall back to the whole list, which is how
+   * the credit below would conclude that Levitate changed nothing.
+   */
+  const effect = defensiveMultiplier(
+    chart, move.type, defender.pokemon, true, defender.ability ?? '',
+  )
+  if (effect === 0) return { rolls: [], hp }
 
   const physical = move.category === 'Physical'
   const atk = statOf(attacker, physical ? 'atk' : 'spa')
   const def = statOf(defender, physical ? 'def' : 'spd')
-
-  const via: string[] = []
-  // What each side brought that this particular hit reads. The stat above
-  // has already taken the ones that work on a stat; these are named so a
-  // row can say why its number is what it is.
-  const note = (what: string | undefined) => { if (what && !via.includes(what)) via.push(what) }
-  if (attacker.ability && MODELLED_ABILITIES.has(attacker.ability)) note(attacker.ability)
-  if (defender.ability && MODELLED_ABILITIES.has(defender.ability)) note(defender.ability)
-  if (physical && attacker.item === 'Choice Band') note(attacker.item)
-  if (!physical && attacker.item === 'Choice Specs') note(attacker.item)
-  if (physical && attacker.item === 'Muscle Band') note(attacker.item)
-  if (!physical && attacker.item === 'Wise Glasses') note(attacker.item)
-  if (attacker.item === 'Light Ball' && (attacker.pokemon.baseSpecies ?? attacker.pokemon.name) === 'Pikachu') note(attacker.item)
-  if (defender.item === 'Eviolite' && defender.pokemon.evos?.length) note(defender.item)
-  if (!physical && defender.item === 'Assault Vest') note(defender.item)
 
   // The games' own order: three integer divisions, then the modifiers.
   let base = Math.floor(
@@ -289,16 +284,13 @@ export function damage(
     : 1
 
   const boost = attacker.item ? ITEM_ATTACK[attacker.item] : undefined
-  if (attacker.item === 'Life Orb') note(attacker.item)
   const typed = attacker.item && ITEM_TYPE[attacker.item] === move.type ? 1.2 : 1
-  if (typed !== 1) note(attacker.item)
   const itemMult = (boost && (!boost.category || boost.category === move.category) ? boost.mult : 1)
     * typed
   // Multiscale reads the defender's HP, and here the defender is always at
   // full: these are first-hit questions. Half damage, and it says so.
   const shield = defender.ability === 'Multiscale' || defender.ability === 'Shadow Shield' ? 0.5 : 1
   const belt = attacker.item === 'Expert Belt' && effect > 1 ? 1.2 : 1
-  if (belt !== 1) note(attacker.item)
   const after = itemMult * shield * belt
 
   const rolls: number[] = []
@@ -310,6 +302,56 @@ export function damage(
     rolls.push(Math.max(1, d))
   }
 
+  return { rolls, hp }
+}
+
+/**
+ * How hard `move` lands, thrown by `attacker` at `defender`.
+ *
+ * `doubles` only matters for the moves that hit more than one Pokémon, which
+ * take a quarter off in a format where there is more than one to hit.
+ */
+export function damage(
+  attacker: Side,
+  defender: Side,
+  move: Move,
+  chart: TypeChart,
+  doubles: boolean,
+): Hit {
+  const { rolls, hp } = core(attacker, defender, move, chart, doubles)
+
+  /*
+   * What gets named is what made a difference — worked out by taking each
+   * one away and asking again.
+   *
+   * Every other rule drifts. Thick Fat halves a Fire move and does nothing
+   * to a Water one; it is the defender's ability and never the attacker's,
+   * so Venusaur's does not explain how hard its Sludge Bomb hit; an Expert
+   * Belt only counts against something it is super effective against. Each
+   * of those was a hand-written condition beside its credit, and the list
+   * of conditions is exactly as long as the list of things modelled.
+   */
+  const via: string[] = []
+  const unchanged = (a: Side, d: Side) => {
+    const other = core(a, d, move, chart, doubles)
+    return other.hp === hp
+      && other.rolls.length === rolls.length
+      && other.rolls.every((r, i) => r === rolls[i])
+  }
+  for (const key of ['ability', 'item'] as const) {
+    const what = attacker[key]
+    if (what && !via.includes(what) && !unchanged({ ...attacker, [key]: undefined }, defender)) {
+      via.push(what)
+    }
+  }
+  for (const key of ['ability', 'item'] as const) {
+    const what = defender[key]
+    if (what && !via.includes(what) && !unchanged(attacker, { ...defender, [key]: undefined })) {
+      via.push(what)
+    }
+  }
+
+  if (!rolls.length) return NO_HIT(hp, via)
   return {
     rolls,
     hp,
