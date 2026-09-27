@@ -103,6 +103,13 @@ export interface Threshold {
   tieAt?: number
   /** Attack and Special Attack rows: what it is doing to them as things stand. */
   shot?: Shot
+  /**
+   * Which sweep of the other side this row belongs to: 0 for each Pokémon's
+   * best move, 1 for its second, and so on.
+   *
+   * The list is ordered by it, and the column draws a line where it changes.
+   */
+  pass?: number
 }
 
 /**
@@ -710,7 +717,7 @@ export function planFor(input: PlanInput): Plan {
       }
       for (const rows of byTarget.values()) {
         rows.sort(nearest)
-        rows.forEach((r, i) => pass.set(r, i))
+        rows.forEach((r, i) => { pass.set(r, i); r.pass = i })
       }
       out[stat].sort((a, b) => (pass.get(a) ?? 0) - (pass.get(b) ?? 0)
         || nearest(a, b)

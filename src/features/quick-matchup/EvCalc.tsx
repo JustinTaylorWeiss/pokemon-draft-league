@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from 'react'
+import { Fragment, useMemo, useState, type CSSProperties } from 'react'
 import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../../data/types'
 import { STAT_LABELS } from '../../lib/stats'
 import {
@@ -150,6 +150,9 @@ function ShotOutcome({ shot, chance }: { shot: Shot; chance: number }) {
     </span>
   )
 }
+
+/** What each sweep of the other side is, above the rows that make it up. */
+const PASS_LABEL = ['Best move', '2nd best', '3rd best', '4th best']
 
 /** A percentage of someone's HP, to one place, without a trailing zero. */
 const pct = (n: number) => `${Math.round(n * 10) / 10}`
@@ -319,6 +322,7 @@ function StatRows({ stat, evs, rows, faces, note }: {
 }) {
   const reachable = rows.filter((r) => !r.unreachable)
   const beyond = rows.filter((r) => r.unreachable)
+  const passes = new Set(reachable.map((r) => r.pass ?? 0)).size
 
   /*
    * Taking a hit is lit by the odds, not by the guaranteed count.
@@ -372,18 +376,21 @@ function StatRows({ stat, evs, rows, faces, note }: {
           <ul className="ev-rows">
             {reachable.map((r, i) => {
               const key = `${r.target}-${r.move ?? r.tier}-${i}`
-              return r.shot
-                ? (
-                  <ShotRow
-                    key={key} row={r} shot={r.shot}
-                    lit={lit(r)} tied={tied(r)} target={faces[r.target]}
-                  />
-                )
-                : (
-                  <ThresholdRow
-                    key={key} row={r} lit={lit(r)} tied={tied(r)} target={faces[r.target]}
-                  />
-                )
+              return (
+                <Fragment key={key}>
+                  {/* A line and a word where the sweep changes: everything
+                      above is each Pokemon's best answer, everything below
+                      its second. Only where there is more than one to tell
+                      apart — a column with one row per Pokemon has nothing
+                      to separate. */}
+                  {passes > 1 && r.pass != null && r.pass !== reachable[i - 1]?.pass && (
+                    <li className="ev-pass" aria-hidden="true">{PASS_LABEL[r.pass] ?? `${r.pass + 1}th best`}</li>
+                  )}
+                  {r.shot
+                    ? <ShotRow row={r} shot={r.shot} lit={lit(r)} tied={tied(r)} target={faces[r.target]} />
+                    : <ThresholdRow row={r} lit={lit(r)} tied={tied(r)} target={faces[r.target]} />}
+                </Fragment>
+              )
             })}
           </ul>
           {/* Held apart, because these are not more of the list above. That
@@ -1015,7 +1022,7 @@ export function EvCalcBody({
                   Added to everyone over there who can learn it. */}
               <span className="ev-add">
                 <input
-                  type="search" value={query} placeholder="Add a move…"
+                  type="search" value={query} placeholder="Add a move to enemy team…"
                   aria-label="Add a move the other side might carry"
                   onChange={(e) => setQuery(e.target.value)}
                 />

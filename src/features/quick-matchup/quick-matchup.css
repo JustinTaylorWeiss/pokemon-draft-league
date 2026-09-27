@@ -1210,6 +1210,18 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 /* Set below what the stat can buy, with air between, because it is the other
    answer rather than the end of the same one. */
 .ev-beyond { margin-top: 0.5rem; }
+/* Where one sweep of the other side ends and the next begins. A rule with
+   the word sitting on it, rather than a row of its own: it is a label for
+   what follows, not an entry in the list. */
+.ev-pass {
+  display: flex; align-items: center; gap: 0.4rem;
+  margin: 0.45rem 0 0.15rem; font-size: 0.58rem; font-weight: 700;
+  letter-spacing: 0.07em; text-transform: uppercase; color: var(--muted);
+}
+.ev-pass::after {
+  content: ''; flex: 1 1 auto; height: 1px; background: var(--line);
+}
+.ev-rows > .ev-pass:first-child { margin-top: 0; }
 /* Two prices, one over the other: EVs spent, and the number the stat has to
    reach. A rule between them, because they are not a sum. */
 .ev-cost {
