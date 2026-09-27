@@ -92,11 +92,6 @@
   font-size: 1.5rem; font-weight: 800; letter-spacing: -0.02em;
 }
 .season-picker .drop-caret { font-size: 1rem; color: var(--nav-blue); }
-.season-picker .drop-current:hover { border-color: var(--nav-blue); }
-.season-picker .drop-current:hover .drop-caret { color: var(--nav-blue); }
-.season-picker .drop-current:focus-visible { outline-color: var(--nav-blue); }
-.season-picker .drop-list button.is-current { color: var(--nav-blue); }
-.season-picker .drop-list button:focus-visible { outline-color: var(--nav-blue); }
 /* Anchored to its right edge: it is the last thing in the bar, and a list
    hanging off the left would run past the window. */
 .season-picker .drop-list { left: auto; right: 0; }
@@ -446,8 +441,11 @@
   padding: 0.3rem 0.7rem; border-radius: 999px; white-space: nowrap;
   background: var(--chip); border: 1px solid var(--line); color: var(--muted);
 }
-.sub-actions button:hover { color: var(--accent); border-color: var(--accent); }
-.sub-actions button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* Red, not the app's purple: these sit in the secondary bar and the tabs
+   beside them are red. Focus follows hover — one control should not answer
+   the pointer in one colour and the keyboard in another. */
+.sub-actions button:hover { color: var(--nav-red); border-color: var(--nav-red); }
+.sub-actions button:focus-visible { outline: 2px solid var(--nav-red); outline-offset: 1px; }
 
 /* Both top-bar pickers: a button, and a list that always opens under it. */
 .drop-picker { position: relative; }
@@ -459,6 +457,13 @@
 }
 .drop-current:hover { border-color: var(--accent); }
 .drop-current:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* In the primary bar they take its blue. Written once for every picker up
+   there rather than per picker: the season one had its own copy of this. */
+.topbar .drop-current:hover { border-color: var(--nav-blue); }
+.topbar .drop-current:focus-visible { outline-color: var(--nav-blue); }
+.topbar .drop-current:hover .drop-caret { color: var(--nav-blue); }
+.topbar .drop-list button.is-current { color: var(--nav-blue); }
+.topbar .drop-list button:focus-visible { outline-color: var(--nav-blue); }
 .drop-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Big enough to read as the control it is, since the button is otherwise just
    a name and nothing says it opens. */

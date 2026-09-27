@@ -535,11 +535,9 @@ button.type-chip { cursor: pointer; }
    the window's edge. */
 .analysis-body { min-width: 0; padding: 0 4px; }
 .analysis-note { margin: 0.6rem 4px 0; color: var(--muted); font-size: 0.72rem; }
-/* Controls sit against the tabs, not a card header, and take the bar's red
-   rather than the app's purple on hover and focus. */
+/* Controls sit against the tabs, not a card header. The red on them comes
+   from the shared `.sub-actions` rules, the league's bar included. */
 .matchup-bar .sub-actions { flex-wrap: wrap; row-gap: 0.4rem; }
-.matchup-bar .sub-actions button:hover { color: var(--nav-red); border-color: var(--nav-red); }
-.matchup-bar .sub-actions button:focus-visible { outline-color: var(--nav-red); }
 /*
  * Filled when it is on, not merely tinted.
  *
@@ -559,9 +557,17 @@ button.type-chip { cursor: pointer; }
   color: var(--bg);
 }
 .pill-toggle[aria-pressed="true"]:hover { filter: brightness(1.08); }
-/* Safe to reach for the accent again now that "on" is a fill rather than a
-   tint — an outline and a filled pill cannot be mistaken for each other. */
-.pill-toggle[aria-pressed="false"]:hover { color: var(--nav-red); border-color: var(--nav-red); }
+/*
+ * The one control in this bar that does not take the bar's red on hover.
+ *
+ * Every other button here does something when clicked; these two say what
+ * state the page is in. A red hover on an off toggle, sitting beside an on
+ * toggle that is red, is the pointer answering in the same colour as the
+ * state — which is what made it impossible to tell you had switched one off.
+ * Lifting it toward the foreground says "you are on this" without saying
+ * anything about whether it is on.
+ */
+.pill-toggle[aria-pressed="false"]:hover { color: var(--fg); border-color: var(--muted); }
 
 /* Cards run to their full height: no panel scrolls inside itself, so the page
    is the only scroller and a trackpad never gets trapped in a nested box. */
