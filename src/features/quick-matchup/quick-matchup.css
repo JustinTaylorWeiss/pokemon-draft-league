@@ -915,10 +915,10 @@ button.type-chip { cursor: pointer; }
 /* The label over its segments rather than beside them: three of these in a
    row read as one long sentence otherwise, and which words belong to which
    control is the first thing you need. */
-.ev-assume { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 0.15rem; }
+.ev-assume { display: inline-flex; flex-direction: column; align-items: center; gap: 0.15rem; }
 .ev-assume-what {
   font-size: 0.62rem; font-weight: 700; letter-spacing: 0.05em; color: var(--muted);
-  text-transform: uppercase; white-space: nowrap;
+  text-transform: uppercase; white-space: nowrap; text-align: center;
 }
 /* Joined segments, the same shape the nature buttons in each column use. */
 .ev-assume-seg { display: inline-flex; }
