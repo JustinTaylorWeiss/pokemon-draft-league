@@ -400,9 +400,10 @@ function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
         title={chosen.length ? chosen.join(' · ') : `Give ${pokemon.name} an item or ability`}
         onClick={() => setOpen((v) => !v)}
       >
-        {chosen.length
-          ? chosen.map((what) => <span key={what}>{what}</span>)
-          : '+'}
+        {chosen.map((what) => <span key={what}>{what}</span>)}
+        {/* Always last, so the way in sits below whatever has been said
+            rather than being replaced by it. */}
+        <span className="ev-gear-more" aria-hidden="true">+</span>
       </button>
 
       {open && (

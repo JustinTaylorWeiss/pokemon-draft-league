@@ -1167,6 +1167,10 @@ button.type-chip { cursor: pointer; }
 }
 .ev-gear-open { max-width: 7.5rem; }
 .ev-gear-open > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The plus keeps its place at the bottom whether or not there is anything
+   above it, so the thing you click is always where you left it. */
+.ev-gear-more { color: var(--muted); line-height: 1; }
+.ev-gear-open.has-gear .ev-gear-more { font-size: 0.55rem; opacity: 0.7; }
 .ev-gear-open:hover { color: var(--fg); border-color: var(--muted); }
 .ev-gear-open.has-gear {
   border-style: solid; border-color: var(--team-accent, var(--accent));
