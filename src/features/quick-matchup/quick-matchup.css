@@ -1495,8 +1495,11 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
  */
 .ev-gear-line {
   display: grid; grid-template-columns: 1fr 1fr;
-  align-items: center; gap: 0.35rem 0.5rem;
+  align-items: center; justify-items: stretch; gap: 0.35rem 0.5rem;
 }
+/* Each fills the half it is given rather than sizing to its own words,
+   so the two are the same pill however much either has to say. */
+.ev-gear-line > * { width: 100%; min-width: 0; }
 .ev-gear-line > :only-child { grid-column: 1 / -1; }
 /* A badge beside the IV one and the same shape, sharing the line evenly
    with it: two facts about the spread, neither more important. It takes
