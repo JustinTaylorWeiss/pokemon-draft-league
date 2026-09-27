@@ -87,7 +87,7 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
           */}
         <div className="speed-level">
           <h3 title={`31 IVs, no EVs, neutral nature, at level ${level}`}>
-            Lv {level} <span className="is-inline">+ IVs</span>
+            Lv {level} <span>+ IVs</span>
           </h3>
           <ul>
             {bases.map((b) => (
@@ -103,7 +103,7 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
 
         <div className="speed-evs">
           <h3 title={`252 EVs, 31 IVs, neutral nature, at level ${level}`}>
-            Lv {level} <span className="is-inline">+ IVs + Max EVs</span>
+            Lv {level} <span>+ IVs + Max EVs</span>
           </h3>
           <ul>
             {bases.map((b) => (
@@ -119,7 +119,7 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
 
         <div className="speed-max">
           <h3 title={`252 EVs, 31 IVs, a positive nature, at level ${level}`}>
-            Lv {level} <span className="is-inline">+ IVs + Max EVs + Nature</span>
+            Lv {level} <span>+ IVs + Max EVs + Nature</span>
           </h3>
           <ul>
             {bases.map((b) => (
@@ -134,7 +134,7 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
         </div>
 
         <div className="speed-groups">
-          <h3>Tiers <span>Lv {level}</span></h3>
+          <h3>Lv {level} Tiers</h3>
           <ul>
             {all.map((t, i) => (
               <li key={`${t.id}-${t.investment}-${t.stage ?? ''}-${t.modifiers.join()}-${i}`} className={rowClass(t.id)}>
