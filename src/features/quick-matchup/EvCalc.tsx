@@ -308,12 +308,22 @@ function GearPicker({ pokemon, items, gear, onChange }: {
   const [open, setOpen] = useState(false)
   const chosen = [gear?.ability, gear?.item].filter(Boolean)
 
-  // Only what this calculation reads. An ability that changes nothing here
-  // is a control that does nothing, and there is no way to tell from the
-  // name which is which — the two lists are built from the same tables the
-  // damage maths uses, so they cannot drift apart from it.
-  const abilities = [...new Set(Object.values(pokemon.abilities))]
-    .filter((a) => MODELLED_ABILITIES.has(a))
+  /*
+   * All three, or none.
+   *
+   * Only offering the ones this calculation reads was half right: it kept
+   * out the Pokémon whose abilities change nothing here, but it also kept
+   * out the way to say a Pokémon is not running the one that does. Persian-
+   * Alola has Fur Coat, Technician and Rattled — two of those are nothing
+   * to these numbers and the third doubles its Defense, so the useful
+   * choice is between them, and choosing Technician is how you say it does
+   * not have Fur Coat.
+   *
+   * So: if any of them lands, all of them are offered. If none does, there
+   * is nothing to choose between and no picker.
+   */
+  const own = [...new Set(Object.values(pokemon.abilities))]
+  const abilities = own.some((a) => MODELLED_ABILITIES.has(a)) ? own : []
   /*
    * The type boosters kept apart from the rest.
    *
@@ -362,7 +372,11 @@ function GearPicker({ pokemon, items, gear, onChange }: {
                   onChange={(e) => onChange({ ...gear, ability: e.target.value })}
                 >
                   <option value="">its set{'’'}s</option>
-                  {abilities.map((a) => <option key={a} value={a}>{a}</option>)}
+                  {abilities.map((a) => (
+                  <option key={a} value={a}>
+                    {a}{MODELLED_ABILITIES.has(a) ? '' : ' — no effect here'}
+                  </option>
+                ))}
                 </select>
               </label>
             )}
