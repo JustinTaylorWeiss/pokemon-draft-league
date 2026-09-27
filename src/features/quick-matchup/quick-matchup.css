@@ -1186,19 +1186,19 @@ button.type-chip { cursor: pointer; }
 }
 .ev-gear {
   position: relative; display: inline-flex; flex-direction: column;
-  align-items: center; gap: 0.12rem; max-width: 100%;
+  align-items: center; gap: 0.15rem; max-width: 100%;
 }
-/* What has been said about it, above the way to say more. An ability and an
-   item are two facts, not one: stacked, each is read on its own line rather
-   than found inside a string. */
+/* What has been said about it, above the way to say more — one pill each.
+   A raised stat, an ability and an item are separate facts, and lines
+   inside a single outline read as one thing said at length rather than
+   three things said. */
 .ev-gear-chip {
-  display: flex; flex-direction: column; align-items: center;
-  max-width: 100%; padding: 0.05rem 0.3rem; line-height: 1.25;
+  display: block; max-width: 100%; padding: 0.05rem 0.4rem; line-height: 1.3;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   background: none; border: 1px solid var(--team-accent, var(--accent));
   border-radius: 999px; color: var(--team-accent, var(--accent));
   font: inherit; font-size: 0.6rem; font-weight: 600; cursor: pointer;
 }
-.ev-gear-chip > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ev-gear-chip:hover { border-color: var(--fg); }
 /* Round, and it stays round: its own button rather than a line inside the
    one above, which stretched it to whatever was written there. */

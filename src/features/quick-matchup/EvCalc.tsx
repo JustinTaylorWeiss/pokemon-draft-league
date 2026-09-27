@@ -400,17 +400,18 @@ function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
       {/* What has been said, and the way to say more — two buttons rather
           than one, so the plus can keep its own shape instead of stretching
           to whatever is written above it. Either opens the same panel. */}
-      {chosen.length > 0 && (
+      {chosen.map((what) => (
         <button
+          key={what}
           type="button"
           className="ev-gear-chip"
           aria-expanded={open}
-          title={chosen.join(' · ')}
+          title={what}
           onClick={() => setOpen((v) => !v)}
         >
-          {chosen.map((what) => <span key={what}>{what}</span>)}
+          {what}
         </button>
-      )}
+      ))}
       <button
         type="button"
         className={`ev-gear-open${chosen.length ? ' has-gear' : ''}`}
