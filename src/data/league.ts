@@ -1,6 +1,6 @@
 /** Shapes produced by scripts/import-league.mjs from the master spreadsheet. */
 import { toId } from './load'
-import { setDbSeason } from './supabase'
+import { onWrite, setDbSeason } from './supabase'
 import type { BaseStats, Pokemon, PokemonDex } from './types'
 
 export type DraftTier = 'Banned' | 'Top' | 'High' | 'Mid' | 'Low'
@@ -480,18 +480,60 @@ export async function setSeason(id: string): Promise<void> {
   }
 }
 
-/** Re-reads the season already showing, for the refresh button. */
-export async function reloadSeason(id: string): Promise<void> {
+/**
+ * Re-reads the season already showing, for the refresh button and for the
+ * automatic re-read below.
+ *
+ * Two callers asking at once get the same read. The automatic one fires a
+ * moment after a write, which is often a moment after a screen has asked for
+ * the same thing itself, and two full reads of a league is a second of
+ * everything flickering for one set of numbers.
+ */
+let reloading: { id: string; done: Promise<void> } | null = null
+export function reloadSeason(id: string): Promise<void> {
+  if (reloading?.id === id) return reloading.done
   const target = SEASONS.find((s) => s.id === id)
-  if (!target) return
+  if (!target) return Promise.resolve()
   tellDatabase(target)
-  try {
-    const league = await loadFor(target)
-    pending = Promise.resolve(league)
-    for (const fn of listeners) fn(league)
-  } finally {
-  }
+  const done = (async () => {
+    try {
+      const league = await loadFor(target)
+      pending = Promise.resolve(league)
+      for (const fn of listeners) fn(league)
+    } finally {
+      reloading = null
+    }
+  })()
+  reloading = { id, done }
+  return done
 }
+
+/**
+ * Anything this browser writes, it re-reads.
+ *
+ * Every screen used to refresh itself after the actions it knew about, which
+ * left the ones it did not know about stale until the page was reloaded — a
+ * claim on the draft board updated the board and not the roster beside it.
+ * The write layer now says when it has written and this answers, so a screen
+ * cannot forget and a new kind of write is covered before anyone adds one.
+ *
+ * Held a moment first, because a single action can be several writes: a
+ * delete stamps the row before removing it, and a burst should be one read.
+ * Only for a season that lives in the database — the others are files.
+ */
+const REREAD_DELAY = 120
+let rereadTimer: ReturnType<typeof setTimeout> | null = null
+onWrite(() => {
+  if (season.source !== 'database') return
+  if (rereadTimer) clearTimeout(rereadTimer)
+  rereadTimer = setTimeout(() => {
+    rereadTimer = null
+    void reloadSeason(season.id).catch(() => {
+      // A failed re-read leaves the last good data on screen, which is better
+      // than an error over work that did land.
+    })
+  }, REREAD_DELAY)
+})
 
 /** Notified when the league is replaced — a season change — so views re-render. */
 export function subscribeLeague(fn: (l: League) => void): () => void {

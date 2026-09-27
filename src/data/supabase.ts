@@ -106,6 +106,20 @@ export function errorText(e: unknown): string {
 
 type Row = Record<string, unknown>
 
+/**
+ * Told after anything that changes the database, so the app can re-read.
+ *
+ * A callback rather than a call into the league module, which imports this
+ * one — and the point of putting it here is that it fires for every write
+ * without anybody remembering to. Before this each screen refreshed itself
+ * after the actions it knew about, so a claim on the draft board updated the
+ * board and left the roster beside it showing what had been true a moment
+ * ago, and the only way to see it was to reload the page.
+ */
+let afterWrite: (() => void) | null = null
+export function onWrite(fn: () => void) { afterWrite = fn }
+const changed = () => afterWrite?.()
+
 /** Inserts rows, stamping the actor, and confirms they landed. */
 export async function insertRows<T extends Row>(table: string, rows: T[]): Promise<T[]> {
   if (!rows.length) return []
@@ -113,6 +127,7 @@ export async function insertRows<T extends Row>(table: string, rows: T[]): Promi
   const { data, error } = await db.from(table).insert(stamped).select()
   if (error) throw error
   if (!data?.length) throw new WriteRefused(`Adding to ${table}`)
+  changed()
   return data as T[]
 }
 
@@ -127,6 +142,7 @@ export async function updateRow<T extends Row>(
   const { data, error } = await query.select()
   if (error) throw error
   if (!data?.length) throw new WriteRefused(`Editing ${table}`)
+  changed()
   return data[0] as T
 }
 
@@ -146,6 +162,7 @@ export async function deleteRow(table: string, key: Row): Promise<void> {
   const { data, error } = await query.select()
   if (error) throw error
   if (!data?.length) throw new WriteRefused(`Removing from ${table}`)
+  changed()
 }
 
 /**
@@ -160,6 +177,7 @@ export async function revertEvent(passphrase: string, eventId: number): Promise<
     passphrase, event_id: eventId, who: currentActor(),
   })
   if (error) throw error
+  changed()
   return data as number
 }
 
@@ -182,6 +200,7 @@ export async function endDraft(passphrase: string) {
     passphrase, season: currentSeasonId(), who: currentActor(),
   })
   if (error) throw error
+  changed()
   return data
 }
 
@@ -199,6 +218,7 @@ export async function claimPokemon(playerId: string, pokemonId: string) {
     who: currentActor(),
   })
   if (error) throw error
+  changed()
   return data as string
 }
 
@@ -209,6 +229,7 @@ export async function releasePokemon(playerId: string, pokemonId: string) {
     who: currentActor(),
   })
   if (error) throw error
+  changed()
   return data as string
 }
 
@@ -218,6 +239,7 @@ export async function startDraft(passphrase: string) {
     passphrase, season: currentSeasonId(), who: currentActor(),
   })
   if (error) throw error
+  changed()
   return data
 }
 
@@ -231,6 +253,7 @@ export async function addPlayer(passphrase: string, name: string, team?: string)
     who: currentActor(),
   })
   if (error) throw error
+  changed()
   return data
 }
 
@@ -257,6 +280,7 @@ export async function removePlayer(passphrase: string, playerId: string) {
     passphrase, season: currentSeasonId(), player_id: playerId, who: currentActor(),
   })
   if (error) throw error
+  changed()
   return data as string
 }
 
@@ -300,6 +324,7 @@ export async function reportMatch(input: {
     who: currentActor(),
   })
   if (error) throw error
+  changed()
   return data as number
 }
 
@@ -312,6 +337,7 @@ export async function scheduleMatch(
     who: currentActor(),
   })
   if (error) throw error
+  changed()
   return data as number
 }
 
@@ -321,6 +347,7 @@ export async function unscheduleMatch(passphrase: string, matchId: number): Prom
     passphrase, match_id: matchId, who: currentActor(),
   })
   if (error) throw error
+  changed()
   return data as string
 }
 
@@ -330,6 +357,7 @@ export async function removeWeek(passphrase: string, week: number): Promise<numb
     passphrase, season: currentSeasonId(), week, who: currentActor(),
   })
   if (error) throw error
+  changed()
   return data as number
 }
 
@@ -339,6 +367,7 @@ export async function restorePlayer(passphrase: string, playerId: string) {
     passphrase, season: currentSeasonId(), player_id: playerId, who: currentActor(),
   })
   if (error) throw error
+  changed()
   return data as string
 }
 
