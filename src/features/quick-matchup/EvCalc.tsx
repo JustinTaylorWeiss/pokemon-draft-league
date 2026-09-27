@@ -217,8 +217,12 @@ function StatHead({
   )
 }
 
+/** Rounding room, for comparing a sixteenth-based probability against a half. */
+const EPSILON = 1e-9
+
 /** And the list itself, which is what scrolls under it. */
-function StatRows({ evs, rows, faces, note }: {
+function StatRows({ stat, evs, rows, faces, note }: {
+  stat: StatKey
   /** What the slider above says, for lighting the rows it has paid for. */
   evs: number
   rows: Threshold[]
@@ -227,6 +231,27 @@ function StatRows({ evs, rows, faces, note }: {
 }) {
   const reachable = rows.filter((r) => !r.unreachable)
   const beyond = rows.filter((r) => r.unreachable)
+
+  /*
+   * Taking a hit is lit by the odds, not by the guaranteed count.
+   *
+   * "Guaranteed 3HKO" is a statement about the worst roll, and the worst
+   * roll is one outcome in sixteen. A wall that still falls in two seven
+   * times out of eight is not a wall, and it was going green. Half is the
+   * line: under it the hit more often than not fails to land, over it the
+   * threshold has bought a technicality.
+   *
+   * Landing one is not the same question — there the guaranteed count is
+   * the whole point of investing — so Attack and Special Attack keep it,
+   * and Speed has no rolls at all.
+   */
+  const defensive = stat === 'hp' || stat === 'def' || stat === 'spd'
+  const lit = (r: Threshold) => (defensive && r.chance != null
+    ? r.chance < 0.5 - EPSILON
+    : evs >= r.evs)
+  const tied = (r: Threshold) => (defensive && r.chance != null
+    ? Math.abs(r.chance - 0.5) <= EPSILON
+    : r.tieAt != null && evs >= r.tieAt && evs < r.evs)
   return (
     <div className="ev-col">
       {rows.length ? (
@@ -236,8 +261,8 @@ function StatRows({ evs, rows, faces, note }: {
               <ThresholdRow
                 key={`${r.target}-${r.move ?? r.tier}-${i}`}
                 row={r}
-                lit={evs >= r.evs}
-                tied={r.tieAt != null && evs >= r.tieAt && evs < r.evs}
+                lit={lit(r)}
+                tied={tied(r)}
                 target={faces[r.target]}
               />
             ))}
@@ -614,6 +639,7 @@ export function EvCalcBody({
             {EV_STATS.map((stat) => (
               <StatRows
                 key={stat}
+                stat={stat}
                 evs={spread.evs[stat]}
                 rows={plan?.[stat] ?? []}
                 faces={faces}
