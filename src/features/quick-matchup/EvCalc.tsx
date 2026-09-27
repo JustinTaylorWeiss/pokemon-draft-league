@@ -639,6 +639,18 @@ function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
               </select>
             </label>
             )}
+            {/* Everything said about this one, unsaid. Shown only where
+                there is something to undo — the pills above the plus are
+                exactly what it clears, so no pills means no button. */}
+            {chosen.length > 0 && (
+              <button
+                type="button"
+                className="link-btn"
+                onClick={() => { onChange({}); onAssume?.(ASSUME_BARE) }}
+              >
+                Reset {pokemon.name}
+              </button>
+            )}
           </div>
         </>
       )}
