@@ -1144,11 +1144,16 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   font-size: 0.8rem; font-weight: 700; font-variant-numeric: tabular-nums;
   color: var(--team-accent, var(--accent));
 }
-/* One button, stepping through what this stat could still be. */
+/* One button, stepping through what this stat could still be. Its own row
+   under the slider rather than squeezed beside it: it says a word now, and
+   a sign on its own was a glyph you had to have been told the meaning of.
+   Six of these beside six sliders would leave the sliders four rems. */
 .ev-nature {
-  width: 1.15rem; height: 1.15rem; padding: 0; line-height: 1; flex: none;
-  background: none; border: 1px solid var(--line); border-radius: 4px;
-  color: var(--muted); font: inherit; font-size: 0.7rem; cursor: pointer;
+  width: 100%; height: 1.3rem; padding: 0 0.4rem; line-height: 1;
+  background: none; border: 1px solid var(--line); border-radius: 999px;
+  color: var(--muted); font: inherit; font-size: 0.62rem; font-weight: 600;
+  letter-spacing: 0.03em; cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .ev-nature:hover:not(:disabled) { border-color: var(--team-accent, var(--accent)); color: var(--fg); }
 .ev-nature:disabled { cursor: default; opacity: 0.45; }

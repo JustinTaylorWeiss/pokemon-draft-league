@@ -37,9 +37,9 @@ import type { Team, TeamEntry } from './TeamEditor'
 
 /** The nature a stat can be given, as the multiplier the maths wants. */
 const NATURES: { mult: number; label: string; title: string }[] = [
-  { mult: 0.9, label: '−', title: 'Hindering nature' },
-  { mult: 1, label: '·', title: 'Neutral nature' },
-  { mult: 1.1, label: '+', title: 'Boosting nature' },
+  { mult: 0.9, label: '− Nature', title: 'Hindering nature' },
+  { mult: 1, label: 'Nature', title: 'Neutral nature' },
+  { mult: 1.1, label: '+ Nature', title: 'Boosting nature' },
 ]
 
 /** A nature gives one stat and takes from another, so only one of each. */
@@ -308,22 +308,23 @@ function StatHead({
           aria-label={`${STAT_LABELS[stat]} EVs`}
           onChange={(e) => onEvs(Number(e.target.value))}
         />
-        {takesNature(stat) && (
-          <button
-            type="button"
-            className="ev-nature"
-            title={cycle.length > 1
-              ? `${now.title} — click for ${next.title.toLowerCase()}`
-              : `${now.title} — the other two are spoken for`}
-            aria-label={`${STAT_LABELS[stat]}: ${now.title}`}
-            aria-pressed={now.mult !== 1}
-            disabled={cycle.length < 2}
-            onClick={() => onNature(next.mult)}
-          >
-            {now.label}
-          </button>
-        )}
       </div>
+
+      {takesNature(stat) && (
+        <button
+          type="button"
+          className="ev-nature"
+          title={cycle.length > 1
+            ? `${now.title} — click for ${next.title.toLowerCase()}`
+            : `${now.title} — the other two are spoken for`}
+          aria-label={`${STAT_LABELS[stat]}: ${now.title}`}
+          aria-pressed={now.mult !== 1}
+          disabled={cycle.length < 2}
+          onClick={() => onNature(next.mult)}
+        >
+          {now.label}
+        </button>
+      )}
     </div>
   )
 }
