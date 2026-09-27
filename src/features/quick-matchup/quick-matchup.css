@@ -1395,6 +1395,11 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 .ev-gear-moves { display: flex; flex-direction: column; gap: 0.25rem; }
 .ev-gear-moves .ev-set-list { max-height: 9rem; }
 .ev-gear-moves .ev-set-slot { font-size: 0.68rem; }
+/* Name on the left, power on the right, and nothing between them. */
+.ev-gear-moves em {
+  font-style: normal; font-size: 0.66rem; color: var(--muted);
+  margin-left: auto; font-variant-numeric: tabular-nums;
+}
 .ev-gear-moves .ev-set-slots { max-height: 11rem; overflow-y: auto; }
 /* Named by hand rather than reckoned, which is the difference between a
    row somebody put there and a row the format put there. */

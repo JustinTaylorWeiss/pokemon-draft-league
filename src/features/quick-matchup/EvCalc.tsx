@@ -893,9 +893,14 @@ function GearPicker({
                           title={`Take ${move.name} off this Pokémon`}
                           onClick={() => dropMove(toId(move.name))}
                         >
-                          <MoveCategory category={move.category} />
+                          {/* The name and what it hits for. Its category and
+                              its type decide which column it lands in and
+                              how hard, and both are read off the column it
+                              landed in — here they are two badges between
+                              the reader and the only two things they came
+                              to check. */}
                           <span className="ev-set-name">{move.name}</span>
-                          <TypeChip type={move.type} />
+                          <em>{move.basePower}</em>
                           <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
                         </button>
                       </li>
@@ -918,9 +923,8 @@ function GearPicker({
                     {addable.map((m) => (
                       <li key={m.name}>
                         <button type="button" onClick={() => addMove(m)}>
-                          <MoveCategory category={m.category} />
                           <span className="ev-set-name">{m.name}</span>
-                          <em>{m.type} · {m.basePower}</em>
+                          <em>{m.basePower}</em>
                         </button>
                       </li>
                     ))}
