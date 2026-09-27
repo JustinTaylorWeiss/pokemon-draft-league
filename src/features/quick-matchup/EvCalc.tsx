@@ -294,6 +294,19 @@ export function EvHelp({ onClose }: { onClose: () => void }) {
 const PASS_LABEL = ['Best move', '2nd best', '3rd best', '4th best']
 const passName = (n: number) => (n < 0 ? 'Added' : PASS_LABEL[n] ?? `${n + 1}th best`)
 
+/**
+ * Whether a move answers what was typed: its name anywhere, or its type
+ * from the start.
+ *
+ * Types from the start rather than anywhere in the word, because a type
+ * is one word and half the eighteen contain each other's letters —
+ * "at" is in Water and "ice" in nothing useful. Searching by type is how
+ * anyone looks for coverage: not "which move is it called" but "what has
+ * it got that is Fire".
+ */
+const matches = (m: Move, q: string) =>
+  !q || m.name.toLowerCase().includes(q) || m.type.toLowerCase().startsWith(q)
+
 /** A percentage of someone's HP, to one place, without a trailing zero. */
 const pct = (n: number) => `${Math.round(n * 10) / 10}`
 
@@ -830,7 +843,7 @@ function GearPicker({
       .filter((id) => !has.has(id))
       .map((id) => moves[id])
       .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0
-        && m.name.toLowerCase().includes(q))
+        && matches(m, q))
       .sort((a, b) => (rank.get(toId(a.name)) ?? Infinity) - (rank.get(toId(b.name)) ?? Infinity)
         || b.basePower - a.basePower
         || a.name.localeCompare(b.name))
@@ -1135,7 +1148,7 @@ function GearPicker({
                   </p>
                 )}
                 <input
-                  type="search" value={find} placeholder="＋ Add a move…"
+                  type="search" value={find} placeholder="＋ Add a move by name or type…"
                   aria-label={`Add a move ${pokemon.name} might carry`}
                   onChange={(e) => setFind(e.target.value)}
                 />
@@ -1327,20 +1340,29 @@ export function EvCalcBody({
    * one, so the four or five worth considering are at the top and the long
    * tail of universal TMs is below them rather than mixed in alphabetically.
    */
+  /*
+   * What it could be given instead, minus what it already has.
+   *
+   * The four it is carrying are listed above the search in their own
+   * slots; repeating them underneath is offering a choice already made,
+   * and the row that would take one off is the slot, not this.
+   */
   const movePool = useMemo(() => {
     if (!picked || !movesOpen) return []
     const rank = new Map(played.map((id, i) => [id, i]))
     const q = moveQuery.trim().toLowerCase()
+    const has = new Set(setIds)
     return Object.keys(learnsets?.[picked.entry.id] ?? {})
+      .filter((id) => !has.has(id))
       .map((id) => moves[id])
       .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0
-        && (!q || m.name.toLowerCase().includes(q)))
+        && matches(m, q))
       .sort((a, b) => (rank.get(toId(a.name)) ?? played.length)
         - (rank.get(toId(b.name)) ?? played.length)
         || b.basePower - a.basePower
         || a.name.localeCompare(b.name))
       .slice(0, 60)
-  }, [picked, movesOpen, moveQuery, learnsets, moves, played])
+  }, [picked, movesOpen, moveQuery, learnsets, moves, played, setIds])
 
   const opponents = useMemo(
     () => (picked
@@ -1577,7 +1599,7 @@ export function EvCalcBody({
                       </ol>
 
                       <input
-                        type="search" value={moveQuery} placeholder="Search its moves…"
+                        type="search" value={moveQuery} placeholder="Search by name or type…"
                         aria-label={`Search ${picked.entry.pokemon.name}'s moves`}
                         onChange={(e) => setMoveQuery(e.target.value)}
                       />
@@ -1591,11 +1613,8 @@ export function EvCalcBody({
                           <li key={m.name}>
                             <button
                               type="button"
-                              className={setIds.includes(toId(m.name)) ? 'is-chosen' : undefined}
-                              disabled={!setIds.includes(toId(m.name)) && setIds.length >= SET_SIZE}
-                              onClick={() => (setIds.includes(toId(m.name))
-                                ? dropFromSet(toId(m.name))
-                                : addToSet(m))}
+                              disabled={setIds.length >= SET_SIZE}
+                              onClick={() => addToSet(m)}
                             >
                               <span className={`ev-set-name${typeInk(m.type)}`}>{m.name}</span>
                               <MoveCategory category={m.category} />
