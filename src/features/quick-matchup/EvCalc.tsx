@@ -295,6 +295,24 @@ function StatHead({
           the rows below are aiming at, so it moves with the slider. */}
       <header className="ev-col-head">
         <span className="ev-stat">{STAT_LABELS[stat]}</span>
+        {/* Beside the stat it bends rather than under the slider it does
+            not: a nature is part of what the number above reads, where the
+            slider is the other part. */}
+        {takesNature(stat) && (
+          <button
+            type="button"
+            className="ev-nature"
+            title={cycle.length > 1
+              ? `${now.title} — click for ${next.title.toLowerCase()}`
+              : `${now.title} — the other two are spoken for`}
+            aria-label={`${STAT_LABELS[stat]}: ${now.title}`}
+            aria-pressed={now.mult !== 1}
+            disabled={cycle.length < 2}
+            onClick={() => onNature(next.mult)}
+          >
+            {now.label}
+          </button>
+        )}
         <strong className="ev-value" title={`${bare} before EVs`}>{value}</strong>
       </header>
 
@@ -310,21 +328,6 @@ function StatHead({
         />
       </div>
 
-      {takesNature(stat) && (
-        <button
-          type="button"
-          className="ev-nature"
-          title={cycle.length > 1
-            ? `${now.title} — click for ${next.title.toLowerCase()}`
-            : `${now.title} — the other two are spoken for`}
-          aria-label={`${STAT_LABELS[stat]}: ${now.title}`}
-          aria-pressed={now.mult !== 1}
-          disabled={cycle.length < 2}
-          onClick={() => onNature(next.mult)}
-        >
-          {now.label}
-        </button>
-      )}
     </div>
   )
 }
