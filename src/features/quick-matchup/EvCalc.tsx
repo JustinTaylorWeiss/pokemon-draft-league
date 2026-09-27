@@ -617,12 +617,34 @@ function GearPicker({
    * and a number do not fit under a sprite, and the second never says
    * anything the first did not.
    */
-  const raised = assume ? [
-    assume.hp === (base?.hp ?? 'ivs') ? null : `HP ${ASSUME_LABEL[assume.hp]}`,
-    ...(['def', 'spd', 'atk', 'spa', 'spe'] as const)
-      .filter((k) => assume[k] !== (base?.[k] ?? 'ivs'))
-      .map((k) => `${STAT_LABELS[k]} ${ASSUME_LABEL[assume[k]]}`),
-  ].filter(Boolean) as string[] : []
+  /*
+   * The spread it is credited with, as one pill.
+   *
+   * Everything it is reckoned to be putting EVs into, not only what has
+   * been changed: that is what a spread is quoted as — "252 Atk, 252+ Spe"
+   * — and where it came from usage it is the most useful thing under a
+   * sprite, because it is the thing the columns are reading and the thing
+   * nobody would otherwise know. One pill, because it is one fact.
+   */
+  const invested = assume
+    ? (EV_STATS.filter((k) => assume[k] !== 'ivs') as StatKey[])
+      .map((k) => `${ASSUME_LABEL[assume[k]]} ${STAT_LABELS[k]}`)
+    : []
+  /*
+   * And a pill saying so where there is nothing, which is not the same as
+   * no pill: a Pokémon with no usage set is being read at bare IVs, and
+   * that is a thing worth knowing rather than an absence to be inferred
+   * from an empty space. Distinguished from one whose spread was cleared
+   * by hand, which is a choice rather than a gap in what is known.
+   */
+  const preset = base && EV_STATS.some((k) => base[k] !== 'ivs')
+  const raised = !assume ? []
+    : invested.length ? [invested.join(' · ')]
+      : [preset ? 'No EVs' : 'No preset EVs']
+  /** Whether any of it departs from how usage says it is built. */
+  const moved = assume
+    ? EV_STATS.some((k) => assume[k] !== (base?.[k] ?? 'ivs'))
+    : false
   // Only the dropped ones. Everything is 31 unless somebody said otherwise,
   // so a pill for each of six perfect IVs would be six pills saying nothing.
   const dropped = lowered(gear?.ivs).map(([stat, iv]) => `${STAT_LABELS[stat]} ${iv}`)
@@ -761,7 +783,9 @@ function GearPicker({
    * read: a move named or struck off shows nowhere out there and is still
    * something a reset would undo, and so is being hidden.
    */
-  const said = chosen.length > 0
+  const said = moved
+    || dropped.length > 0
+    || Boolean(gear?.ability) || Boolean(gear?.item)
     || Boolean(out)
     || (named ?? []).length > 0
     || (gear?.without ?? []).length > 0
@@ -779,7 +803,7 @@ function GearPicker({
         <button
           key={what}
           type="button"
-          className="ev-gear-chip"
+          className={`ev-gear-chip${what === raised[0] ? ' is-spread' : ''}`}
           aria-expanded={open}
           title={what}
           onClick={() => setOpen((v) => !v)}
