@@ -669,9 +669,10 @@ export function planFor(input: PlanInput): Plan {
      * Four rows all reading "0 EVs" is four ways of saying the same thing —
      * and for anything slow enough, all four tiers cost nothing, which filled
      * the column with Pokémon there was no decision to make about. One row
-     * saying it is beaten at any spread says all of it.
+     * named for the highest tier it covers says all of it: 252+ means you
+     * are past it however it was built, which is the same claim "any
+     * spread" made and in the notation the rest of the panel uses.
      */
-    const all = catchable.length === SPEED_TIERS.length
     for (let i = 0; i < catchable.length; i++) {
       const cost = catchable[i].need
       let last = i
@@ -682,7 +683,7 @@ export function planFor(input: PlanInput): Plan {
         target: o.id,
         targetName: o.pokemon.name,
         outspeed: top.speed,
-        tier: all && i === 0 && last === catchable.length - 1 ? 'any spread' : top.label,
+        tier: top.label,
         statAt: top.speed + 1,
         tieAt: top.tie,
         via: scarfed,
