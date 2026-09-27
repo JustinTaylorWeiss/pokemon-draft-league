@@ -324,13 +324,17 @@ function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
   /*
    * What has been said about this Pokemon, on the button itself: the spread
    * it is credited with first, then what it is holding. Closed, the button
-   * is the only place any of it shows, and "252+ Atk/SpA" is the line most
-   * worth seeing without opening anything.
+   * is the only place any of it shows, and "Atk 252+" is the line most
+   * worth seeing without opening anything. Defence and Special Defence move
+   * together under one toggle, as do Attack and Special Attack, so the pill
+   * names the first of each pair rather than spelling both out — two stats
+   * and a number do not fit under a sprite, and the second never says
+   * anything the first did not.
    */
   const raised = assume ? [
     assume.hp === 'max' ? 'HP 252' : null,
-    assume.bulk === 'ivs' ? null : `Def/SpD ${ASSUME_LABEL[assume.bulk]}`,
-    assume.power === 'ivs' ? null : `Atk/SpA ${ASSUME_LABEL[assume.power]}`,
+    assume.bulk === 'ivs' ? null : `Def ${ASSUME_LABEL[assume.bulk]}`,
+    assume.power === 'ivs' ? null : `Atk ${ASSUME_LABEL[assume.power]}`,
   ].filter(Boolean) as string[] : []
   const chosen = [...raised, gear?.ability, gear?.item].filter(Boolean) as string[]
 
@@ -795,11 +799,6 @@ export function EvCalcBody({
               <span className="ev-budget-read">
                 {used}<i>/{EV_BUDGET}</i>
               </span>
-              {used > 0 && (
-                <button type="button" className="link-btn" onClick={() => setSpread(emptySpread())}>
-                  Clear
-                </button>
-              )}
             </span>
 
             {/* Anything they might be carrying that their set does not say.
