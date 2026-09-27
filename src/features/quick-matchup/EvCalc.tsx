@@ -1507,7 +1507,14 @@ export function EvCalcBody({
   // Pokémon it is about, so picking another simply reads a different file.
   const choose = setChosen
 
-  /** Back to whatever this Pokémon, or the shape just picked, is usually seen with. */
+  /*
+   * Back to whatever this Pokémon is usually seen with.
+   *
+   * Not called when the shape changes any more. A Mega learns what its
+   * base learns and a stance learns what the other stance does, so the
+   * four chosen for one are the four for the other — and losing them on
+   * the way to asking "what if it Megas" is losing the question.
+   */
   const forgetSet = () => {
     setMyset(null)
     setMovesOpen(false)
@@ -1639,7 +1646,7 @@ export function EvCalcBody({
                     className="ev-seg"
                     aria-pressed={(shape ?? picked?.own) === f.id}
                     title={f.pokemon.name}
-                    onClick={() => { setShape(f.id); forgetSet() }}
+                    onClick={() => setShape(f.id)}
                   >
                     {f.pokemon.forme ?? 'Base'}
                   </button>
