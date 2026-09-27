@@ -589,6 +589,15 @@ function GearPicker({
   const [open, setOpen] = useState(false)
   const [find, setFind] = useState('')
   /*
+   * Six number boxes, folded away.
+   *
+   * Almost every Pokémon has 31 in all six and always will, so the only
+   * thing they are usually doing is standing between the ability and the
+   * item. Open where one has already been dropped, because then they are
+   * the reason the panel was opened.
+   */
+  const [ivsOpen, setIvsOpen] = useState(() => lowered(gear?.ivs).length > 0)
+  /*
    * What has been said about this Pokemon, on the button itself: the spread
    * it is credited with first, then what it is holding. Closed, the button
    * is the only place any of it shows, and "Atk 252+" is the line most
@@ -605,7 +614,7 @@ function GearPicker({
   ].filter(Boolean) as string[] : []
   // Only the dropped ones. Everything is 31 unless somebody said otherwise,
   // so a pill for each of six perfect IVs would be six pills saying nothing.
-  const dropped = lowered(gear?.ivs).map(([stat, iv]) => `${STAT_LABELS[stat]} ${iv} IV`)
+  const dropped = lowered(gear?.ivs).map(([stat, iv]) => `${STAT_LABELS[stat]} ${iv}`)
   /*
    * Moves are not among them. A spread, an ability and an item are one
    * fact each and fit under a sprite; a movepool is six or seven rows and
@@ -613,7 +622,7 @@ function GearPicker({
    * fit before the rest become "2 more", and moves would spend all three.
    */
   const chosen = [
-    ...raised, ...dropped, gear?.ability, gear?.item,
+    ...raised, ...dropped.map((d) => `${d} IV`), gear?.ability, gear?.item,
   ].filter(Boolean) as string[]
 
   /*
@@ -629,7 +638,7 @@ function GearPicker({
    */
   const CHIPS = 3
   const priority = [
-    gear?.ability, gear?.item, ...raised, ...dropped,
+    gear?.ability, gear?.item, ...raised, ...dropped.map((d) => `${d} IV`),
   ].filter(Boolean) as string[]
   const keeping = new Set(chosen.length > CHIPS ? priority.slice(0, CHIPS - 1) : chosen)
   const shown = chosen.filter((c) => keeping.has(c))
@@ -821,7 +830,17 @@ function GearPicker({
                 Speed is how anything gets under a Trick Room. The other four
                 are here because leaving them out would mean explaining why. */}
             <div className="ev-gear-ivs">
-              <span>IVs</span>
+              <button
+                type="button"
+                className="ev-gear-fold"
+                aria-expanded={ivsOpen}
+                onClick={() => setIvsOpen((v) => !v)}
+              >
+                <span>IVs</span>
+                <em>{dropped.length ? dropped.join(' · ') : 'all 31'}</em>
+                <i aria-hidden="true">{ivsOpen ? '\u25b4' : '\u25be'}</i>
+              </button>
+              {ivsOpen && (
               <div>
                 {EV_STATS.map((stat) => (
                   <label key={stat} className="ev-iv">
@@ -843,6 +862,7 @@ function GearPicker({
                   </label>
                 ))}
               </div>
+              )}
             </div>
             {abilities.length > 0 && (
               <label>
