@@ -718,8 +718,19 @@ function GearPicker({
    * only makes sense as a list, which the menu already is. Three of these
    * fit before the rest become "2 more", and moves would spend all three.
    */
+  /*
+   * An ability only earns a pill where it changes a number on this page.
+   *
+   * All of a Pokemon's are offered, because choosing one of the other two
+   * is how you say it is not running the one that matters — but saying
+   * "Intimidate" under a sprite is saying a thing that alters nothing
+   * here, in the one place where every word is about what altered
+   * something. The panel still shows which is selected.
+   */
+  const telling = gear?.ability && MODELLED_ABILITIES.has(gear.ability)
+    ? gear.ability : undefined
   const chosen = [
-    ...raised, ...dropped.map((d) => `${d} IV`), gear?.ability, gear?.item,
+    ...raised, ...dropped.map((d) => `${d} IV`), telling, gear?.item,
   ].filter(Boolean) as string[]
 
   /*
@@ -735,7 +746,7 @@ function GearPicker({
    */
   const CHIPS = 3
   const priority = [
-    gear?.ability, gear?.item, ...raised, ...dropped.map((d) => `${d} IV`),
+    telling, gear?.item, ...raised, ...dropped.map((d) => `${d} IV`),
   ].filter(Boolean) as string[]
   const keeping = new Set(chosen.length > CHIPS ? priority.slice(0, CHIPS - 1) : chosen)
   const shown = chosen.filter((c) => keeping.has(c))
