@@ -986,6 +986,9 @@ button.type-chip { cursor: pointer; }
    reach. A rule between them, because they are not a sum. */
 .ev-cost {
   flex: 0 0 2rem; display: flex; flex-direction: column; align-items: stretch;
+  /* Centred against the whole row, not sat on its first baseline: the row is
+     three lines and this is two, so baselines put it at the top. */
+  align-self: center;
   text-align: center; font-variant-numeric: tabular-nums; line-height: 1.2;
 }
 .ev-cost-evs { font-weight: 700; }
