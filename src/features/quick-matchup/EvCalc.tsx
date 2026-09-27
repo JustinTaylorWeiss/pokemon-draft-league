@@ -908,9 +908,11 @@ function GearPicker({
             onClick={() => setOpen(null)}
           />
           <div className="ev-gear-pop">
-            {/* In or out of the columns, above everything it is bringing:
-                whether to count it at all comes before what to count. */}
-            {open === 'kit' && onHide && (
+            {/* In or out of the columns, at the top of both panels:
+                whether to count the Pokémon at all comes before anything
+                either of them has to say about how it is built, and
+                whichever one is open is where someone is standing. */}
+            {onHide && (
               <button
                 type="button"
                 className="ev-hide"
@@ -971,7 +973,9 @@ function GearPicker({
                   than under them: two lines of small print about the same
                   spread, so one line. */}
               {assume && (
-                <p className="ev-assume-total">{spent(assume)} / {EV_BUDGET} EVs</p>
+                <p className={`ev-assume-total${spent(assume) === EV_BUDGET ? ' is-full' : ''}`}>
+                  {spent(assume)} / {EV_BUDGET} EVs
+                </p>
               )}
               </div>
               {ivsOpen && (
@@ -1548,15 +1552,6 @@ export function EvCalcBody({
               </div>
             )}
 
-            {/* Everything on the tab, on both sides, unsaid. The panels
-                reset their own Pokémon; this is the one thing that cannot
-                be undone one at a time, because there are thirteen. */}
-            {anything && (
-              <button type="button" className="ev-start-over" onClick={startOver}>
-                Reset everything
-              </button>
-            )}
-
             {/* What is left to spend, drawn rather than counted out. Five
                 hundred and eight is a number you have to subtract from; a
                 bar is a thing you can see the end of. */}
@@ -1569,6 +1564,15 @@ export function EvCalcBody({
                   {used}<i>/{EV_BUDGET}</i>
                 </span>
               </span>
+            )}
+
+            {/* Under the bar it undoes most of. The panels reset their own
+                Pokémon; this is the one thing that cannot be undone one at
+                a time, because there are thirteen. */}
+            {anything && (
+              <button type="button" className="ev-start-over" onClick={startOver}>
+                Reset everything
+              </button>
             )}
           </div>
 

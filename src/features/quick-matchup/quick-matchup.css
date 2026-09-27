@@ -1486,12 +1486,34 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
    line runs long, and the total belongs under it rather than clipped
    against it. */
 .ev-gear-line { display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem 0.5rem; }
-.ev-gear-line .ev-gear-fold { flex: 0 1 auto; }
-.ev-gear-line .ev-assume-total { margin-left: auto; }
+/* A badge beside the IV one and the same shape, sharing the line evenly
+   with it: two facts about the spread, neither more important. It takes
+   the accent once every EV is spent, because "there is nothing left" is
+   the thing anyone tuning a spread is watching for. */
+.ev-gear-line .ev-assume-total { margin-left: 0; }
 .ev-assume-total {
-  flex: none; margin: 0; white-space: nowrap;
-  font-size: 0.62rem; color: var(--muted); font-variant-numeric: tabular-nums;
+  flex: 1 1 0; min-width: 0; margin: 0; text-align: center; white-space: nowrap;
+  padding: 0.2rem 0.4rem; line-height: 1.3;
+  border: 1px solid var(--line); border-radius: 999px;
+  font-size: 0.66rem; color: var(--muted); font-variant-numeric: tabular-nums;
 }
+.ev-assume-total.is-full {
+  border-color: var(--team-accent, var(--accent));
+  color: var(--team-accent, var(--accent)); font-weight: 600;
+}
+/* The IV pill takes the other half. */
+.ev-gear-line .ev-gear-fold { flex: 1 1 0; min-width: 0; }
+.ev-gear-fold em { overflow: hidden; text-overflow: ellipsis; }
+
+/* Under the budget in the blue box, with the other things that belong to
+   the whole tab rather than to one Pokemon. Shown only where there is
+   something to undo. */
+.ev-start-over {
+  width: 100%; padding: 0.35rem 0.6rem; line-height: 1.3;
+  background: none; border: 1px solid var(--line); border-radius: 999px;
+  color: var(--muted); font: inherit; font-size: 0.72rem; cursor: pointer;
+}
+.ev-start-over:hover { border-color: #e05563; color: #e05563; }
 .ev-gear-pop label { display: flex; flex-direction: column; gap: 0.15rem; }
 /* The label over each control, and only that. As `.ev-gear-pop span` it
    also caught the word inside every category badge in the move list —
