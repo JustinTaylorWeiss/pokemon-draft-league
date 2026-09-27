@@ -1256,9 +1256,20 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 /* The type's own colour as ink. Two classes so it beats the background the
    type class sets, and mixed towards the page's ink because Dark and Ghost
    are chosen to carry a white word, not to be one. */
+/*
+ * A type's colour as ink.
+ *
+ * The palette was chosen to be a ground with a white word on it, and half
+ * of it is too dark or too flat to be the word instead — Normal is a mid
+ * grey that reads as disabled text, Dark and Ghost disappear into the
+ * page. Raising the lightness floor keeps each hue and makes all nineteen
+ * readable; the mix above it is the same idea for a browser without
+ * relative colour, and is dropped on any that has it.
+ */
 .ev-row .ev-ink, .ev-gear-moves .ev-ink {
   background: none;
-  color: color-mix(in oklab, var(--type-colour, var(--muted)), var(--fg) 25%);
+  color: color-mix(in oklab, var(--type-colour, var(--muted)), var(--fg) 40%);
+  color: oklch(from var(--type-colour, var(--muted)) max(l, 0.8) c h);
   font-weight: 600;
 }
 .ev-row .ev-range {
