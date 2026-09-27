@@ -1400,30 +1400,40 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 }
 /* The spread it is credited with, above what it is holding: the first is
    about how it was built and the second about what it brought. */
+/* Two stats to a row, three rows deep. */
 .ev-gear-assumes {
-  display: flex; flex-direction: column; gap: 0.35rem;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.4rem 0.55rem;
   padding-bottom: 0.45rem; border-bottom: 1px solid var(--line);
 }
-/* Six rows: the stat, a slider across the width, what it comes to, and
-   the nature. Laid out on a grid so the numbers and the nature buttons
-   line up down the panel instead of wherever their sliders end. */
+/*
+ * The name, the number and the nature on one line, the slider under them
+ * across all three.
+ *
+ * Six stats in a row apiece left the slider the width of a thumbnail once
+ * the three of those had taken theirs, and a slider four rems wide is 64
+ * steps at a pixel each. Stacked, it gets the whole cell.
+ */
 .ev-assume-stat {
-  display: grid; grid-template-columns: 2.1rem minmax(0, 1fr) 1.9rem 1.15rem;
-  align-items: center; gap: 0.35rem;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center; gap: 0.05rem 0.3rem;
 }
 .ev-assume-stat > span {
-  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em;
+  font-size: 0.58rem; font-weight: 700; letter-spacing: 0.05em;
   text-transform: uppercase; color: var(--muted);
 }
 .ev-assume-stat > b {
-  font-size: 0.72rem; text-align: right;
+  font-size: 0.7rem; text-align: right;
   font-variant-numeric: tabular-nums; color: var(--fg);
 }
-.ev-assume-stat .ev-nature { width: 1.15rem; height: 1.15rem; padding: 0; border-radius: 4px; }
+.ev-assume-stat input[type="range"] { grid-column: 1 / -1; }
+.ev-assume-stat .ev-nature { width: 1.05rem; height: 1.05rem; padding: 0; border-radius: 4px; }
+/* HP has no nature, and its cell should still be the width of the others. */
+.ev-assume-stat > i { width: 1.05rem; }
 /* What the six come to. Over 508 is not a build, and says so rather than
    being refused: the question is often asked one stat at a time. */
 .ev-assume-total {
-  margin: 0.1rem 0 0; text-align: right;
+  grid-column: 1 / -1; margin: 0.1rem 0 0; text-align: right;
   font-size: 0.62rem; color: var(--muted); font-variant-numeric: tabular-nums;
 }
 .ev-assume-total.is-over { color: #e05563; font-weight: 600; }
