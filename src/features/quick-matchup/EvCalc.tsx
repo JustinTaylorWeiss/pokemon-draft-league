@@ -300,8 +300,10 @@ export interface Gear { item?: string; ability?: string }
  * fifth of the Special Defense column, and Multiscale is half of every
  * defensive row at once.
  */
-function GearPicker({ pokemon, gear, onChange }: {
+function GearPicker({ pokemon, usual, gear, onChange }: {
   pokemon: Pokemon
+  /** The ability it is reckoned to have when nobody has said otherwise. */
+  usual: string
   gear: Gear | undefined
   onChange: (next: Gear) => void
 }) {
@@ -387,11 +389,12 @@ function GearPicker({ pokemon, gear, onChange }: {
             {abilities.length > 0 && (
               <label>
                 <span>Ability</span>
+                {/* No blank option: it already has an ability, and "its
+                    set's" was a way of naming it without saying which. */}
                 <select
-                  value={gear?.ability ?? ''}
+                  value={gear?.ability || usual}
                   onChange={(e) => onChange({ ...gear, ability: e.target.value })}
                 >
-                  <option value="">its set{'’'}s</option>
                   {abilities.map((a) => (
                   <option key={a} value={a}>
                     {a}{MODELLED_ABILITIES.has(a) ? '' : ' — no effect here'}
@@ -424,7 +427,7 @@ function GearPicker({ pokemon, gear, onChange }: {
                 type="button" className="link-btn"
                 onClick={() => { onChange({}); setOpen(false) }}
               >
-                Back to its set
+                Start over
               </button>
             )}
           </div>
@@ -473,6 +476,16 @@ export function EvCalcBody({
   /** Items and abilities given out by hand, on either side. */
   const [gear, setGear] = useState<Record<string, Gear>>({})
   const give = (id: string, next: Gear) => setGear((prev) => ({ ...prev, [id]: next }))
+
+  /**
+   * The ability to read a Pokémon with when nobody has chosen one:
+   * whatever its most-used set runs, and failing that the first it is
+   * listed with, which is the one it is usually seen with. Shared with
+   * the picker, so what is shown selected is what the columns are
+   * calculated from.
+   */
+  const usualAbility = (id: string, mon: Pokemon) =>
+    sets?.[id]?.spreads?.[0]?.ability ?? Object.values(mon.abilities)[0] ?? ''
 
   const sides: { key: 'one' | 'two'; team: Team }[] = [
     { key: 'one', team: teamOne }, { key: 'two', team: teamTwo },
@@ -576,7 +589,6 @@ export function EvCalcBody({
 
   const plan = useMemo(() => {
     if (!picked) return null
-    const set = sets?.[picked.entry.id]?.spreads?.[0]
     const worn = gear[picked.entry.id]
     return planFor({
       pokemon: picked.entry.pokemon,
@@ -585,7 +597,10 @@ export function EvCalcBody({
       // and unlike its moves and its spread it is worth a third of the
       // damage on its own — too much to apply without being asked.
       item: worn?.item || undefined,
-      ability: worn?.ability || set?.ability,
+      // Whatever it is reckoned to have, matching what the picker shows.
+      ability: worn?.ability
+        || sets?.[picked.entry.id]?.spreads?.[0]?.ability
+        || Object.values(picked.entry.pokemon.abilities)[0],
       spread,
       opponents,
       chart,
@@ -675,6 +690,7 @@ export function EvCalcBody({
             </PokemonLink>
             <GearPicker
               pokemon={picked.entry.pokemon}
+              usual={usualAbility(picked.entry.id, picked.entry.pokemon)}
               gear={gear[picked.entry.id]} onChange={(g) => give(picked.entry.id, g)}
             />
           </span>
@@ -701,6 +717,7 @@ export function EvCalcBody({
                 </button>
                 <GearPicker
                   pokemon={m.pokemon}
+                  usual={usualAbility(m.id, m.pokemon)}
                   gear={gear[m.id]} onChange={(g) => give(m.id, g)}
                 />
               </span>
