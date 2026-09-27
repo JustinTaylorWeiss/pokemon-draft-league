@@ -873,7 +873,8 @@ function GearPicker({
    * stone, and plenty of other Pokemon have exactly one ability to have.
    * Those were left out of the panel altogether, which reads as the panel
    * not knowing — where the truth is that there is nothing to decide. They
-   * are shown and not clickable.
+   * are shown and not clickable; the dashed box is what says so, and a
+   * line of explanation under every one of them was saying it twice.
    */
   const setAbility = mega || own.length === 1 ? own[0] : undefined
   const nothing = !setAbility && !mega && own.length < 2
@@ -1029,7 +1030,6 @@ function GearPicker({
               <div className="ev-gear-fixed">
                 <span>Ability</span>
                 <b>{setAbility}</b>
-                <em>{mega ? 'comes with the forme' : 'its only one'}</em>
               </div>
             )}
             {/* Several to choose between and no reason to: none of them
@@ -1065,7 +1065,6 @@ function GearPicker({
               <div className="ev-gear-fixed">
                 <span>Item</span>
                 <b>Mega Stone</b>
-                <em>nothing else fits</em>
               </div>
             )}
             {open === 'kit' && !mega && (
