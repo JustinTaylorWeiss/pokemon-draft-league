@@ -1191,62 +1191,60 @@ export function EvCalcBody({
                 ))}
               </div>
             )}
+
+            {/* Anything they might be carrying that their set does not say,
+                and everything named so far. Beside the team it is about:
+                it adds a move to whoever over there can learn it, so the
+                row of sprites to its left is its answer. */}
+            <div className="ev-added">
+            {/* Anything they might be carrying that their set does not say.
+                Added to everyone over there who can learn it. */}
+            <span className="ev-add">
+              <input
+                type="search" value={query} placeholder="Add a move to enemy team…"
+                aria-label="Add a move the other side might carry"
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              {matches.length > 0 && (
+                <ul className="ev-matches">
+                  {matches.map((m) => (
+                    <li key={m.name}>
+                      <button type="button" onClick={() => addMove(m)}>
+                        <MoveCategory category={m.category} />
+                        <span>{m.name}</span>
+                        <em>{m.type} · {m.basePower}</em>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </span>
+            {extra.map((id) => {
+              const move = moves[id]
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  className="ev-extra"
+                  title={`${move?.name ?? id} — click to drop it`}
+                  onClick={() => setExtra((prev) => prev.filter((x) => x !== id))}
+                >
+                  {/* What it is, then what it is called, then how hard it
+                      hits — the two badges together on the left rather than
+                      one either side of the name, so a row of these can be
+                      read down the badges without reading the names. */}
+                  {move && <MoveCategory category={move.category} />}
+                  {move && <TypeChip type={move.type} />}
+                  <span className="ev-extra-name">{move?.name ?? id}</span>
+                  {move && <em className="ev-extra-power">{move.basePower}</em>}
+                  <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
+                </button>
+              )
+            })}
+            </div>
           </div>
         )}
       </div>
-
-      {/* The move search and what it has added, on a line of their own
-          under both columns. It was inside the row that holds them, which
-          made it a third thing in that row and put it hard against the
-          right edge next to the scroll bar. */}
-      {picked && (
-        <div className="ev-added">
-          {/* Anything they might be carrying that their set does not say.
-              Added to everyone over there who can learn it. */}
-          <span className="ev-add">
-            <input
-              type="search" value={query} placeholder="Add a move to enemy team…"
-              aria-label="Add a move the other side might carry"
-              onChange={(e) => setQuery(e.target.value)}
-            />
-            {matches.length > 0 && (
-              <ul className="ev-matches">
-                {matches.map((m) => (
-                  <li key={m.name}>
-                    <button type="button" onClick={() => addMove(m)}>
-                      <MoveCategory category={m.category} />
-                      <span>{m.name}</span>
-                      <em>{m.type} · {m.basePower}</em>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </span>
-          {extra.map((id) => {
-            const move = moves[id]
-            return (
-              <button
-                key={id}
-                type="button"
-                className="ev-extra"
-                title={`${move?.name ?? id} — click to drop it`}
-                onClick={() => setExtra((prev) => prev.filter((x) => x !== id))}
-              >
-                {/* What it is, then what it is called, then how hard it
-                    hits — the two badges together on the left rather than
-                    one either side of the name, so a row of these can be
-                    read down the badges without reading the names. */}
-                {move && <MoveCategory category={move.category} />}
-                {move && <TypeChip type={move.type} />}
-                <span className="ev-extra-name">{move?.name ?? id}</span>
-                {move && <em className="ev-extra-power">{move.basePower}</em>}
-                <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
-              </button>
-            )
-          })}
-        </div>
-      )}
 
       {/* The headings and their sliders in one grid, the lists in
           another below it, both on the same six columns. Two grids
