@@ -1360,12 +1360,17 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
    one above, which stretched it to whatever was written there. */
 .ev-gear-open {
   display: grid; place-items: center; flex: none;
-  width: 1.15rem; height: 1.15rem; padding: 0; line-height: 1;
-  background: none; border: 1px dashed var(--line); border-radius: 50%;
-  color: var(--muted); font: inherit; font-size: 0.7rem; cursor: pointer;
+  width: 1.45rem; height: 1.45rem; padding: 0; line-height: 1;
+  background: var(--chip); border: 1px solid var(--line); border-radius: 50%;
+  color: var(--fg); font: inherit; font-size: 0.95rem; font-weight: 600;
+  cursor: pointer;
 }
-.ev-gear-open:hover { color: var(--fg); border-color: var(--muted); }
-.ev-gear-open.has-gear { border-style: solid; }
+.ev-gear-open:hover {
+  background: var(--team-accent, var(--accent));
+  border-color: var(--team-accent, var(--accent));
+  color: var(--bg);
+}
+.ev-gear-open.has-gear { border-color: var(--team-accent, var(--accent)); }
 
 /* Catches the click that should close it, without stealing one from the
    controls inside — it sits under the panel, not over it. */

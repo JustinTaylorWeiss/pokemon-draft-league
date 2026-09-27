@@ -164,6 +164,7 @@ const typeInk = (type?: string) => (type ? ` ev-ink type-${type.toLowerCase()}` 
 
 /** What each sweep of the other side is, above the rows that make it up. */
 const PASS_LABEL = ['Best move', '2nd best', '3rd best', '4th best']
+const passName = (n: number) => (n < 0 ? 'Added' : PASS_LABEL[n] ?? `${n + 1}th best`)
 
 /** A percentage of someone's HP, to one place, without a trailing zero. */
 const pct = (n: number) => `${Math.round(n * 10) / 10}`
@@ -343,7 +344,14 @@ function StatRows({ stat, evs, rows, faces, note }: {
 }) {
   const reachable = rows.filter((r) => !r.unreachable)
   const beyond = rows.filter((r) => r.unreachable)
+  /*
+   * Whether the sweeps are worth ruling off. More than one of them, or any
+   * move named by hand — a column with a single group of guessed moves has
+   * nothing to separate, but one holding a move somebody asked about should
+   * say which it is even if it is the only group there.
+   */
   const passes = new Set(reachable.map((r) => r.pass ?? 0)).size
+  const grouped = passes > 1 || reachable.some((r) => r.added)
 
   const defensive = stat === 'hp' || stat === 'def' || stat === 'spd'
   /*
@@ -385,8 +393,8 @@ function StatRows({ stat, evs, rows, faces, note }: {
                       its second. Only where there is more than one to tell
                       apart — a column with one row per Pokemon has nothing
                       to separate. */}
-                  {passes > 1 && r.pass != null && r.pass !== reachable[i - 1]?.pass && (
-                    <li className="ev-pass" aria-hidden="true">{PASS_LABEL[r.pass] ?? `${r.pass + 1}th best`}</li>
+                  {grouped && r.pass != null && r.pass !== reachable[i - 1]?.pass && (
+                    <li className="ev-pass" aria-hidden="true">{passName(r.pass)}</li>
                   )}
                   {r.shot
                     ? <ShotRow row={r} shot={r.shot} lit={lit(r)} tied={tied(r)} target={faces[r.target]} />

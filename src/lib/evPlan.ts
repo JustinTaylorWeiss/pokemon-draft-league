@@ -110,11 +110,16 @@ export interface Threshold {
   shot?: Shot
   /**
    * Which sweep of the other side this row belongs to: 0 for each Pokémon's
-   * best move, 1 for its second, and so on.
+   * best move, 1 for its second, and so on, and -1 for one named by hand.
    *
    * The list is ordered by it, and the column draws a line where it changes.
+   * Named moves come first because they were asked for: somebody typed
+   * "what if they bring Ice Beam" and the answer should not be four rows
+   * down among the ones nobody asked about.
    */
   pass?: number
+  /** Named by hand rather than guessed at. Sorted and labelled apart. */
+  added?: boolean
 }
 
 /**
@@ -208,6 +213,11 @@ export interface Opponent {
   side: Side
   /** The damaging moves it is known or likely to be carrying. */
   moves: Move[]
+  /**
+   * Of those, the ones named by hand rather than guessed at from its set
+   * and the format. They are asked for, so they are listed apart.
+   */
+  named: string[]
   /** True when there was no usage set and the movepool stood in for one. */
   guessed: boolean
 }
@@ -458,7 +468,14 @@ export function opponentsFrom(
     const byName = new Map(usual.map((m) => [m.name, m]))
     for (const m of named) byName.set(m.name, m)
 
-    return { id, pokemon, side, moves: [...byName.values()], guessed: !known.length }
+    return {
+      id,
+      pokemon,
+      side,
+      moves: [...byName.values()],
+      named: named.map((m) => m.name),
+      guessed: !known.length,
+    }
   })
 }
 
@@ -584,6 +601,7 @@ export function planFor(input: PlanInput): Plan {
           ...row,
           target: o.id,
           targetName: o.pokemon.name,
+          added: o.named.includes(move.name),
           shot: { ...row.shot, peak },
         })
       }
@@ -738,7 +756,14 @@ export function planFor(input: PlanInput): Plan {
       }
       for (const rows of byTarget.values()) {
         rows.sort(nearest)
-        rows.forEach((r, i) => { pass.set(r, i); r.pass = i })
+        // Named moves are not one of the sweeps; they sit above all of
+        // them and do not push the guessed ones down a place.
+        let n = 0
+        for (const r of rows) {
+          const at = r.added ? -1 : n++
+          pass.set(r, at)
+          r.pass = at
+        }
       }
       out[stat].sort((a, b) => (pass.get(a) ?? 0) - (pass.get(b) ?? 0)
         || nearest(a, b)
