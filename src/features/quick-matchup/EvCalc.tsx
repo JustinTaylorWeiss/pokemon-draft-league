@@ -896,11 +896,11 @@ function GearPicker({
                           {/* The name and what it hits for. Its category and
                               its type decide which column it lands in and
                               how hard, and both are read off the column it
-                              landed in — here they are two badges between
-                              the reader and the only two things they came
-                              to check. The type is in the name's colour,
-                              which costs no room. */}
+                              landed in, so both belong on the row. The type
+                              rides in the name's colour, which costs no
+                              room at all; the category needs its badge. */}
                           <span className={`ev-set-name${typeInk(move.type)}`}>{move.name}</span>
+                          <MoveCategory category={move.category} />
                           <em>{move.basePower}</em>
                           <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
                         </button>
@@ -925,6 +925,7 @@ function GearPicker({
                       <li key={m.name}>
                         <button type="button" onClick={() => addMove(m)}>
                           <span className={`ev-set-name${typeInk(m.type)}`}>{m.name}</span>
+                          <MoveCategory category={m.category} />
                           <em>{m.basePower}</em>
                         </button>
                       </li>

@@ -1356,7 +1356,7 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 .ev-gear-pop {
   position: absolute; top: calc(100% + 0.4rem); left: 50%; transform: translateX(-50%);
   z-index: 21; display: flex; flex-direction: column; gap: 0.45rem;
-  padding: 0.55rem; width: 15rem; max-width: 80vw;
+  padding: 0.55rem; width: 16.5rem; max-width: 80vw;
   background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
   box-shadow: 0 10px 28px rgb(0 0 0 / 45%);
 }
@@ -1394,12 +1394,20 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
    four-move overlay, because it is the same job asked of one Pokemon. */
 .ev-gear-moves { display: flex; flex-direction: column; gap: 0.25rem; }
 .ev-gear-moves .ev-set-list { max-height: 9rem; }
-.ev-gear-moves .ev-set-slot { font-size: 0.68rem; }
-/* Name on the left, power on the right, and nothing between them. */
+/* Three columns down the list — name, category, power — so the badges and
+   the numbers line up and the eye can run down one of them. The name takes
+   what is left and truncates; the other two are fixed. */
+.ev-gear-moves .ev-set-slot,
+.ev-gear-moves .ev-set-list button {
+  display: grid; grid-template-columns: minmax(0, 1fr) 3.35rem 1.4rem;
+  align-items: center; gap: 0.35rem; font-size: 0.68rem;
+}
+.ev-gear-moves .ev-set-slot { grid-template-columns: minmax(0, 1fr) 3.35rem 1.4rem 0.8rem; }
 .ev-gear-moves em {
   font-style: normal; font-size: 0.66rem; color: var(--muted);
-  margin-left: auto; font-variant-numeric: tabular-nums;
+  text-align: right; font-variant-numeric: tabular-nums;
 }
+.ev-gear-moves .ev-extra-drop { text-align: center; padding: 0; }
 .ev-gear-moves .ev-set-slots { max-height: 11rem; overflow-y: auto; }
 /* Named by hand rather than reckoned, which is the difference between a
    row somebody put there and a row the format put there. */
