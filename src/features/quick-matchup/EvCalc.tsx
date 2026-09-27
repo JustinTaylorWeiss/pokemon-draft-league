@@ -238,8 +238,12 @@ function ThresholdRow({
             {row.via.join(' · ')}
           </span>
         ) : null}
-        <span className="ev-detail">
-          {row.tier} · {row.outspeed}{tied ? ' · tied' : ''}
+        {/* Which build of theirs this row is about, and only that. Their
+            Speed was printed beside it, one below the number already on
+            the left — which is the Speed you need, meaning theirs plus
+            one. Two figures a step apart read as two facts. */}
+        <span className="ev-detail" title={`They reach ${row.outspeed} Speed`}>
+          {row.tier}{tied ? ' · tied' : ''}
         </span>
       </span>
     </li>

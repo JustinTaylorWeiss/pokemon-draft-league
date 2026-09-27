@@ -126,11 +126,17 @@ export interface Threshold {
  * uninvested version of something is a real and much cheaper win, and a
  * single row hid that it was on offer.
  */
+/*
+ * Labelled the way the pills under each sprite are, because they say the
+ * same thing: 31 is perfect IVs and nothing else, 252 is everything in the
+ * stat, and the plus is a boosting nature on top. "max EVs + nature" was
+ * three words for what the rest of the panel says in four characters.
+ */
 const SPEED_TIERS: { label: string; evs: number; nature: number }[] = [
-  { label: 'IVs only', evs: 0, nature: 1 },
-  { label: 'nature', evs: 0, nature: 1.1 },
-  { label: 'max EVs', evs: EV_MAX, nature: 1 },
-  { label: 'max EVs + nature', evs: EV_MAX, nature: 1.1 },
+  { label: '31', evs: 0, nature: 1 },
+  { label: '31+', evs: 0, nature: 1.1 },
+  { label: '252', evs: EV_MAX, nature: 1 },
+  { label: '252+', evs: EV_MAX, nature: 1.1 },
 ]
 
 export interface Spread {
