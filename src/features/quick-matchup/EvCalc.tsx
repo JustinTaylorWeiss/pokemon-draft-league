@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../../data/types'
 import { STAT_LABELS } from '../../lib/stats'
 import {
@@ -156,6 +156,122 @@ function ShotOutcome({ shot, chance }: { shot: Shot; chance: number }) {
  * the word itself.
  */
 const typeInk = (type?: string) => (type ? ` ev-ink type-${type.toLowerCase()}` : '')
+
+/**
+ * How to read this tab, for someone opening it for the first time.
+ *
+ * Written out rather than left to be worked out: the columns are dense and
+ * the thing that makes them worth reading — that every number is about a
+ * Pokémon actually on the other team — is the one thing a screen full of
+ * percentages does not say.
+ */
+export function EvHelp({ onClose }: { onClose: () => void }) {
+  // Escape closes it, the way it closes everything else that opens over the
+  // page. The backdrop takes a click for the same reason.
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', key)
+    return () => window.removeEventListener('keydown', key)
+  }, [onClose])
+
+  return (
+    <div className="ev-help" role="dialog" aria-modal="true" aria-label="How the EV calculator works">
+      <button type="button" className="ev-help-away" aria-label="Close" onClick={onClose} />
+      <div className="ev-help-panel">
+        <header>
+          <h2>Choosing a spread</h2>
+          <button type="button" className="ev-help-close" aria-label="Close" onClick={onClose}>
+            {'×'}
+          </button>
+        </header>
+
+        <div className="ev-help-body">
+          <p>
+            Every other EV tool tells you what a number becomes. The number never matters
+            on its own — 12 Special Attack is worth having or worth nothing depending
+            entirely on whether it changes something against a Pokémon they actually
+            drafted. Both teams are already here, so this answers that instead.
+          </p>
+
+          <h3>Set it up</h3>
+          <ol>
+            <li>
+              <b>Pick your Pokémon</b> from the dropdown in the blue box. Both teams are
+              listed, under their coach.
+            </li>
+            <li>
+              <b>Choose its four moves.</b> They start filled with what it is usually seen
+              throwing — its most-used set, topped up from the moves this format actually
+              plays. The two attacking columns argue from exactly these four, so a move it
+              is not carrying never makes a case for spending on it.
+            </li>
+            <li>
+              <b>Tell it about the other side.</b> The <code>{'⋯'}</code> under each of
+              their sprites opens that Pokémon: hide it if you are not bringing yours into
+              it, credit it with 252 HP or a boosting nature, drop an IV, give it an item or
+              a different ability. Everything you say shows as a pill under the sprite, and
+              every number in every column moves with it.
+            </li>
+          </ol>
+
+          <h3>Read a row</h3>
+          <p className="ev-help-eg">
+            <span>Incineroar</span>
+            <em>94% 1HKO</em>
+            <span>Earthquake</span>
+            <em>98.8–117.6%</em>
+          </p>
+          <p>
+            Earthquake does between 98.8% and 117.6% of Incineroar&rsquo;s HP, so it knocks
+            it out in one hit 94 times in 100 and in two the rest of the time. The range is
+            the sixteen damage rolls end to end, the same numbers any damage calculator
+            prints. Both move as you drag the slider.
+          </p>
+          <p>
+            The defensive columns are the same row read the other way: what their move does
+            to you. The attacking ones show each of your four against each of them, sorted
+            in passes — your best answer to every Pokémon first, then your second, and down.
+          </p>
+
+          <h3>What green means</h3>
+          <p>
+            A row is green when its guaranteed hit count is the best that column could ever
+            reach: the fewest hits when you are landing them, the most when you are taking
+            them. Green is not &ldquo;good&rdquo;, it is <b>nothing left to buy here</b> —
+            more EVs in that stat will not change the outcome against that Pokémon. Grey
+            rows are where the next point still does something.
+          </p>
+          <p>
+            Speed is the one column that still prices thresholds, because it has no damage
+            rolls. Each row is a build of theirs — <code>31</code> perfect IVs and nothing
+            else, <code>252</code> fully invested, a <code>+</code> for a boosting nature —
+            with the EVs and the Speed you need to beat it, and orange where you only tie.
+          </p>
+
+          <h3>Two things worth trying</h3>
+          <ul>
+            <li>
+              Drag HP up four at a time and watch a 2HKO turn into a 3HKO. The point it
+              flips is the only part of that slider you were paying for.
+            </li>
+            <li>
+              Type a move into <b>add a move to enemy team</b> — Ice Beam, say. It is
+              credited to everyone over there who can learn it and listed in its own group
+              above the rest, so &ldquo;what if they bring it&rdquo; is a question you can
+              actually ask.
+            </li>
+          </ul>
+
+          <p className="ev-help-small">
+            Weather, terrain, screens, stat stages, Intimidate, burn and Tera are not
+            counted. Hits are the guaranteed ones — the worst roll every time — with the
+            odds of the faster result beside them.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 /** What each sweep of the other side is, above the rows that make it up. */
 const PASS_LABEL = ['Best move', '2nd best', '3rd best', '4th best']

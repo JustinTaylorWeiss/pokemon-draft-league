@@ -5,7 +5,7 @@ import { DraftSummaryBody } from './DraftSummary'
 import { DefensiveChartBody } from './DefensiveChart'
 import { buildMoveRows, LearnedMovesBody } from './LearnedMoves'
 import { CoverageBody } from './CoveragePanel'
-import { EvCalcBody } from './EvCalc'
+import { EvCalcBody, EvHelp } from './EvCalc'
 import { useSpeedTiersPanel } from './useSpeedTiersPanel'
 import { TeamName } from '../../components/TeamName'
 import type { LeagueDex } from '../../data/league'
@@ -98,6 +98,7 @@ export function AnalysisCard({
 
   const [sets, setSets] = useState<SetDex | null>(null)
   useEffect(() => { loadSets().then(setSets, () => {}) }, [])
+  const [help, setHelp] = useState(false)
 
   // Built here rather than inside LearnedMovesBody: this component stays
   // mounted across tab switches, so the work survives leaving the tab and
@@ -150,7 +151,21 @@ export function AnalysisCard({
       </button>
     ),
     speed: <>{levelPicker}{speed.actions}</>,
-    evs: levelPicker,
+    // The one tab dense enough to need saying out loud what it is for.
+    evs: (
+      <>
+        {levelPicker}
+        <button
+          type="button"
+          className="sub-help"
+          aria-label="How the EV calculator works"
+          title="How the EV calculator works"
+          onClick={() => setHelp(true)}
+        >
+          ?
+        </button>
+      </>
+    ),
   }[tab]
 
   // On every tab that shows the two teams as a pair, which is all of them bar
@@ -202,6 +217,8 @@ export function AnalysisCard({
           {(header || trail) && <div className="sub-actions">{header}{trail}</div>}
         </div>
       </div>
+
+      {help && <EvHelp onClose={() => setHelp(false)} />}
 
       <div className="analysis-body">
       {tab === 'summary' && (
