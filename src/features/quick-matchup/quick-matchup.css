@@ -910,6 +910,54 @@ button.type-chip { cursor: pointer; }
    the numbers" without taking it off the row and leaving a gap. */
 .ev-foe.is-off img { opacity: 0.3; filter: grayscale(1); }
 
+/* What the other side is credited with, and anything else it might bring. */
+.ev-assumes { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.5rem 0.9rem; }
+/* The label over its segments rather than beside them: three of these in a
+   row read as one long sentence otherwise, and which words belong to which
+   control is the first thing you need. */
+.ev-assume { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 0.15rem; }
+.ev-assume-what {
+  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.05em; color: var(--muted);
+  text-transform: uppercase; white-space: nowrap;
+}
+/* Joined segments, the same shape the nature buttons in each column use. */
+.ev-assume-seg { display: inline-flex; }
+.ev-seg {
+  padding: 0.12rem 0.4rem; line-height: 1.3;
+  background: none; border: 1px solid var(--line); color: var(--muted);
+  font: inherit; font-size: 0.68rem; font-variant-numeric: tabular-nums; cursor: pointer;
+}
+.ev-seg:first-child { border-radius: 999px 0 0 999px; padding-left: 0.55rem; }
+.ev-seg:last-child { border-radius: 0 999px 999px 0; padding-right: 0.55rem; }
+.ev-seg + .ev-seg { border-left: 0; }
+.ev-seg:hover { color: var(--fg); }
+.ev-seg[aria-pressed="true"] {
+  background: var(--team-accent, var(--accent)); border-color: var(--team-accent, var(--accent));
+  color: var(--bg); font-weight: 600;
+}
+
+.ev-add { position: relative; display: inline-flex; }
+.ev-add input {
+  height: 1.55rem; width: 9rem; padding: 0 0.5rem; font-size: 0.75rem;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+  color: var(--fg); font-family: inherit;
+}
+.ev-add input:focus-visible { outline: 2px solid var(--team-accent, var(--accent)); outline-offset: 1px; }
+.ev-matches {
+  position: absolute; top: calc(100% + 0.3rem); left: 0; z-index: 30;
+  list-style: none; margin: 0; padding: 0.25rem; min-width: 15rem;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 45%);
+}
+.ev-matches button {
+  width: 100%; display: flex; align-items: center; gap: 0.4rem;
+  background: none; border: 0; border-radius: 6px; cursor: pointer;
+  padding: 0.28rem 0.4rem; font: inherit; font-size: 0.75rem; color: var(--fg); text-align: left;
+}
+.ev-matches button:hover { background: var(--chip); }
+.ev-matches em { font-style: normal; font-size: 0.65rem; color: var(--muted); margin-left: auto; }
+.ev-extra { font-size: 0.7rem; }
+
 .ev-hint, .ev-note { margin: 0; color: var(--muted); font-size: 0.75rem; line-height: 1.45; }
 .ev-budget {
   margin-left: auto; display: inline-flex; align-items: baseline; gap: 0.6rem;

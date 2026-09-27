@@ -110,6 +110,30 @@ export function sideFrom(
   return { pokemon, level, evs: s.evs, natureBy: s.nature, item, ability }
 }
 
+/**
+ * What to credit the other side with, where you do not want to take their
+ * usage set's word for it.
+ *
+ * A set is one spread off a ladder and the Pokémon across from you is
+ * whatever its coach built. Asking "does this hold up against a max-invested
+ * version" is the question a spread is actually chosen to answer, and the
+ * set cannot be asked it.
+ *
+ * `max+` puts the boosting nature on whichever stat is being tested, both
+ * defences or both attacks. No real Pokémon has both, and no real Pokémon
+ * needs to: each calculation only reads one of them, and the assumption is
+ * about that one.
+ */
+export type Assume = 'set' | 'max' | 'max+'
+export interface Assumptions {
+  /** HP takes no nature, so it has no `max+`. */
+  hp: 'set' | 'max'
+  bulk: Assume
+  power: Assume
+}
+
+export const ASSUME_SET: Assumptions = { hp: 'set', bulk: 'set', power: 'set' }
+
 export interface Opponent {
   id: string
   pokemon: Pokemon
@@ -236,6 +260,17 @@ export function opponentsFrom(
   learnsets: LearnsetDex | null,
   played: string[] | null,
   level: number,
+  assume: Assumptions = ASSUME_SET,
+  /**
+   * Moves to credit every opponent that can learn one with, on top of
+   * whatever its set or its movepool already said.
+   *
+   * A set is four moves and a coach picks them; the one that beats you may
+   * not be among the four this Pokémon is usually seen with. Naming it adds
+   * it wherever it is legal, which is the question "what if they bring
+   * Ice Beam" asked of the whole team at once.
+   */
+  extra: string[] = [],
 ): Opponent[] {
   return members.map(({ id, pokemon }) => {
     const set = sets?.[id]
@@ -244,7 +279,7 @@ export function opponentsFrom(
     const physical = pokemon.baseStats.atk >= pokemon.baseStats.spa
 
     const side: Side = spread
-      ? { pokemon, level, evs, nature: spread.nature, item: spread.item, ability: spread.ability }
+      ? { pokemon, level, evs: { ...evs }, nature: spread.nature, item: spread.item, ability: spread.ability }
       : {
         pokemon,
         level,
@@ -252,12 +287,33 @@ export function opponentsFrom(
         ability: Object.values(pokemon.abilities)[0],
       }
 
+    // Credited with more than the set says, where that is what was asked.
+    if (assume.hp === 'max') side.evs = { ...side.evs, hp: EV_MAX }
+    for (const [choice, stats] of [
+      [assume.bulk, ['def', 'spd']],
+      [assume.power, ['atk', 'spa']],
+    ] as [Assume, StatKey[]][]) {
+      if (choice === 'set') continue
+      side.evs = { ...side.evs, ...Object.fromEntries(stats.map((k) => [k, EV_MAX])) }
+      if (choice === 'max+') {
+        side.natureBy = { ...side.natureBy, ...Object.fromEntries(stats.map((k) => [k, 1.1])) }
+      }
+    }
+
     const known = (set?.moves ?? [])
       .map((m) => moveDex[m])
       .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0)
-    const moves = known.length ? known : likelyMoves(pokemon, learnsets?.[id], moveDex, played)
+    const usual = known.length ? known : likelyMoves(pokemon, learnsets?.[id], moveDex, played)
 
-    return { id, pokemon, side, moves, guessed: !known.length }
+    const own = learnsets?.[id]
+    const named = extra
+      .filter((mv) => own?.[mv])
+      .map((mv) => moveDex[mv])
+      .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0)
+    const byName = new Map(usual.map((m) => [m.name, m]))
+    for (const m of named) byName.set(m.name, m)
+
+    return { id, pokemon, side, moves: [...byName.values()], guessed: !known.length }
   })
 }
 

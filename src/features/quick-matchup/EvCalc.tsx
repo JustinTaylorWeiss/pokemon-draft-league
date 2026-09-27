@@ -2,10 +2,12 @@ import { useMemo, useState } from 'react'
 import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../../data/types'
 import { STAT_LABELS } from '../../lib/stats'
 import {
-  EV_BUDGET, EV_MAX, EV_STATS, EV_STEP, emptySpread, opponentsFrom, planFor, spent,
-  statOfSpread, type Spread, type Threshold,
+  ASSUME_SET, EV_BUDGET, EV_MAX, EV_STATS, EV_STEP, emptySpread, opponentsFrom, planFor,
+  spent, statOfSpread, type Assume, type Assumptions, type Spread, type Threshold,
 } from '../../lib/evPlan'
 import { Sprite } from '../../components/Sprite'
+import { MoveCategory } from '../../components/MoveCategory'
+import { toId } from '../../data/load'
 import { DropPicker, type DropItem } from '../../components/DropPicker'
 import type { Team, TeamEntry } from './TeamEditor'
 
@@ -39,6 +41,48 @@ const natureIsLegal = (s: Spread) => {
 
 /** HP has no nature: no nature in the games touches it. */
 const takesNature = (stat: StatKey) => stat !== 'hp'
+
+/** Short on the button, spelled out on hover. */
+const ASSUME_LABEL: Record<Assume, string> = { set: 'set', max: '252', 'max+': '252+' }
+const ASSUME_MEANS: Record<Assume, string> = {
+  set: 'whatever their most-used set runs',
+  max: 'maximum EVs',
+  'max+': 'maximum EVs and a boosting nature',
+}
+
+/**
+ * The three states side by side rather than one button cycling through them.
+ *
+ * Cycling is fine for two and poor for three: reaching the one you want
+ * means clicking through the one you do not, and which comes next is only
+ * learnable by trying. Laid out, the choice is the control.
+ */
+function AssumePicker({ label, value, states, onPick }: {
+  label: string
+  value: Assume
+  states: Assume[]
+  onPick: (next: Assume) => void
+}) {
+  return (
+    <span className="ev-assume">
+      <span className="ev-assume-what">{label}</span>
+      <span className="ev-assume-seg">
+        {states.map((state) => (
+          <button
+            key={state}
+            type="button"
+            className="ev-seg"
+            aria-pressed={value === state}
+            title={`${label}: ${ASSUME_MEANS[state]}`}
+            onClick={() => onPick(state)}
+          >
+            {ASSUME_LABEL[state]}
+          </button>
+        ))}
+      </span>
+    </span>
+  )
+}
 
 /**
  * Odds as a player says them. "Guaranteed" and "never" rather than 100% and
@@ -201,6 +245,11 @@ export function EvCalcBody({
    * ones that matter.
    */
   const [off, setOff] = useState<Set<string>>(() => new Set())
+  /** What the other side is credited with, where their set is not the answer. */
+  const [assume, setAssume] = useState<Assumptions>(ASSUME_SET)
+  /** Moves named by hand, credited to every opponent that can learn one. */
+  const [extra, setExtra] = useState<string[]>([])
+  const [query, setQuery] = useState('')
 
   const sides: { key: 'one' | 'two'; team: Team }[] = [
     { key: 'one', team: teamOne }, { key: 'two', team: teamTwo },
@@ -232,9 +281,12 @@ export function EvCalcBody({
 
   const opponents = useMemo(
     () => (picked
-      ? opponentsFrom(picked.foes.filter((m) => !off.has(m.id)), sets, moves, learnsets, played, level)
+      ? opponentsFrom(
+        picked.foes.filter((m) => !off.has(m.id)),
+        sets, moves, learnsets, played, level, assume, extra,
+      )
       : []),
-    [picked, off, sets, moves, learnsets, played, level],
+    [picked, off, sets, moves, learnsets, played, level, assume, extra],
   )
 
   /** Everything on either side, for the picker. */
@@ -247,12 +299,37 @@ export function EvCalcBody({
     icon: <Sprite pokemon={m.pokemon} width={28} height={24} />,
   })))
 
+  /**
+   * Moves matching what has been typed, that somebody over there can learn.
+   *
+   * Filtered against the other side rather than the whole move list: a move
+   * none of them has is a move that would be added to nobody, and offering
+   * it is offering a button that does nothing.
+   */
+  const matches = useMemo(() => {
+    const q = query.trim().toLowerCase()
+    if (q.length < 2 || !picked) return []
+    const legal = new Set<string>()
+    for (const m of picked.foes) for (const id of Object.keys(learnsets?.[m.id] ?? {})) legal.add(id)
+    return [...legal]
+      .map((id) => moves[id])
+      .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0
+        && m.name.toLowerCase().includes(q) && !extra.includes(toId(m.name)))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .slice(0, 8)
+  }, [query, picked, learnsets, moves, extra])
+
   const choose = (id: string) => {
     setChosen(id)
     // A spread belongs to the Pokémon it was chosen for, and so does a
     // decision about which of the other side to weigh it against.
     setSpread(emptySpread())
     setOff(new Set())
+  }
+
+  const addMove = (move: Move) => {
+    setExtra((prev) => (prev.includes(toId(move.name)) ? prev : [...prev, toId(move.name)]))
+    setQuery('')
   }
 
   const plan = useMemo(() => {
@@ -354,6 +431,60 @@ export function EvCalcBody({
         <p className="ev-hint">Pick a Pokémon to see what its EVs would buy against the other side.</p>
       ) : (
         <>
+          {/* What to credit them with. Their set is one spread off a ladder;
+              "does this hold against a max-invested one" is the question a
+              spread is actually chosen to answer. */}
+          <div className="ev-assumes">
+            <span className="ev-against">they run</span>
+            <AssumePicker
+              label="HP" value={assume.hp} states={['set', 'max']}
+              onPick={(hp) => setAssume((a) => ({ ...a, hp: hp as 'set' | 'max' }))}
+            />
+            <AssumePicker
+              label="Def / SpD" value={assume.bulk} states={['set', 'max', 'max+']}
+              onPick={(bulk) => setAssume((a) => ({ ...a, bulk }))}
+            />
+            <AssumePicker
+              label="Atk / SpA" value={assume.power} states={['set', 'max', 'max+']}
+              onPick={(power) => setAssume((a) => ({ ...a, power }))}
+            />
+
+            {/* And anything they might be carrying that their set does not
+                say. Added to everyone over there who can learn it. */}
+            <span className="ev-add">
+              <input
+                type="search" value={query} placeholder="Add a move…"
+                aria-label="Add a move the other side might carry"
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              {matches.length > 0 && (
+                <ul className="ev-matches">
+                  {matches.map((m) => (
+                    <li key={m.name}>
+                      <button type="button" onClick={() => addMove(m)}>
+                        <MoveCategory category={m.category} />
+                        <span>{m.name}</span>
+                        <em>{m.type} · {m.basePower}</em>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </span>
+
+            {extra.map((id) => (
+              <button
+                key={id}
+                type="button"
+                className="pill-toggle ev-extra"
+                aria-pressed
+                title={`${moves[id]?.name ?? id} — click to drop it`}
+                onClick={() => setExtra((prev) => prev.filter((x) => x !== id))}
+              >
+                {moves[id]?.name ?? id} {'×'}
+              </button>
+            ))}
+          </div>
 
           <div className="ev-cols">
             {EV_STATS.map((stat) => (
@@ -382,6 +513,10 @@ export function EvCalcBody({
                 so {guessed.length === 1 ? 'its' : 'their'} movepool stands in</>
             )}
             . Weather, terrain, screens, boosts and Intimidate are not counted.
+            {(assume.bulk === 'max+' || assume.power === 'max+') && (
+              <> A boosting nature is credited to whichever of the pair each
+                calculation reads, which no single Pokémon could have both of.</>
+            )}
           </p>
         </>
       )}
