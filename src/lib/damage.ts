@@ -105,7 +105,7 @@ const ITEM_DEFENSE: Record<string, { stat: StatKey; mult: number }> = {
 export const MODELLED_ABILITIES: ReadonlySet<string> = new Set([
   ...DEFENSIVE_ABILITIES,
   'Adaptability', 'Huge Power', 'Pure Power', 'Fur Coat', 'Ice Scales',
-  'Multiscale', 'Shadow Shield',
+  'Multiscale', 'Shadow Shield', 'Tough Claws', 'Technician',
 ])
 
 const ALWAYS_MATTERS = new Set([
@@ -300,7 +300,20 @@ function core(
   // full: these are first-hit questions. Half damage, and it says so.
   const shield = defender.ability === 'Multiscale' || defender.ability === 'Shadow Shield' ? 0.5 : 1
   const belt = attacker.item === 'Expert Belt' && effect > 1 ? 1.2 : 1
-  const after = itemMult * shield * belt
+  /*
+   * Two of the attacker's that read nothing but the move in front of
+   * them. Tough Claws is a third again on anything that touches, which
+   * is most of what a physical attacker clicks — Mega Aerodactyl has it
+   * and every Rock Slide it threw was landing for a third less than it
+   * should. Technician is half again under sixty base power, which is
+   * the whole reason anything runs a sixty-power move.
+   *
+   * Both are in the data already: the build records `contact` on every
+   * move that has the flag, and base power speaks for itself.
+   */
+  const claws = attacker.ability === 'Tough Claws' && move.contact ? 1.3 : 1
+  const tech = attacker.ability === 'Technician' && move.basePower <= 60 ? 1.5 : 1
+  const after = itemMult * shield * belt * claws * tech
 
   const rolls: number[] = []
   for (let r = 85; r <= 100; r++) {

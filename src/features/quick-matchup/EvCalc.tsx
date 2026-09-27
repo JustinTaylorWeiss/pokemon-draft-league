@@ -727,8 +727,18 @@ function GearPicker({
    * here, in the one place where every word is about what altered
    * something. The panel still shows which is selected.
    */
-  const telling = gear?.ability && MODELLED_ABILITIES.has(gear.ability)
-    ? gear.ability : undefined
+  /*
+   * The ability it is running, where that changes a number here — chosen
+   * by hand or not.
+   *
+   * It used to read only what somebody had picked, so a Mega Aerodactyl
+   * whose Tough Claws is a third of every contact move it throws said
+   * nothing under its sprite, because nobody had picked it: it has no
+   * choice to make. What matters is whether the ability moves the
+   * figures, not who settled on it.
+   */
+  const running = gear?.ability || usualAbilityName
+  const telling = running && MODELLED_ABILITIES.has(running) ? running : undefined
   const chosen = [
     ...raised, ...dropped.map((d) => `${d} IV`), telling, gear?.item,
   ].filter(Boolean) as string[]
@@ -1029,18 +1039,19 @@ function GearPicker({
             {open === 'kit' && setAbility && (
               <div className="ev-gear-fixed">
                 <span>Ability</span>
-                <b>{setAbility}</b>
+                <b>{MODELLED_ABILITIES.has(setAbility) ? setAbility : 'No effect here'}</b>
               </div>
             )}
             {/* Several to choose between and no reason to: none of them
                 changes a number here, so which it is running is not a
-                question this tab can answer or needs answered. Said
-                rather than left blank — a panel with no ability line
-                looks like a panel that did not check. */}
+                question this tab can answer or needs answered. The names
+                are not worth the line either — this row exists to say
+                whether the ability is in the numbers, and the answer is
+                no, which is what it says. */}
             {open === 'kit' && !setAbility && !abilities.length && own.length > 1 && (
               <div className="ev-gear-fixed">
-                <span>Ability <em>no effect here</em></span>
-                <b>{own.join(' · ')}</b>
+                <span>Ability</span>
+                <b>No effect here</b>
               </div>
             )}
             {open === 'kit' && !setAbility && abilities.length > 0 && (
