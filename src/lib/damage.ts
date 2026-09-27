@@ -62,6 +62,30 @@ const ITEM_TYPE: Record<string, TypeName> = {
 /** Which type an item lends its fifth to, for anywhere that groups them. */
 export const typeBoosted = (item: string): TypeName | undefined => ITEM_TYPE[item]
 
+/**
+ * What an item does, in the shortest form that is still the whole of it.
+ *
+ * Beside the name in a list, because "Muscle Band" and "Choice Band" are a
+ * tenth and a half apart and nothing about the two names says which.
+ */
+const ITEM_EFFECT: Record<string, string> = {
+  'Life Orb': '×1.3',
+  'Choice Band': '×1.5 phys',
+  'Choice Specs': '×1.5 spec',
+  'Muscle Band': '×1.1 phys',
+  'Wise Glasses': '×1.1 spec',
+  'Expert Belt': '×1.2 if super effective',
+  'Assault Vest': '×1.5 SpD',
+  Eviolite: '×1.5 Def and SpD',
+  'Light Ball': '×2 Atk and SpA',
+  'Choice Scarf': '×1.5 Spe',
+}
+
+export function itemEffect(item: string): string {
+  const type = ITEM_TYPE[item]
+  return type ? `×1.2 ${type}` : ITEM_EFFECT[item] ?? ''
+}
+
 /** Items that change how hard a hit is taken. */
 const ITEM_DEFENSE: Record<string, { stat: StatKey; mult: number }> = {
   'Assault Vest': { stat: 'spd', mult: 1.5 },

@@ -1,7 +1,9 @@
 import { useMemo, useState } from 'react'
 import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../../data/types'
 import { STAT_LABELS } from '../../lib/stats'
-import { GIVEABLE_ITEMS, MODELLED_ABILITIES, itemMatters, typeBoosted } from '../../lib/damage'
+import {
+  GIVEABLE_ITEMS, MODELLED_ABILITIES, itemEffect, itemMatters, typeBoosted,
+} from '../../lib/damage'
 import {
   ASSUME_SET, EV_BUDGET, EV_MAX, EV_STATS, EV_STEP, emptySpread, opponentsFrom, planFor,
   spent, statOfSpread, type Assume, type Assumptions, type Spread, type Threshold,
@@ -298,10 +300,8 @@ export interface Gear { item?: string; ability?: string }
  * fifth of the Special Defense column, and Multiscale is half of every
  * defensive row at once.
  */
-function GearPicker({ pokemon, threats, gear, onChange }: {
+function GearPicker({ pokemon, gear, onChange }: {
   pokemon: Pokemon
-  /** What it is reckoned to be attacking with, which decides its plates. */
-  threats: Move[]
   gear: Gear | undefined
   onChange: (next: Gear) => void
 }) {
@@ -333,26 +333,25 @@ function GearPicker({ pokemon, threats, gear, onChange }: {
    * mineral rather than the type it belongs to.
    */
   /*
-   * A plate is worth a fifth of one type, so the ones worth offering are
-   * the types this Pokemon actually throws — not the types it is.
+   * A plate for each of its own types, and no others.
    *
-   * Its own types would be the obvious filter and the wrong one: a Garchomp
-   * running Fire Blast holds a Flame Plate for it, and Fire is not one of
-   * Garchomp's types. Its moves are what the plate reads, so its moves are
-   * what the list follows. Every one of the twenty-two was on offer to
-   * everything before this, masks included.
+   * All twenty-two were on offer to everything, Ogerpon's masks included.
+   * Following the Pokemon's types rather than its moves means a plate for a
+   * coverage move is not offered — a Garchomp with Fire Blast cannot be
+   * given a Flame Plate here — which is the trade for a list of two rather
+   * than a list of six.
    */
   const { plain, boosters } = useMemo(() => {
-    const thrown = new Set(threats.map((m) => m.type))
+    const own = new Set<string>(pokemon.types)
     const usable = GIVEABLE_ITEMS.filter((n) => itemMatters(n, pokemon))
     return {
       plain: usable.filter((n) => !typeBoosted(n)),
       boosters: usable.filter((n) => {
         const type = typeBoosted(n)
-        return type != null && thrown.has(type)
+        return type != null && own.has(type)
       }),
     }
-  }, [pokemon, threats])
+  }, [pokemon])
 
   // Nothing either list can offer, so nothing to open.
   if (!abilities.length && !plain.length && !boosters.length) return null
@@ -400,11 +399,13 @@ function GearPicker({ pokemon, threats, gear, onChange }: {
                 onChange={(e) => onChange({ ...gear, item: e.target.value })}
               >
                 <option value="">none</option>
-                {plain.map((n) => <option key={n} value={n}>{n}</option>)}
+                {plain.map((n) => (
+                  <option key={n} value={n}>{n} — {itemEffect(n)}</option>
+                ))}
                 {boosters.length > 0 && (
                   <optgroup label="Type boosters">
                     {boosters.map((n) => (
-                      <option key={n} value={n}>{n} — {typeBoosted(n)}</option>
+                      <option key={n} value={n}>{n} — {itemEffect(n)}</option>
                     ))}
                   </optgroup>
                 )}
@@ -665,7 +666,7 @@ export function EvCalcBody({
               <Sprite pokemon={picked.entry.pokemon} width={40} height={33} />
             </PokemonLink>
             <GearPicker
-              pokemon={picked.entry.pokemon} threats={myMoves}
+              pokemon={picked.entry.pokemon}
               gear={gear[picked.entry.id]} onChange={(g) => give(picked.entry.id, g)}
             />
           </span>
@@ -692,7 +693,6 @@ export function EvCalcBody({
                 </button>
                 <GearPicker
                   pokemon={m.pokemon}
-                  threats={opponents.find((o) => o.id === m.id)?.moves ?? []}
                   gear={gear[m.id]} onChange={(g) => give(m.id, g)}
                 />
               </span>
