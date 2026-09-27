@@ -606,9 +606,14 @@ function GearPicker({
   // Only the dropped ones. Everything is 31 unless somebody said otherwise,
   // so a pill for each of six perfect IVs would be six pills saying nothing.
   const dropped = lowered(gear?.ivs).map(([stat, iv]) => `${STAT_LABELS[stat]} ${iv} IV`)
-  const brought = (named ?? []).map((id) => moves?.[id]?.name ?? id)
+  /*
+   * Moves are not among them. A spread, an ability and an item are one
+   * fact each and fit under a sprite; a movepool is six or seven rows and
+   * only makes sense as a list, which the menu already is. Three of these
+   * fit before the rest become "2 more", and moves would spend all three.
+   */
   const chosen = [
-    ...raised, ...dropped, gear?.ability, gear?.item, ...brought,
+    ...raised, ...dropped, gear?.ability, gear?.item,
   ].filter(Boolean) as string[]
 
   /*
@@ -624,7 +629,7 @@ function GearPicker({
    */
   const CHIPS = 3
   const priority = [
-    gear?.ability, gear?.item, ...brought, ...raised, ...dropped,
+    gear?.ability, gear?.item, ...raised, ...dropped,
   ].filter(Boolean) as string[]
   const keeping = new Set(chosen.length > CHIPS ? priority.slice(0, CHIPS - 1) : chosen)
   const shown = chosen.filter((c) => keeping.has(c))
