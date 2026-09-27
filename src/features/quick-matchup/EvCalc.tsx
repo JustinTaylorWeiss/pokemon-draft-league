@@ -100,9 +100,16 @@ function StatColumn({
         <strong className="ev-value" title={`${bare} before EVs`}>{value}</strong>
       </header>
 
-      {/* And what is being spent on it. */}
+      {/* What is being spent, what spends it, and what bends it — one row,
+          reading left to right in that order. The total is above; this line
+          is only the controls. */}
       <div className="ev-spend">
         <span className="ev-evs" title={`${evs} EVs`}>{evs}</span>
+        <input
+          type="range" min={0} max={EV_MAX} step={EV_STEP} value={evs}
+          aria-label={`${STAT_LABELS[stat]} EVs`}
+          onChange={(e) => onEvs(Number(e.target.value))}
+        />
         {takesNature(stat) && (
           <span className="ev-natures">
             {NATURES.map((n) => (
@@ -120,14 +127,6 @@ function StatColumn({
           </span>
         )}
       </div>
-
-      <label className="ev-slider">
-        <input
-          type="range" min={0} max={EV_MAX} step={EV_STEP} value={evs}
-          aria-label={`${STAT_LABELS[stat]} EVs`}
-          onChange={(e) => onEvs(Number(e.target.value))}
-        />
-      </label>
 
       {rows.length ? (
         <>

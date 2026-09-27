@@ -899,6 +899,9 @@ button.type-chip { cursor: pointer; }
 
 .ev-cols { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.5rem; }
 .ev-col { min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+/* A rule between them: six lists of short rows run together otherwise, and
+   which column a row belongs to is the first thing you need from it. */
+.ev-col + .ev-col { border-left: 1px solid var(--line); padding-left: 0.5rem; }
 /* The stat as it stands with no EVs in it, which is what the rows below are
    measured from, and under a rule the EVs going into it. */
 .ev-col-head {
@@ -907,12 +910,13 @@ button.type-chip { cursor: pointer; }
 }
 .ev-stat { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; color: var(--muted); }
 .ev-value { font-size: 0.95rem; font-variant-numeric: tabular-nums; margin-left: auto; }
-.ev-spend { display: flex; align-items: center; gap: 0.35rem; }
+.ev-spend { display: flex; align-items: center; gap: 0.3rem; }
 .ev-evs {
+  flex: 0 0 1.6rem; text-align: right;
   font-size: 0.8rem; font-weight: 700; font-variant-numeric: tabular-nums;
   color: var(--team-accent, var(--accent));
 }
-.ev-natures { display: inline-flex; margin-left: auto; }
+.ev-natures { display: inline-flex; flex: none; }
 .ev-nature {
   width: 1.15rem; height: 1.15rem; padding: 0; line-height: 1;
   background: none; border: 1px solid var(--line); color: var(--muted);
@@ -926,23 +930,22 @@ button.type-chip { cursor: pointer; }
   color: var(--bg);
 }
 
-.ev-slider { display: flex; align-items: center; gap: 0.35rem; }
-.ev-slider input[type="range"] {
+.ev-spend input[type="range"] {
   appearance: none; -webkit-appearance: none;
   margin: 0; padding: 0; flex: 1 1 0; min-width: 0; height: 0.85rem;
   background: transparent; cursor: pointer;
 }
-.ev-slider input[type="range"]::-webkit-slider-runnable-track {
+.ev-spend input[type="range"]::-webkit-slider-runnable-track {
   height: 4px; border-radius: 999px; background: var(--chip);
 }
-.ev-slider input[type="range"]::-webkit-slider-thumb {
+.ev-spend input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%;
   background: var(--team-accent, var(--accent)); border: 0; margin-top: -4px;
 }
-.ev-slider input[type="range"]::-moz-range-track {
+.ev-spend input[type="range"]::-moz-range-track {
   height: 4px; border-radius: 999px; background: var(--chip);
 }
-.ev-slider input[type="range"]::-moz-range-thumb {
+.ev-spend input[type="range"]::-moz-range-thumb {
   width: 12px; height: 12px; border-radius: 50%;
   background: var(--team-accent, var(--accent)); border: 0;
 }
