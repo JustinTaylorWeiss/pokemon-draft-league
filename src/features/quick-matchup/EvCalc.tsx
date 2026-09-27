@@ -1116,61 +1116,18 @@ export function EvCalcBody({
             </div>
           )}
 
+          {/* What is left to spend, drawn rather than counted out. Five
+              hundred and eight is a number you have to subtract from; a
+              bar is a thing you can see the end of. */}
           {picked && (
-            <div className="ev-assumes">
-              {/* What is left to spend, drawn rather than counted out. Five
-                  hundred and eight is a number you have to subtract from; a
-                  bar is a thing you can see the end of. */}
-              <span className={`ev-budget${left === 0 ? ' is-full' : ''}`}>
-                <span className="ev-budget-bar">
-                  <span style={{ width: `${(used / EV_BUDGET) * 100}%` }} />
-                </span>
-                <span className="ev-budget-read">
-                  {used}<i>/{EV_BUDGET}</i>
-                </span>
+            <span className={`ev-budget${left === 0 ? ' is-full' : ''}`}>
+              <span className="ev-budget-bar">
+                <span style={{ width: `${(used / EV_BUDGET) * 100}%` }} />
               </span>
-
-              {/* Anything they might be carrying that their set does not say.
-                  Added to everyone over there who can learn it. */}
-              <span className="ev-add">
-                <input
-                  type="search" value={query} placeholder="Add a move to enemy team…"
-                  aria-label="Add a move the other side might carry"
-                  onChange={(e) => setQuery(e.target.value)}
-                />
-                {matches.length > 0 && (
-                  <ul className="ev-matches">
-                    {matches.map((m) => (
-                      <li key={m.name}>
-                        <button type="button" onClick={() => addMove(m)}>
-                          <MoveCategory category={m.category} />
-                          <span>{m.name}</span>
-                          <em>{m.type} · {m.basePower}</em>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+              <span className="ev-budget-read">
+                {used}<i>/{EV_BUDGET}</i>
               </span>
-
-              {extra.map((id) => {
-                const move = moves[id]
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    className="ev-extra"
-                    title={`${move?.name ?? id} — click to drop it`}
-                    onClick={() => setExtra((prev) => prev.filter((x) => x !== id))}
-                  >
-                    {move && <MoveCategory category={move.category} />}
-                    <span className="ev-extra-name">{move?.name ?? id}</span>
-                    {move && <TypeChip type={move.type} />}
-                    <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
-                  </button>
-                )
-              })}
-            </div>
+            </span>
           )}
         </div>
 
@@ -1234,6 +1191,60 @@ export function EvCalcBody({
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* The move search and what it has added, in a band of their own
+            under both columns. In the left column it had twelve rems to
+            work in, so the moves it made came out one to a line; here they
+            run out to the right of the box that made them and wrap when
+            they reach the edge. */}
+        {picked && (
+          <div className="ev-added">
+            {/* Anything they might be carrying that their set does not say.
+                Added to everyone over there who can learn it. */}
+            <span className="ev-add">
+              <input
+                type="search" value={query} placeholder="Add a move to enemy team…"
+                aria-label="Add a move the other side might carry"
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              {matches.length > 0 && (
+                <ul className="ev-matches">
+                  {matches.map((m) => (
+                    <li key={m.name}>
+                      <button type="button" onClick={() => addMove(m)}>
+                        <MoveCategory category={m.category} />
+                        <span>{m.name}</span>
+                        <em>{m.type} · {m.basePower}</em>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </span>
+            {extra.map((id) => {
+              const move = moves[id]
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  className="ev-extra"
+                  title={`${move?.name ?? id} — click to drop it`}
+                  onClick={() => setExtra((prev) => prev.filter((x) => x !== id))}
+                >
+                  {/* What it is, then what it is called, then how hard it
+                      hits — the two badges together on the left rather than
+                      one either side of the name, so a row of these can be
+                      read down the badges without reading the names. */}
+                  {move && <MoveCategory category={move.category} />}
+                  {move && <TypeChip type={move.type} />}
+                  <span className="ev-extra-name">{move?.name ?? id}</span>
+                  {move && <em className="ev-extra-power">{move.basePower}</em>}
+                  <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
+                </button>
+              )
+            })}
           </div>
         )}
       </div>

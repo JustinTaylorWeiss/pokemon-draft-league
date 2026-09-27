@@ -977,12 +977,12 @@ button.type-chip { cursor: pointer; }
 }
 
 /* What the other side is credited with, and anything else it might bring. */
-/* The budget, then the move search under it: two settings that belong to
-   the whole tab rather than to any one Pokemon, stacked down the left. */
-.ev-assumes {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 0.45rem;
+/* The search and everything it has added, in one band across the tab. The
+   box keeps the width the controls above it share; the moves run out to its
+   right and wrap onto another line when they reach the edge. */
+.ev-added {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
 }
-.ev-assumes .ev-add { align-self: flex-start; }
 /* The label over its segments rather than beside them: three of these in a
    row read as one long sentence otherwise, and which words belong to which
    control is the first thing you need. */
@@ -1097,15 +1097,20 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 /* A move added by hand, wearing the same badges it wore in the list it was
    picked from, so it is recognisably the thing that was chosen. */
 .ev-extra {
-  display: inline-flex; align-items: center; gap: 0.3rem;
-  padding: 0.15rem 0.3rem 0.15rem 0.35rem; border-radius: 999px;
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  height: 1.7rem; padding: 0 0.35rem 0 0.4rem; border-radius: 999px;
   background: var(--chip); border: 1px solid var(--line); color: var(--fg);
-  font: inherit; font-size: 0.72rem; cursor: pointer;
+  font: inherit; font-size: 0.8rem; cursor: pointer;
 }
 .ev-extra:hover { border-color: #e05563; }
-.ev-extra .type-chip { min-width: 0; font-size: 0.58rem; padding: 0.05rem 0.35rem; }
+.ev-extra .type-chip { min-width: 0; font-size: 0.6rem; padding: 0.08rem 0.4rem; }
 .ev-extra-name { font-weight: 600; white-space: nowrap; }
-.ev-extra-drop { color: var(--muted); font-size: 0.85rem; line-height: 1; padding: 0 0.1rem; }
+/* Its base power, which is the number the badges do not give. */
+.ev-extra-power {
+  font-style: normal; font-size: 0.7rem; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.ev-extra-drop { color: var(--muted); font-size: 0.95rem; line-height: 1; padding: 0 0.15rem; }
 .ev-extra:hover .ev-extra-drop { color: #e05563; }
 
 .ev-hint, .ev-note { margin: 0; color: var(--muted); font-size: 0.75rem; line-height: 1.45; }
