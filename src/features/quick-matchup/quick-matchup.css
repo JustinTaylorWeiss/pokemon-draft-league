@@ -1331,12 +1331,14 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   display: inline-flex; flex-direction: column; align-items: center;
   justify-content: flex-start; gap: 0.1rem; width: 6rem;
 }
-/* Full width of the slot, so every pill under a sprite is the same width.
-   Ragged right edges down a column of six read as six different kinds of
-   thing when they are all the same kind of thing. */
+/* Full width of the slot less a little, so every pill under a sprite is
+   the same width and the ones under the sprite beside it are clearly not
+   the same pill. Ragged right edges down a column of six read as six
+   different kinds of thing when they are all the same kind of thing;
+   flush ones across a row read as one band. */
 .ev-gear {
   position: relative; display: flex; flex-direction: column;
-  align-items: center; gap: 0.28rem; width: 100%;
+  align-items: center; gap: 0.28rem; width: calc(100% - 0.45rem);
 }
 /* What has been said about it, above the way to say more — one pill each.
    A raised stat, an ability and an item are separate facts, and lines
