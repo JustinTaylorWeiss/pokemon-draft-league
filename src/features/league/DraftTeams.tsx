@@ -358,7 +358,7 @@ export function DraftTeams({ league, dex }: Props) {
                     ids: [...mine].sort(byPickOrder(me)).map((pick) => pick.pokemon),
                   })}
                 >
-                  Analyse in Quick Matchup
+                  Analyse in Matchup
                 </button>
               )}
             </h3>

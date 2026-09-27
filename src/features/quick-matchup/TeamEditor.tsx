@@ -6,7 +6,7 @@ import { Sprite } from '../../components/Sprite'
 export interface TeamEntry {
   id: string
   /**
-   * The merged entry, not the raw dex one. Quick Matchup builds its teams from
+   * The merged entry, not the raw dex one. Matchup builds its teams from
    * `mergeDex`, so every member already carries what the league says about it —
    * its tier or its cost — and the summary can show that without being handed
    * the league a second time.

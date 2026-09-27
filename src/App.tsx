@@ -26,7 +26,7 @@ type View = 'league' | 'matchup' | 'dex' | 'history'
 
 const VIEWS: { key: View; label: string }[] = [
   { key: 'league', label: 'League' },
-  { key: 'matchup', label: 'Quick Matchup' },
+  { key: 'matchup', label: 'Matchup' },
   { key: 'dex', label: 'Dex' },
   // The log covers every part of the league, not just the draft it started in.
   { key: 'history', label: 'History' },

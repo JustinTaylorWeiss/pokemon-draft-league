@@ -1315,7 +1315,7 @@
 
 /* ---- the league's own awards, beside the computed ranking ---- */
 /*
- * The same tabs the Quick Matchup analysis card uses to switch between its
+ * The same tabs the Matchup analysis card uses to switch between its
  * Summary and Defensive Type Chart: an underline strip, each tab taking
  * an equal share of the width, the open one marked by the accent beneath it.
  * Same job in both places — pick which view of the same data you are looking

@@ -1,5 +1,5 @@
 /**
- * One team, sent to Quick Matchup to be read on its own.
+ * One team, sent to Matchup to be read on its own.
  *
  * The matchup tool answers "how do these two sides meet". A coach looking at
  * their own roster is asking something smaller and more common: what am I
