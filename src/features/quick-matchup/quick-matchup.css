@@ -977,11 +977,12 @@ button.type-chip { cursor: pointer; }
 }
 
 /* What the other side is credited with, and anything else it might bring. */
-/* The search and everything it has added, in one band across the tab. The
-   box keeps the width the controls above it share; the moves run out to its
-   right and wrap onto another line when they reach the edge. */
+/* The search and everything it has added, down the left of the tab. Room
+   above it because the focus ring it draws when selected sits outside its
+   box, and a row packed against the one above clipped it. */
 .ev-added {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem;
+  padding-top: 0.15rem;
 }
 /* The label over its segments rather than beside them: three of these in a
    row read as one long sentence otherwise, and which words belong to which
@@ -1367,7 +1368,7 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   display: grid; place-items: center; flex: none;
   width: 1.45rem; height: 1.45rem; padding: 0; line-height: 1;
   background: var(--chip); border: 1px solid var(--line); border-radius: 50%;
-  color: var(--fg); font: inherit; font-size: 0.95rem; font-weight: 600;
+  color: var(--fg); font: inherit; font-size: 0.8rem; font-weight: 700;
   cursor: pointer;
 }
 .ev-gear-open:hover {
