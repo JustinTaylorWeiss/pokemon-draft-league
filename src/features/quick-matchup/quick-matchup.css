@@ -1436,22 +1436,24 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
    always 31, so open they are mostly six boxes standing between the
    ability and the item. */
 .ev-gear-ivs { display: flex; flex-direction: column; gap: 0.25rem; }
+/* A pill, like the hide toggle above it: closed it is one line of state
+   and a way in, which is the same shape of thing. */
 .ev-gear-fold {
-  display: flex; align-items: baseline; gap: 0.4rem; width: 100%;
-  padding: 0; background: none; border: 0; cursor: pointer;
-  font: inherit; color: var(--muted); text-align: left;
-}
-.ev-gear-fold > span {
-  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em;
-  text-transform: uppercase; color: var(--muted);
+  display: flex; align-items: center; gap: 0.4rem; width: 100%;
+  padding: 0.2rem 0.5rem 0.2rem 0.6rem; line-height: 1.3;
+  background: none; border: 1px solid var(--line); border-radius: 999px;
+  color: var(--muted); font: inherit; font-size: 0.66rem;
+  cursor: pointer; text-align: left;
 }
 .ev-gear-fold em {
-  font-style: normal; font-size: 0.66rem; color: var(--fg);
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-style: normal; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .ev-gear-fold i { margin-left: auto; font-style: normal; font-size: 0.6rem; }
-.ev-gear-fold:hover { color: var(--fg); }
-.ev-gear-fold:hover em { color: var(--team-accent, var(--accent)); }
+.ev-gear-fold:hover { border-color: var(--fg); color: var(--fg); }
+.ev-gear-fold[aria-expanded="true"] {
+  border-color: var(--team-accent, var(--accent));
+  color: var(--team-accent, var(--accent));
+}
 .ev-gear-ivs > div {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.2rem;
 }

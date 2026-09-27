@@ -836,8 +836,10 @@ function GearPicker({
                 aria-expanded={ivsOpen}
                 onClick={() => setIvsOpen((v) => !v)}
               >
-                <span>IVs</span>
-                <em>{dropped.length ? dropped.join(' · ') : 'all 31'}</em>
+                {/* What it says depends on whether there is anything to
+                    report: the ones that are not 31, or an invitation,
+                    since all-31 is the state nobody needs telling about. */}
+                <em>{dropped.length ? dropped.join(' · ') : 'Click to change IVs'}</em>
                 <i aria-hidden="true">{ivsOpen ? '\u25b4' : '\u25be'}</i>
               </button>
               {ivsOpen && (
