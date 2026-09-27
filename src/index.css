@@ -39,23 +39,26 @@ body {
 /* Fills the chip so the word centres in it whatever the chip's width. */
 .type-chip-text { flex: 1 1 auto; text-align: center; min-width: 0; }
 
-/* Type colors are global so chips render the same in every panel. */
-.type-normal   { background: #9fa19f; }
-.type-grass    { background: #48a53c; }
-.type-water    { background: #3692dc; }
-.type-fire     { background: #e8722c; }
-.type-electric { background: #c9a800; }
-.type-ground   { background: #a3822d; }
-.type-rock     { background: #b6a136; }
-.type-flying   { background: #7f9fdc; }
-.type-ice      { background: #3fb3c4; }
-.type-fighting { background: #c22e28; }
-.type-poison   { background: #9459a3; }
-.type-bug      { background: #8fa32c; }
-.type-psychic  { background: #e0447f; }
-.type-dark     { background: #5c5366; }
-.type-ghost    { background: #6b4d92; }
-.type-dragon   { background: #6c4ad0; }
-.type-steel    { background: #6b8a95; }
-.type-fairy    { background: #d685ad; }
-.type-stellar  { background: #4d8f8b; }
+/* Type colors are global so chips render the same in every panel. Each one
+   is a variable as well as a background, so anything that wants the same
+   hue as ink rather than as a ground — a move's name in a list — can take
+   it from here instead of keeping a second copy of the palette. */
+.type-normal   { --type-colour: #9fa19f; background: var(--type-colour); }
+.type-grass    { --type-colour: #48a53c; background: var(--type-colour); }
+.type-water    { --type-colour: #3692dc; background: var(--type-colour); }
+.type-fire     { --type-colour: #e8722c; background: var(--type-colour); }
+.type-electric { --type-colour: #c9a800; background: var(--type-colour); }
+.type-ground   { --type-colour: #a3822d; background: var(--type-colour); }
+.type-rock     { --type-colour: #b6a136; background: var(--type-colour); }
+.type-flying   { --type-colour: #7f9fdc; background: var(--type-colour); }
+.type-ice      { --type-colour: #3fb3c4; background: var(--type-colour); }
+.type-fighting { --type-colour: #c22e28; background: var(--type-colour); }
+.type-poison   { --type-colour: #9459a3; background: var(--type-colour); }
+.type-bug      { --type-colour: #8fa32c; background: var(--type-colour); }
+.type-psychic  { --type-colour: #e0447f; background: var(--type-colour); }
+.type-dark     { --type-colour: #5c5366; background: var(--type-colour); }
+.type-ghost    { --type-colour: #6b4d92; background: var(--type-colour); }
+.type-dragon   { --type-colour: #6c4ad0; background: var(--type-colour); }
+.type-steel    { --type-colour: #6b8a95; background: var(--type-colour); }
+.type-fairy    { --type-colour: #d685ad; background: var(--type-colour); }
+.type-stellar  { --type-colour: #4d8f8b; background: var(--type-colour); }

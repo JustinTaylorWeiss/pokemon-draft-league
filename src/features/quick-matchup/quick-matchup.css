@@ -1236,7 +1236,9 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   font-size: 0.62rem; border-top: 1px solid var(--line); padding-top: 0.05rem;
 }
 .ev-face { flex: none; image-rendering: pixelated; object-fit: contain; align-self: center; }
-.ev-what { min-width: 0; display: flex; flex-direction: column; }
+/* Takes the rest of the row, so the numbers pushed right inside it reach
+   the row's own edge rather than the end of the longest word above them. */
+.ev-what { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
 .ev-target { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ev-detail { font-size: 0.64rem; }
 /* The item or ability behind the number, where there is one. */
@@ -1263,6 +1265,14 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
    truncates, the number is pushed to the right edge so the two columns of
    figures read down the list. */
 .ev-move { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The type's own colour as ink. Two classes so it beats the background the
+   type class sets, and mixed towards the page's ink because Dark and Ghost
+   are chosen to carry a white word, not to be one. */
+.ev-row .ev-ink {
+  background: none;
+  color: color-mix(in oklab, var(--type-colour, var(--muted)), var(--fg) 25%);
+  font-weight: 600;
+}
 .ev-row .ev-range {
   flex: none; margin-left: auto;
   font-variant-numeric: tabular-nums; letter-spacing: 0.01em;

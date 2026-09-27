@@ -151,6 +151,17 @@ function ShotOutcome({ shot, chance }: { shot: Shot; chance: number }) {
   )
 }
 
+/**
+ * A move's name in its own type's colour.
+ *
+ * The palette is the one the chips use, taken from the variable each type
+ * class sets rather than written out again here, and pulled a quarter of
+ * the way towards the page's own ink: Dark and Ghost are chosen to be read
+ * as a white word on a dark ground, and unmixed they are barely visible as
+ * the word itself.
+ */
+const typeInk = (type?: string) => (type ? ` ev-ink type-${type.toLowerCase()}` : '')
+
 /** What each sweep of the other side is, above the rows that make it up. */
 const PASS_LABEL = ['Best move', '2nd best', '3rd best', '4th best']
 
@@ -191,7 +202,7 @@ function ShotRow({
           </span>
         ) : null}
         <span className="ev-line">
-          <span className="ev-detail ev-move">{row.moveName}</span>
+          <span className={`ev-detail ev-move${typeInk(row.moveType)}`}>{row.moveName}</span>
           <span className="ev-range" title="Worst roll to best, as a share of its HP">
             {pct(shot.low)}–{pct(shot.high)}%
           </span>
@@ -227,23 +238,9 @@ function ThresholdRow({
             {row.via.join(' · ')}
           </span>
         ) : null}
-        {row.outspeed != null ? (
-          <span className="ev-detail">
-            {row.tier} · {row.outspeed}{tied ? ' · tied' : ''}
-          </span>
-        ) : (
-          <>
-            <span className="ev-detail">{row.moveName}</span>
-            <span className="ev-detail ev-swing">
-              {row.from}HKO {'→'} {row.to}HKO
-              {row.chance != null && row.at != null && (
-                <em className="ev-odds" title={`${odds(row.chance)} to ${row.at}HKO as it stands`}>
-                  {odds(row.chance)} {row.at}HKO
-                </em>
-              )}
-            </span>
-          </>
-        )}
+        <span className="ev-detail">
+          {row.tier} · {row.outspeed}{tied ? ' · tied' : ''}
+        </span>
       </span>
     </li>
   )

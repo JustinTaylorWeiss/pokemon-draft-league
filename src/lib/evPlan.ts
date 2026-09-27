@@ -1,4 +1,6 @@
-import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../data/types'
+import type {
+  LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart, TypeName,
+} from '../data/types'
 import { damage, koCurve, statOf, type Side } from './damage'
 import { statAtLevel } from './stats'
 
@@ -60,6 +62,8 @@ export interface Threshold {
   /** The move, for every column but Speed. */
   move?: string
   moveName?: string
+  /** And its type, which is how its name is coloured. */
+  moveType?: TypeName
   /** Hits to knock out, before and after. Speed rows leave these out. */
   from?: number
   to?: number
@@ -532,6 +536,7 @@ export function planFor(input: PlanInput): Plan {
       targetName: '',
       move: move.name,
       moveName: move.name,
+      moveType: move.type,
       at: live.bestCase,
       chance: curve[live.bestCase - 1] ?? 0,
       via: live.via,
