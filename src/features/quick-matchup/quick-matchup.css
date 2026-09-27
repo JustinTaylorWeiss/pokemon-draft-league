@@ -960,15 +960,21 @@ button.type-chip { cursor: pointer; }
   font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
   color: var(--muted);
 }
-.ev-foe {
-  background: none; border: 1px solid transparent; border-radius: 8px;
-  padding: 0.1rem; cursor: pointer; line-height: 0;
-}
-.ev-foe img { image-rendering: pixelated; object-fit: contain; }
-.ev-foe:hover { border-color: var(--line); }
 /* Counted by default. Switched off it goes grey and flat, which says "not in
    the numbers" without taking it off the row and leaving a gap. */
-.ev-foe.is-off img { opacity: 0.3; filter: grayscale(1); }
+.ev-open.is-off img { opacity: 0.3; filter: grayscale(1); }
+/* In or out of the columns, at the top of the panel. Reads as pressed while
+   it is out, which is the state worth being able to see at a glance. */
+.ev-hide {
+  width: 100%; padding: 0.2rem 0.4rem; line-height: 1.3;
+  background: none; border: 1px solid var(--line); border-radius: 999px;
+  color: var(--muted); font: inherit; font-size: 0.66rem; cursor: pointer;
+}
+.ev-hide:hover { border-color: var(--fg); color: var(--fg); }
+.ev-hide[aria-pressed="true"] {
+  background: var(--chip); border-color: var(--team-accent, var(--accent));
+  color: var(--team-accent, var(--accent)); font-weight: 600;
+}
 
 /* What the other side is credited with, and anything else it might bring. */
 /* The budget, then the move search under it: two settings that belong to

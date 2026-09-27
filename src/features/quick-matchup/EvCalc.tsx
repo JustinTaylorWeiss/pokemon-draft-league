@@ -430,7 +430,9 @@ export interface Gear {
  * fifth of the Special Defense column, and Multiscale is half of every
  * defensive row at once.
  */
-function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
+function GearPicker({
+  pokemon, usual, gear, onChange, assume, onAssume, out, onHide,
+}: {
   pokemon: Pokemon
   /** The ability it is reckoned to have when nobody has said otherwise. */
   usual: string
@@ -442,6 +444,13 @@ function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
    */
   assume?: Assumptions
   onAssume?: (next: Assumptions) => void
+  /**
+   * Whether this one is left out of the columns. Opponents only: a spread
+   * is chosen against the Pokémon you expect to be across from, and that is
+   * rarely all six.
+   */
+  out?: boolean
+  onHide?: (next: boolean) => void
 }) {
   const [open, setOpen] = useState(false)
   /*
@@ -536,7 +545,7 @@ function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
 
   // Nothing to choose at all: no lists, and no spread to credit it with.
   const nothing = mega || (!abilities.length && !plain.length && !boosters.length)
-  if (nothing && !assume) return null
+  if (nothing && !assume && !onHide) return null
 
   return (
     <span className="ev-gear">
@@ -583,6 +592,19 @@ function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
               expects of something that opened over the page. */}
           <button type="button" className="ev-gear-away" aria-label="Close" onClick={() => setOpen(false)} />
           <div className="ev-gear-pop">
+            {/* In or out of the columns, above everything about how it is
+                built: whether to count it at all comes before what to
+                count it as. */}
+            {onHide && (
+              <button
+                type="button"
+                className="ev-hide"
+                aria-pressed={Boolean(out)}
+                onClick={() => onHide(!out)}
+              >
+                {out ? 'Show in the columns' : 'Hide from the columns'}
+              </button>
+            )}
             {/* What it is built like, per Pokémon rather than one setting for
                 the whole side: they are not all built the same way, and a
                 spread chosen against "everything at 252" is chosen against a
@@ -1174,26 +1196,31 @@ export function EvCalcBody({
               <div className="ev-foes">
                 {picked.foes.map((m) => (
                   <span key={m.id} className="ev-foe-slot">
-                    <button
-                      type="button"
-                      className={`ev-foe${off.has(m.id) ? ' is-off' : ''}`}
-                      title={`${m.pokemon.name} — ${off.has(m.id) ? 'not counted' : 'counted'}`}
-                      aria-pressed={!off.has(m.id)}
-                      onClick={() => setOff((prev) => {
-                        const next = new Set(prev)
-                        if (next.has(m.id)) next.delete(m.id)
-                        else next.add(m.id)
-                        return next
-                      })}
+                    {/* Opens the Pokémon, the way a sprite does everywhere
+                        else on the site. Leaving it out of the columns used
+                        to be a click here, which meant the one thing a
+                        picture of a Pokémon always does was the one thing
+                        this picture did not — it is in the menu below now. */}
+                    <PokemonLink
+                      id={m.id}
+                      className={`ev-open${off.has(m.id) ? ' is-off' : ''}`}
+                      title={`Open ${m.pokemon.name}`}
                     >
                       <Sprite pokemon={m.pokemon} width={SPRITE_W} height={SPRITE_H} />
-                    </button>
+                    </PokemonLink>
                     <GearPicker
                       pokemon={m.pokemon}
                       usual={usualAbility(m.id, m.pokemon)}
                       gear={gear[m.id]} onChange={(g) => give(m.id, g)}
                       assume={credit(m.id)}
                       onAssume={(next) => setAssume((prev) => ({ ...prev, [m.id]: next }))}
+                      out={off.has(m.id)}
+                      onHide={(next) => setOff((prev) => {
+                        const now = new Set(prev)
+                        if (next) now.add(m.id)
+                        else now.delete(m.id)
+                        return now
+                      })}
                     />
                   </span>
                 ))}
