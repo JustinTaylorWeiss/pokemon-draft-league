@@ -528,6 +528,14 @@ export interface Gear {
   ability?: string
   /** Only the ones dropped below 31; the rest are assumed perfect. */
   ivs?: Partial<Record<StatKey, number>>
+  /**
+   * Moves struck off the ones it is reckoned to have.
+   *
+   * The list a Pokémon gets is its set plus what the format plays that it
+   * can learn, which is a guess and sometimes a wrong one. Taking one off
+   * is the other half of naming one.
+   */
+  without?: string[]
 }
 
 /**
@@ -544,7 +552,7 @@ export interface Gear {
  */
 function GearPicker({
   pokemon, usual, gear, onChange, assume, onAssume, out, onHide,
-  learnset, moves, played, named, onNamed,
+  learnset, moves, played, named, onNamed, carrying,
 }: {
   pokemon: Pokemon
   /** The ability it is reckoned to have when nobody has said otherwise. */
@@ -562,6 +570,8 @@ function GearPicker({
   played?: string[]
   named?: string[]
   onNamed?: (next: string[]) => void
+  /** What it is currently reckoned to have, which is what the columns read. */
+  carrying?: Move[]
   /**
    * What this one is credited with, for an opponent. Absent for the Pokémon
    * the spread is being built for, whose numbers are the sliders below.
@@ -674,25 +684,50 @@ function GearPicker({
   }, [pokemon])
 
   /*
-   * Its whole damaging movepool, popular first, minus what it is already
-   * reckoned to have. Ordered by how often the format clicks each one so
-   * the few worth considering are at the top and the long tail of
-   * universal TMs is below them rather than mixed in alphabetically.
+   * What it could be given, once somebody has said what they are looking
+   * for. Its own damaging movepool minus what it already has, popular
+   * first — and nothing at all until a letter is typed, because the list
+   * above is what it is carrying and a hundred rows of what it is not
+   * would bury that.
    */
+  const has = new Set((carrying ?? []).map((m) => toId(m.name)))
   const addable = useMemo(() => {
-    if (!open || !onNamed || !learnset || !moves) return []
-    const rank = new Map((played ?? []).map((id, i) => [id, i]))
     const q = find.trim().toLowerCase()
+    if (!open || !onNamed || !learnset || !moves || !q) return []
+    const rank = new Map((played ?? []).map((id, i) => [id, i]))
     return Object.keys(learnset)
-      .filter((id) => !named?.includes(id))
+      .filter((id) => !has.has(id))
       .map((id) => moves[id])
       .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0
-        && (!q || m.name.toLowerCase().includes(q)))
+        && m.name.toLowerCase().includes(q))
       .sort((a, b) => (rank.get(toId(a.name)) ?? Infinity) - (rank.get(toId(b.name)) ?? Infinity)
         || b.basePower - a.basePower
         || a.name.localeCompare(b.name))
-      .slice(0, 40)
-  }, [open, onNamed, learnset, moves, played, named, find])
+      .slice(0, 30)
+    // `has` is rebuilt every render from `carrying`, which is the dependency
+    // that actually changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, onNamed, learnset, moves, played, carrying, find])
+
+  /*
+   * Taking one off is not always the same act. A move named by hand is
+   * unnamed; one it was reckoned to have is struck off the reckoning, and
+   * finding it again in the search puts it back rather than naming it
+   * twice.
+   */
+  const dropMove = (id: string) => {
+    if (named?.includes(id)) onNamed?.(named.filter((x) => x !== id))
+    else onChange({ ...gear, without: [...(gear?.without ?? []), id] })
+  }
+  const addMove = (move: Move) => {
+    const id = toId(move.name)
+    if (gear?.without?.includes(id)) {
+      onChange({ ...gear, without: gear.without.filter((x) => x !== id) })
+    } else {
+      onNamed?.([...(named ?? []), id])
+    }
+    setFind('')
+  }
 
   // Nothing to choose at all: no lists, and no spread to credit it with.
   const nothing = mega || (!abilities.length && !plain.length && !boosters.length)
@@ -847,49 +882,51 @@ function GearPicker({
                 is not a thing it might bring. */}
             {onNamed && moves && (
               <div className="ev-gear-moves">
-                <span>Moves</span>
-                {(named ?? []).length > 0 && (
+                <span>Moves in the columns</span>
+                {carrying && carrying.length > 0 ? (
                   <ol className="ev-set-slots">
-                    {(named ?? []).map((id) => {
-                      const move = moves[id]
-                      return (
-                        <li key={id}>
-                          <button
-                            type="button"
-                            className="ev-set-slot"
-                            title={`Drop ${move?.name ?? id}`}
-                            onClick={() => onNamed((named ?? []).filter((x) => x !== id))}
-                          >
-                            {move && <MoveCategory category={move.category} />}
-                            <span className="ev-set-name">{move?.name ?? id}</span>
-                            {move && <TypeChip type={move.type} />}
-                            <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
-                          </button>
-                        </li>
-                      )
-                    })}
+                    {carrying.map((move) => (
+                      <li key={move.name}>
+                        <button
+                          type="button"
+                          className={`ev-set-slot${named?.includes(toId(move.name)) ? ' is-named' : ''}`}
+                          title={`Take ${move.name} off this Pokémon`}
+                          onClick={() => dropMove(toId(move.name))}
+                        >
+                          <MoveCategory category={move.category} />
+                          <span className="ev-set-name">{move.name}</span>
+                          <TypeChip type={move.type} />
+                          <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
+                        </button>
+                      </li>
+                    ))}
                   </ol>
+                ) : (
+                  <p className="ev-set-none">
+                    {out
+                      ? 'Hidden, so none of its moves are being read.'
+                      : 'Nothing, so it threatens with nothing.'}
+                  </p>
                 )}
                 <input
                   type="search" value={find} placeholder="Add a move…"
                   aria-label={`Add a move ${pokemon.name} might carry`}
                   onChange={(e) => setFind(e.target.value)}
                 />
-                <ul className="ev-set-list">
-                  {addable.map((m) => (
-                    <li key={m.name}>
-                      <button
-                        type="button"
-                        onClick={() => { onNamed([...(named ?? []), toId(m.name)]); setFind('') }}
-                      >
-                        <MoveCategory category={m.category} />
-                        <span className="ev-set-name">{m.name}</span>
-                        <em>{m.type} · {m.basePower}</em>
-                      </button>
-                    </li>
-                  ))}
-                  {addable.length === 0 && <li className="ev-set-none">Nothing matches.</li>}
-                </ul>
+                {find.trim() && (
+                  <ul className="ev-set-list">
+                    {addable.map((m) => (
+                      <li key={m.name}>
+                        <button type="button" onClick={() => addMove(m)}>
+                          <MoveCategory category={m.category} />
+                          <span className="ev-set-name">{m.name}</span>
+                          <em>{m.type} · {m.basePower}</em>
+                        </button>
+                      </li>
+                    ))}
+                    {addable.length === 0 && <li className="ev-set-none">Nothing matches.</li>}
+                  </ul>
+                )}
               </div>
             )}
             {/* Everything said about this one, unsaid. Shown only where
@@ -1044,7 +1081,15 @@ export function EvCalcBody({
       ? opponentsFrom(
         picked.foes.filter((m) => !off.has(m.id)),
         sets, moves, learnsets, played, level, assume, extra, gear,
-      )
+      // Struck off here rather than inside the solver: what a Pokémon is
+      // reckoned to have is the solver's business, and what somebody has
+      // said it is not carrying is this panel's.
+      ).map((o) => {
+        const without = gear[o.id]?.without
+        return without?.length
+          ? { ...o, moves: o.moves.filter((m) => !without.includes(toId(m.name))) }
+          : o
+      })
       : []),
     [picked, off, sets, moves, learnsets, played, level, assume, extra, gear],
   )
@@ -1346,6 +1391,7 @@ export function EvCalcBody({
                       played={played}
                       named={extra[m.id]}
                       onNamed={(next) => names(m.id, next)}
+                      carrying={opponents.find((o) => o.id === m.id)?.moves}
                       out={off.has(m.id)}
                       onHide={(next) => setOff((prev) => {
                         const now = new Set(prev)

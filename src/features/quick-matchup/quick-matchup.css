@@ -1395,6 +1395,15 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 .ev-gear-moves { display: flex; flex-direction: column; gap: 0.25rem; }
 .ev-gear-moves .ev-set-list { max-height: 9rem; }
 .ev-gear-moves .ev-set-slot { font-size: 0.68rem; }
+.ev-gear-moves .ev-set-slots { max-height: 11rem; overflow-y: auto; }
+/* Named by hand rather than reckoned, which is the difference between a
+   row somebody put there and a row the format put there. */
+.ev-gear-moves .ev-set-slot.is-named {
+  border-color: color-mix(in oklab, var(--team-accent, var(--accent)), transparent 45%);
+}
+/* Still red on the way out, which the rule above would otherwise outweigh. */
+.ev-gear-moves button.ev-set-slot:hover { border-color: #e05563; }
+.ev-gear-moves .ev-set-none { padding-left: 0; }
 /* Six of them across two rows. Small, because five of the six are almost
    always 31 and the panel should not look like six decisions to make. */
 .ev-gear-ivs { display: flex; flex-direction: column; gap: 0.15rem; }
