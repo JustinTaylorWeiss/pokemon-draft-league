@@ -1058,6 +1058,7 @@ button.ev-set-slot:hover { border-color: #e05563; }
 /* The × on the row, which is what says it can be dropped. */
 .ev-extra-drop { color: var(--muted); font-size: 0.95rem; line-height: 1; padding: 0 0.15rem; }
 button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
+.ev-set-pop .ev-set-slot.is-empty { display: flex; }
 .ev-set-slot.is-empty {
   color: var(--muted); border-style: dashed; background: none;
   justify-content: center; font-size: 0.68rem;
@@ -1300,7 +1301,7 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
  * readable; the mix above it is the same idea for a browser without
  * relative colour, and is dropped on any that has it.
  */
-.ev-row .ev-ink, .ev-gear-moves .ev-ink {
+.ev-row .ev-ink, .ev-gear-moves .ev-ink, .ev-set-pop .ev-ink {
   background: none;
   color: color-mix(in oklab, var(--type-colour, var(--muted)), var(--fg) 40%);
   color: oklch(from var(--type-colour, var(--muted)) max(l, 0.8) c h);
@@ -1576,21 +1577,25 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
    the numbers line up and the eye can run down one of them. The name takes
    what is left and truncates; the other two are fixed. */
 .ev-gear-moves .ev-set-slot,
-.ev-gear-moves .ev-set-list button {
+.ev-gear-moves .ev-set-list button,
+.ev-set-pop .ev-set-slot,
+.ev-set-pop .ev-set-list button {
   display: grid; grid-template-columns: minmax(0, 1fr) 3.35rem 1.4rem;
   align-items: center; gap: 0.35rem; font-size: 0.68rem;
 }
-.ev-gear-moves .ev-set-slot { grid-template-columns: minmax(0, 1fr) 3.35rem 1.4rem 0.8rem; }
+.ev-gear-moves .ev-set-slot,
+.ev-set-pop .ev-set-slot { grid-template-columns: minmax(0, 1fr) 3.35rem 1.4rem 0.8rem; }
 /* The base power is half of what the row is for, so it is read rather than
    noted: muted grey at two-thirds of a rem was the dimmest thing on a row
    whose only other content is a coloured name. A step under the name's
    weight, not three. */
-.ev-gear-moves em {
+.ev-gear-moves em, .ev-set-pop .ev-set-list em, .ev-set-pop .ev-set-slot em {
   font-style: normal; font-size: 0.74rem; font-weight: 600;
   color: color-mix(in oklab, var(--fg), var(--muted) 25%);
   text-align: right; font-variant-numeric: tabular-nums;
 }
-.ev-gear-moves .ev-extra-drop { text-align: center; padding: 0; }
+.ev-gear-moves .ev-extra-drop,
+.ev-set-pop .ev-extra-drop { text-align: center; padding: 0; }
 .ev-gear-moves .ev-set-slots { max-height: 11rem; overflow-y: auto; }
 /* Named by hand rather than reckoned, which is the difference between a
    row somebody put there and a row the format put there. */

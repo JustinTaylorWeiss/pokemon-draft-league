@@ -12,7 +12,6 @@ import {
 } from '../../lib/evPlan'
 import { Sprite } from '../../components/Sprite'
 import { MoveCategory } from '../../components/MoveCategory'
-import { TypeChip } from '../../components/TypeChip'
 import { PokemonLink } from '../../components/PokemonLink'
 import { toId } from '../../data/load'
 import { DropPicker, type DropItem } from '../../components/DropPicker'
@@ -1559,9 +1558,14 @@ export function EvCalcBody({
                                   title={`Drop ${move.name}`}
                                   onClick={() => dropFromSet(toId(move.name))}
                                 >
+                                  {/* Name, category, power — the row the
+                                      loadout menu uses, because it is the
+                                      same list of the same things. */}
+                                  <span className={`ev-set-name${typeInk(move.type)}`}>
+                                    {move.name}
+                                  </span>
                                   <MoveCategory category={move.category} />
-                                  <span className="ev-set-name">{move.name}</span>
-                                  <TypeChip type={move.type} />
+                                  <em>{move.basePower}</em>
                                   <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
                                 </button>
                               ) : (
@@ -1593,9 +1597,9 @@ export function EvCalcBody({
                                 ? dropFromSet(toId(m.name))
                                 : addToSet(m))}
                             >
+                              <span className={`ev-set-name${typeInk(m.type)}`}>{m.name}</span>
                               <MoveCategory category={m.category} />
-                              <span className="ev-set-name">{m.name}</span>
-                              <em>{m.type} · {m.basePower}</em>
+                              <em>{m.basePower}</em>
                             </button>
                           </li>
                         ))}
