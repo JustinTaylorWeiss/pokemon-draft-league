@@ -7,6 +7,7 @@ import {
 } from '../../lib/evPlan'
 import { Sprite } from '../../components/Sprite'
 import { MoveCategory } from '../../components/MoveCategory'
+import { TypeChip } from '../../components/TypeChip'
 import { PokemonLink } from '../../components/PokemonLink'
 import { toId } from '../../data/load'
 import { DropPicker, type DropItem } from '../../components/DropPicker'
@@ -494,18 +495,23 @@ export function EvCalcBody({
               )}
             </span>
 
-            {extra.map((id) => (
-              <button
-                key={id}
-                type="button"
-                className="pill-toggle ev-extra"
-                aria-pressed
-                title={`${moves[id]?.name ?? id} — click to drop it`}
-                onClick={() => setExtra((prev) => prev.filter((x) => x !== id))}
-              >
-                {moves[id]?.name ?? id} {'×'}
-              </button>
-            ))}
+            {extra.map((id) => {
+              const move = moves[id]
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  className="ev-extra"
+                  title={`${move?.name ?? id} — click to drop it`}
+                  onClick={() => setExtra((prev) => prev.filter((x) => x !== id))}
+                >
+                  {move && <MoveCategory category={move.category} />}
+                  <span className="ev-extra-name">{move?.name ?? id}</span>
+                  {move && <TypeChip type={move.type} />}
+                  <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
+                </button>
+              )
+            })}
           </div>
 
           <div className="ev-cols">
@@ -528,11 +534,12 @@ export function EvCalcBody({
           </div>
 
           <p className="ev-note">
-            Hits are guaranteed ones: the worst roll every time. Against each Pokémon{"'"}s
-            most-used set where there is one
+            Hits are guaranteed ones: the worst roll every time, with the odds beside them.
+            Each Pokémon threatens with its most-used set plus the moves the format plays
+            that it can learn
             {guessed.length > 0 && (
-              <> — {guessed.map((o) => o.pokemon.name).join(', ')} {guessed.length === 1 ? 'has' : 'have'} none,
-                so {guessed.length === 1 ? 'its' : 'their'} movepool stands in</>
+              <> — {guessed.map((o) => o.pokemon.name).join(', ')} {guessed.length === 1 ? 'has' : 'have'} no
+                set on record, so that second list is all there is for {guessed.length === 1 ? 'it' : 'them'}</>
             )}
             . Weather, terrain, screens, boosts and Intimidate are not counted.
             {(assume.bulk === 'max+' || assume.power === 'max+') && (

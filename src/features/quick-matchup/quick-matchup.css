@@ -961,7 +961,19 @@ button.type-chip { cursor: pointer; }
 }
 .ev-matches button:hover { background: var(--chip); }
 .ev-matches em { font-style: normal; font-size: 0.65rem; color: var(--muted); margin-left: auto; }
-.ev-extra { font-size: 0.7rem; }
+/* A move added by hand, wearing the same badges it wore in the list it was
+   picked from, so it is recognisably the thing that was chosen. */
+.ev-extra {
+  display: inline-flex; align-items: center; gap: 0.3rem;
+  padding: 0.15rem 0.3rem 0.15rem 0.35rem; border-radius: 999px;
+  background: var(--chip); border: 1px solid var(--line); color: var(--fg);
+  font: inherit; font-size: 0.72rem; cursor: pointer;
+}
+.ev-extra:hover { border-color: #e05563; }
+.ev-extra .type-chip { min-width: 0; font-size: 0.58rem; padding: 0.05rem 0.35rem; }
+.ev-extra-name { font-weight: 600; white-space: nowrap; }
+.ev-extra-drop { color: var(--muted); font-size: 0.85rem; line-height: 1; padding: 0 0.1rem; }
+.ev-extra:hover .ev-extra-drop { color: #e05563; }
 
 .ev-hint, .ev-note { margin: 0; color: var(--muted); font-size: 0.75rem; line-height: 1.45; }
 .ev-budget {

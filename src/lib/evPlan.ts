@@ -152,8 +152,16 @@ export interface Opponent {
 
 /** Below this a move is not the thing anyone is building a spread against. */
 const THREAT_POWER = 60
-/** As many moves as a Pokémon has slots, which is as many as it can threaten with. */
-const THREAT_MOVES = 4
+/**
+ * How many distinct threats to credit a Pokémon with.
+ *
+ * More than the four slots it has, because the four it has are not known.
+ * A usage set is one build and the Pokémon across from you is whatever its
+ * coach made; a spread chosen against only the set's moves is chosen against
+ * a guess dressed as a fact. Six is the point where the list stops being
+ * things it plausibly runs.
+ */
+const THREAT_MOVES = 6
 /**
  * Hits beyond this are not a decision anyone makes. Turning a 2HKO into a
  * 3HKO is the whole game; turning an 11HKO into a 12HKO is a line of noise
@@ -309,7 +317,22 @@ export function opponentsFrom(
     const known = (set?.moves ?? [])
       .map((m) => moveDex[m])
       .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0)
-    const usual = known.length ? known : likelyMoves(pokemon, learnsets?.[id], moveDex, played)
+
+    /*
+     * Its set, and the rest of what the format plays that it can learn.
+     *
+     * The set alone was too thin to build against: Indeedee's carries one
+     * damaging move and Hawlucha's two, so a Pokémon with a set threatened
+     * less than one without, which had its whole movepool to guess from. The
+     * played list is the same standing-in either way; the set's moves simply
+     * win where both name the same type and category.
+     */
+    const byKey = new Map<string, Move>()
+    for (const m of likelyMoves(pokemon, learnsets?.[id], moveDex, played)) {
+      byKey.set(`${m.category}:${m.type}`, m)
+    }
+    for (const m of known) byKey.set(`${m.category}:${m.type}`, m)
+    const usual = [...byKey.values()]
 
     const own = learnsets?.[id]
     const named = extra

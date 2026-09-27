@@ -656,9 +656,10 @@ async function main() {
    * Intersected with this list it picks the biggest number it can learn that
    * anybody actually clicks, which is a different and much better guess.
    *
-   * Ninety per cent is the point where the tail stops being moves and starts
-   * being one Pokemon's signature. It takes about 120 moves; the last ten per
-   * cent would take another 130.
+   * Ninety-five per cent, which takes 167 moves of the 250 that appear at
+   * all. The last five would cost another 83 and are mostly signature moves
+   * one Pokemon has: past this point the list stops describing a format and
+   * starts listing exceptions.
    *
    * REGULATION-SPECIFIC. This is measured off the Gen 9 formats Showdown
    * publishes usage for, which is the closest thing available to Champions
@@ -667,7 +668,7 @@ async function main() {
    * against whatever usage data exists for it by then. Nothing else in this
    * file has that property, which is why it is said here.
    */
-  const COVERAGE_TARGET = 0.9
+  const COVERAGE_TARGET = 0.95
   const slotCount = new Map()
   let damagingSlots = 0
   for (const set of Object.values(sets)) {
