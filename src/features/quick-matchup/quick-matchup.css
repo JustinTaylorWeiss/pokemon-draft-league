@@ -962,12 +962,23 @@ button.type-chip { cursor: pointer; }
 .ev-picker img { image-rendering: pixelated; object-fit: contain; flex: none; }
 
 /* The sprite beside the picker, which opens its page. */
-.ev-open {
+/*
+ * Named with its slot, because the chosen Pokemon's sprite opens through
+ * `.mon-link` and the other six are plain buttons.
+ *
+ * `.mon-link` zeroes the padding and the border of whatever it is on, and
+ * at one class it was cancelling this one — so the sprite in the blue box
+ * sat a couple of pixels higher than the six in the red box beside it,
+ * which is a row of seven Pokemon with one of them out of line.
+ */
+.ev-mine .ev-open, .ev-foe-slot .ev-open {
   background: none; border: 1px solid transparent; border-radius: 8px;
   padding: 0.1rem; line-height: 0; cursor: pointer;
 }
 .ev-open img { image-rendering: pixelated; object-fit: contain; }
-.ev-open:hover { border-color: var(--team-accent, var(--accent)); }
+.ev-mine .ev-open:hover, .ev-foe-slot .ev-open:hover {
+  border-color: var(--team-accent, var(--accent));
+}
 
 /* Which shape to read it in. Uses the segment styling the assumptions use,
    because it is the same kind of choice: one of a short fixed set. */
