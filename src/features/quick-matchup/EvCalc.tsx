@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type CSSProperties } from 'react'
 import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../../data/types'
 import { STAT_LABELS } from '../../lib/stats'
 import {
@@ -68,6 +68,15 @@ function battleFormes(id: string, dex: LeagueDex) {
 }
 
 /** Short on the button, spelled out on hover. */
+/*
+ * How big the Pokemon along the top are drawn. Handed to CSS as well as to
+ * the sprites, because the word "against" beside them is centred on the
+ * picture rather than on the slot — the pills underneath are not what it
+ * labels — and a height written in two places drifts apart.
+ */
+const SPRITE_W = 56
+const SPRITE_H = 46
+
 const ASSUME_LABEL: Record<Assume, string> = { ivs: '31', max: '252', 'max+': '252+' }
 const ASSUME_MEANS: Record<Assume, string> = {
   ivs: 'perfect IVs and nothing else — no EVs, neutral nature',
@@ -700,167 +709,175 @@ export function EvCalcBody({
   if (!teamOne.members.length) return null
 
   return (
-    <div className="ev-calc">
+    <div className="ev-calc" style={{ '--ev-sprite-h': `${SPRITE_H}px` } as CSSProperties}>
       {/* Everything you can change, above everything you read, and stuck
           there: the reason to read a column is to decide where an EV goes,
           and the slider was a scroll away from the list that argued for it. */}
       <div className="ev-top">
+      {/* The controls down the left, and the Pokemon they are about beside
+          them. Two columns rather than one row: a pill added under a sprite
+          used to push the picker's row taller while the space next to the
+          budget and the search sat empty. Now the sprites run down into it. */}
       <div className="ev-bar">
-        <DropPicker
-          className="ev-picker"
-          items={choices}
-          value={chosen ?? ''}
-          onPick={(item) => choose(item.id)}
-          ariaLabel="Pokémon to build a spread for"
-          placeholder="Pick a Pokémon"
-        />
+        <div className="ev-side">
+          <DropPicker
+            className="ev-picker"
+            items={choices}
+            value={chosen ?? ''}
+            onPick={(item) => choose(item.id)}
+            ariaLabel="Pokémon to build a spread for"
+            placeholder="Pick a Pokémon"
+          />
 
-        {/* And which of its shapes to read it in, where it has more than one.
-            Aegislash is 60 Defense in one stance and 150 in the other. */}
-        {formes.length > 1 && (
-          <span className="ev-assume-seg ev-formes">
-            {formes.map((f) => (
-              <button
-                key={f.id}
-                type="button"
-                className="ev-seg"
-                aria-pressed={(shape ?? picked?.own) === f.id}
-                title={f.pokemon.name}
-                onClick={() => setShape(f.id)}
-              >
-                {f.pokemon.forme ?? 'Base'}
-              </button>
-            ))}
-          </span>
-        )}
-
-        {/* Its picture last, after the shape that decides which picture it
-            is. The picker opens the list; this opens the Pokémon, the way a
-            sprite does everywhere else on the site. */}
-        {picked && (
-          <span className="ev-mine">
-            <PokemonLink
-              id={picked.entry.id}
-              className="ev-open"
-              title={`Open ${picked.entry.pokemon.name}`}
-            >
-              <Sprite pokemon={picked.entry.pokemon} width={56} height={46} />
-            </PokemonLink>
-            <GearPicker
-              pokemon={picked.entry.pokemon}
-              usual={usualAbility(picked.entry.id, picked.entry.pokemon)}
-              gear={gear[picked.entry.id]} onChange={(g) => give(picked.entry.id, g)}
-            />
-          </span>
-        )}
-
-        {picked && picked.foes.length > 0 && (
-          <div className="ev-foes">
-            <span className="ev-against">against</span>
-            {picked.foes.map((m) => (
-              <span key={m.id} className="ev-foe-slot">
+          {/* And which of its shapes to read it in, where it has more than one.
+              Aegislash is 60 Defense in one stance and 150 in the other. */}
+          {formes.length > 1 && (
+            <span className="ev-assume-seg ev-formes">
+              {formes.map((f) => (
                 <button
+                  key={f.id}
                   type="button"
-                  className={`ev-foe${off.has(m.id) ? ' is-off' : ''}`}
-                  title={`${m.pokemon.name} — ${off.has(m.id) ? 'not counted' : 'counted'}`}
-                  aria-pressed={!off.has(m.id)}
-                  onClick={() => setOff((prev) => {
-                    const next = new Set(prev)
-                    if (next.has(m.id)) next.delete(m.id)
-                    else next.add(m.id)
-                    return next
-                  })}
+                  className="ev-seg"
+                  aria-pressed={(shape ?? picked?.own) === f.id}
+                  title={f.pokemon.name}
+                  onClick={() => setShape(f.id)}
                 >
-                  <Sprite pokemon={m.pokemon} width={56} height={46} />
+                  {f.pokemon.forme ?? 'Base'}
                 </button>
-                <GearPicker
-                  pokemon={m.pokemon}
-                  usual={usualAbility(m.id, m.pokemon)}
-                  gear={gear[m.id]} onChange={(g) => give(m.id, g)}
-                  assume={credit(m.id)}
-                  onAssume={(next) => setAssume((prev) => ({ ...prev, [m.id]: next }))}
-                />
+              ))}
+            </span>
+          )}
+
+          {picked && (
+            <div className="ev-assumes">
+              {/* What is left to spend, drawn rather than counted out. Five
+                  hundred and eight is a number you have to subtract from; a
+                  bar is a thing you can see the end of. */}
+              <span className={`ev-budget${left === 0 ? ' is-full' : ''}`}>
+                <span className="ev-budget-bar">
+                  <span style={{ width: `${(used / EV_BUDGET) * 100}%` }} />
+                </span>
+                <span className="ev-budget-read">
+                  {used}<i>/{EV_BUDGET}</i>
+                </span>
               </span>
-            ))}
+
+              {/* Anything they might be carrying that their set does not say.
+                  Added to everyone over there who can learn it. */}
+              <span className="ev-add">
+                <input
+                  type="search" value={query} placeholder="Add a move…"
+                  aria-label="Add a move the other side might carry"
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+                {matches.length > 0 && (
+                  <ul className="ev-matches">
+                    {matches.map((m) => (
+                      <li key={m.name}>
+                        <button type="button" onClick={() => addMove(m)}>
+                          <MoveCategory category={m.category} />
+                          <span>{m.name}</span>
+                          <em>{m.type} · {m.basePower}</em>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </span>
+
+              {extra.map((id) => {
+                const move = moves[id]
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    className="ev-extra"
+                    title={`${move?.name ?? id} — click to drop it`}
+                    onClick={() => setExtra((prev) => prev.filter((x) => x !== id))}
+                  >
+                    {move && <MoveCategory category={move.category} />}
+                    <span className="ev-extra-name">{move?.name ?? id}</span>
+                    {move && <TypeChip type={move.type} />}
+                    <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        {picked && (
+          <div className="ev-mons">
+            {/* Its picture last, after the shape that decides which picture it
+                is. The picker opens the list; this opens the Pokémon, the way a
+                sprite does everywhere else on the site. */}
+            <span className="ev-mine">
+              <PokemonLink
+                id={picked.entry.id}
+                className="ev-open"
+                title={`Open ${picked.entry.pokemon.name}`}
+              >
+                <Sprite pokemon={picked.entry.pokemon} width={SPRITE_W} height={SPRITE_H} />
+              </PokemonLink>
+              <GearPicker
+                pokemon={picked.entry.pokemon}
+                usual={usualAbility(picked.entry.id, picked.entry.pokemon)}
+                gear={gear[picked.entry.id]} onChange={(g) => give(picked.entry.id, g)}
+              />
+            </span>
+
+            {picked.foes.length > 0 && (
+              <div className="ev-foes">
+                <span className="ev-against">against</span>
+                {picked.foes.map((m) => (
+                  <span key={m.id} className="ev-foe-slot">
+                    <button
+                      type="button"
+                      className={`ev-foe${off.has(m.id) ? ' is-off' : ''}`}
+                      title={`${m.pokemon.name} — ${off.has(m.id) ? 'not counted' : 'counted'}`}
+                      aria-pressed={!off.has(m.id)}
+                      onClick={() => setOff((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(m.id)) next.delete(m.id)
+                        else next.add(m.id)
+                        return next
+                      })}
+                    >
+                      <Sprite pokemon={m.pokemon} width={SPRITE_W} height={SPRITE_H} />
+                    </button>
+                    <GearPicker
+                      pokemon={m.pokemon}
+                      usual={usualAbility(m.id, m.pokemon)}
+                      gear={gear[m.id]} onChange={(g) => give(m.id, g)}
+                      assume={credit(m.id)}
+                      onAssume={(next) => setAssume((prev) => ({ ...prev, [m.id]: next }))}
+                    />
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         )}
-
       </div>
 
+      {/* The headings and their sliders in one grid, the lists in
+          another below it, both on the same six columns. Two grids
+          rather than six columns of both, so the whole top can stick
+          while the lists run under it. */}
       {picked && (
-        <>
-          <div className="ev-assumes">
-            {/* What is left to spend, drawn rather than counted out. Five
-                hundred and eight is a number you have to subtract from; a
-                bar is a thing you can see the end of. */}
-            <span className={`ev-budget${left === 0 ? ' is-full' : ''}`}>
-              <span className="ev-budget-bar">
-                <span style={{ width: `${(used / EV_BUDGET) * 100}%` }} />
-              </span>
-              <span className="ev-budget-read">
-                {used}<i>/{EV_BUDGET}</i>
-              </span>
-            </span>
-
-            {/* Anything they might be carrying that their set does not say.
-                Added to everyone over there who can learn it. */}
-            <span className="ev-add">
-              <input
-                type="search" value={query} placeholder="Add a move…"
-                aria-label="Add a move the other side might carry"
-                onChange={(e) => setQuery(e.target.value)}
-              />
-              {matches.length > 0 && (
-                <ul className="ev-matches">
-                  {matches.map((m) => (
-                    <li key={m.name}>
-                      <button type="button" onClick={() => addMove(m)}>
-                        <MoveCategory category={m.category} />
-                        <span>{m.name}</span>
-                        <em>{m.type} · {m.basePower}</em>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </span>
-
-            {extra.map((id) => {
-              const move = moves[id]
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  className="ev-extra"
-                  title={`${move?.name ?? id} — click to drop it`}
-                  onClick={() => setExtra((prev) => prev.filter((x) => x !== id))}
-                >
-                  {move && <MoveCategory category={move.category} />}
-                  <span className="ev-extra-name">{move?.name ?? id}</span>
-                  {move && <TypeChip type={move.type} />}
-                  <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
-                </button>
-              )
-            })}
-          </div>
-          {/* The headings and their sliders in one grid, the lists in
-              another below it, both on the same six columns. Two grids
-              rather than six columns of both, so the whole top can stick
-              while the lists run under it. */}
-          <div className="ev-cols ev-heads">
-            {EV_STATS.map((stat) => (
-              <StatHead
-                key={stat}
-                stat={stat}
-                bare={statOfSpread(picked.entry.pokemon, level, bareSpread, stat)}
-                value={statOfSpread(picked.entry.pokemon, level, spread, stat)}
-                spread={spread}
-                onEvs={(n) => setEvs(stat, n)}
-                onNature={(m) => setNature(stat, m)}
-              />
-            ))}
-          </div>
-        </>
+        <div className="ev-cols ev-heads">
+          {EV_STATS.map((stat) => (
+            <StatHead
+              key={stat}
+              stat={stat}
+              bare={statOfSpread(picked.entry.pokemon, level, bareSpread, stat)}
+              value={statOfSpread(picked.entry.pokemon, level, spread, stat)}
+              spread={spread}
+              onEvs={(n) => setEvs(stat, n)}
+              onNature={(m) => setNature(stat, m)}
+            />
+          ))}
+        </div>
       )}
       </div>
 
