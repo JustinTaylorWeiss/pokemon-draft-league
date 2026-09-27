@@ -1485,25 +1485,33 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 /* Wrapping rather than squeezing: with several IVs dropped the fold's
    line runs long, and the total belongs under it rather than clipped
    against it. */
-.ev-gear-line { display: flex; align-items: center; flex-wrap: wrap; gap: 0.35rem 0.5rem; }
+/* Two equal columns, or one where there is only the IV pill to put in
+   it — `auto-fit` gives each child a share and gives a lone child the
+   lot, which a flex row with wrapping did not: the fold's own full-width
+   rule made its hypothetical size the whole line and pushed the total
+   onto the next one. */
+.ev-gear-line {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  align-items: center; gap: 0.35rem 0.5rem;
+}
 /* A badge beside the IV one and the same shape, sharing the line evenly
    with it: two facts about the spread, neither more important. It takes
    the accent once every EV is spent, because "there is nothing left" is
    the thing anyone tuning a spread is watching for. */
-.ev-gear-line .ev-assume-total { margin-left: 0; }
+
 .ev-assume-total {
-  flex: 1 1 0; min-width: 0; margin: 0; text-align: center; white-space: nowrap;
+  min-width: 0; margin: 0; text-align: center; white-space: nowrap;
   padding: 0.2rem 0.4rem; line-height: 1.3;
-  border: 1px solid var(--line); border-radius: 999px;
-  font-size: 0.66rem; color: var(--muted); font-variant-numeric: tabular-nums;
+  background: var(--chip); border: 1px solid var(--line); border-radius: 999px;
+  font-size: 0.66rem; font-weight: 600; color: var(--muted);
+  font-variant-numeric: tabular-nums;
 }
+/* Every EV spent, which is what anyone tuning a spread is watching for. */
 .ev-assume-total.is-full {
+  background: color-mix(in oklab, var(--team-accent, var(--accent)), transparent 86%);
   border-color: var(--team-accent, var(--accent));
-  color: var(--team-accent, var(--accent)); font-weight: 600;
+  color: var(--team-accent, var(--accent));
 }
-/* The IV pill takes the other half. */
-.ev-gear-line .ev-gear-fold { flex: 1 1 0; min-width: 0; }
-.ev-gear-fold em { overflow: hidden; text-overflow: ellipsis; }
 
 /* Under the budget in the blue box, with the other things that belong to
    the whole tab rather than to one Pokemon. Shown only where there is
@@ -1593,7 +1601,7 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 /* A pill, like the hide toggle above it: closed it is one line of state
    and a way in, which is the same shape of thing. */
 .ev-gear-fold {
-  display: flex; align-items: center; gap: 0.4rem; width: 100%;
+  display: flex; align-items: center; gap: 0.4rem; min-width: 0;
   padding: 0.2rem 0.5rem 0.2rem 0.6rem; line-height: 1.3;
   background: none; border: 1px solid var(--line); border-radius: 999px;
   color: var(--muted); font: inherit; font-size: 0.66rem;
