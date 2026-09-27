@@ -269,6 +269,26 @@ function StatHead({
   onNature: (mult: number) => void
 }) {
   const evs = spread.evs[stat]
+
+  /*
+   * One button rather than three.
+   *
+   * A nature raises one stat and lowers one, so at most two of the six can
+   * be anything but neutral — which meant two of the three buttons under
+   * most columns did nothing when pressed. A control that mostly cannot be
+   * used has to be read before it is touched.
+   *
+   * So it shows where this stat stands and steps to the next thing it could
+   * be. Neutral is always one of those, and the plus and the minus only
+   * where no other stat is holding them. Where both are, there is nowhere
+   * to step and the button says so rather than going quiet.
+   */
+  const cycle = NATURES.filter((n) => n.mult === 1
+    || n.mult === spread.nature[stat]
+    || !EV_STATS.some((k) => k !== stat && spread.nature[k] === n.mult))
+  const now = NATURES.find((n) => n.mult === spread.nature[stat]) ?? NATURES[1]
+  const next = cycle[(cycle.findIndex((n) => n.mult === now.mult) + 1) % cycle.length]
+
   return (
     <div className="ev-col ev-col-fixed">
       {/* What the stat reads right now, EVs and nature and all — the number
@@ -289,20 +309,19 @@ function StatHead({
           onChange={(e) => onEvs(Number(e.target.value))}
         />
         {takesNature(stat) && (
-          <span className="ev-natures">
-            {NATURES.map((n) => (
-              <button
-                key={n.mult}
-                type="button"
-                title={n.title}
-                aria-pressed={spread.nature[stat] === n.mult}
-                className="ev-nature"
-                onClick={() => onNature(n.mult)}
-              >
-                {n.label}
-              </button>
-            ))}
-          </span>
+          <button
+            type="button"
+            className="ev-nature"
+            title={cycle.length > 1
+              ? `${now.title} — click for ${next.title.toLowerCase()}`
+              : `${now.title} — the other two are spoken for`}
+            aria-label={`${STAT_LABELS[stat]}: ${now.title}`}
+            aria-pressed={now.mult !== 1}
+            disabled={cycle.length < 2}
+            onClick={() => onNature(next.mult)}
+          >
+            {now.label}
+          </button>
         )}
       </div>
     </div>
@@ -322,19 +341,6 @@ function StatRows({ stat, evs, rows, faces, note }: {
   const beyond = rows.filter((r) => r.unreachable)
   const passes = new Set(reachable.map((r) => r.pass ?? 0)).size
 
-  /*
-   * Taking a hit is lit by the odds, not by the guaranteed count.
-   *
-   * "Guaranteed 3HKO" is a statement about the worst roll, and the worst
-   * roll is one outcome in sixteen. A wall that still falls in two seven
-   * times out of eight is not a wall, and it was going green. Half is the
-   * line: under it the hit more often than not fails to land, over it the
-   * threshold has bought a technicality.
-   *
-   * Landing one is not the same question — there the guaranteed count is
-   * the whole point of investing — so Attack and Special Attack keep it,
-   * and Speed has no rolls at all.
-   */
   const defensive = stat === 'hp' || stat === 'def' || stat === 'spd'
   /*
    * A reading goes green at its ceiling, whichever way it is read.

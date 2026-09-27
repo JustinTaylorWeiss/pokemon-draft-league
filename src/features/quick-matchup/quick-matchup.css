@@ -1144,15 +1144,14 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   font-size: 0.8rem; font-weight: 700; font-variant-numeric: tabular-nums;
   color: var(--team-accent, var(--accent));
 }
-.ev-natures { display: inline-flex; flex: none; }
+/* One button, stepping through what this stat could still be. */
 .ev-nature {
-  width: 1.15rem; height: 1.15rem; padding: 0; line-height: 1;
-  background: none; border: 1px solid var(--line); color: var(--muted);
-  font: inherit; font-size: 0.7rem; cursor: pointer;
+  width: 1.15rem; height: 1.15rem; padding: 0; line-height: 1; flex: none;
+  background: none; border: 1px solid var(--line); border-radius: 4px;
+  color: var(--muted); font: inherit; font-size: 0.7rem; cursor: pointer;
 }
-.ev-nature:first-child { border-radius: 4px 0 0 4px; }
-.ev-nature:last-child { border-radius: 0 4px 4px 0; }
-.ev-nature + .ev-nature { border-left: 0; }
+.ev-nature:hover:not(:disabled) { border-color: var(--team-accent, var(--accent)); color: var(--fg); }
+.ev-nature:disabled { cursor: default; opacity: 0.45; }
 .ev-nature[aria-pressed="true"] {
   background: var(--team-accent, var(--accent)); border-color: var(--team-accent, var(--accent));
   color: var(--bg);
