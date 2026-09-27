@@ -556,54 +556,37 @@ export function planFor(input: PlanInput): Plan {
     }
   }
 
-  /**
-   * The worst of several, for the columns that show one row per Pokémon.
-   *
-   * Which move they would actually click: soonest to the knockout, and the
-   * bigger number where two are equally soon.
-   */
-  const worstOf = (from: Side, to: Side, candidates: Move[]) => {
-    let best: (Threshold & { shot: Shot }) | null = null
-    for (const move of candidates) {
-      const row = readMove(from, to, move)
-      if (!best
-        || row.shot.soonest < best.shot.soonest
-        || (row.shot.soonest === best.shot.soonest && row.shot.high > best.shot.high)) {
-        best = row
-      }
-    }
-    return best
-  }
-
   for (const o of opponents) {
     /*
      * ---- taking hits: HP, Defense, Special Defense ----
      *
-     * One row per Pokémon over there, the same as the attacking columns and
-     * for the same reason: with both sides' moves settled, the question is
-     * flat. What is the worst thing this one can throw at me, what does it
-     * do, and how does that move as I spend.
+     * Every move they have against me, the same as the attacking columns
+     * and for the same reason: with both sides' moves settled the question
+     * is flat, and answering it only for their best line answers less than
+     * was asked. A Flare Blitz you always survive and a Knock Off you do
+     * not are two different facts about the same Incineroar. The one that
+     * hurts most is still the row read first, because the list is sorted
+     * so it is.
      *
      * Defense reads their physical moves and Special Defense their special
-     * ones; HP reads everything, because it is the stat that answers both
-     * and the row worth seeing there is whichever hurts most.
+     * ones; HP reads everything, because it is the stat that answers both.
      */
     for (const stat of ['hp', 'def', 'spd'] as const) {
       const category = stat === 'def' ? 'Physical' : stat === 'spd' ? 'Special' : null
       const theirs = category ? o.moves.filter((m) => m.category === category) : o.moves
-      const row = worstOf(o.side, meNow, theirs)
-      if (!row) continue
-      // The most hits this stat alone could ever make it take. Where the
-      // row already reads that number, the column has nothing left to give
-      // against that Pokémon and says so.
-      const found = theirs.find((m) => m.name === row.moveName)
-      const peak = found ? damage(o.side, meMax(stat), found, chart, doubles).worstCase : undefined
-      out[stat].push({
-        ...row,
-        target: o.id,
-        targetName: o.pokemon.name,
-        shot: { ...row.shot, peak },
-      })
+      for (const move of theirs) {
+        // The most hits this stat alone could ever make it take. Where the
+        // row already reads that number, the column has nothing left to
+        // give against that move and says so.
+        const peak = damage(o.side, meMax(stat), move, chart, doubles).worstCase
+        const row = readMove(o.side, meNow, move)
+        out[stat].push({
+          ...row,
+          target: o.id,
+          targetName: o.pokemon.name,
+          shot: { ...row.shot, peak },
+        })
+      }
     }
 
     /*
