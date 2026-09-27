@@ -876,7 +876,7 @@ function GearPicker({
    * are shown and not clickable.
    */
   const setAbility = mega || own.length === 1 ? own[0] : undefined
-  const nothing = !setAbility && !mega
+  const nothing = !setAbility && !mega && own.length < 2
     && !abilities.length && !plain.length && !boosters.length
   if (nothing && !assume && !onHide && !onNamed) return null
 
@@ -1030,6 +1030,18 @@ function GearPicker({
                 <span>Ability</span>
                 <b>{setAbility}</b>
                 <em>{mega ? 'comes with the forme' : 'its only one'}</em>
+              </div>
+            )}
+            {/* Several to choose between and no reason to: none of them
+                changes a number here, so which it is running is not a
+                question this tab can answer or needs answered. Said
+                rather than left blank — a panel with no ability line
+                looks like a panel that did not check. */}
+            {open === 'kit' && !setAbility && !abilities.length && own.length > 1 && (
+              <div className="ev-gear-fixed">
+                <span>Ability</span>
+                <b>{own.join(' · ')}</b>
+                <em>none of them changes a number here</em>
               </div>
             )}
             {open === 'kit' && !setAbility && abilities.length > 0 && (

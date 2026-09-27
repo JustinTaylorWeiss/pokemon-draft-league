@@ -1550,6 +1550,7 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   padding: 0.2rem 0.3rem; border-radius: 6px;
   background: var(--chip); border: 1px dashed var(--line);
   font-size: 0.75rem; font-weight: 500; color: var(--fg);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .ev-gear-fixed > em { font-style: normal; font-size: 0.6rem; color: var(--muted); }
 
