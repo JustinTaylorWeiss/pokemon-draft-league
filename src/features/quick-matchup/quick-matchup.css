@@ -1192,6 +1192,12 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
    usually four EVs short of a win. Orange, between the two. */
 .ev-row.is-tied { border-color: #e0824a; background: rgb(224 130 74 / 12%); }
 .ev-row.is-tied .ev-cost-evs, .ev-row.is-tied .ev-detail { color: #e0824a; }
+/* The build this Pokemon is reckoned to be running, out of the several the
+   column prices. Marked rather than the only one shown: the toggle is an
+   opinion, and "what if it is faster than that" is the question the rest
+   of the rows are there for. */
+.ev-row.is-expected .ev-target { color: var(--team-accent, var(--accent)); }
+.ev-row.is-expected { border-left: 2px solid var(--team-accent, var(--accent)); }
 /* Out of reach: still readable, but the cost column has nothing to say. */
 .ev-row.is-out { border-style: dashed; }
 .ev-row.is-out .ev-target { color: var(--muted); }
