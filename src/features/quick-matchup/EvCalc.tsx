@@ -628,7 +628,9 @@ function GearPicker({
    */
   const invested = assume
     ? (EV_STATS.filter((k) => assume[k] !== 'ivs') as StatKey[])
-      .map((k) => `${ASSUME_LABEL[assume[k]]} ${STAT_LABELS[k]}`)
+      // A hard space inside each pair and a soft one between them, so the
+      // pill breaks between stats and never between a number and its stat.
+      .map((k) => `${ASSUME_LABEL[assume[k]]}\u00a0${STAT_LABELS[k]}`)
     : []
   /*
    * And a pill saying so where there is nothing, which is not the same as
@@ -639,7 +641,7 @@ function GearPicker({
    */
   const preset = base && EV_STATS.some((k) => base[k] !== 'ivs')
   const raised = !assume ? []
-    : invested.length ? [invested.join(' · ')]
+    : invested.length ? [invested.join(' ')]
       : [preset ? 'No EVs' : 'No preset EVs']
   /** Whether any of it departs from how usage says it is built. */
   const moved = assume
