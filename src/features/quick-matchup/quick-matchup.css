@@ -938,8 +938,14 @@ button.type-chip { cursor: pointer; }
   justify-content: space-between;
   flex: none; gap: 0.5rem; min-height: 9rem;
 }
+/*
+ * Two columns and no wrapping: the sprites take what is left and wrap among
+ * themselves, the search keeps the right edge. Wrapping this row put the
+ * search beside the sprites on a wide screen and underneath them on a
+ * narrower one, which is one control in two places depending on the device.
+ */
 .ev-mons {
-  display: flex; align-items: flex-start; flex-wrap: wrap;
+  display: flex; align-items: flex-start; flex-wrap: nowrap;
   flex: 1 1 18rem; gap: 0.6rem; padding: 0.6rem;
   border: 1px solid color-mix(in oklab, var(--nav-red), transparent 60%);
   border-radius: 10px;
@@ -966,7 +972,10 @@ button.type-chip { cursor: pointer; }
 
 /* Tops aligned, not middles: a Mega has no gear button under it, so its
    slot is shorter, and centring the row hung its sprite below the rest. */
-.ev-foes { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 0.15rem 0.05rem; }
+.ev-foes {
+  display: flex; align-items: flex-start; flex-wrap: wrap;
+  flex: 1 1 auto; min-width: 0; gap: 0.15rem 0.05rem;
+}
 /* Counted by default. Switched off it goes grey and flat, which says "not in
    the numbers" without taking it off the row and leaving a gap. */
 .ev-open.is-off img { opacity: 0.3; filter: grayscale(1); }
@@ -1523,6 +1532,9 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   .ev-ours { flex-wrap: wrap; }
   .ev-side { flex: 1 1 12rem; min-height: 0; }
   .ev-mons { flex: 1 1 auto; }
+  /* Under the sprites rather than beside them, since there is no room to
+     be beside them, and the whole width once it is down there. */
+  .ev-mons { flex-wrap: wrap; }
   .ev-added { width: 100%; margin-left: 0; }
   .ev-set, .ev-picker, .ev-picker .drop-current { width: 100%; }
   .ev-budget { width: 100%; }
