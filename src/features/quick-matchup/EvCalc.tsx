@@ -42,6 +42,17 @@ const NATURES: { mult: number; label: string; title: string }[] = [
   { mult: 1.1, label: '+ Nature', title: 'Boosting nature' },
 ]
 
+/**
+ * A move's name in its own type's colour.
+ *
+ * The palette is the one the chips use, taken from the variable each type
+ * class sets rather than written out again here, and pulled a quarter of
+ * the way towards the page's own ink: Dark and Ghost are chosen to be read
+ * as a white word on a dark ground, and unmixed they are barely visible as
+ * the word itself.
+ */
+const typeInk = (type?: string) => (type ? ` ev-ink type-${type.toLowerCase()}` : '')
+
 /** A nature gives one stat and takes from another, so only one of each. */
 const natureIsLegal = (s: Spread) => {
   const plus = EV_STATS.filter((k) => s.nature[k] > 1).length
@@ -145,17 +156,6 @@ function ShotOutcome({ shot, chance }: { shot: Shot; chance: number }) {
     </span>
   )
 }
-
-/**
- * A move's name in its own type's colour.
- *
- * The palette is the one the chips use, taken from the variable each type
- * class sets rather than written out again here, and pulled a quarter of
- * the way towards the page's own ink: Dark and Ghost are chosen to be read
- * as a white word on a dark ground, and unmixed they are barely visible as
- * the word itself.
- */
-const typeInk = (type?: string) => (type ? ` ev-ink type-${type.toLowerCase()}` : '')
 
 /**
  * How to read this tab, for someone opening it for the first time.
@@ -898,8 +898,9 @@ function GearPicker({
                               how hard, and both are read off the column it
                               landed in — here they are two badges between
                               the reader and the only two things they came
-                              to check. */}
-                          <span className="ev-set-name">{move.name}</span>
+                              to check. The type is in the name's colour,
+                              which costs no room. */}
+                          <span className={`ev-set-name${typeInk(move.type)}`}>{move.name}</span>
                           <em>{move.basePower}</em>
                           <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
                         </button>
@@ -923,7 +924,7 @@ function GearPicker({
                     {addable.map((m) => (
                       <li key={m.name}>
                         <button type="button" onClick={() => addMove(m)}>
-                          <span className="ev-set-name">{m.name}</span>
+                          <span className={`ev-set-name${typeInk(m.type)}`}>{m.name}</span>
                           <em>{m.basePower}</em>
                         </button>
                       </li>

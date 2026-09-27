@@ -1256,7 +1256,7 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 /* The type's own colour as ink. Two classes so it beats the background the
    type class sets, and mixed towards the page's ink because Dark and Ghost
    are chosen to carry a white word, not to be one. */
-.ev-row .ev-ink {
+.ev-row .ev-ink, .ev-gear-moves .ev-ink {
   background: none;
   color: color-mix(in oklab, var(--type-colour, var(--muted)), var(--fg) 25%);
   font-weight: 600;
