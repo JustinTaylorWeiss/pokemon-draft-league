@@ -1538,6 +1538,21 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em;
   text-transform: uppercase; color: var(--muted);
 }
+/* What it has and cannot be talked out of. Laid out like the labelled
+   controls beside it so the panel reads straight down, with the reason
+   under it rather than a disabled dropdown of one. */
+.ev-gear-fixed { display: flex; flex-direction: column; gap: 0.15rem; }
+.ev-gear-fixed > span {
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--muted);
+}
+.ev-gear-fixed > b {
+  padding: 0.2rem 0.3rem; border-radius: 6px;
+  background: var(--chip); border: 1px dashed var(--line);
+  font-size: 0.75rem; font-weight: 500; color: var(--fg);
+}
+.ev-gear-fixed > em { font-style: normal; font-size: 0.6rem; color: var(--muted); }
+
 .ev-gear-pop select {
   background: var(--chip); border: 1px solid var(--line); color: var(--fg);
   border-radius: 6px; padding: 0.2rem 0.3rem; font: inherit; font-size: 0.75rem; cursor: pointer;

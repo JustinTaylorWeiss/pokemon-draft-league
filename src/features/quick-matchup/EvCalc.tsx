@@ -866,7 +866,18 @@ function GearPicker({
     || (gear?.without ?? []).length > 0
 
   // Nothing to choose at all: no lists, and no spread to credit it with.
-  const nothing = mega || (!abilities.length && !plain.length && !boosters.length)
+  /*
+   * Fixed rather than absent.
+   *
+   * A Mega's ability comes with the forme and its item slot holds the
+   * stone, and plenty of other Pokemon have exactly one ability to have.
+   * Those were left out of the panel altogether, which reads as the panel
+   * not knowing — where the truth is that there is nothing to decide. They
+   * are shown and not clickable.
+   */
+  const setAbility = mega || own.length === 1 ? own[0] : undefined
+  const nothing = !setAbility && !mega
+    && !abilities.length && !plain.length && !boosters.length
   if (nothing && !assume && !onHide && !onNamed) return null
 
   return (
@@ -1014,7 +1025,14 @@ function GearPicker({
               )}
             </div>
             )}
-            {open === 'kit' && abilities.length > 0 && (
+            {open === 'kit' && setAbility && (
+              <div className="ev-gear-fixed">
+                <span>Ability</span>
+                <b>{setAbility}</b>
+                <em>{mega ? 'comes with the forme' : 'its only one'}</em>
+              </div>
+            )}
+            {open === 'kit' && !setAbility && abilities.length > 0 && (
               <label>
                 <span>Ability</span>
                 {/* No blank option: it already has an ability, and "its
@@ -1030,6 +1048,13 @@ function GearPicker({
                 ))}
                 </select>
               </label>
+            )}
+            {open === 'kit' && mega && (
+              <div className="ev-gear-fixed">
+                <span>Item</span>
+                <b>Mega Stone</b>
+                <em>nothing else fits</em>
+              </div>
             )}
             {open === 'kit' && !mega && (
             <label>
