@@ -1269,7 +1269,11 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   color: var(--fg); white-space: nowrap;
 }
 .ev-row.is-lit .ev-range { color: #2ea078; }
-.ev-shot .ev-odds { flex: none; margin-left: auto; }
+/* Flush with the top of the row and its right edge, rather than sitting on
+   the name's baseline — a badge with a background of its own reads as being
+   out of line when its box hangs above and below the text beside it. */
+.ev-shot .ev-line:first-child { align-items: flex-start; }
+.ev-shot .ev-odds { flex: none; margin-left: auto; align-self: flex-start; }
 .ev-shot.is-lit .ev-odds {
   background: rgb(46 160 120 / 18%); color: #2ea078; font-weight: 600;
 }
