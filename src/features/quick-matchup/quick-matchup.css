@@ -914,20 +914,29 @@ button.type-chip { cursor: pointer; }
  * other eleven. The picker answers it in one control, and the row beside it
  * is the only other choice on the tab worth making.
  */
-/* Two columns: the controls down the left, the Pokemon they are about to
-   the right of them. As one row it grew every time a pill appeared under a
-   sprite, while the space beside the budget and the move search — directly
-   below the picker — stayed empty. The sprites use that height now. */
-.ev-bar { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.5rem 0.9rem; }
+/* Two boxes: yours on the left in blue, theirs on the right in red. The
+   colours are which side, not which team — the Pokemon being built for is
+   always the blue one, whichever coach drafted it.
+ *
+ * The left box is held at the height of a sprite carrying three pills, so
+ * giving one an item and an ability does not push the whole row taller.
+ * The slack goes to the move-set button and the budget, which are the two
+ * things in there worth making easier to hit.
+ */
+.ev-bar { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0.6rem; }
 .ev-side {
   display: flex; flex-direction: column; align-items: flex-start;
-  flex: none; gap: 0.5rem;
+  flex: none; gap: 0.5rem; min-height: 9rem; padding: 0.6rem;
+  border: 1px solid color-mix(in oklab, var(--nav-blue), transparent 60%);
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--nav-blue), transparent 94%);
 }
-/* The gap here is the one either side of "against", so it is the whole of
-   the spacing between the three things in this row. */
 .ev-mons {
   display: flex; align-items: flex-start; flex-wrap: wrap;
-  flex: 1 1 18rem; gap: 0.5rem 0.6rem;
+  flex: 1 1 18rem; gap: 0.6rem; padding: 0.6rem;
+  border: 1px solid color-mix(in oklab, var(--nav-red), transparent 60%);
+  border-radius: 10px;
+  background: color-mix(in oklab, var(--nav-red), transparent 94%);
 }
 .ev-picker .drop-current { width: var(--ev-control); font-size: 0.9rem; gap: 0.4rem; }
 .ev-picker .drop-label { flex: 1 1 auto; text-align: left; }
@@ -951,15 +960,6 @@ button.type-chip { cursor: pointer; }
 /* Tops aligned, not middles: a Mega has no gear button under it, so its
    slot is shorter, and centring the row hung its sprite below the rest. */
 .ev-foes { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 0.15rem 0.05rem; }
-/* Level with the pictures, not with the slot. The pills under a sprite are
-   not what this word labels, so the height it centres on is the sprite's
-   own plus the padding and border of the button around it. */
-.ev-against {
-  display: inline-flex; align-items: center;
-  height: calc(var(--ev-sprite-h) + 0.2rem + 2px);
-  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
-  color: var(--muted);
-}
 /* Counted by default. Switched off it goes grey and flat, which says "not in
    the numbers" without taking it off the row and leaving a gap. */
 .ev-open.is-off img { opacity: 0.3; filter: grayscale(1); }
@@ -1012,10 +1012,10 @@ button.type-chip { cursor: pointer; }
 /* Its four, chosen behind a button. The same width as everything else down
    this column; the panel it opens is wider than that, because a move's name,
    its category and its type do not fit in twelve rems. */
-.ev-set { position: relative; width: var(--ev-control); }
+.ev-set { position: relative; width: var(--ev-control); flex: 2 1 auto; min-height: 1.8rem; }
 .ev-set-open {
   display: flex; align-items: center; justify-content: space-between; gap: 0.4rem;
-  width: 100%; height: 1.55rem; padding: 0 0.5rem 0 0.7rem;
+  width: 100%; height: 100%; min-height: 1.8rem; padding: 0 0.5rem 0 0.7rem;
   background: var(--chip); border: 1px solid var(--line); border-radius: 999px;
   color: var(--fg); font: inherit; font-size: 0.75rem; cursor: pointer;
 }
@@ -1120,11 +1120,11 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
    and a bar is a thing you can see the end of. */
 .ev-budget {
   display: inline-flex; align-items: center; gap: 0.45rem;
-  width: var(--ev-control);
+  width: var(--ev-control); flex: 1 1 auto; min-height: 1.3rem;
   font-size: 0.72rem; color: var(--muted); font-variant-numeric: tabular-nums;
 }
 .ev-budget-bar {
-  flex: 1 1 auto; min-width: 0; height: 0.4rem; border-radius: 999px;
+  flex: 1 1 auto; min-width: 0; height: 0.55rem; border-radius: 999px;
   background: var(--chip); overflow: hidden;
 }
 .ev-budget-bar > span {

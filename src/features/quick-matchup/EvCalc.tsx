@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState, type CSSProperties } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../../data/types'
 import { STAT_LABELS } from '../../lib/stats'
 import {
@@ -72,12 +72,7 @@ function battleFormes(id: string, dex: LeagueDex) {
 }
 
 /** Short on the button, spelled out on hover. */
-/*
- * How big the Pokemon along the top are drawn. Handed to CSS as well as to
- * the sprites, because the word "against" beside them is centred on the
- * picture rather than on the slot — the pills underneath are not what it
- * labels — and a height written in two places drifts apart.
- */
+/** How big the Pokemon along the top are drawn. */
 const SPRITE_W = 56
 const SPRITE_H = 46
 
@@ -980,7 +975,7 @@ export function EvCalcBody({
   if (!teamOne.members.length) return null
 
   return (
-    <div className="ev-calc" style={{ '--ev-sprite-h': `${SPRITE_H}px` } as CSSProperties}>
+    <div className="ev-calc">
       {/* Everything you can change, above everything you read, and stuck
           there: the reason to read a column is to decide where an EV goes,
           and the slider was a scroll away from the list that argued for it. */}
@@ -1150,12 +1145,6 @@ export function EvCalcBody({
                 gear={gear[picked.entry.id]} onChange={(g) => give(picked.entry.id, g)}
               />
             </span>
-
-            {/* Between the two, and a child of neither. Inside the foe list
-                it had the gap of one parent on its left and of the other on
-                its right, which is two different gaps around one word. Out
-                here both sides are the same gap by construction. */}
-            {picked.foes.length > 0 && <span className="ev-against">against</span>}
 
             {picked.foes.length > 0 && (
               <div className="ev-foes">
