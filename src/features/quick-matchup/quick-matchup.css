@@ -1146,21 +1146,26 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   color: var(--bg);
 }
 
+.ev-assume-stat input[type="range"],
 .ev-spend input[type="range"] {
   appearance: none; -webkit-appearance: none;
   margin: 0; padding: 0; flex: 1 1 0; min-width: 0; height: 0.85rem;
   background: transparent; cursor: pointer;
 }
+.ev-assume-stat input[type="range"]::-webkit-slider-runnable-track,
 .ev-spend input[type="range"]::-webkit-slider-runnable-track {
   height: 4px; border-radius: 999px; background: var(--chip);
 }
+.ev-assume-stat input[type="range"]::-webkit-slider-thumb,
 .ev-spend input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%;
   background: var(--team-accent, var(--accent)); border: 0; margin-top: -4px;
 }
+.ev-assume-stat input[type="range"]::-moz-range-track,
 .ev-spend input[type="range"]::-moz-range-track {
   height: 4px; border-radius: 999px; background: var(--chip);
 }
+.ev-assume-stat input[type="range"]::-moz-range-thumb,
 .ev-spend input[type="range"]::-moz-range-thumb {
   width: 12px; height: 12px; border-radius: 50%;
   background: var(--team-accent, var(--accent)); border: 0;
@@ -1402,13 +1407,29 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   display: flex; flex-direction: column; gap: 0.35rem;
   padding-bottom: 0.45rem; border-bottom: 1px solid var(--line);
 }
-.ev-gear-assumes > .ev-assume { flex-direction: row; align-items: center; justify-content: space-between; }
-/* Two stats read as a pair sit as a pair, each with its label over its
-   segments: side by side there is no room for a word beside them. */
-.ev-assume-row { display: flex; gap: 0.4rem; }
-.ev-assume-row .ev-assume { flex: 1 1 0; min-width: 0; align-items: stretch; }
-.ev-assume-row .ev-assume-seg { width: 100%; }
-.ev-assume-row .ev-seg { flex: 1 1 0; min-width: 0; padding: 0.12rem 0.2rem; }
+/* Six rows: the stat, a slider across the width, what it comes to, and
+   the nature. Laid out on a grid so the numbers and the nature buttons
+   line up down the panel instead of wherever their sliders end. */
+.ev-assume-stat {
+  display: grid; grid-template-columns: 2.1rem minmax(0, 1fr) 1.9rem 1.15rem;
+  align-items: center; gap: 0.35rem;
+}
+.ev-assume-stat > span {
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--muted);
+}
+.ev-assume-stat > b {
+  font-size: 0.72rem; text-align: right;
+  font-variant-numeric: tabular-nums; color: var(--fg);
+}
+.ev-assume-stat .ev-nature { width: 1.15rem; height: 1.15rem; padding: 0; border-radius: 4px; }
+/* What the six come to. Over 508 is not a build, and says so rather than
+   being refused: the question is often asked one stat at a time. */
+.ev-assume-total {
+  margin: 0.1rem 0 0; text-align: right;
+  font-size: 0.62rem; color: var(--muted); font-variant-numeric: tabular-nums;
+}
+.ev-assume-total.is-over { color: #e05563; font-weight: 600; }
 .ev-gear-pop label { display: flex; flex-direction: column; gap: 0.15rem; }
 /* The label over each control, and only that. As `.ev-gear-pop span` it
    also caught the word inside every category badge in the move list —

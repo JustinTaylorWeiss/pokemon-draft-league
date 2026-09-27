@@ -5,10 +5,10 @@ import {
   GIVEABLE_ITEMS, MODELLED_ABILITIES, itemEffect, itemMatters, typeBoosted,
 } from '../../lib/damage'
 import {
-  ASSUME_BARE, EV_BUDGET, EV_MAX, EV_STATS, EV_STEP, IV_MAX, SET_SIZE, assumeFrom,
+  EV_BUDGET, EV_MAX, EV_STATS, EV_STEP, IV_MAX, SET_SIZE, assumeFrom,
   emptySpread, lowered,
   opponentsFrom, planFor, spent, statOfSpread, usualMoves,
-  type Assume, type Assumptions, type Shot, type Spread, type Threshold,
+  type Assumptions, type Shot, type Spread, type Threshold,
 } from '../../lib/evPlan'
 import { Sprite } from '../../components/Sprite'
 import { MoveCategory } from '../../components/MoveCategory'
@@ -88,44 +88,50 @@ function battleFormes(id: string, dex: LeagueDex) {
 const SPRITE_W = 64
 const SPRITE_H = 53
 
-const ASSUME_LABEL: Record<Assume, string> = { ivs: '31', max: '252', 'max+': '252+' }
-const ASSUME_MEANS: Record<Assume, string> = {
-  ivs: 'perfect IVs and nothing else — no EVs, neutral nature',
-  max: 'maximum EVs',
-  'max+': 'maximum EVs and a boosting nature',
-}
-
 /**
- * The three states side by side rather than one button cycling through them.
+ * One stat of a credited spread: a slider, its number, and its nature.
  *
- * Cycling is fine for two and poor for three: reaching the one you want
- * means clicking through the one you do not, and which comes next is only
- * learnable by trying. Laid out, the choice is the control.
+ * Three buttons could say bare, maxed, and maxed with a nature, and
+ * nothing in between — which is most of what gets run. Incineroar's 96
+ * Defense had no way of being said and came out as either nothing or
+ * everything, neither of which is what it does.
  */
-function AssumePicker({ label, value, states, onPick }: {
-  label: string
-  value: Assume
-  states: Assume[]
-  onPick: (next: Assume) => void
+function AssumeStat({ stat, spread, onEvs, onNature }: {
+  stat: StatKey
+  spread: Spread
+  onEvs: (n: number) => void
+  onNature: (mult: number) => void
 }) {
+  const evs = spread.evs[stat]
+  const cycle = NATURES.filter((n) => n.mult === 1
+    || n.mult === spread.nature[stat]
+    || !EV_STATS.some((k) => k !== stat && spread.nature[k] === n.mult))
+  const now = NATURES.find((n) => n.mult === spread.nature[stat]) ?? NATURES[1]
+  const next = cycle[(cycle.findIndex((n) => n.mult === now.mult) + 1) % cycle.length]
   return (
-    <span className="ev-assume">
-      <span className="ev-assume-what">{label}</span>
-      <span className="ev-assume-seg">
-        {states.map((state) => (
-          <button
-            key={state}
-            type="button"
-            className="ev-seg"
-            aria-pressed={value === state}
-            title={`${label}: ${ASSUME_MEANS[state]}`}
-            onClick={() => onPick(state)}
-          >
-            {ASSUME_LABEL[state]}
-          </button>
-        ))}
-      </span>
-    </span>
+    <label className="ev-assume-stat">
+      <span>{STAT_LABELS[stat]}</span>
+      <input
+        type="range" min={0} max={EV_MAX} step={EV_STEP} value={evs}
+        aria-label={`${STAT_LABELS[stat]} EVs`}
+        onChange={(e) => onEvs(Number(e.target.value))}
+      />
+      <b>{evs}</b>
+      {takesNature(stat) ? (
+        <button
+          type="button"
+          className="ev-nature"
+          aria-pressed={now.mult !== 1}
+          disabled={cycle.length < 2}
+          title={cycle.length > 1
+            ? `${now.title} \u2014 click for ${next.title.toLowerCase()}`
+            : `${now.title} \u2014 the other two are spoken for`}
+          onClick={() => onNature(next.mult)}
+        >
+          {now.mult === 1 ? '\u00b7' : now.mult > 1 ? '+' : '\u2212'}
+        </button>
+      ) : <i aria-hidden="true" />}
+    </label>
   )
 }
 
@@ -626,11 +632,18 @@ function GearPicker({
    * sprite, because it is the thing the columns are reading and the thing
    * nobody would otherwise know. One pill, because it is one fact.
    */
+  /*
+   * Only what it is putting into a stat, and only the nature that helps.
+   *
+   * A minus is the other end of a plus and never chosen for itself — a
+   * spread is quoted by what it invests in, and "0− SpA" is a fact about
+   * the nature already named by the plus somewhere else on the line.
+   */
   const invested = assume
-    ? (EV_STATS.filter((k) => assume[k] !== 'ivs') as StatKey[])
+    ? EV_STATS.filter((k) => assume.evs[k] > 0 || assume.nature[k] > 1)
       // A hard space inside each pair and a soft one between them, so the
       // pill breaks between stats and never between a number and its stat.
-      .map((k) => `${ASSUME_LABEL[assume[k]]}\u00a0${STAT_LABELS[k]}`)
+      .map((k) => `${assume.evs[k]}${assume.nature[k] > 1 ? '+' : ''}\u00a0${STAT_LABELS[k]}`)
     : []
   /*
    * And a pill saying so where there is nothing, which is not the same as
@@ -639,14 +652,14 @@ function GearPicker({
    * from an empty space. Distinguished from one whose spread was cleared
    * by hand, which is a choice rather than a gap in what is known.
    */
-  const preset = base && EV_STATS.some((k) => base[k] !== 'ivs')
+  const preset = base && EV_STATS.some((k) => base.evs[k] > 0)
   const raised = !assume ? []
     : invested.length ? [invested.join(' ')]
       : [preset ? 'No EVs' : 'No preset EVs']
   /** Whether any of it departs from how usage says it is built. */
-  const moved = assume
-    ? EV_STATS.some((k) => assume[k] !== (base?.[k] ?? 'ivs'))
-    : false
+  const moved = Boolean(assume) && EV_STATS.some(
+    (k) => assume?.evs[k] !== base?.evs[k] || assume?.nature[k] !== base?.nature[k],
+  )
   // Only the dropped ones. Everything is 31 unless somebody said otherwise,
   // so a pill for each of six perfect IVs would be six pills saying nothing.
   const dropped = lowered(gear?.ivs).map(([stat, iv]) => `${STAT_LABELS[stat]} ${iv}`)
@@ -860,36 +873,24 @@ function GearPicker({
                 team nobody brought. */}
             {assume && onAssume && (
               <div className="ev-gear-assumes">
-                {/* HP and Speed together: the two that are not part of a
-                    pair, and the two a spread is usually described by. */}
-                <div className="ev-assume-row">
-                  <AssumePicker
-                    label="HP" value={assume.hp} states={['ivs', 'max']}
-                    onPick={(hp) => onAssume({ ...assume, hp: hp as 'ivs' | 'max' })}
+                {EV_STATS.map((stat) => (
+                  <AssumeStat
+                    key={stat}
+                    stat={stat}
+                    spread={assume}
+                    onEvs={(n) => onAssume({ ...assume, evs: { ...assume.evs, [stat]: n } })}
+                    onNature={(mult) => {
+                      const step = { ...assume, nature: { ...assume.nature, [stat]: mult } }
+                      if (natureIsLegal(step)) onAssume(step)
+                    }}
                   />
-                  <AssumePicker
-                    label={STAT_LABELS.spe} value={assume.spe} states={['ivs', 'max', 'max+']}
-                    onPick={(spe) => onAssume({ ...assume, spe })}
-                  />
-                </div>
-                {/* The two defences on one line and the two attacks on the
-                    next. They are separate questions — an Incineroar puts
-                    everything in Attack and nothing in Special Attack, and
-                    in HP and Defense and nothing in Special Defense — but
-                    they are read in pairs, so they sit in pairs. */}
-                {([['def', 'spd'], ['atk', 'spa']] as const).map((pair) => (
-                  <div key={pair[0]} className="ev-assume-row">
-                    {pair.map((stat) => (
-                      <AssumePicker
-                        key={stat}
-                        label={STAT_LABELS[stat]}
-                        value={assume[stat]}
-                        states={['ivs', 'max', 'max+']}
-                        onPick={(next) => onAssume({ ...assume, [stat]: next })}
-                      />
-                    ))}
-                  </div>
                 ))}
+                {/* What it comes to. Nothing stops it going over — "what if
+                    it were max in this one" is asked a stat at a time — but
+                    an impossible spread should look impossible. */}
+                <p className={`ev-assume-total${spent(assume) > EV_BUDGET ? ' is-over' : ''}`}>
+                  {spent(assume)} / {EV_BUDGET} EVs
+                </p>
               </div>
             )}
             {/* Dropped IVs. Two of the six are dropped on purpose and often:
@@ -1040,7 +1041,7 @@ function GearPicker({
                 className="ev-gear-reset"
                 onClick={() => {
                   onChange({})
-                  onAssume?.(base ?? ASSUME_BARE)
+                  onAssume?.(base ?? emptySpread())
                   onNamed?.([])
                   onHide?.(false)
                 }}
@@ -1571,12 +1572,10 @@ export function EvCalcBody({
                 set on record, so that second list is all there is for {guessed.length === 1 ? 'it' : 'them'}</>
             )}
             . Weather, terrain, screens, boosts and Intimidate are not counted.
-            {Object.values(assume)
-              .some((a) => (['def', 'spd', 'atk', 'spa', 'spe'] as const)
-                .filter((k) => a[k] === 'max+').length > 1) && (
-              <> More than one stat on the same Pokémon has been given a
-                boosting nature, which no single Pokémon could have — each
-                calculation reads one of them, so each is answered on its own.</>
+            {Object.values(assume).some((a) => spent(a) > EV_BUDGET) && (
+              <> One of them has been credited with more than 508 EVs, which no
+                single Pokémon could carry — each column reads the stats it needs,
+                so each question is answered on its own.</>
             )}
           </p>
         </>
