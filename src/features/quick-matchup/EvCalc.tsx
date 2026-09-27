@@ -986,26 +986,6 @@ export function EvCalcBody({
           budget and the search sat empty. Now the sprites run down into it. */}
       <div className="ev-bar">
         <div className="ev-ours">
-          {/* Its picture beside the controls that are about it. The picker
-              opens the list; this opens the Pokémon, the way a sprite does
-              everywhere else on the site. */}
-          {picked && (
-            <span className="ev-mine">
-              <PokemonLink
-                id={picked.entry.id}
-                className="ev-open"
-                title={`Open ${picked.entry.pokemon.name}`}
-              >
-                <Sprite pokemon={picked.entry.pokemon} width={SPRITE_W} height={SPRITE_H} />
-              </PokemonLink>
-              <GearPicker
-                pokemon={picked.entry.pokemon}
-                usual={usualAbility(picked.entry.id, picked.entry.pokemon)}
-                gear={gear[picked.entry.id]} onChange={(g) => give(picked.entry.id, g)}
-              />
-            </span>
-          )}
-
           <div className="ev-side">
             <DropPicker
               className="ev-picker"
@@ -1146,6 +1126,27 @@ export function EvCalcBody({
               </span>
             )}
           </div>
+
+          {/* Its picture where it was, to the right of the controls that
+              are about it — only the box around the two of them is new.
+              The picker opens the list; this opens the Pokémon, the way
+              a sprite does everywhere else on the site. */}
+          {picked && (
+            <span className="ev-mine">
+              <PokemonLink
+                id={picked.entry.id}
+                className="ev-open"
+                title={`Open ${picked.entry.pokemon.name}`}
+              >
+                <Sprite pokemon={picked.entry.pokemon} width={SPRITE_W} height={SPRITE_H} />
+              </PokemonLink>
+              <GearPicker
+                pokemon={picked.entry.pokemon}
+                usual={usualAbility(picked.entry.id, picked.entry.pokemon)}
+                gear={gear[picked.entry.id]} onChange={(g) => give(picked.entry.id, g)}
+              />
+            </span>
+          )}
         </div>
 
         {picked && (
