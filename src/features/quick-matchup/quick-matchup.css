@@ -1338,11 +1338,24 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
    controls inside — it sits under the panel, not over it. */
 .ev-gear-away { position: fixed; inset: 0; z-index: 20; background: none; border: 0; cursor: default; }
 .ev-gear-pop {
-  position: absolute; top: calc(100% + 0.3rem); left: 50%; transform: translateX(-50%);
+  position: absolute; top: calc(100% + 0.4rem); left: 50%; transform: translateX(-50%);
   z-index: 21; display: flex; flex-direction: column; gap: 0.45rem;
   padding: 0.55rem; min-width: 13rem;
   background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
   box-shadow: 0 10px 28px rgb(0 0 0 / 45%);
+}
+/* A caret up at the Pokemon it belongs to. Six of these open in the same
+   place under a row of sprites, and without it the panel is six identical
+   panels and no way to tell which one you have. A square turned on its
+   corner, half of it under the panel: the two borders it keeps are the
+   caret's own sides, and its middle covers the panel's top edge. */
+.ev-gear-pop::before {
+  content: ''; position: absolute; top: -0.3rem; left: 50%;
+  width: 0.6rem; height: 0.6rem; margin-left: -0.3rem;
+  background: var(--surface);
+  border-top: 1px solid var(--line); border-left: 1px solid var(--line);
+  border-top-left-radius: 2px;
+  transform: rotate(45deg);
 }
 /* The spread it is credited with, above what it is holding: the first is
    about how it was built and the second about what it brought. */
