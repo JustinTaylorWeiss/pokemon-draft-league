@@ -81,6 +81,13 @@ export interface GameLine {
   deaths: number
   /** Whether it was sent out: six are previewed, four are usually played. */
   brought: boolean
+  /**
+   * How many times it was brought back after fainting — Revival Blessing, and
+   * nothing else. Nearly always 0, and 0 for anything recorded before the
+   * column existed, which is indistinguishable from a game with no revive
+   * because a game with no revive is overwhelmingly the likely one.
+   */
+  revived: number
 }
 
 /**

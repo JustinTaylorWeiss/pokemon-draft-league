@@ -1373,6 +1373,8 @@ function seriesLines(stat: MatchStat | undefined) {
     lines.map((l) => ({
       pokemon: l.pokemon, kills: l.kills, deaths: l.deaths,
       brought: Boolean(l.kills || l.deaths),
+      // A series total has no record of a revive; only a game does.
+      revived: 0,
     }))
   return { a: side(stat.a.lines), b: side(stat.b.lines) }
 }
@@ -1384,6 +1386,11 @@ function seriesLines(stat: MatchStat | undefined) {
  * the game reads at a glance. Brought-but-idle and benched look identical in
  * the numbers — both are 0/0 — which is why the replay's switch-ins are
  * recorded rather than inferred.
+ *
+ * One brought back by Revival Blessing is drawn once per life: greyed for the
+ * knockout it did not stay down from, then again as it finished. Drawn once
+ * it would read as having taken one knockout the whole game, which is what
+ * its numbers say and not what happened.
  */
 function GameTeam({
   lines, dex, align, won,
@@ -1398,17 +1405,29 @@ function GameTeam({
   const mon = (l: GameLine) => {
     const entry = dex[l.pokemon]
     const name = entry?.name ?? l.pokemon
+    const lives = (l.revived ?? 0) + 1
+    const kos = `${l.kills} KO${l.kills === 1 ? '' : 's'}`
     return (
-      <PokemonLink
-        key={l.pokemon}
-        id={l.pokemon}
-        title={`${name} — ${l.kills} KO${l.kills === 1 ? '' : 's'}, ${
-          l.deaths ? 'knocked out' : 'survived'}`}
-      >
-        {entry && (
-          <Sprite pokemon={entry} className={l.deaths ? 'is-fainted' : undefined} width={40} height={33} />
-        )}
-      </PokemonLink>
+      <Fragment key={l.pokemon}>
+        {Array.from({ length: lives }, (_, i) => {
+          // Every life but the last ended in the knockout a revive undid.
+          const last = i === lives - 1
+          const down = last ? l.deaths > 0 : true
+          return (
+            <PokemonLink
+              key={i}
+              id={l.pokemon}
+              title={last
+                ? `${name} — ${kos}, ${l.deaths ? 'knocked out' : 'survived'}${lives > 1 ? ', revived earlier' : ''}`
+                : `${name} — knocked out, then revived`}
+            >
+              {entry && (
+                <Sprite pokemon={entry} className={down ? 'is-fainted' : undefined} width={40} height={33} />
+              )}
+            </PokemonLink>
+          )
+        })}
+      </Fragment>
     )
   }
   return (

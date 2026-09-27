@@ -54,6 +54,7 @@ interface GameLineRow {
   kills: number
   deaths: number
   brought: boolean
+  revived: number | null
 }
 
 interface StandingRow {
@@ -213,7 +214,8 @@ export async function loadLeagueFromSupabase(seasonId?: string): Promise<League>
     const side = (s: 'a' | 'b') => own
       .filter((l) => l.side === s)
       .map((l) => ({
-        pokemon: l.pokemon_id, kills: l.kills, deaths: l.deaths, brought: l.brought ?? false,
+        pokemon: l.pokemon_id, kills: l.kills, deaths: l.deaths,
+        brought: l.brought ?? false, revived: l.revived ?? 0,
       }))
     const list = gamesByMatch.get(g.match_id) ?? []
     list.push({

@@ -10,6 +10,13 @@
  * gets the credit. Damage tagged `[from]` — weather, poison, recoil, hazards —
  * has no attacker, so those deaths are recorded with nobody credited rather
  * than blamed on whoever moved last.
+ *
+ * A faint that gets undone is taken back off both records. Revival Blessing
+ * puts a fainted Pokémon back in the party, and a knockout that did not stick
+ * is not a knockout: the death comes off the Pokémon and the KO comes off
+ * whoever was credited with it. Left in, one Pokémon could be knocked out
+ * twice — two deaths against a team of six, and a survivor count that reads
+ * one short of what was standing at the end.
  */
 
 export interface ReplaySide {
@@ -27,6 +34,8 @@ export interface ReplaySide {
      * nor fainted reads 0/0, exactly like one that sat on the bench.
      */
     brought: boolean
+    /** How many times it was brought back after fainting. Nearly always 0. */
+    revived: number
   }[]
 }
 
@@ -119,6 +128,10 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
   const brought: Record<string, Set<number>> = { p1: new Set(), p2: new Set() }
   /** Last attacker to damage each Pokémon, which is who gets the KO. */
   const lastHitBy: Record<string, { side: string; index: number } | null> = {}
+  /** Who was credited for each slot's most recent faint, so a revive can take it back. */
+  const creditedTo: Record<string, Record<number, { side: string; index: number } | null>> = { p1: {}, p2: {} }
+  /** Slots brought back after fainting, and how often. */
+  const revived: Record<string, Record<number, number>> = { p1: {}, p2: {} }
   /** What a slot's `detailschange` said it became, until something says why. */
   const becoming: Record<string, string> = {}
 
@@ -128,6 +141,30 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
     if (!raw.startsWith('|')) continue
     const parts = raw.split('|')
     const kind = parts[1]
+
+    /*
+     * Revival Blessing, which Showdown reports as a heal on the benched
+     * Pokemon tagged with the move rather than as an event of its own. Matched
+     * on the tag wherever it appears in the line, because the line it appears
+     * on has changed before and the tag has not.
+     *
+     * The Pokemon is on the bench, so its slot is not in `active` and has to
+     * be found by name.
+     */
+    if (parts.some((part) => /\[from\]\s*move:\s*Revival Blessing/i.test(part))) {
+      const who = parseIdent(parts[2] ?? '')
+      const index = who ? teamIndex(teams[who.side], who.name) : null
+      if (who && index != null && (deaths[who.side][index] ?? 0) > 0) {
+        deaths[who.side][index] -= 1
+        const credited = creditedTo[who.side][index]
+        if (credited) {
+          kills[credited.side][credited.index] = Math.max(0, (kills[credited.side][credited.index] ?? 0) - 1)
+        }
+        creditedTo[who.side][index] = null
+        revived[who.side][index] = (revived[who.side][index] ?? 0) + 1
+      }
+      continue
+    }
 
     if (kind === 'player' && parts[2] && parts[3]) {
       accounts[parts[2]] = parts[3]
@@ -197,11 +234,16 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       const slot = (parts[2] ?? '').split(':')[0].trim()
       const index = active[slot] ?? teamIndex(teams[who.side], who.name)
       deaths[who.side][index] = (deaths[who.side][index] ?? 0) + 1
+      // Recorded here rather than inferred from the death afterwards: a revive
+      // takes the death back, and a Pokemon that fainted was on the field
+      // whether or not the faint ends up counting.
+      brought[who.side]?.add(index)
 
       const killer = lastHitBy[slot]
       if (killer && killer.side !== who.side) {
         kills[killer.side][killer.index] = (kills[killer.side][killer.index] ?? 0) + 1
       }
+      creditedTo[who.side][index] = killer && killer.side !== who.side ? killer : null
       lastHitBy[slot] = null
 
     } else if (kind === 'win') {
@@ -227,6 +269,7 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       // A Pokémon that fainted was plainly on the field, even in the odd log
       // where its switch-in is missing.
       brought: brought[key].has(i) || (deaths[key][i] ?? 0) > 0,
+      revived: revived[key][i] ?? 0,
     })),
   })
 

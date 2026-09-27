@@ -289,8 +289,8 @@ export interface ReportedGame {
   winner: 'a' | 'b' | null
   replay_url: string
   survivors: number
-  a: { pokemon_id: string; kills: number; deaths: number; brought: boolean }[]
-  b: { pokemon_id: string; kills: number; deaths: number; brought: boolean }[]
+  a: { pokemon_id: string; kills: number; deaths: number; brought: boolean; revived: number }[]
+  b: { pokemon_id: string; kills: number; deaths: number; brought: boolean; revived: number }[]
 }
 
 /**

@@ -211,11 +211,12 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
         canonical.get(`${side}-${baseName(mon)}`) ?? toId(mon)
 
       const lineOf = (side: 'a' | 'b') =>
-        (l: { pokemon: string; kills: number; deaths: number; brought: boolean }) => ({
+        (l: { pokemon: string; kills: number; deaths: number; brought: boolean; revived: number }) => ({
           pokemon_id: idOf(side, l.pokemon),
           kills: l.kills,
           deaths: l.deaths,
           brought: l.brought,
+          revived: l.revived,
         })
 
       // Numbered in the order they were played, which is the order they were
