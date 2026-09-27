@@ -1039,9 +1039,8 @@ function GearPicker({
                 looks like a panel that did not check. */}
             {open === 'kit' && !setAbility && !abilities.length && own.length > 1 && (
               <div className="ev-gear-fixed">
-                <span>Ability</span>
+                <span>Ability <em>no effect here</em></span>
                 <b>{own.join(' · ')}</b>
-                <em>none of them changes a number here</em>
               </div>
             )}
             {open === 'kit' && !setAbility && abilities.length > 0 && (
