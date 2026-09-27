@@ -1124,7 +1124,19 @@ export function EvCalcBody({
   teamOne, teamTwo, chart, moves, learnsets, sets, played, dex, level,
 }: Props) {
   const [chosen, setChosen] = useState<string | null>(null)
-  const [spread, setSpread] = useState<Spread>(emptySpread)
+  /*
+   * Everything about one Pokémon is kept under its id, not thrown away
+   * when another is picked.
+   *
+   * A coach works down a team — what does Garchomp want, what does the
+   * Incineroar behind it want — and comes back to the first one. Losing
+   * its spread on the way is losing the work. It also means the two sides
+   * are one set of facts: a Garchomp credited with an item and a spread
+   * while it was the opponent is still carrying them when the Pokémon
+   * being built for is on the other team and Garchomp is the one being
+   * built. There is one Garchomp.
+   */
+  const [spreads, setSpreads] = useState<Record<string, Spread>>({})
   /**
    * Opponents switched off.
    *
@@ -1145,7 +1157,7 @@ export function EvCalcBody({
   const names = (id: string, next: string[]) =>
     setExtra((prev) => ({ ...prev, [id]: next }))
   /** Which shape to read it in, for the ones that have more than one. */
-  const [shape, setShape] = useState<string | null>(null)
+  const [shapes, setShapes] = useState<Record<string, string>>({})
   /**
    * The four it is throwing, where somebody has said.
    *
@@ -1154,11 +1166,29 @@ export function EvCalcBody({
    * columns are populated before the overlay has ever been opened, and
    * opening it and closing it again changes nothing.
    */
-  const [myset, setMyset] = useState<string[] | null>(null)
+  const [mysets, setMysets] = useState<Record<string, string[]>>({})
   const [movesOpen, setMovesOpen] = useState(false)
   const [moveQuery, setMoveQuery] = useState('')
   /** Items and abilities given out by hand, on either side. */
   const [gear, setGear] = useState<Record<string, Gear>>({})
+  /** Which Pokémon everything above is about, once one has been picked. */
+  const mine = chosen ?? ''
+  const shape = shapes[mine] ?? null
+  const myset = mysets[mine] ?? null
+  const spread = useMemo(() => spreads[mine] ?? emptySpread(), [spreads, mine])
+  const setSpread = (next: Spread | ((s: Spread) => Spread)) => setSpreads((prev) => ({
+    ...prev,
+    [mine]: typeof next === 'function' ? next(prev[mine] ?? emptySpread()) : next,
+  }))
+  const setShape = (id: string) => setShapes((prev) => ({ ...prev, [mine]: id }))
+  const setMyset = (ids: string[] | null) => setMysets((prev) => {
+    if (ids == null) {
+      const rest = { ...prev }
+      delete rest[mine]
+      return rest
+    }
+    return { ...prev, [mine]: ids }
+  })
   const give = (id: string, next: Gear) => setGear((prev) => ({ ...prev, [id]: next }))
 
   /**
@@ -1264,21 +1294,38 @@ export function EvCalcBody({
     icon: <Sprite pokemon={m.pokemon} width={28} height={24} />,
   })))
 
-  const choose = (id: string) => {
-    setChosen(id)
-    // A spread belongs to the Pokémon it was chosen for, and so does a
-    // decision about which of the other side to weigh it against.
-    setSpread(emptySpread())
-    setOff(new Set())
-    setShape(null)
-    forgetSet()
-  }
+  // Nothing to clear: everything the panel holds is filed under the
+  // Pokémon it is about, so picking another simply reads a different file.
+  const choose = setChosen
 
-  /** Back to whatever the new Pokémon, or the new shape, is usually seen with. */
+  /** Back to whatever this Pokémon, or the shape just picked, is usually seen with. */
   const forgetSet = () => {
     setMyset(null)
     setMovesOpen(false)
     setMoveQuery('')
+  }
+
+  /**
+   * Everything said, on both sides, unsaid.
+   *
+   * The one thing that cannot be undone a Pokémon at a time: the panels
+   * reset their own, and there are thirteen of them.
+   */
+  const anything = Object.keys(spreads).length > 0
+    || Object.keys(mysets).length > 0
+    || Object.keys(shapes).length > 0
+    || Object.keys(gear).length > 0
+    || Object.keys(assume).length > 0
+    || Object.keys(extra).length > 0
+    || off.size > 0
+  const startOver = () => {
+    setSpreads({})
+    setMysets({})
+    setShapes({})
+    setGear({})
+    setAssume({})
+    setExtra({})
+    setOff(new Set())
   }
 
   const dropFromSet = (id: string) => setMyset(setIds.filter((x) => x !== id))
@@ -1483,6 +1530,15 @@ export function EvCalcBody({
                   </>
                 )}
               </div>
+            )}
+
+            {/* Everything on the tab, on both sides, unsaid. The panels
+                reset their own Pokémon; this is the one thing that cannot
+                be undone one at a time, because there are thirteen. */}
+            {anything && (
+              <button type="button" className="ev-start-over" onClick={startOver}>
+                Reset everything
+              </button>
             )}
 
             {/* What is left to spend, drawn rather than counted out. Five
