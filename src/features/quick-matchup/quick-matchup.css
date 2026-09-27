@@ -1154,21 +1154,36 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   font-weight: 700;
 }
 
+/*
+ * The thumb inside the control, not hanging out of the top of it.
+ *
+ * WebKit lays a track that has a height of its own at the top of the
+ * input rather than down the middle, so a twelve-pixel thumb pulled up
+ * onto a four-pixel track stood four pixels clear of the box — four
+ * pixels out of whatever gap is set above it, which is why the bar kept
+ * touching the pill over it however wide that gap was made.
+ *
+ * So the track takes the full height and draws its four-pixel line as a
+ * background down the middle. The thumb centres on that line with no
+ * negative margin, and the input's box is all it occupies.
+ */
 .ev-assume-stat input[type="range"],
 .ev-spend input[type="range"] {
   appearance: none; -webkit-appearance: none;
-  margin: 0; padding: 0; flex: 1 1 0; min-width: 0; height: 0.85rem;
+  margin: 0; padding: 0; flex: 1 1 0; min-width: 0; height: 12px;
   background: transparent; cursor: pointer;
 }
 .ev-assume-stat input[type="range"]::-webkit-slider-runnable-track,
 .ev-spend input[type="range"]::-webkit-slider-runnable-track {
-  height: 4px; border-radius: 999px; background: var(--chip);
+  height: 12px; border: 0;
+  background: linear-gradient(var(--chip), var(--chip)) center / 100% 4px no-repeat;
 }
 .ev-assume-stat input[type="range"]::-webkit-slider-thumb,
 .ev-spend input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%;
-  background: var(--team-accent, var(--accent)); border: 0; margin-top: -4px;
+  background: var(--team-accent, var(--accent)); border: 0; margin-top: 0;
 }
+/* Firefox centres its own track, so that one is left as it was. */
 .ev-assume-stat input[type="range"]::-moz-range-track,
 .ev-spend input[type="range"]::-moz-range-track {
   height: 4px; border-radius: 999px; background: var(--chip);
@@ -1177,6 +1192,27 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 .ev-spend input[type="range"]::-moz-range-thumb {
   width: 12px; height: 12px; border-radius: 50%;
   background: var(--team-accent, var(--accent)); border: 0;
+}
+/* A mark at each end of the bar, where the step past the EVs sets the
+   nature. Painted on the track rather than added as elements, so it
+   travels with the bar at any width. Lost in a careless line-range edit
+   two commits after it was added; back, and composed with the track's
+   own line rather than replacing it. */
+.ev-assume-stat input.has-notches::-webkit-slider-runnable-track {
+  background:
+    linear-gradient(90deg,
+      var(--muted) 0 3px,
+      transparent 3px calc(100% - 3px),
+      var(--muted) calc(100% - 3px) 100%) center / 100% 9px no-repeat,
+    linear-gradient(var(--chip), var(--chip)) center / 100% 4px no-repeat;
+}
+.ev-assume-stat input.has-notches::-moz-range-track {
+  background:
+    linear-gradient(90deg,
+      var(--muted) 0 3px,
+      transparent 3px calc(100% - 3px),
+      var(--muted) calc(100% - 3px) 100%),
+    var(--chip);
 }
 
 
