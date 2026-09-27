@@ -1432,12 +1432,12 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
  */
 /* Air between the line and its bar: the slider's thumb stands proud of
    the track it runs on, so it wants clear room under the pill. */
-.ev-assume-stat { display: flex; flex-direction: column; gap: 0.45rem; min-width: 0; }
+.ev-assume-stat { display: flex; flex-direction: column; gap: 0.6rem; min-width: 0; }
 /* The stat, what it reads, and the nature that bends it, packed left on
    one line above the bar. A fixed height so the six bars sit level
    whatever is over them — HP has no nature button. */
 .ev-assume-head {
-  display: flex; align-items: center; gap: 0.35rem; height: 1.15rem; min-width: 0;
+  display: flex; align-items: center; gap: 0.35rem; min-height: 1.15rem; min-width: 0;
 }
 .ev-assume-head > em {
   font-style: normal; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.05em;
@@ -1455,7 +1455,11 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
    here, because a column heading is the width of a column and this is
    half a panel. */
 .ev-assume-head .ev-nature {
-  margin-left: auto; height: 1.1rem; padding: 0 0.35rem; font-size: 0.55rem;
+  margin-left: auto; height: 1.15rem; padding: 0 0.4rem; font-size: 0.55rem;
+}
+.ev-nature > i {
+  font-style: normal; font-weight: 700; font-size: 1.15em;
+  display: inline-flex; align-items: center; margin-right: 0.2em;
 }
 /* What the six come to. Over 508 is not a build, and says so rather than
    being refused: the question is often asked one stat at a time. */

@@ -37,10 +37,10 @@ import type { Team, TeamEntry } from './TeamEditor'
  */
 
 /** The nature a stat can be given, as the multiplier the maths wants. */
-const NATURES: { mult: number; label: string; title: string }[] = [
-  { mult: 0.9, label: '− Nature', title: 'Hindering nature' },
-  { mult: 1, label: 'Nature', title: 'Neutral nature' },
-  { mult: 1.1, label: '+ Nature', title: 'Boosting nature' },
+const NATURES: { mult: number; title: string }[] = [
+  { mult: 0.9, title: 'Hindering nature' },
+  { mult: 1, title: 'Neutral nature' },
+  { mult: 1.1, title: 'Boosting nature' },
 ]
 
 /**
@@ -158,7 +158,12 @@ function AssumeStat({ stat, spread, onEvs, onNature }: {
               : `${now.title} \u2014 the other two are spoken for`}
             onClick={() => onNature(next.mult)}
           >
-            {now.label}
+            {/* The sign as its own item rather than a character in the word. A
+              plus and a minus sit on the font's math axis, which is set
+              against lowercase and reads low beside a capital N; as a flex
+              item it centres on the line the word does. */}
+            {now.mult !== 1 && <i aria-hidden="true">{now.mult > 1 ? '+' : '\u2212'}</i>}
+            Nature
           </button>
         )}
       </span>
@@ -470,7 +475,12 @@ function StatHead({
             disabled={cycle.length < 2}
             onClick={() => onNature(next.mult)}
           >
-            {now.label}
+            {/* The sign as its own item rather than a character in the word. A
+              plus and a minus sit on the font's math axis, which is set
+              against lowercase and reads low beside a capital N; as a flex
+              item it centres on the line the word does. */}
+            {now.mult !== 1 && <i aria-hidden="true">{now.mult > 1 ? '+' : '\u2212'}</i>}
+            Nature
           </button>
         )}
       </header>
