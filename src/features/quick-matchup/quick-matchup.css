@@ -1137,7 +1137,7 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   padding-bottom: 0.3rem; border-bottom: 1px solid var(--line);
 }
 .ev-stat { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.05em; color: var(--muted); }
-.ev-value { font-size: 0.95rem; font-variant-numeric: tabular-nums; margin-left: auto; }
+.ev-value { font-size: 0.95rem; font-variant-numeric: tabular-nums; }
 .ev-spend { display: flex; align-items: center; gap: 0.3rem; }
 .ev-evs {
   flex: 0 0 1.6rem; text-align: right;
@@ -1148,7 +1148,7 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
    own line, because a nature is half of what that number reads and the
    slider is the other half. */
 .ev-nature {
-  flex: 0 1 auto; min-width: 0; align-self: center;
+  flex: 0 1 auto; min-width: 0; align-self: center; margin-left: auto;
   height: 1.25rem; padding: 0 0.45rem; line-height: 1;
   background: none; border: 1px solid var(--line); border-radius: 999px;
   color: var(--muted); font: inherit; font-size: 0.6rem; font-weight: 600;

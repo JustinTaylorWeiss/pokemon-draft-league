@@ -295,6 +295,7 @@ function StatHead({
           the rows below are aiming at, so it moves with the slider. */}
       <header className="ev-col-head">
         <span className="ev-stat">{STAT_LABELS[stat]}</span>
+        <strong className="ev-value" title={`${bare} before EVs`}>{value}</strong>
         {/* Beside the stat it bends rather than under the slider it does
             not: a nature is part of what the number above reads, where the
             slider is the other part. */}
@@ -313,7 +314,6 @@ function StatHead({
             {now.label}
           </button>
         )}
-        <strong className="ev-value" title={`${bare} before EVs`}>{value}</strong>
       </header>
 
       {/* What is being spent, what spends it, and what bends it — one row,
