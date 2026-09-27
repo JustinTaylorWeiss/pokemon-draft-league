@@ -597,7 +597,7 @@ export interface Gear {
  */
 function GearPicker({
   pokemon, ability: usualAbilityName, gear, onChange, assume, onAssume, base,
-  out, onHide, alone, onAlone, learnset, moves, played, named, onNamed, carrying,
+  id, out, learnset, moves, played, named, onNamed, carrying,
 }: {
   pokemon: Pokemon
   /** The ability it is reckoned to have when nobody has said otherwise. */
@@ -634,19 +634,10 @@ function GearPicker({
    * is chosen against the Pokémon you expect to be across from, and that is
    * rarely all six.
    */
+  /** Its id, for the link to its page at the top of the panel. */
+  id: string
+  /** Out of the columns, which the sprite itself toggles. */
   out?: boolean
-  onHide?: (next: boolean) => void
-  /**
-   * Whether the columns are reading this one and nothing else.
-   *
-   * Hiding the other five one at a time is five menus; this is the same
-   * end from here. Kept apart from hiding because it says something
-   * different — not "I am not bringing mine into that" but "show me this
-   * pairing on its own" — and because the five it sets aside are set
-   * aside for a moment rather than decided about.
-   */
-  alone?: boolean
-  onAlone?: (next: boolean) => void
 }) {
   /**
    * Two panels, not one.
@@ -894,7 +885,6 @@ function GearPicker({
   const said = moved
     || dropped.length > 0
     || Boolean(gear?.ability) || Boolean(gear?.item)
-    || Boolean(out)
     || (named ?? []).length > 0
     || (gear?.without ?? []).length > 0
 
@@ -912,7 +902,7 @@ function GearPicker({
   const setAbility = mega || own.length === 1 ? own[0] : undefined
   const nothing = !setAbility && !mega && own.length < 2
     && !abilities.length && !plain.length && !boosters.length
-  if (nothing && !assume && !onHide && !onAlone && !onNamed) return null
+  if (nothing && !assume && !onNamed) return null
 
   return (
     <span className="ev-gear">
@@ -964,30 +954,13 @@ function GearPicker({
             onClick={() => setOpen(null)}
           />
           <div className="ev-gear-pop">
-            {/* In or out of the columns, at the top of both panels:
-                whether to count the Pokémon at all comes before anything
-                either of them has to say about how it is built, and
-                whichever one is open is where someone is standing. */}
-            {onHide && (
-              <button
-                type="button"
-                className="ev-hide"
-                aria-pressed={Boolean(out)}
-                onClick={() => onHide(!out)}
-              >
-                {out ? 'Show in the columns' : 'Hide from the columns'}
-              </button>
-            )}
-            {onAlone && (
-              <button
-                type="button"
-                className="ev-hide"
-                aria-pressed={Boolean(alone)}
-                onClick={() => onAlone(!alone)}
-              >
-                {alone ? 'Show the rest again' : 'Only this one'}
-              </button>
-            )}
+            {/* The Pokémon itself, at the top of both panels. The sprite
+                is a switch now — clicking it takes the Pokémon in and out
+                of the columns — so the thing a picture of a Pokémon does
+                everywhere else on the site needed somewhere to go. */}
+            <PokemonLink id={id} className="ev-gear-open-page" title={`Open ${pokemon.name}`}>
+              View {pokemon.name}
+            </PokemonLink>
             {/* What it is built like, per Pokémon rather than one setting for
                 the whole side: they are not all built the same way, and a
                 spread chosen against "everything at 252" is chosen against a
@@ -1202,7 +1175,6 @@ function GearPicker({
                   onChange({})
                   onAssume?.(base ?? emptySpread())
                   onNamed?.([])
-                  onHide?.(false)
                 }}
               >
                 Reset {pokemon.name}
@@ -1256,14 +1228,6 @@ export function EvCalcBody({
    * ones that matter.
    */
   const [off, setOff] = useState<Set<string>>(() => new Set())
-  /**
-   * One of them, on its own, when somebody wants to look at one pairing.
-   *
-   * Overrides hiding rather than adding to it: it is a way of reading the
-   * columns for a moment, not a decision about the team, and a Pokémon
-   * singled out is shown even if it was hidden.
-   */
-  const [only, setOnly] = useState<string | null>(null)
   /** What each of the other side is credited with, one answer per Pokémon. */
   const [assume, setAssume] = useState<Record<string, Assumptions>>({})
   // How it is usually built, until somebody says otherwise. A Pokémon over
@@ -1396,7 +1360,7 @@ export function EvCalcBody({
   const opponents = useMemo(
     () => (picked
       ? opponentsFrom(
-        picked.foes.filter((m) => (only ? m.id === only : !off.has(m.id))),
+        picked.foes.filter((m) => !off.has(m.id)),
         sets, moves, learnsets, played, level, assume, extra, gear,
       // Struck off here rather than inside the solver: what a Pokémon is
       // reckoned to have is the solver's business, and what somebody has
@@ -1408,7 +1372,7 @@ export function EvCalcBody({
           : o
       })
       : []),
-    [picked, off, only, sets, moves, learnsets, played, level, assume, extra, gear],
+    [picked, off, sets, moves, learnsets, played, level, assume, extra, gear],
   )
 
   /** Everything on either side, for the picker. */
@@ -1445,7 +1409,6 @@ export function EvCalcBody({
     || Object.keys(assume).length > 0
     || Object.keys(extra).length > 0
     || off.size > 0
-    || only != null
   const startOver = () => {
     setSpreads({})
     setMysets({})
@@ -1454,7 +1417,6 @@ export function EvCalcBody({
     setAssume({})
     setExtra({})
     setOff(new Set())
-    setOnly(null)
   }
 
   const dropFromSet = (id: string) => setMyset(setIds.filter((x) => x !== id))
@@ -1702,6 +1664,7 @@ export function EvCalcBody({
               </PokemonLink>
               <GearPicker
                 pokemon={picked.entry.pokemon}
+                id={picked.entry.id}
                 ability={usualAbility(picked.entry.id, picked.entry.pokemon)}
                 gear={gear[picked.entry.id]} onChange={(g) => give(picked.entry.id, g)}
               />
@@ -1715,19 +1678,26 @@ export function EvCalcBody({
               <div className="ev-foes">
                 {picked.foes.map((m) => (
                   <span key={m.id} className="ev-foe-slot">
-                    {/* Opens the Pokémon, the way a sprite does everywhere
-                        else on the site. Leaving it out of the columns used
-                        to be a click here, which meant the one thing a
-                        picture of a Pokémon always does was the one thing
-                        this picture did not — it is in the menu below now. */}
-                    <PokemonLink
-                      id={m.id}
-                      className={`ev-open${off.has(m.id) && !only ? ' is-off' : ''}`
-                        + `${only === m.id ? ' is-only' : ''}`}
-                      title={`Open ${m.pokemon.name}`}
+                    {/* The switch for whether the columns read it at all.
+                        One click on the Pokémon itself, which is the
+                        question asked most often about the other side;
+                        its page is a line at the top of either menu. */}
+                    <button
+                      type="button"
+                      className={`ev-open${off.has(m.id) ? ' is-off' : ''}`}
+                      aria-pressed={!off.has(m.id)}
+                      title={off.has(m.id)
+                        ? `${m.pokemon.name} — not in the columns`
+                        : `${m.pokemon.name} — click to take it out of the columns`}
+                      onClick={() => setOff((prev) => {
+                        const now = new Set(prev)
+                        if (now.has(m.id)) now.delete(m.id)
+                        else now.add(m.id)
+                        return now
+                      })}
                     >
                       <Sprite pokemon={m.pokemon} width={SPRITE_W} height={SPRITE_H} />
-                    </PokemonLink>
+                    </button>
                     <GearPicker
                       pokemon={m.pokemon}
                       ability={usualAbility(m.id, m.pokemon)}
@@ -1741,15 +1711,8 @@ export function EvCalcBody({
                       named={extra[m.id]}
                       onNamed={(next) => names(m.id, next)}
                       carrying={opponents.find((o) => o.id === m.id)?.moves}
+                      id={m.id}
                       out={off.has(m.id)}
-                      alone={only === m.id}
-                      onAlone={(next) => setOnly(next ? m.id : null)}
-                      onHide={(next) => setOff((prev) => {
-                        const now = new Set(prev)
-                        if (next) now.add(m.id)
-                        else now.delete(m.id)
-                        return now
-                      })}
                     />
                   </span>
                 ))}
