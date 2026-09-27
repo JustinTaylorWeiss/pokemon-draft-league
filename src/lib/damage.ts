@@ -1,4 +1,4 @@
-import type { Move, Pokemon, StatKey, TypeChart } from '../data/types'
+import type { Move, Pokemon, StatKey, TypeChart, TypeName } from '../data/types'
 import { defensiveMultiplier } from './matchup'
 import { natureMultiplier, statAtLevel } from './stats'
 
@@ -17,6 +17,12 @@ import { natureMultiplier, statAtLevel } from './stats'
  * knows, the spread-move reduction in doubles, the sixteen damage rolls, and
  * the handful of items and abilities that change a number by a lot.
  *
+ * Items: the ones that change a number outright — the Orbs and Choice items,
+ * the type-boosting plates and their cousins, Assault Vest, Eviolite, Light
+ * Ball, Air Balloon, Choice Scarf. Not the ones that fire on a condition
+ * (Weakness Policy, Booster Energy, the Berries), which are a turn's events
+ * rather than a Pokémon's build.
+ *
  * What is not: weather, terrain, screens, stat stages, Intimidate, burn,
  * Tera, and every ability that reads the battle rather than the two Pokémon.
  * Those are turn-by-turn facts and this is a team-building tool; a spread
@@ -34,6 +40,22 @@ const ITEM_ATTACK: Record<string, { mult: number; category?: 'Physical' | 'Speci
   'Choice Specs': { mult: 1.5, category: 'Special' },
   'Muscle Band': { mult: 1.1, category: 'Physical' },
   'Wise Glasses': { mult: 1.1, category: 'Special' },
+}
+
+/**
+ * Items that lend a fifth to one type. The plates, the elemental items, and
+ * the masks Ogerpon wears — all the same 1.2, all read the same way.
+ */
+const ITEM_TYPE: Record<string, TypeName> = {
+  'Black Glasses': 'Dark', 'Dread Plate': 'Dark',
+  Charcoal: 'Fire', 'Flame Plate': 'Fire', 'Hearthflame Mask': 'Fire',
+  'Silk Scarf': 'Normal',
+  'Draco Plate': 'Dragon', 'Pixie Plate': 'Fairy', 'Earth Plate': 'Ground',
+  'Insect Plate': 'Bug', 'Zap Plate': 'Electric', 'Fist Plate': 'Fighting',
+  'Sky Plate': 'Flying', 'Meadow Plate': 'Grass', 'Spooky Plate': 'Ghost',
+  'Toxic Plate': 'Poison', 'Icicle Plate': 'Ice', 'Stone Plate': 'Rock',
+  'Iron Plate': 'Steel', 'Splash Plate': 'Water', 'Mind Plate': 'Psychic',
+  'Wellspring Mask': 'Water', 'Cornerstone Mask': 'Rock',
 }
 
 /** Items that change how hard a hit is taken. */
@@ -83,6 +105,17 @@ export function statOf(side: Side, stat: StatKey): number {
   if (stat === 'def' && ability === 'Fur Coat') return raw * 2
   if (stat === 'spd' && ability === 'Ice Scales') return raw * 2
 
+  // Pikachu's, and nothing else's: it doubles both attacking stats. Read
+  // through `baseSpecies ?? name`, because the plain one has no baseSpecies —
+  // it is the base — and checking only that field missed every Pikachu but
+  // the costumed ones.
+  if (side.item === 'Light Ball' && (side.pokemon.baseSpecies ?? side.pokemon.name) === 'Pikachu'
+    && (stat === 'atk' || stat === 'spa')) return raw * 2
+  // Only for something that has not finished growing, which is what it is for.
+  if (side.item === 'Eviolite' && (stat === 'def' || stat === 'spd')
+    && side.pokemon.evos?.length) return Math.floor(raw * 1.5)
+  if (side.item === 'Choice Scarf' && stat === 'spe') return Math.floor(raw * 1.5)
+
   const item = side.item ? ITEM_DEFENSE[side.item] : undefined
   if (item && item.stat === stat) return Math.floor(raw * item.mult)
   return raw
@@ -117,6 +150,10 @@ export function damage(
   const hp = statOf(defender, 'hp')
   if (move.category === 'Status' || move.basePower <= 0) return NO_HIT(hp)
 
+  // A balloon keeps the ground away until something pops it, and nothing
+  // here pops it: these are first-hit questions.
+  if (defender.item === 'Air Balloon' && move.type === 'Ground') return NO_HIT(hp)
+
   const effect = defensiveMultiplier(chart, move.type, defender.pokemon, true)
   if (effect === 0) return NO_HIT(hp)
 
@@ -138,7 +175,9 @@ export function damage(
     : 1
 
   const boost = attacker.item ? ITEM_ATTACK[attacker.item] : undefined
-  const itemMult = boost && (!boost.category || boost.category === move.category) ? boost.mult : 1
+  const typed = attacker.item && ITEM_TYPE[attacker.item] === move.type ? 1.2 : 1
+  const itemMult = (boost && (!boost.category || boost.category === move.category) ? boost.mult : 1)
+    * typed
   // Multiscale reads the defender's HP, and here the defender is always at
   // full: these are first-hit questions. Half damage, and it says so.
   const shield = defender.ability === 'Multiscale' || defender.ability === 'Shadow Shield' ? 0.5 : 1

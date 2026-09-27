@@ -1134,3 +1134,43 @@ button.type-chip { cursor: pointer; }
 @media (max-width: 1100px) { .ev-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 900px) { .ev-budget { margin-left: 0; } }
 @media (max-width: 700px) { .ev-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* ---- an item and an ability, given by hand ---- */
+/*
+ * Under each sprite, because it belongs to that Pokemon and to nothing else
+ * on the row. Closed it is a plus; open it is two selects; chosen it is what
+ * was chosen, which is the only state worth reading at a glance.
+ */
+.ev-mine, .ev-foe-slot { display: inline-flex; flex-direction: column; align-items: center; gap: 0.1rem; }
+.ev-gear { position: relative; display: inline-flex; }
+.ev-gear-open {
+  max-width: 6.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  padding: 0 0.3rem; line-height: 1.25;
+  background: none; border: 1px dashed var(--line); border-radius: 999px;
+  color: var(--muted); font: inherit; font-size: 0.6rem; cursor: pointer;
+}
+.ev-gear-open:hover { color: var(--fg); border-color: var(--muted); }
+.ev-gear-open.has-gear {
+  border-style: solid; border-color: var(--team-accent, var(--accent));
+  color: var(--team-accent, var(--accent)); font-weight: 600;
+}
+/* Catches the click that should close it, without stealing one from the
+   controls inside — it sits under the panel, not over it. */
+.ev-gear-away { position: fixed; inset: 0; z-index: 20; background: none; border: 0; cursor: default; }
+.ev-gear-pop {
+  position: absolute; top: calc(100% + 0.3rem); left: 50%; transform: translateX(-50%);
+  z-index: 21; display: flex; flex-direction: column; gap: 0.4rem;
+  padding: 0.5rem; min-width: 11rem;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 10px 28px rgb(0 0 0 / 45%);
+}
+.ev-gear-pop label { display: flex; flex-direction: column; gap: 0.15rem; }
+.ev-gear-pop span {
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em;
+  text-transform: uppercase; color: var(--muted);
+}
+.ev-gear-pop select {
+  background: var(--chip); border: 1px solid var(--line); color: var(--fg);
+  border-radius: 6px; padding: 0.2rem 0.3rem; font: inherit; font-size: 0.75rem; cursor: pointer;
+}
+.ev-gear-pop .link-btn { align-self: flex-start; font-size: 0.68rem; }

@@ -11,6 +11,7 @@ import { TypeChip } from '../../components/TypeChip'
 import { PokemonLink } from '../../components/PokemonLink'
 import { toId } from '../../data/load'
 import { DropPicker, type DropItem } from '../../components/DropPicker'
+import type { ItemDex } from '../../data/types'
 import type { LeagueDex } from '../../data/league'
 import type { Team, TeamEntry } from './TeamEditor'
 
@@ -282,6 +283,88 @@ function StatRows({ stat, evs, rows, faces, note }: {
   )
 }
 
+/** What a Pokémon has been given by hand, over whatever its set said. */
+export interface Gear { item?: string; ability?: string }
+
+/**
+ * An item and an ability, chosen for one Pokémon.
+ *
+ * Abilities come from the Pokémon's own three; items from the seventy the
+ * format's sets actually reference, which is the closest thing to a legality
+ * list this data has and excludes everything the regulation does not allow
+ * by simply never having seen it played.
+ *
+ * Both are calculated with rather than decorative — an Assault Vest is a
+ * fifth of the Special Defense column, and Multiscale is half of every
+ * defensive row at once.
+ */
+function GearPicker({ pokemon, items, gear, onChange }: {
+  pokemon: Pokemon
+  items: ItemDex
+  gear: Gear | undefined
+  onChange: (next: Gear) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const abilities = [...new Set(Object.values(pokemon.abilities))]
+  const chosen = [gear?.ability, gear?.item].filter(Boolean)
+  const names = useMemo(
+    () => Object.values(items).map((i) => i.name).sort((a, b) => a.localeCompare(b)),
+    [items],
+  )
+
+  return (
+    <span className="ev-gear">
+      <button
+        type="button"
+        className={`ev-gear-open${chosen.length ? ' has-gear' : ''}`}
+        aria-expanded={open}
+        title={chosen.length ? chosen.join(' · ') : `Give ${pokemon.name} an item or ability`}
+        onClick={() => setOpen((v) => !v)}
+      >
+        {chosen.length ? chosen.join(' · ') : '+'}
+      </button>
+
+      {open && (
+        <>
+          {/* Click anywhere else and it closes, which is what a reader
+              expects of something that opened over the page. */}
+          <button type="button" className="ev-gear-away" aria-label="Close" onClick={() => setOpen(false)} />
+          <div className="ev-gear-pop">
+            <label>
+              <span>Ability</span>
+              <select
+                value={gear?.ability ?? ''}
+                onChange={(e) => onChange({ ...gear, ability: e.target.value })}
+              >
+                <option value="">its set{'’'}s</option>
+                {abilities.map((a) => <option key={a} value={a}>{a}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Item</span>
+              <select
+                value={gear?.item ?? ''}
+                onChange={(e) => onChange({ ...gear, item: e.target.value })}
+              >
+                <option value="">its set{'’'}s</option>
+                {names.map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </label>
+            {chosen.length > 0 && (
+              <button
+                type="button" className="link-btn"
+                onClick={() => { onChange({}); setOpen(false) }}
+              >
+                Back to its set
+              </button>
+            )}
+          </div>
+        </>
+      )}
+    </span>
+  )
+}
+
 interface Props {
   teamOne: Team
   teamTwo: Team
@@ -293,12 +376,14 @@ interface Props {
   played: string[]
   /** For finding a Pokémon's other in-battle shapes, which are not on a team. */
   dex: LeagueDex
+  /** The items this format's sets reference, which is what may be given out. */
+  items: ItemDex
   /** Owned by the card, so one picker in the bar serves this and the tiers. */
   level: number
 }
 
 export function EvCalcBody({
-  teamOne, teamTwo, chart, moves, learnsets, sets, played, dex, level,
+  teamOne, teamTwo, chart, moves, learnsets, sets, played, dex, items, level,
 }: Props) {
   const [chosen, setChosen] = useState<string | null>(null)
   const [spread, setSpread] = useState<Spread>(emptySpread)
@@ -318,6 +403,9 @@ export function EvCalcBody({
   const [query, setQuery] = useState('')
   /** Which shape to read it in, for the ones that have more than one. */
   const [shape, setShape] = useState<string | null>(null)
+  /** Items and abilities given out by hand, on either side. */
+  const [gear, setGear] = useState<Record<string, Gear>>({})
+  const give = (id: string, next: Gear) => setGear((prev) => ({ ...prev, [id]: next }))
 
   const sides: { key: 'one' | 'two'; team: Team }[] = [
     { key: 'one', team: teamOne }, { key: 'two', team: teamTwo },
@@ -364,14 +452,14 @@ export function EvCalcBody({
     () => (picked
       ? opponentsFrom(
         picked.foes.filter((m) => !off.has(m.id)),
-        sets, moves, learnsets, played, level, assume, extra,
+        sets, moves, learnsets, played, level, assume, extra, gear,
       )
       : []),
-    [picked, off, sets, moves, learnsets, played, level, assume, extra],
+    [picked, off, sets, moves, learnsets, played, level, assume, extra, gear],
   )
 
   /** Everything on either side, for the picker. */
-  const items: DropItem[] = sides.flatMap(({ key, team }) => team.members.map((m) => ({
+  const choices: DropItem[] = sides.flatMap(({ key, team }) => team.members.map((m) => ({
     id: m.id,
     label: m.pokemon.name,
     // The coach's name heads the section rather than trailing every row in
@@ -422,11 +510,12 @@ export function EvCalcBody({
   const plan = useMemo(() => {
     if (!picked) return null
     const set = sets?.[picked.entry.id]?.spreads?.[0]
+    const worn = gear[picked.entry.id]
     return planFor({
       pokemon: picked.entry.pokemon,
       moves: myMoves,
-      item: set?.item,
-      ability: set?.ability,
+      item: worn?.item || set?.item,
+      ability: worn?.ability || set?.ability,
       spread,
       opponents,
       chart,
@@ -434,7 +523,7 @@ export function EvCalcBody({
       // The league plays doubles, which takes a quarter off the spread moves.
       doubles: true,
     })
-  }, [picked, myMoves, opponents, spread, chart, level, sets])
+  }, [picked, myMoves, opponents, spread, chart, level, sets, gear])
 
   /** The same natures, none of the EVs — what each column counts up from. */
   const bareSpread = useMemo(
@@ -476,24 +565,12 @@ export function EvCalcBody({
       <div className="ev-bar">
         <DropPicker
           className="ev-picker"
-          items={items}
+          items={choices}
           value={chosen ?? ''}
           onPick={(item) => choose(item.id)}
           ariaLabel="Pokémon to build a spread for"
           placeholder="Pick a Pokémon"
         />
-        {/* The picker opens the list; this opens the Pokémon. Everywhere else
-            on the site a sprite is a way into its page, and here it was the
-            one that was not. */}
-        {picked && (
-          <PokemonLink
-            id={picked.entry.id}
-            className="ev-open"
-            title={`Open ${picked.entry.pokemon.name}`}
-          >
-            <Sprite pokemon={picked.entry.pokemon} width={34} height={28} />
-          </PokemonLink>
-        )}
 
         {/* And which of its shapes to read it in, where it has more than one.
             Aegislash is 60 Defense in one stance and 150 in the other. */}
@@ -514,25 +591,49 @@ export function EvCalcBody({
           </span>
         )}
 
+        {/* Its picture last, after the shape that decides which picture it
+            is. The picker opens the list; this opens the Pokémon, the way a
+            sprite does everywhere else on the site. */}
+        {picked && (
+          <span className="ev-mine">
+            <PokemonLink
+              id={picked.entry.id}
+              className="ev-open"
+              title={`Open ${picked.entry.pokemon.name}`}
+            >
+              <Sprite pokemon={picked.entry.pokemon} width={40} height={33} />
+            </PokemonLink>
+            <GearPicker
+              pokemon={picked.entry.pokemon} items={items}
+              gear={gear[picked.entry.id]} onChange={(g) => give(picked.entry.id, g)}
+            />
+          </span>
+        )}
+
         {picked && picked.foes.length > 0 && (
           <div className="ev-foes">
             <span className="ev-against">against</span>
             {picked.foes.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                className={`ev-foe${off.has(m.id) ? ' is-off' : ''}`}
-                title={`${m.pokemon.name} — ${off.has(m.id) ? 'not counted' : 'counted'}`}
-                aria-pressed={!off.has(m.id)}
-                onClick={() => setOff((prev) => {
-                  const next = new Set(prev)
-                  if (next.has(m.id)) next.delete(m.id)
-                  else next.add(m.id)
-                  return next
-                })}
-              >
-                <Sprite pokemon={m.pokemon} width={40} height={33} />
-              </button>
+              <span key={m.id} className="ev-foe-slot">
+                <button
+                  type="button"
+                  className={`ev-foe${off.has(m.id) ? ' is-off' : ''}`}
+                  title={`${m.pokemon.name} — ${off.has(m.id) ? 'not counted' : 'counted'}`}
+                  aria-pressed={!off.has(m.id)}
+                  onClick={() => setOff((prev) => {
+                    const next = new Set(prev)
+                    if (next.has(m.id)) next.delete(m.id)
+                    else next.add(m.id)
+                    return next
+                  })}
+                >
+                  <Sprite pokemon={m.pokemon} width={40} height={33} />
+                </button>
+                <GearPicker
+                  pokemon={m.pokemon} items={items}
+                  gear={gear[m.id]} onChange={(g) => give(m.id, g)}
+                />
+              </span>
             ))}
           </div>
         )}

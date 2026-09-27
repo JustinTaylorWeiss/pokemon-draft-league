@@ -285,6 +285,8 @@ export function opponentsFrom(
    * Ice Beam" asked of the whole team at once.
    */
   extra: string[] = [],
+  /** An item or an ability chosen by hand, over whatever the set said. */
+  gear: Record<string, { item?: string; ability?: string }> = {},
 ): Opponent[] {
   return members.map(({ id, pokemon }) => {
     const set = sets?.[id]
@@ -300,6 +302,10 @@ export function opponentsFrom(
         evs: { [physical ? 'atk' : 'spa']: EV_MAX, spe: EV_MAX },
         ability: Object.values(pokemon.abilities)[0],
       }
+
+    const worn = gear[id]
+    if (worn?.item !== undefined) side.item = worn.item || undefined
+    if (worn?.ability !== undefined) side.ability = worn.ability || undefined
 
     // Credited with more than the set says, where that is what was asked.
     if (assume.hp === 'max') side.evs = { ...side.evs, hp: EV_MAX }
