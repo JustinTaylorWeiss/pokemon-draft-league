@@ -1485,15 +1485,19 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 /* Wrapping rather than squeezing: with several IVs dropped the fold's
    line runs long, and the total belongs under it rather than clipped
    against it. */
-/* Two equal columns, or one where there is only the IV pill to put in
-   it — `auto-fit` gives each child a share and gives a lone child the
-   lot, which a flex row with wrapping did not: the fold's own full-width
-   rule made its hypothetical size the whole line and pushed the total
-   onto the next one. */
+/*
+ * Two equal columns, and the whole line where the IV pill is alone in it.
+ *
+ * Written out rather than left to `auto-fit`: a repeat whose minimum is
+ * zero gives the browser no width to divide the container by, so it
+ * cannot work out how many tracks fit and falls back to one — both
+ * controls in the same column, stacked and flush left.
+ */
 .ev-gear-line {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  display: grid; grid-template-columns: 1fr 1fr;
   align-items: center; gap: 0.35rem 0.5rem;
 }
+.ev-gear-line > :only-child { grid-column: 1 / -1; }
 /* A badge beside the IV one and the same shape, sharing the line evenly
    with it: two facts about the spread, neither more important. It takes
    the accent once every EV is spent, because "there is nothing left" is
