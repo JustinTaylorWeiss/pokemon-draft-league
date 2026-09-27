@@ -138,25 +138,27 @@ function ThresholdRow({
   )
 }
 
-function StatColumn({
-  stat, bare, value, spread, rows, faces, onEvs, onNature, note,
+/**
+ * A column's heading and its controls, which live apart from its list.
+ *
+ * Apart because they stick: the lists are long and the reason to read one is
+ * to decide where to put an EV, which meant scrolling back to the top to
+ * move the slider and then back down to see what it did.
+ */
+function StatHead({
+  stat, bare, value, spread, onEvs, onNature,
 }: {
   stat: StatKey
   /** The stat before any EVs go in, which is where every decision starts. */
   bare: number
   value: number
   spread: Spread
-  rows: Threshold[]
-  faces: Record<string, Pokemon>
   onEvs: (n: number) => void
   onNature: (mult: number) => void
-  note?: string
 }) {
   const evs = spread.evs[stat]
-  const reachable = rows.filter((r) => !r.unreachable)
-  const beyond = rows.filter((r) => r.unreachable)
   return (
-    <section className="ev-col">
+    <div className="ev-col ev-col-fixed">
       {/* What the stat reads right now, EVs and nature and all — the number
           the rows below are aiming at, so it moves with the slider. */}
       <header className="ev-col-head">
@@ -191,7 +193,22 @@ function StatColumn({
           </span>
         )}
       </div>
+    </div>
+  )
+}
 
+/** And the list itself, which is what scrolls under it. */
+function StatRows({ evs, rows, faces, note }: {
+  /** What the slider above says, for lighting the rows it has paid for. */
+  evs: number
+  rows: Threshold[]
+  faces: Record<string, Pokemon>
+  note?: string
+}) {
+  const reachable = rows.filter((r) => !r.unreachable)
+  const beyond = rows.filter((r) => r.unreachable)
+  return (
+    <div className="ev-col">
       {rows.length ? (
         <>
           <ul className="ev-rows">
@@ -216,7 +233,7 @@ function StatColumn({
           )}
         </>
       ) : <p className="ev-none">{note ?? 'Nothing here to buy.'}</p>}
-    </section>
+    </div>
   )
 }
 
@@ -393,6 +410,10 @@ export function EvCalcBody({
 
   return (
     <div className="ev-calc">
+      {/* Everything you can change, above everything you read, and stuck
+          there: the reason to read a column is to decide where an EV goes,
+          and the slider was a scroll away from the list that argued for it. */}
+      <div className="ev-top">
       <div className="ev-bar">
         <DropPicker
           className="ev-picker"
@@ -450,9 +471,7 @@ export function EvCalcBody({
         )}
       </div>
 
-      {!picked ? (
-        <p className="ev-hint">Pick a Pokémon to see what its EVs would buy against the other side.</p>
-      ) : (
+      {picked && (
         <>
           {/* What to credit them with. Their set is one spread off a ladder;
               "does this hold against a max-invested one" is the question a
@@ -513,19 +532,38 @@ export function EvCalcBody({
               )
             })}
           </div>
-
-          <div className="ev-cols">
+          {/* The headings and their sliders in one grid, the lists in
+              another below it, both on the same six columns. Two grids
+              rather than six columns of both, so the whole top can stick
+              while the lists run under it. */}
+          <div className="ev-cols ev-heads">
             {EV_STATS.map((stat) => (
-              <StatColumn
+              <StatHead
                 key={stat}
                 stat={stat}
                 bare={statOfSpread(picked.entry.pokemon, level, bareSpread, stat)}
                 value={statOfSpread(picked.entry.pokemon, level, spread, stat)}
                 spread={spread}
-                rows={plan?.[stat] ?? []}
-                faces={faces}
                 onEvs={(n) => setEvs(stat, n)}
                 onNature={(m) => setNature(stat, m)}
+              />
+            ))}
+          </div>
+        </>
+      )}
+      </div>
+
+      {!picked ? (
+        <p className="ev-hint">Pick a Pokémon to see what its EVs would buy against the other side.</p>
+      ) : (
+        <>
+          <div className="ev-cols">
+            {EV_STATS.map((stat) => (
+              <StatRows
+                key={stat}
+                evs={spread.evs[stat]}
+                rows={plan?.[stat] ?? []}
+                faces={faces}
                 note={(stat === 'atk' || stat === 'spa') && !myMoves.some(
                   (m) => m.category === (stat === 'atk' ? 'Physical' : 'Special'),
                 ) ? `No ${stat === 'atk' ? 'physical' : 'special'} moves on this set.` : undefined}

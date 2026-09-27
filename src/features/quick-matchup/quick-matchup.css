@@ -877,6 +877,29 @@ button.type-chip { cursor: pointer; }
 .ev-calc { display: flex; flex-direction: column; gap: 0.9rem; }
 
 /*
+ * Everything you can change, stuck above everything you read.
+ *
+ * The reason to read a column is to decide where an EV goes, and the slider
+ * that puts it there was a scroll away from the list arguing for it — pick a
+ * row twenty down, scroll up, move the slider, scroll back to see whether it
+ * lit. The controls stay put now and the lists run under them.
+ *
+ * Which is why the headings and their sliders are a grid of their own rather
+ * than the top of each column: half a column cannot stick on its own.
+ */
+.ev-top {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; flex-direction: column; gap: 0.9rem;
+  /* Its own ground, or the rows show through it. */
+  background: var(--bg);
+  padding-bottom: 0.5rem; margin-bottom: -0.4rem;
+  box-shadow: 0 1px 0 var(--line);
+}
+/* The two grids line up because they are the same grid twice: same columns,
+   same gap, same rule down the left of every column after the first. */
+.ev-heads { align-items: end; }
+
+/*
  * One line: who the spread is for, who it is being weighed against, and what
  * is left to spend.
  *
@@ -984,6 +1007,8 @@ button.type-chip { cursor: pointer; }
 
 .ev-cols { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.5rem; }
 .ev-col { min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+/* The half that stays: it carries the rule, so the two grids read as one. */
+.ev-col-fixed { justify-content: flex-end; }
 /* A rule between them: six lists of short rows run together otherwise, and
    which column a row belongs to is the first thing you need from it. */
 .ev-col + .ev-col { border-left: 1px solid var(--line); padding-left: 0.5rem; }
