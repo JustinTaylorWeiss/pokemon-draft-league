@@ -1009,11 +1009,24 @@ button.type-chip { cursor: pointer; }
 .ev-extra:hover .ev-extra-drop { color: #e05563; }
 
 .ev-hint, .ev-note { margin: 0; color: var(--muted); font-size: 0.75rem; line-height: 1.45; }
+/* Drawn rather than counted out: 508 is a number you have to subtract from,
+   and a bar is a thing you can see the end of. */
 .ev-budget {
-  margin-left: auto; display: inline-flex; align-items: baseline; gap: 0.6rem;
-  font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums;
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  font-size: 0.72rem; color: var(--muted); font-variant-numeric: tabular-nums;
 }
-.ev-full { color: var(--fg); }
+.ev-budget-bar {
+  width: 7rem; height: 0.4rem; border-radius: 999px;
+  background: var(--chip); overflow: hidden; flex: none;
+}
+.ev-budget-bar > span {
+  display: block; height: 100%; border-radius: 999px;
+  background: var(--team-accent, var(--accent)); transition: width 0.12s;
+}
+.ev-budget-read { font-weight: 700; color: var(--fg); }
+.ev-budget-read i { font-style: normal; font-weight: 400; color: var(--muted); }
+/* Full is the goal, not a warning: every EV spent is one doing something. */
+.ev-budget.is-full .ev-budget-bar > span { background: #2ea078; }
 
 .ev-cols { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 0.5rem; }
 .ev-col { min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
@@ -1143,7 +1156,7 @@ button.type-chip { cursor: pointer; }
 
 /* Six columns of this need real width; below it they go two and three up. */
 @media (max-width: 1100px) { .ev-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 900px) { .ev-budget { margin-left: 0; } }
+
 @media (max-width: 700px) { .ev-cols { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 /* ---- an item and an ability, given by hand ---- */

@@ -768,21 +768,28 @@ export function EvCalcBody({
           </div>
         )}
 
-        {picked && (
-          <span className={`ev-budget${left === 0 ? ' ev-full' : ''}`}>
-            {used} of {EV_BUDGET} EVs{left > 0 ? ` · ${left} left` : ' · all spent'}
-            {used > 0 && (
-              <button type="button" className="link-btn" onClick={() => setSpread(emptySpread())}>
-                Clear
-              </button>
-            )}
-          </span>
-        )}
       </div>
 
       {picked && (
         <>
           <div className="ev-assumes">
+            {/* What is left to spend, drawn rather than counted out. Five
+                hundred and eight is a number you have to subtract from; a
+                bar is a thing you can see the end of. */}
+            <span className={`ev-budget${left === 0 ? ' is-full' : ''}`}>
+              <span className="ev-budget-bar">
+                <span style={{ width: `${(used / EV_BUDGET) * 100}%` }} />
+              </span>
+              <span className="ev-budget-read">
+                {used}<i>/{EV_BUDGET}</i>
+              </span>
+              {used > 0 && (
+                <button type="button" className="link-btn" onClick={() => setSpread(emptySpread())}>
+                  Clear
+                </button>
+              )}
+            </span>
+
             {/* Anything they might be carrying that their set does not say.
                 Added to everyone over there who can learn it. */}
             <span className="ev-add">
