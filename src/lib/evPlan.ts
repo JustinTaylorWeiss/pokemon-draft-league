@@ -616,9 +616,20 @@ export function planFor(input: PlanInput): Plan {
   }
 
   for (const stat of EV_STATS) {
-    // Infinity sorts last on its own, which puts the out-of-reach rows after
-    // everything buyable without a second rule.
-    out[stat].sort((a, b) => a.evs - b.evs || a.targetName.localeCompare(b.targetName))
+    /*
+     * Cheapest first, and among equals the one still most likely to happen.
+     *
+     * Two rows at 44 EVs are not the same row: one where the hit still lands
+     * nine times in ten is the reason to spend them, and one where it lands
+     * once in twenty is nearly bought already. The odds break the tie in the
+     * direction of what still needs attention, and the name breaks that.
+     *
+     * Infinity sorts last on its own, which puts the out-of-reach rows after
+     * everything buyable without a second rule.
+     */
+    out[stat].sort((a, b) => a.evs - b.evs
+      || (b.chance ?? 0) - (a.chance ?? 0)
+      || a.targetName.localeCompare(b.targetName))
   }
   return out
 }
