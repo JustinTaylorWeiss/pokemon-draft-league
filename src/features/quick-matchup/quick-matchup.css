@@ -949,7 +949,12 @@ button.type-chip { cursor: pointer; }
 .ev-foe.is-off img { opacity: 0.3; filter: grayscale(1); }
 
 /* What the other side is credited with, and anything else it might bring. */
-.ev-assumes { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.9rem; }
+/* The budget, then the move search under it: two settings that belong to
+   the whole tab rather than to any one Pokemon, stacked down the left. */
+.ev-assumes {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 0.45rem;
+}
+.ev-assumes .ev-add { align-self: flex-start; }
 /* The label over its segments rather than beside them: three of these in a
    row read as one long sentence otherwise, and which words belong to which
    control is the first thing you need. */
@@ -1171,25 +1176,33 @@ button.type-chip { cursor: pointer; }
   display: inline-flex; flex-direction: column; align-items: center;
   justify-content: flex-start; gap: 0.1rem; width: 4rem;
 }
-.ev-gear { position: relative; display: inline-flex; }
-/* An ability and an item are two facts, not one: stacked, each is read on
-   its own line rather than found inside a string. */
-.ev-gear-open {
+.ev-gear {
+  position: relative; display: inline-flex; flex-direction: column;
+  align-items: center; gap: 0.12rem; max-width: 100%;
+}
+/* What has been said about it, above the way to say more. An ability and an
+   item are two facts, not one: stacked, each is read on its own line rather
+   than found inside a string. */
+.ev-gear-chip {
   display: flex; flex-direction: column; align-items: center;
-  max-width: 100%; padding: 0 0.3rem; line-height: 1.25;
-  background: none; border: 1px dashed var(--line); border-radius: 999px;
-  color: var(--muted); font: inherit; font-size: 0.6rem; cursor: pointer;
+  max-width: 100%; padding: 0.05rem 0.3rem; line-height: 1.25;
+  background: none; border: 1px solid var(--team-accent, var(--accent));
+  border-radius: 999px; color: var(--team-accent, var(--accent));
+  font: inherit; font-size: 0.6rem; font-weight: 600; cursor: pointer;
 }
-.ev-gear-open > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* The plus keeps its place at the bottom whether or not there is anything
-   above it, so the thing you click is always where you left it. */
-.ev-gear-more { color: var(--muted); line-height: 1; }
-.ev-gear-open.has-gear .ev-gear-more { font-size: 0.55rem; opacity: 0.7; }
+.ev-gear-chip > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ev-gear-chip:hover { border-color: var(--fg); }
+/* Round, and it stays round: its own button rather than a line inside the
+   one above, which stretched it to whatever was written there. */
+.ev-gear-open {
+  display: grid; place-items: center; flex: none;
+  width: 1.15rem; height: 1.15rem; padding: 0; line-height: 1;
+  background: none; border: 1px dashed var(--line); border-radius: 50%;
+  color: var(--muted); font: inherit; font-size: 0.7rem; cursor: pointer;
+}
 .ev-gear-open:hover { color: var(--fg); border-color: var(--muted); }
-.ev-gear-open.has-gear {
-  border-style: solid; border-color: var(--team-accent, var(--accent));
-  color: var(--team-accent, var(--accent)); font-weight: 600;
-}
+.ev-gear-open.has-gear { border-style: solid; }
+
 /* Catches the click that should close it, without stealing one from the
    controls inside — it sits under the panel, not over it. */
 .ev-gear-away { position: fixed; inset: 0; z-index: 20; background: none; border: 0; cursor: default; }
