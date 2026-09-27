@@ -1237,6 +1237,14 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   display: flex; align-items: baseline; gap: 0.3rem; flex-wrap: wrap;
 }
 .ev-row.is-lit .ev-swing { color: #2ea078; font-weight: 600; }
+/* The rolls end to end, above the knockout they add up to. Reads as the
+   number it is rather than as a chip, because it is the line being led
+   with rather than a note beside something else. */
+.ev-row .ev-range {
+  font-variant-numeric: tabular-nums; letter-spacing: 0.01em;
+  color: var(--fg);
+}
+.ev-row.is-lit .ev-range { color: #2ea078; }
 /* How often it actually happens, as things stand. Set apart from the hit
    counts beside it, which are the guaranteed ones and do not move. */
 .ev-odds {

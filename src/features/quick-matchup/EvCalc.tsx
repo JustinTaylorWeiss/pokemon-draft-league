@@ -134,29 +134,20 @@ function odds(p: number): string {
 }
 
 /**
- * The knockout in words: the soonest it can happen, how often, and the
- * number of hits it is guaranteed in.
+ * The knockout in words, the way a damage calculator says it.
  *
- * Two numbers rather than one because either alone misleads. "2HKO" hides
- * that it only lands three times in sixteen; "guaranteed 3HKO" hides that
- * it usually takes two. Where the rolls all agree there is only one number
- * to print, and it prints one.
+ * Where the rolls disagree — it falls in two on a good one and three on a
+ * bad one — the pair of counts is not the useful thing to print. "84% 2HKO"
+ * is, and the three is implied by the sixteen percent it leaves. Where every
+ * roll agrees there is one count and no odds to give.
  */
 function ShotOutcome({ shot, chance }: { shot: Shot; chance: number }) {
   if (!Number.isFinite(shot.hits)) return <>no damage</>
-  if (shot.soonest === shot.hits) return <>{shot.hits}HKO</>
+  if (shot.soonest === shot.hits || chance <= 0) return <>{shot.hits}HKO</>
   return (
-    <>
-      {shot.hits}HKO
-      {chance > 0 && (
-        <>
-          {' · '}
-          <span title={`${odds(chance)} to ${shot.soonest}HKO as it stands`}>
-            {shot.soonest}HKO {odds(chance)}
-          </span>
-        </>
-      )}
-    </>
+    <span title={`${odds(chance)} to ${shot.soonest}HKO, ${shot.hits} otherwise`}>
+      {odds(chance)} {shot.soonest}HKO
+    </span>
   )
 }
 
@@ -208,17 +199,17 @@ function ThresholdRow({
             {row.tier} · {row.outspeed}{tied ? ' · tied' : ''}
           </span>
         ) : row.shot ? (
-          /* What the move does, and how often it does it — both moving with
-             the slider. The range is the sixteen rolls end to end, which is
-             the number every damage calculator prints and the one a coach
-             reads before anything else. */
+          /* What the move does, then how often that is enough — both moving
+             with the slider. The range leads because it is the number every
+             damage calculator prints and the one a coach reads first; the
+             knockout under it is what the range adds up to. */
           <>
             <span className="ev-detail">{row.moveName}</span>
+            <span className="ev-detail ev-range" title="Worst roll to best, as a share of its HP">
+              {pct(row.shot.low)}–{pct(row.shot.high)}%
+            </span>
             <span className="ev-detail ev-swing">
               <ShotOutcome shot={row.shot} chance={row.chance ?? 0} />
-              <em className="ev-odds" title="Worst roll to best, as a share of its HP">
-                {pct(row.shot.low)}–{pct(row.shot.high)}%
-              </em>
             </span>
           </>
         ) : (
