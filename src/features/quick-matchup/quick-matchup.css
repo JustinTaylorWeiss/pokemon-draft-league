@@ -972,13 +972,13 @@ button.type-chip { cursor: pointer; }
  * which is a row of seven Pokemon with one of them out of line.
  */
 .ev-mine .ev-open, .ev-foe-slot .ev-open {
-  background: none; border: 1px solid transparent; border-radius: 8px;
-  padding: 0.1rem; line-height: 0; cursor: pointer;
+  display: block; background: none; border: 1px solid transparent;
+  border-radius: 8px; padding: 0.1rem; line-height: 0;
 }
+/* Only the six that are switches answer the pointer. */
+.ev-foe-slot .ev-open { cursor: pointer; }
 .ev-open img { image-rendering: pixelated; object-fit: contain; }
-.ev-mine .ev-open:hover, .ev-foe-slot .ev-open:hover {
-  border-color: var(--team-accent, var(--accent));
-}
+.ev-foe-slot .ev-open:hover { border-color: var(--team-accent, var(--accent)); }
 
 /* Which shape to read it in. Uses the segment styling the assumptions use,
    because it is the same kind of choice: one of a short fixed set. */
@@ -1001,7 +1001,8 @@ button.type-chip { cursor: pointer; }
    every name on the site opens through — strips the border and the
    padding off anything it is on, and at one class it was outweighing
    this one and leaving a line of text. */
-.ev-gear-pop .ev-gear-open-page {
+.ev-gear-pop .ev-gear-open-page,
+.ev-set-pop .ev-gear-open-page {
   display: flex; align-items: center; justify-content: center;
   width: 100%; padding: 0.3rem 0.5rem; line-height: 1.3;
   background: var(--chip); border: 1px solid var(--line); border-radius: 999px;
@@ -1009,7 +1010,8 @@ button.type-chip { cursor: pointer; }
   text-align: center; cursor: pointer;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.ev-gear-pop .ev-gear-open-page:hover {
+.ev-gear-pop .ev-gear-open-page:hover,
+.ev-set-pop .ev-gear-open-page:hover {
   border-color: var(--team-accent, var(--accent));
   color: var(--team-accent, var(--accent));
 }

@@ -1558,6 +1558,18 @@ export function EvCalcBody({
                         )}
                       </p>
 
+                      {/* Its page, the same line the other two panels
+                          carry. This one is where the four moves are
+                          chosen, which is where someone is most likely to
+                          want to look the Pokémon up. */}
+                      <PokemonLink
+                        id={picked.entry.id}
+                        className="ev-gear-open-page"
+                        title={`Open ${picked.entry.pokemon.name}`}
+                      >
+                        View {picked.entry.pokemon.name}
+                      </PokemonLink>
+
                       {/* The slots as they stand, each its own way out of
                           itself. Empty ones are drawn rather than left out, so
                           the number still to choose is a thing you can see. */}
@@ -1655,13 +1667,16 @@ export function EvCalcBody({
               a sprite does everywhere else on the site. */}
           {picked && (
             <span className="ev-mine">
-              <PokemonLink
-                id={picked.entry.id}
-                className="ev-open"
-                title={`Open ${picked.entry.pokemon.name}`}
-              >
+              {/* Not a link and not a switch. The six opposite are
+                  switches — click one and it leaves the columns — and
+                  this one has neither meaning: it cannot be taken out of
+                  a matchup it is the subject of, and its page is a line
+                  in all three of its panels. A picture that lights up
+                  under the pointer and then does nothing is worse than
+                  one that plainly does not. */}
+              <span className="ev-open">
                 <Sprite pokemon={picked.entry.pokemon} width={SPRITE_W} height={SPRITE_H} />
-              </PokemonLink>
+              </span>
               <GearPicker
                 pokemon={picked.entry.pokemon}
                 id={picked.entry.id}
