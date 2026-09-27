@@ -990,7 +990,7 @@ function GearPicker({
               )}
               </div>
               {ivsOpen && (
-              <div>
+              <div className="ev-iv-grid">
                 {EV_STATS.map((stat) => (
                   <label key={stat} className="ev-iv">
                     <span>{STAT_LABELS[stat]}</span>

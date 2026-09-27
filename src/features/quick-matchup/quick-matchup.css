@@ -1634,7 +1634,12 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   border-color: var(--team-accent, var(--accent));
   color: var(--team-accent, var(--accent));
 }
-.ev-gear-ivs > div {
+/* Named, not "any div in here". As `.ev-gear-ivs > div` it also caught
+   the line above holding the fold and the EV total — a rule one class
+   and one element deep, outweighing that line's own — and laid the two
+   of them out on three IV columns. Which is why they sat in the left
+   third, flush together, whatever their own rule asked for. */
+.ev-iv-grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.2rem;
 }
 .ev-iv { flex-direction: column; gap: 0.1rem; }
