@@ -154,7 +154,6 @@ export function AnalysisCard({
     // The one tab dense enough to need saying out loud what it is for.
     evs: (
       <>
-        {levelPicker}
         <button
           type="button"
           className="sub-help"
@@ -164,6 +163,7 @@ export function AnalysisCard({
         >
           ?
         </button>
+        {levelPicker}
       </>
     ),
   }[tab]
