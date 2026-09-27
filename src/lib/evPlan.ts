@@ -127,20 +127,25 @@ export function sideFrom(
  * version" is the question a spread is actually chosen to answer, and the
  * set cannot be asked it.
  *
+ * Three states, and the first of them is `ivs`: perfect IVs and nothing
+ * else, no EVs and no nature. Not the set's spread — a set is a guess, and
+ * a guess at the bottom of a scale of guesses is the one place it does not
+ * belong. From there, everything, and everything with the nature on it.
+ *
  * `max+` puts the boosting nature on whichever stat is being tested, both
  * defences or both attacks. No real Pokémon has both, and no real Pokémon
  * needs to: each calculation only reads one of them, and the assumption is
  * about that one.
  */
-export type Assume = 'set' | 'max' | 'max+'
+export type Assume = 'ivs' | 'max' | 'max+'
 export interface Assumptions {
   /** HP takes no nature, so it has no `max+`. */
-  hp: 'set' | 'max'
+  hp: 'ivs' | 'max'
   bulk: Assume
   power: Assume
 }
 
-export const ASSUME_SET: Assumptions = { hp: 'set', bulk: 'set', power: 'set' }
+export const ASSUME_BARE: Assumptions = { hp: 'ivs', bulk: 'ivs', power: 'ivs' }
 
 export interface Opponent {
   id: string
@@ -313,18 +318,22 @@ export function opponentsFrom(
     if (worn?.item !== undefined) side.item = worn.item || undefined
     if (worn?.ability !== undefined) side.ability = worn.ability || undefined
 
-    // Credited with more than the set says, where that is what was asked.
-    const credit = assume[id] ?? ASSUME_SET
-    if (credit.hp === 'max') side.evs = { ...side.evs, hp: EV_MAX }
+    /*
+     * Built as asked, not as its set was. Every one of these five stats is
+     * set outright — the bare state zeroes the EVs and levels the nature
+     * rather than leaving the set's numbers in place, so what the columns
+     * read is what the pickers say and nothing behind them.
+     */
+    const credit = assume[id] ?? ASSUME_BARE
+    side.evs = { ...side.evs, hp: credit.hp === 'max' ? EV_MAX : 0 }
     for (const [choice, stats] of [
       [credit.bulk, ['def', 'spd']],
       [credit.power, ['atk', 'spa']],
     ] as [Assume, StatKey[]][]) {
-      if (choice === 'set') continue
-      side.evs = { ...side.evs, ...Object.fromEntries(stats.map((k) => [k, EV_MAX])) }
-      if (choice === 'max+') {
-        side.natureBy = { ...side.natureBy, ...Object.fromEntries(stats.map((k) => [k, 1.1])) }
-      }
+      const evs = choice === 'ivs' ? 0 : EV_MAX
+      const nature = choice === 'max+' ? 1.1 : 1
+      side.evs = { ...side.evs, ...Object.fromEntries(stats.map((k) => [k, evs])) }
+      side.natureBy = { ...side.natureBy, ...Object.fromEntries(stats.map((k) => [k, nature])) }
     }
 
     const known = (set?.moves ?? [])

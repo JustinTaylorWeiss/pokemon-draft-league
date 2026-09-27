@@ -1165,6 +1165,7 @@ button.type-chip { cursor: pointer; }
   background: none; border: 1px dashed var(--line); border-radius: 999px;
   color: var(--muted); font: inherit; font-size: 0.6rem; cursor: pointer;
 }
+.ev-gear-open { max-width: 7.5rem; }
 .ev-gear-open > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ev-gear-open:hover { color: var(--fg); border-color: var(--muted); }
 .ev-gear-open.has-gear {

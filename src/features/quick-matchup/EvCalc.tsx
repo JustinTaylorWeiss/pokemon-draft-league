@@ -5,7 +5,7 @@ import {
   GIVEABLE_ITEMS, MODELLED_ABILITIES, itemEffect, itemMatters, typeBoosted,
 } from '../../lib/damage'
 import {
-  ASSUME_SET, EV_BUDGET, EV_MAX, EV_STATS, EV_STEP, emptySpread, opponentsFrom, planFor,
+  ASSUME_BARE, EV_BUDGET, EV_MAX, EV_STATS, EV_STEP, emptySpread, opponentsFrom, planFor,
   spent, statOfSpread, type Assume, type Assumptions, type Spread, type Threshold,
 } from '../../lib/evPlan'
 import { Sprite } from '../../components/Sprite'
@@ -68,9 +68,9 @@ function battleFormes(id: string, dex: LeagueDex) {
 }
 
 /** Short on the button, spelled out on hover. */
-const ASSUME_LABEL: Record<Assume, string> = { set: 'set', max: '252', 'max+': '252+' }
+const ASSUME_LABEL: Record<Assume, string> = { ivs: '31', max: '252', 'max+': '252+' }
 const ASSUME_MEANS: Record<Assume, string> = {
-  set: 'whatever their most-used set runs',
+  ivs: 'perfect IVs and nothing else — no EVs, neutral nature',
   max: 'maximum EVs',
   'max+': 'maximum EVs and a boosting nature',
 }
@@ -321,7 +321,18 @@ function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
   onAssume?: (next: Assumptions) => void
 }) {
   const [open, setOpen] = useState(false)
-  const chosen = [gear?.ability, gear?.item].filter(Boolean)
+  /*
+   * What has been said about this Pokemon, on the button itself: the spread
+   * it is credited with first, then what it is holding. Closed, the button
+   * is the only place any of it shows, and "252+ Atk/SpA" is the line most
+   * worth seeing without opening anything.
+   */
+  const raised = assume ? [
+    assume.hp === 'max' ? 'HP 252' : null,
+    assume.bulk === 'ivs' ? null : `Def/SpD ${ASSUME_LABEL[assume.bulk]}`,
+    assume.power === 'ivs' ? null : `Atk/SpA ${ASSUME_LABEL[assume.power]}`,
+  ].filter(Boolean) as string[] : []
+  const chosen = [...raised, gear?.ability, gear?.item].filter(Boolean) as string[]
 
   /*
    * A Mega has neither to give. The stone is in its item slot, and its
@@ -407,15 +418,15 @@ function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
             {assume && onAssume && (
               <div className="ev-gear-assumes">
                 <AssumePicker
-                  label="HP" value={assume.hp} states={['set', 'max']}
-                  onPick={(hp) => onAssume({ ...assume, hp: hp as 'set' | 'max' })}
+                  label="HP" value={assume.hp} states={['ivs', 'max']}
+                  onPick={(hp) => onAssume({ ...assume, hp: hp as 'ivs' | 'max' })}
                 />
                 <AssumePicker
-                  label="Def / SpD" value={assume.bulk} states={['set', 'max', 'max+']}
+                  label="Def / SpD" value={assume.bulk} states={['ivs', 'max', 'max+']}
                   onPick={(bulk) => onAssume({ ...assume, bulk })}
                 />
                 <AssumePicker
-                  label="Atk / SpA" value={assume.power} states={['set', 'max', 'max+']}
+                  label="Atk / SpA" value={assume.power} states={['ivs', 'max', 'max+']}
                   onPick={(power) => onAssume({ ...assume, power })}
                 />
               </div>
@@ -458,14 +469,6 @@ function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
               </select>
             </label>
             )}
-            {chosen.length > 0 && (
-              <button
-                type="button" className="link-btn"
-                onClick={() => { onChange({}); setOpen(false) }}
-              >
-                Start over
-              </button>
-            )}
           </div>
         </>
       )}
@@ -504,7 +507,7 @@ export function EvCalcBody({
   const [off, setOff] = useState<Set<string>>(() => new Set())
   /** What each of the other side is credited with, one answer per Pokémon. */
   const [assume, setAssume] = useState<Record<string, Assumptions>>({})
-  const credit = (id: string) => assume[id] ?? ASSUME_SET
+  const credit = (id: string) => assume[id] ?? ASSUME_BARE
   /** Moves named by hand, credited to every opponent that can learn one. */
   const [extra, setExtra] = useState<string[]>([])
   const [query, setQuery] = useState('')
