@@ -267,14 +267,24 @@
    level with IVs, with max EVs on top, with a nature on top of that, and
    every tier it can actually sit at. Even because none of them is the one you
    read first — the comparison runs across. */
-.speed-layout { display: flex; gap: 0.6rem; }
-.speed-bases, .speed-level, .speed-evs, .speed-max, .speed-groups {
-  flex: 1 1 0; min-width: 0;
+/*
+ * A grid of two rows rather than a row of columns, so the headings share a
+ * row and the lists share a row. They wrap to different depths now that they
+ * are sentences, and the lists have to start on the same line or the columns
+ * cannot be read across — which a floor under the headings also achieved, at
+ * the cost of three lines of empty space above every list whenever they all
+ * fitted on one. A grid row is exactly as tall as its tallest member and no
+ * taller.
+ *
+ * The columns are `display: contents` so their heading and list drop into
+ * this grid; laid out column-first, each contributes one of each in order.
+ */
+.speed-layout {
+  display: grid; grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr); grid-template-rows: auto 1fr;
+  column-gap: 0.6rem; align-items: start;
 }
-/* The headings spell their spreads out and so wrap to different depths. A
-   floor under them keeps every list starting on the same line, which is the
-   whole point of standing these columns next to each other. */
-.speed-layout h3 { min-height: 3.2rem; }
+.speed-bases, .speed-level, .speed-evs, .speed-max, .speed-groups { display: contents; }
 .speed-layout h3 { margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase; color: var(--team-both); letter-spacing: 0.05em; }
 .speed-layout h3 span { float: right; text-transform: none; font-size: 0.68rem; }
 /* Stays beside the word it qualifies. Held right it read as a second heading
