@@ -1447,9 +1447,12 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
  * read once and then never again, and anything permanently on the tab that
  * is read once is in the way for every later visit.
  */
+/* Grid-centred with the line box collapsed: left to the button's own
+   layout the glyph sits on a baseline inside a line box taller than it is,
+   which reads as a question mark parked low and left of the circle. */
 .sub-help {
   display: grid; place-items: center; flex: none;
-  width: 1.5rem; height: 1.5rem; padding: 0;
+  width: 1.5rem; height: 1.5rem; padding: 0; line-height: 1;
   background: none; border: 1px solid var(--line); border-radius: 50%;
   color: var(--muted); font: inherit; font-size: 0.8rem; font-weight: 700;
   cursor: pointer;
@@ -1472,7 +1475,8 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 }
 .ev-help-panel h2 { margin: 0; font-size: 1.05rem; }
 .ev-help-close {
-  flex: none; width: 1.7rem; height: 1.7rem; padding: 0; line-height: 1;
+  display: grid; place-items: center; flex: none;
+  width: 1.7rem; height: 1.7rem; padding: 0; line-height: 1;
   background: none; border: 1px solid var(--line); border-radius: 50%;
   color: var(--muted); font: inherit; font-size: 1.1rem; cursor: pointer;
 }

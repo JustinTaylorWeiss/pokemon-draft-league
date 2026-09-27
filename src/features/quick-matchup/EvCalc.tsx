@@ -160,10 +160,10 @@ const typeInk = (type?: string) => (type ? ` ev-ink type-${type.toLowerCase()}` 
 /**
  * How to read this tab, for someone opening it for the first time.
  *
- * Written out rather than left to be worked out: the columns are dense and
- * the thing that makes them worth reading — that every number is about a
- * Pokémon actually on the other team — is the one thing a screen full of
- * percentages does not say.
+ * Plainly. The columns are dense and what each number refers to is not
+ * obvious from looking at them, so this says what each control does and
+ * what each figure means, and leaves the reader to decide whether any of
+ * it is useful.
  */
 export function EvHelp({ onClose }: { onClose: () => void }) {
   // Escape closes it, the way it closes everything else that opens over the
@@ -179,42 +179,39 @@ export function EvHelp({ onClose }: { onClose: () => void }) {
       <button type="button" className="ev-help-away" aria-label="Close" onClick={onClose} />
       <div className="ev-help-panel">
         <header>
-          <h2>Choosing a spread</h2>
+          <h2>How this tab works</h2>
           <button type="button" className="ev-help-close" aria-label="Close" onClick={onClose}>
-            {'×'}
+            {'\u00d7'}
           </button>
         </header>
 
         <div className="ev-help-body">
           <p>
-            Every other EV tool tells you what a number becomes. The number never matters
-            on its own — 12 Special Attack is worth having or worth nothing depending
-            entirely on whether it changes something against a Pokémon they actually
-            drafted. Both teams are already here, so this answers that instead.
+            This tab works out what EVs do for one Pokémon against the team it is facing.
+            Both teams are already loaded, so each figure refers to a specific Pokémon on
+            the other side rather than to the stat on its own.
           </p>
 
-          <h3>Set it up</h3>
+          <h3>Setting it up</h3>
           <ol>
             <li>
-              <b>Pick your Pokémon</b> from the dropdown in the blue box. Both teams are
-              listed, under their coach.
+              Pick your Pokémon from the dropdown in the blue box. Both teams are listed,
+              grouped by coach.
             </li>
             <li>
-              <b>Choose its four moves.</b> They start filled with what it is usually seen
-              throwing — its most-used set, topped up from the moves this format actually
-              plays. The two attacking columns argue from exactly these four, so a move it
-              is not carrying never makes a case for spending on it.
+              Choose its four moves. They start filled with its most-used set, topped up
+              from the damaging moves this format plays. The Attack and Special Attack
+              columns read from these four and nothing else.
             </li>
             <li>
-              <b>Tell it about the other side.</b> The <code>{'⋯'}</code> under each of
-              their sprites opens that Pokémon: hide it if you are not bringing yours into
-              it, credit it with 252 HP or a boosting nature, drop an IV, give it an item or
-              a different ability. Everything you say shows as a pill under the sprite, and
-              every number in every column moves with it.
+              The <code>{'\u22ef'}</code> under each sprite on the red side opens that
+              Pokémon. You can hide it from the columns, credit it with 252 HP or a
+              boosting nature, lower an IV, give it an item, or switch its ability. Each
+              choice appears as a pill under the sprite, and the columns update.
             </li>
           </ol>
 
-          <h3>Read a row</h3>
+          <h3>Reading a row</h3>
           <p className="ev-help-eg">
             <span>Incineroar</span>
             <em>94% 1HKO</em>
@@ -222,50 +219,44 @@ export function EvHelp({ onClose }: { onClose: () => void }) {
             <em>98.8–117.6%</em>
           </p>
           <p>
-            Earthquake does between 98.8% and 117.6% of Incineroar&rsquo;s HP, so it knocks
-            it out in one hit 94 times in 100 and in two the rest of the time. The range is
-            the sixteen damage rolls end to end, the same numbers any damage calculator
-            prints. Both move as you drag the slider.
+            Earthquake does between 98.8% and 117.6% of Incineroar&rsquo;s HP, which knocks
+            it out in one hit 94% of the time and in two otherwise. The range is the sixteen
+            damage rolls, lowest to highest. Both figures change as the sliders move.
           </p>
           <p>
-            The defensive columns are the same row read the other way: what their move does
-            to you. The attacking ones show each of your four against each of them, sorted
-            in passes — your best answer to every Pokémon first, then your second, and down.
+            HP, Defense and Special Defense show the same thing in reverse — their moves
+            against your Pokémon. Attack and Special Attack list each of your four moves
+            against each of their Pokémon, in passes: your strongest result against each of
+            them first, then the next, and so on.
           </p>
 
-          <h3>What green means</h3>
+          <h3>Green rows</h3>
           <p>
-            A row is green when its guaranteed hit count is the best that column could ever
-            reach: the fewest hits when you are landing them, the most when you are taking
-            them. Green is not &ldquo;good&rdquo;, it is <b>nothing left to buy here</b> —
-            more EVs in that stat will not change the outcome against that Pokémon. Grey
-            rows are where the next point still does something.
-          </p>
-          <p>
-            Speed is the one column that still prices thresholds, because it has no damage
-            rolls. Each row is a build of theirs — <code>31</code> perfect IVs and nothing
-            else, <code>252</code> fully invested, a <code>+</code> for a boosting nature —
-            with the EVs and the Speed you need to beat it, and orange where you only tie.
+            A row is green when its guaranteed hit count already matches the best that
+            column can reach — the fewest hits when attacking, the most when defending.
+            Further EVs in that stat do not change the outcome against that Pokémon. Grey
+            rows are the ones the next point can still change.
           </p>
 
-          <h3>Two things worth trying</h3>
-          <ul>
-            <li>
-              Drag HP up four at a time and watch a 2HKO turn into a 3HKO. The point it
-              flips is the only part of that slider you were paying for.
-            </li>
-            <li>
-              Type a move into <b>add a move to enemy team</b> — Ice Beam, say. It is
-              credited to everyone over there who can learn it and listed in its own group
-              above the rest, so &ldquo;what if they bring it&rdquo; is a question you can
-              actually ask.
-            </li>
-          </ul>
+          <h3>Speed</h3>
+          <p>
+            Speed has no damage rolls, so its rows are thresholds rather than readings. Each
+            is one build of theirs — <code>31</code> for perfect IVs and nothing else,
+            <code>252</code> for full investment, <code>+</code> for a boosting nature — with
+            the EVs and the Speed needed to outrun it. Orange marks a tie.
+          </p>
+
+          <h3>Adding a move</h3>
+          <p>
+            The search beside the enemy team credits a move to every Pokémon over there that
+            can learn it. Those rows are grouped above the rest, under
+            &ldquo;Added&rdquo;.
+          </p>
 
           <p className="ev-help-small">
-            Weather, terrain, screens, stat stages, Intimidate, burn and Tera are not
-            counted. Hits are the guaranteed ones — the worst roll every time — with the
-            odds of the faster result beside them.
+            Not counted: weather, terrain, screens, stat stages, Intimidate, burn and Tera.
+            Hit counts are the guaranteed ones — the lowest roll every time — with the odds
+            of the faster result beside them.
           </p>
         </div>
       </div>
