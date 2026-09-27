@@ -7,6 +7,7 @@ import {
 } from '../../lib/evPlan'
 import { Sprite } from '../../components/Sprite'
 import { MoveCategory } from '../../components/MoveCategory'
+import { PokemonLink } from '../../components/PokemonLink'
 import { toId } from '../../data/load'
 import { DropPicker, type DropItem } from '../../components/DropPicker'
 import type { Team, TeamEntry } from './TeamEditor'
@@ -274,10 +275,14 @@ export function EvCalcBody({
     const known = (set?.moves ?? [])
       .map((m) => moves[m])
       .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0)
-    if (known.length) return known
-    // Same standing-in the other side gets, through the same door.
-    return opponentsFrom([picked.entry], null, moves, learnsets, played, level)[0].moves
-  }, [picked, sets, moves, learnsets, played, level])
+
+    // Same standing-in the other side gets, and the same named moves, through
+    // the same door — a move named by hand belongs to whoever can learn it,
+    // and that includes this one.
+    return opponentsFrom(
+      [picked.entry], known.length ? sets : null, moves, learnsets, played, level, ASSUME_SET, extra,
+    )[0].moves
+  }, [picked, sets, moves, learnsets, played, level, extra])
 
   const opponents = useMemo(
     () => (picked
@@ -310,7 +315,12 @@ export function EvCalcBody({
     const q = query.trim().toLowerCase()
     if (q.length < 2 || !picked) return []
     const legal = new Set<string>()
-    for (const m of picked.foes) for (const id of Object.keys(learnsets?.[m.id] ?? {})) legal.add(id)
+    // Both sides: a move added to this Pokémon fills out what it can threaten
+    // with, and one added to theirs fills out what it has to survive. Which
+    // of those happens is decided by who can learn it, not by who typed it.
+    for (const m of [picked.entry, ...picked.foes]) {
+      for (const id of Object.keys(learnsets?.[m.id] ?? {})) legal.add(id)
+    }
     return [...legal]
       .map((id) => moves[id])
       .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0
@@ -391,6 +401,18 @@ export function EvCalcBody({
           ariaLabel="Pokémon to build a spread for"
           placeholder="Pick a Pokémon"
         />
+        {/* The picker opens the list; this opens the Pokémon. Everywhere else
+            on the site a sprite is a way into its page, and here it was the
+            one that was not. */}
+        {picked && (
+          <PokemonLink
+            id={picked.entry.id}
+            className="ev-open"
+            title={`Open ${picked.entry.pokemon.name}`}
+          >
+            <Sprite pokemon={picked.entry.pokemon} width={34} height={28} />
+          </PokemonLink>
+        )}
 
         {picked && picked.foes.length > 0 && (
           <div className="ev-foes">

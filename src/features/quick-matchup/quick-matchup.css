@@ -895,6 +895,11 @@ button.type-chip { cursor: pointer; }
 }
 .ev-picker img { image-rendering: pixelated; object-fit: contain; flex: none; }
 
+/* The sprite beside the picker, which opens its page. */
+.ev-open { background: none; border: 1px solid transparent; border-radius: 8px; padding: 0.1rem; line-height: 0; }
+.ev-open img { image-rendering: pixelated; object-fit: contain; }
+.ev-open:hover { border-color: var(--team-accent, var(--accent)); }
+
 .ev-foes { display: flex; align-items: center; flex-wrap: wrap; gap: 0.15rem; }
 .ev-against {
   font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
