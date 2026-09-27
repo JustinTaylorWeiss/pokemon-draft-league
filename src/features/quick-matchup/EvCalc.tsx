@@ -681,9 +681,21 @@ function GearPicker({
    * cannot say. A minus is the other end of that plus and never chosen
    * for itself.
    */
+  /*
+   * Heaviest first, counting the nature as part of the weight.
+   *
+   * By EVs alone Ninetales reads HP SPE+ DEF: 252 in each of the first two
+   * and the tie broken by the order the stats are listed in, which puts
+   * the one the whole spread is built around in the middle. A boosting
+   * nature is worth about half an investment — at level 50 it adds a
+   * sixth of a good base stat where 252 EVs add about a third — so it
+   * counts as that, and Speed comes first where it belongs.
+   */
+  const weigh = (k: StatKey) =>
+    (assume ? assume.evs[k] + (assume.nature[k] > 1 ? EV_MAX / 2 : 0) : 0)
   const invested = assume
     ? EV_STATS.filter((k) => assume.evs[k] > 0)
-      .sort((a, b) => assume.evs[b] - assume.evs[a] || EV_STATS.indexOf(a) - EV_STATS.indexOf(b))
+      .sort((a, b) => weigh(b) - weigh(a) || EV_STATS.indexOf(a) - EV_STATS.indexOf(b))
       .map((k) => `${STAT_LABELS[k]}${assume.nature[k] > 1 ? '+' : ''}`)
     : []
   /*
