@@ -43,12 +43,13 @@ export interface Shot {
   /** And on the best, which is the one `chance` gives the odds of. */
   soonest: number
   /**
-   * Attacking rows: the fewest hits any spread at all could guarantee.
+   * The best guaranteed count this column could ever reach: fewest when
+   * landing a hit, most when taking one.
    *
-   * The bound of "could I do better", answered over every EV and every
-   * nature rather than over what is left in the budget. Where the guaranteed
-   * count already equals it, this stat has nothing more to give against that
-   * Pokémon and the row says so.
+   * The bound of "could this stat do better", answered at 252 EVs and a
+   * boosting nature — everything there is to spend on it — with the rest of
+   * the spread as it stands. Where `hits` already equals it, the column has
+   * nothing more to give against that Pokémon and the row says so.
    */
   peak?: number
 }
@@ -503,25 +504,25 @@ export function planFor(input: PlanInput): Plan {
   /** And me exactly as the sliders have me, for the live odds. */
   const meNow = sideFrom(pokemon, level, spread, item, ability, ivs)
   /**
-   * The best this Pokémon could ever be built into: everything everywhere,
-   * every nature boosting.
+   * The most one stat can do, everything else as the sliders have it.
    *
-   * Not a legal spread and it does not need to be. It is the bound of the
-   * question "could any spread do better than this", which is the one thing
-   * an attacking row goes green for.
+   * The bound of "could this column do better than it is doing" — 252 in
+   * the stat and a boosting nature on it, which is all there is to spend.
+   * Per stat rather than everything at once, because that is the question
+   * each column is asking: a Defense row wants to know what Defense can
+   * still buy, not what Defense and HP together could.
    */
-  const bound = (evs: number, nature: number) => sideFrom(
+  const meMax = (stat: StatKey): Side => sideFrom(
     pokemon,
     level,
     {
-      evs: Object.fromEntries(EV_STATS.map((k) => [k, evs])) as Record<StatKey, number>,
-      nature: Object.fromEntries(EV_STATS.map((k) => [k, nature])) as Record<StatKey, number>,
+      evs: { ...spread.evs, [stat]: EV_MAX },
+      nature: { ...spread.nature, [stat]: 1.1 },
     },
     item,
     ability,
     ivs,
   )
-  const bestMe = bound(EV_MAX, 1.1)
 
 
   /**
@@ -592,7 +593,17 @@ export function planFor(input: PlanInput): Plan {
       const theirs = category ? o.moves.filter((m) => m.category === category) : o.moves
       const row = worstOf(o.side, meNow, theirs)
       if (!row) continue
-      out[stat].push({ ...row, target: o.id, targetName: o.pokemon.name })
+      // The most hits this stat alone could ever make it take. Where the
+      // row already reads that number, the column has nothing left to give
+      // against that Pokémon and says so.
+      const found = theirs.find((m) => m.name === row.moveName)
+      const peak = found ? damage(o.side, meMax(stat), found, chart, doubles).worstCase : undefined
+      out[stat].push({
+        ...row,
+        target: o.id,
+        targetName: o.pokemon.name,
+        shot: { ...row.shot, peak },
+      })
     }
 
     /*
@@ -623,10 +634,9 @@ export function planFor(input: PlanInput): Plan {
     for (const stat of ['atk', 'spa'] as const) {
       const category = stat === 'atk' ? 'Physical' : 'Special'
       for (const move of moves.filter((m) => m.category === category)) {
-        // Everything everywhere, every nature boosting. Not a legal spread
-        // and it does not need to be: it is the bound of "could any spread
-        // do better than this", which is what the row goes green for.
-        const peak = damage(bestMe, o.side, move, chart, doubles).worstCase
+        // The fewest hits this stat alone could ever guarantee, which is
+        // what the row goes green for.
+        const peak = damage(meMax(stat), o.side, move, chart, doubles).worstCase
         const row = readMove(meNow, o.side, move)
         out[stat].push({
           ...row,

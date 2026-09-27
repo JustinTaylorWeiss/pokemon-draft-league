@@ -309,9 +309,6 @@ function StatHead({
   )
 }
 
-/** Rounding room, for comparing a sixteenth-based probability against a half. */
-const EPSILON = 1e-9
-
 /** And the list itself, which is what scrolls under it. */
 function StatRows({ stat, evs, rows, faces, note }: {
   stat: StatKey
@@ -340,36 +337,30 @@ function StatRows({ stat, evs, rows, faces, note }: {
    */
   const defensive = stat === 'hp' || stat === 'def' || stat === 'spd'
   /*
-   * The two sides go green for different reasons, because they are answers
-   * to different questions.
+   * A reading goes green at its ceiling, whichever way it is read.
    *
-   * Taking a hit, green is the odds: the knockout at the soonest count more
-   * often than not fails to land. "Guaranteed 3HKO" is a statement about one
-   * roll in sixteen, and a wall that still falls in two seven times out of
-   * eight is not a wall.
+   * The guaranteed hit count is the fewest this column could ever make it —
+   * landing a hit — or the most — taking one. Either way it is the one
+   * place where there is nothing left to buy, which is the only thing
+   * worth marking on a row that is a reading rather than a price: a
+   * percentage that has crept up is not a breakpoint.
    *
-   * Landing one, green is certainty and nothing less: the guaranteed hit
-   * count is the fewest any spread at all could guarantee. A percentage
-   * that has crept up is not a breakpoint, and the thing worth marking is
-   * the one place where there is nothing left to buy.
+   * Never green where nothing lands at all in the attacking columns. The
+   * ceiling is technically reached — no Attack ever knocks out something
+   * immune to the move — and "as good as it gets" over a row doing nothing
+   * reads as a win. Taking a hit it is the opposite: they cannot touch you,
+   * and that is the best the row will ever say.
    */
-  const certainty = (r: Threshold) =>
-    (r.shot && r.shot.soonest === r.shot.hits ? 1 : r.chance ?? 0)
   const lit = (r: Threshold) => {
-    if (r.shot) {
-      if (!defensive) {
-        return Number.isFinite(r.shot.hits) && r.shot.hits === r.shot.peak
-      }
-      return !Number.isFinite(r.shot.soonest) || certainty(r) < 0.5 - EPSILON
-    }
-    return defensive && r.chance != null ? r.chance < 0.5 - EPSILON : evs >= r.evs
+    // Speed is the one column still priced, and a price is paid or it is not.
+    if (!r.shot) return evs >= r.evs
+    if (r.shot.peak == null || r.shot.hits !== r.shot.peak) return false
+    return defensive || Number.isFinite(r.shot.hits)
   }
-  const tied = (r: Threshold) => {
-    if (r.shot) return defensive && Math.abs(certainty(r) - 0.5) <= EPSILON
-    return defensive && r.chance != null
-      ? Math.abs(r.chance - 0.5) <= EPSILON
-      : r.tieAt != null && evs >= r.tieAt && evs < r.evs
-  }
+  // A speed tie is its own outcome: not a win, because the turn order is a
+  // coin flip, and not nothing, because it is four EVs short of one.
+  const tied = (r: Threshold) =>
+    !r.shot && r.tieAt != null && evs >= r.tieAt && evs < r.evs
   return (
     <div className="ev-col">
       {rows.length ? (
