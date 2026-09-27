@@ -1427,7 +1427,7 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
    one line above the bar. A fixed height so the six bars sit level
    whatever is over them — HP has no nature button. */
 .ev-assume-head {
-  display: flex; align-items: center; gap: 0.35rem; height: 1.25rem; min-width: 0;
+  display: flex; align-items: center; gap: 0.35rem; height: 1.15rem; min-width: 0;
 }
 .ev-assume-head > em {
   font-style: normal; font-size: 0.58rem; font-weight: 700; letter-spacing: 0.05em;
@@ -1441,8 +1441,12 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
    control lying across the one beside it. */
 .ev-assume-stat input[type="range"] { width: 100%; min-width: 0; }
 /* The same pill the columns put over their sliders, saying the same word:
-   one control, one shape, whichever side of the tab it is on. */
-.ev-assume-head .ev-nature { margin-left: auto; }
+   one control, one shape, whichever side of the tab it is on. Smaller
+   here, because a column heading is the width of a column and this is
+   half a panel. */
+.ev-assume-head .ev-nature {
+  margin-left: auto; height: 1.1rem; padding: 0 0.35rem; font-size: 0.55rem;
+}
 /* What the six come to. Over 508 is not a build, and says so rather than
    being refused: the question is often asked one stat at a time. */
 /* Beside the IV line, not under the bars: two pieces of small print about
