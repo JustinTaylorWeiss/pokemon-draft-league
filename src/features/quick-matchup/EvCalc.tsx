@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../../data/types'
 import { STAT_LABELS } from '../../lib/stats'
-import { MODELLED_ABILITIES, itemMatters, typeBoosted } from '../../lib/damage'
+import { GIVEABLE_ITEMS, MODELLED_ABILITIES, itemMatters, typeBoosted } from '../../lib/damage'
 import {
   ASSUME_SET, EV_BUDGET, EV_MAX, EV_STATS, EV_STEP, emptySpread, opponentsFrom, planFor,
   spent, statOfSpread, type Assume, type Assumptions, type Spread, type Threshold,
@@ -12,7 +12,6 @@ import { TypeChip } from '../../components/TypeChip'
 import { PokemonLink } from '../../components/PokemonLink'
 import { toId } from '../../data/load'
 import { DropPicker, type DropItem } from '../../components/DropPicker'
-import type { ItemDex } from '../../data/types'
 import type { LeagueDex } from '../../data/league'
 import type { Team, TeamEntry } from './TeamEditor'
 
@@ -299,9 +298,8 @@ export interface Gear { item?: string; ability?: string }
  * fifth of the Special Defense column, and Multiscale is half of every
  * defensive row at once.
  */
-function GearPicker({ pokemon, items, gear, onChange }: {
+function GearPicker({ pokemon, gear, onChange }: {
   pokemon: Pokemon
-  items: ItemDex
   gear: Gear | undefined
   onChange: (next: Gear) => void
 }) {
@@ -333,15 +331,12 @@ function GearPicker({ pokemon, items, gear, onChange }: {
    * mineral rather than the type it belongs to.
    */
   const { plain, boosters } = useMemo(() => {
-    const usable = Object.values(items)
-      .map((i) => i.name)
-      .filter((n) => itemMatters(n, pokemon))
-      .sort((a, b) => a.localeCompare(b))
+    const usable = GIVEABLE_ITEMS.filter((n) => itemMatters(n, pokemon))
     return {
       plain: usable.filter((n) => !typeBoosted(n)),
       boosters: usable.filter((n) => typeBoosted(n)),
     }
-  }, [items, pokemon])
+  }, [pokemon])
 
   // Nothing either list can offer, so nothing to open.
   if (!abilities.length && !plain.length && !boosters.length) return null
@@ -355,7 +350,9 @@ function GearPicker({ pokemon, items, gear, onChange }: {
         title={chosen.length ? chosen.join(' · ') : `Give ${pokemon.name} an item or ability`}
         onClick={() => setOpen((v) => !v)}
       >
-        {chosen.length ? chosen.join(' · ') : '+'}
+        {chosen.length
+          ? chosen.map((what) => <span key={what}>{what}</span>)
+          : '+'}
       </button>
 
       {open && (
@@ -423,14 +420,12 @@ interface Props {
   played: string[]
   /** For finding a Pokémon's other in-battle shapes, which are not on a team. */
   dex: LeagueDex
-  /** The items this format's sets reference, which is what may be given out. */
-  items: ItemDex
   /** Owned by the card, so one picker in the bar serves this and the tiers. */
   level: number
 }
 
 export function EvCalcBody({
-  teamOne, teamTwo, chart, moves, learnsets, sets, played, dex, items, level,
+  teamOne, teamTwo, chart, moves, learnsets, sets, played, dex, level,
 }: Props) {
   const [chosen, setChosen] = useState<string | null>(null)
   const [spread, setSpread] = useState<Spread>(emptySpread)
@@ -654,7 +649,7 @@ export function EvCalcBody({
               <Sprite pokemon={picked.entry.pokemon} width={40} height={33} />
             </PokemonLink>
             <GearPicker
-              pokemon={picked.entry.pokemon} items={items}
+              pokemon={picked.entry.pokemon}
               gear={gear[picked.entry.id]} onChange={(g) => give(picked.entry.id, g)}
             />
           </span>
@@ -680,7 +675,7 @@ export function EvCalcBody({
                   <Sprite pokemon={m.pokemon} width={40} height={33} />
                 </button>
                 <GearPicker
-                  pokemon={m.pokemon} items={items}
+                  pokemon={m.pokemon}
                   gear={gear[m.id]} onChange={(g) => give(m.id, g)}
                 />
               </span>

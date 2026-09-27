@@ -1143,12 +1143,15 @@ button.type-chip { cursor: pointer; }
  */
 .ev-mine, .ev-foe-slot { display: inline-flex; flex-direction: column; align-items: center; gap: 0.1rem; }
 .ev-gear { position: relative; display: inline-flex; }
+/* An ability and an item are two facts, not one: stacked, each is read on
+   its own line rather than found inside a string. */
 .ev-gear-open {
-  max-width: 6.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  padding: 0 0.3rem; line-height: 1.25;
+  display: flex; flex-direction: column; align-items: center;
+  max-width: 6.5rem; padding: 0 0.3rem; line-height: 1.25;
   background: none; border: 1px dashed var(--line); border-radius: 999px;
   color: var(--muted); font: inherit; font-size: 0.6rem; cursor: pointer;
 }
+.ev-gear-open > span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ev-gear-open:hover { color: var(--fg); border-color: var(--muted); }
 .ev-gear-open.has-gear {
   border-style: solid; border-color: var(--team-accent, var(--accent));

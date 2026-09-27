@@ -19,7 +19,8 @@ import { natureMultiplier, statAtLevel } from './stats'
  *
  * Items: the ones that change a number outright — the Orbs and Choice items,
  * the type-boosting plates and their cousins, Assault Vest, Eviolite, Light
- * Ball, Air Balloon, Choice Scarf. Not the ones that fire on a condition
+ * Ball and Choice Scarf. Not the ones that fire on a condition, nor the
+ * ones whose effect ends the moment something lands on it (Air Balloon),
  * (Weakness Policy, Booster Energy, the Berries), which are a turn's events
  * rather than a Pokémon's build.
  *
@@ -87,8 +88,24 @@ const ALWAYS_MATTERS = new Set([
   ...Object.keys(ITEM_ATTACK),
   ...Object.keys(ITEM_TYPE),
   ...Object.keys(ITEM_DEFENSE),
-  'Expert Belt', 'Choice Scarf', 'Air Balloon',
+  'Expert Belt', 'Choice Scarf',
 ])
+
+/**
+ * Every item that can be handed out, in one list.
+ *
+ * Taken from what the calculation reads rather than from the item dex, which
+ * only holds what this format's usage sets happen to reference — Expert Belt
+ * is a legal, ordinary held item that no set in that sample was wearing, and
+ * a picker built off the dex could never offer it. Everything here is a
+ * standard item; nothing the regulation bans reads as anything anyway,
+ * because the maths has no rule for it.
+ *
+ * Two of them are conditional and `itemMatters` decides those per Pokemon.
+ */
+export const GIVEABLE_ITEMS: readonly string[] = [
+  ...ALWAYS_MATTERS, 'Eviolite', 'Light Ball',
+].sort((a, b) => a.localeCompare(b))
 
 export function itemMatters(item: string, pokemon: Pokemon): boolean {
   if (item === 'Eviolite') return Boolean(pokemon.evos?.length)
@@ -182,10 +199,6 @@ export function damage(
 ): Hit {
   const hp = statOf(defender, 'hp')
   if (move.category === 'Status' || move.basePower <= 0) return NO_HIT(hp)
-
-  // A balloon keeps the ground away until something pops it, and nothing
-  // here pops it: these are first-hit questions.
-  if (defender.item === 'Air Balloon' && move.type === 'Ground') return NO_HIT(hp)
 
   const effect = defensiveMultiplier(chart, move.type, defender.pokemon, true)
   if (effect === 0) return NO_HIT(hp)

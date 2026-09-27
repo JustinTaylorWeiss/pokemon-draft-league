@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import type { ItemDex, LearnsetDex, MoveDex, SetDex, TypeChart } from '../../data/types'
-import { loadItems, loadSets } from '../../data/load'
+import type { LearnsetDex, MoveDex, SetDex, TypeChart } from '../../data/types'
+import { loadSets } from '../../data/load'
 import { DraftSummaryBody } from './DraftSummary'
 import { DefensiveChartBody } from './DefensiveChart'
 import { buildMoveRows, LearnedMovesBody } from './LearnedMoves'
@@ -98,10 +98,6 @@ export function AnalysisCard({
 
   const [sets, setSets] = useState<SetDex | null>(null)
   useEffect(() => { loadSets().then(setSets, () => {}) }, [])
-  // The items the format's sets reference, which is what the EV calculator
-  // lets a Pokémon be given. Loaded here so the tab has it on arrival.
-  const [items, setItems] = useState<ItemDex>({})
-  useEffect(() => { loadItems().then(setItems, () => {}) }, [])
 
   // Built here rather than inside LearnedMovesBody: this component stays
   // mounted across tab switches, so the work survives leaving the tab and
@@ -237,7 +233,7 @@ export function AnalysisCard({
           <EvCalcBody
             teamOne={teamOne} teamTwo={teamTwo}
             chart={chart} moves={moves} learnsets={learnsets} sets={sets} played={played}
-            dex={dex} items={items} level={level}
+            dex={dex} level={level}
           />
         )
         : <LoadingBall label="Loading learnsets…" inline />)}
