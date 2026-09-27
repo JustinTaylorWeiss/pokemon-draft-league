@@ -102,10 +102,53 @@ const ITEM_DEFENSE: Record<string, { stat: StatKey; mult: number }> = {
  * `itemMatters` is per Pokémon, because two of them are: Eviolite does
  * nothing to something fully grown, and a Light Ball is Pikachu's alone.
  */
+/**
+ * Abilities that lend an offensive stat half again, or a third, for moves
+ * of one type. Fire Mane is Mega Pyroar's and the reason it is a Mega.
+ */
+const TYPE_POWER: Record<string, { type: TypeName; mult: number }> = {
+  'Fire Mane': { type: 'Fire', mult: 1.5 },
+  "Dragon's Maw": { type: 'Dragon', mult: 1.5 },
+  'Rocky Payload': { type: 'Rock', mult: 1.5 },
+  Steelworker: { type: 'Steel', mult: 1.5 },
+  Transistor: { type: 'Electric', mult: 1.3 },
+}
+
+/**
+ * The -ate abilities: a Normal move becomes another type and gains a
+ * fifth. Both halves matter, and the type more — a Pixilate Return off
+ * Mega Gardevoir is Fairy, which is what it is for.
+ */
+const ATE: Record<string, TypeName> = {
+  Aerilate: 'Flying',
+  Pixilate: 'Fairy',
+  Refrigerate: 'Ice',
+  Galvanize: 'Electric',
+  Dragonize: 'Dragon',
+}
+
+/**
+ * The four Ruin abilities, each taking a quarter off one stat of every
+ * Pokémon that does not share it — so they read across the pair, which
+ * is what makes them something this can model at all.
+ */
+const RUIN: Record<string, StatKey> = {
+  'Sword of Ruin': 'def',
+  'Beads of Ruin': 'spd',
+  'Tablets of Ruin': 'atk',
+  'Vessel of Ruin': 'spa',
+}
+
 export const MODELLED_ABILITIES: ReadonlySet<string> = new Set([
   ...DEFENSIVE_ABILITIES,
+  ...Object.keys(TYPE_POWER),
+  ...Object.keys(ATE),
+  ...Object.keys(RUIN),
   'Adaptability', 'Huge Power', 'Pure Power', 'Fur Coat', 'Ice Scales',
   'Multiscale', 'Shadow Shield', 'Tough Claws', 'Technician',
+  'Normalize', 'Liquid Voice', 'Neuroforce', 'Tinted Lens', 'Aura Guard',
+  'Punk Rock', 'Soundproof', 'Reckless', 'Parental Bond', 'Gorilla Tactics',
+  'Hustle', 'Protean', 'Mold Breaker',
 ])
 
 const ALWAYS_MATTERS = new Set([
@@ -257,6 +300,30 @@ function core(
   const hp = statOf(defender, 'hp')
   if (move.category === 'Status' || move.basePower <= 0) return { rolls: [], hp }
 
+  const mine = attacker.ability ?? ''
+
+  /*
+   * Mold Breaker reads the defender as though it had no ability at all —
+   * which is the whole of what it does, and cheap to say here because
+   * everything below already takes the defender's ability from one place.
+   */
+  const shielded = mine === 'Mold Breaker' ? { ...defender, ability: '' } : defender
+  const guard = shielded.ability ?? ''
+
+  /*
+   * The type the move actually lands as.
+   *
+   * Normalize turns everything Normal, the -ate abilities turn Normal into
+   * something else, and Liquid Voice turns a sound move into Water. All
+   * three change what the type chart says as well as what it hits for,
+   * and the chart is read below.
+   */
+  const kind: TypeName = mine === 'Normalize' ? 'Normal'
+    : mine === 'Liquid Voice' && move.sound ? 'Water'
+      : move.type === 'Normal' && ATE[mine] ? ATE[mine]
+        : move.type
+  const ated = mine === 'Normalize' || (move.type === 'Normal' && ATE[mine]) ? 1.2 : 1
+
   /*
    * The one it has, and only that one — an empty string where it has none.
    *
@@ -270,14 +337,25 @@ function core(
    * away. Passing nothing would fall back to the whole list, which is how
    * the credit below would conclude that Levitate changed nothing.
    */
-  const effect = defensiveMultiplier(
-    chart, move.type, defender.pokemon, true, defender.ability ?? '',
-  )
+  const effect = defensiveMultiplier(chart, kind, shielded.pokemon, true, guard)
   if (effect === 0) return { rolls: [], hp }
+  // Nothing at all gets through a Soundproof to a sound move.
+  if (guard === 'Soundproof' && move.sound) return { rolls: [], hp }
 
   const physical = move.category === 'Physical'
-  const atk = statOf(attacker, physical ? 'atk' : 'spa')
-  const def = statOf(defender, physical ? 'def' : 'spd')
+  /*
+   * The offensive stat, and the defensive one, each with whatever reads
+   * only the two Pokémon and the move in front of them: the type-power
+   * abilities, the two flat Attack ones, and the Ruin pair that applies
+   * from the other side.
+   */
+  const lends = TYPE_POWER[mine]
+  const atkMult = (lends && lends.type === kind ? lends.mult : 1)
+    * (mine === 'Gorilla Tactics' || mine === 'Hustle' ? (physical ? 1.5 : 1) : 1)
+    * (RUIN[guard] === (physical ? 'atk' : 'spa') ? 0.75 : 1)
+  const defMult = RUIN[mine] === (physical ? 'def' : 'spd') ? 0.75 : 1
+  const atk = Math.floor(statOf(attacker, physical ? 'atk' : 'spa') * atkMult)
+  const def = Math.max(1, Math.floor(statOf(shielded, physical ? 'def' : 'spd') * defMult))
 
   // The games' own order: three integer divisions, then the modifiers.
   let base = Math.floor(
@@ -288,17 +366,18 @@ function core(
   const spreads = move.target === 'allAdjacentFoes' || move.target === 'allAdjacent'
   if (doubles && spreads) base = pokeRound(base * 0.75)
 
-  const stab = attacker.pokemon.types.includes(move.type)
-    ? (attacker.ability === 'Adaptability' ? 2 : 1.5)
+  // Protean makes the move's type the user's, so everything is same-type.
+  const stab = mine === 'Protean' || attacker.pokemon.types.includes(kind)
+    ? (mine === 'Adaptability' ? 2 : 1.5)
     : 1
 
   const boost = attacker.item ? ITEM_ATTACK[attacker.item] : undefined
-  const typed = attacker.item && ITEM_TYPE[attacker.item] === move.type ? 1.2 : 1
+  const typed = attacker.item && ITEM_TYPE[attacker.item] === kind ? 1.2 : 1
   const itemMult = (boost && (!boost.category || boost.category === move.category) ? boost.mult : 1)
     * typed
   // Multiscale reads the defender's HP, and here the defender is always at
   // full: these are first-hit questions. Half damage, and it says so.
-  const shield = defender.ability === 'Multiscale' || defender.ability === 'Shadow Shield' ? 0.5 : 1
+  const shield = guard === 'Multiscale' || guard === 'Shadow Shield' ? 0.5 : 1
   const belt = attacker.item === 'Expert Belt' && effect > 1 ? 1.2 : 1
   /*
    * Two of the attacker's that read nothing but the move in front of
@@ -311,9 +390,25 @@ function core(
    * Both are in the data already: the build records `contact` on every
    * move that has the flag, and base power speaks for itself.
    */
-  const claws = attacker.ability === 'Tough Claws' && move.contact ? 1.3 : 1
-  const tech = attacker.ability === 'Technician' && move.basePower <= 60 ? 1.5 : 1
-  const after = itemMult * shield * belt * claws * tech
+  const claws = mine === 'Tough Claws' && move.contact ? 1.3 : 1
+  const tech = mine === 'Technician' && move.basePower <= 60 ? 1.5 : 1
+  /*
+   * The rest of what reads only this pairing and this move.
+   *
+   * Parental Bond is two hits, the second quartered, which over a turn
+   * comes to a quarter again — the spread of the sixteen rolls is a
+   * little tighter than one hit's and the total is what a spread is
+   * chosen against, so it is taken as the quarter.
+   */
+  const bond = mine === 'Parental Bond' ? 1.25 : 1
+  const reckless = mine === 'Reckless' && move.recoil ? 1.2 : 1
+  const punk = (mine === 'Punk Rock' && move.sound ? 1.3 : 1)
+    * (guard === 'Punk Rock' && move.sound ? 0.5 : 1)
+  const aura = guard === 'Aura Guard' && move.contact ? 0.5 : 1
+  const lens = mine === 'Tinted Lens' && effect < 1 ? 2 : 1
+  const force = mine === 'Neuroforce' && effect > 1 ? 1.25 : 1
+  const after = itemMult * shield * belt * claws * tech * ated
+    * bond * reckless * punk * aura * lens * force
 
   const rolls: number[] = []
   for (let r = 85; r <= 100; r++) {
