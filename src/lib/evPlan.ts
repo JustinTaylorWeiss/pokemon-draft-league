@@ -1,5 +1,5 @@
 import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../data/types'
-import { damage, koCurve, statOf, type Side } from './damage'
+import { damage, koCurve, statOf, type Hit, type Side } from './damage'
 import { statAtLevel } from './stats'
 
 /**
@@ -21,6 +21,26 @@ export const EV_MAX = 252
 export const EV_BUDGET = 508
 
 export const EV_STATS: StatKey[] = ['hp', 'atk', 'def', 'spa', 'spd', 'spe']
+
+/**
+ * An offensive row's live reading: what this move is doing to that Pokémon
+ * right now, with the sliders where they are.
+ *
+ * The defensive and Speed columns are lists of thresholds — outcomes you can
+ * buy, priced. The two attacking columns are not, any more: the four moves
+ * are chosen, so there is one pairing per Pokémon over there and the useful
+ * thing to show is what it does and how that moves as you spend, rather than
+ * a threshold per move per hit count.
+ */
+export interface Shot {
+  /** Percent of the target's HP: the worst roll, and the best. */
+  low: number
+  high: number
+  /** Hits to knock out on the worst roll — the guaranteed count. */
+  hits: number
+  /** And on the best, which is the one `chance` gives the odds of. */
+  soonest: number
+}
 
 export interface Threshold {
   /** The least EVs in this stat that buy it, given everything else as it is. */
@@ -72,6 +92,8 @@ export interface Threshold {
    * usually four EVs short of a win and worth knowing you are standing on it.
    */
   tieAt?: number
+  /** Attack and Special Attack rows: what it is doing to them as things stand. */
+  shot?: Shot
 }
 
 /**
@@ -564,27 +586,82 @@ export function planFor(input: PlanInput): Plan {
       }
     }
 
-    // ---- landing them: Attack, Special Attack ----
-    for (const move of moves) {
-      const stat: StatKey = move.category === 'Physical' ? 'atk' : 'spa'
-      const live = damage(meNow, o.side, move, chart, doubles)
+    /*
+     * ---- landing them: Attack, Special Attack ----
+     *
+     * One row per Pokémon over there, not one per move per hit count.
+     *
+     * The four moves are chosen now, so the question has flattened: not
+     * "which of everything it could learn threatens this one" but "what does
+     * my set do to each of them, and how does that move as I spend". So each
+     * row is a live reading — the roll range and the odds of the knockout —
+     * with the next breakpoint priced beside it, which is the one threshold
+     * still worth naming.
+     *
+     * The move shown is the one it would actually click: fewest hits to the
+     * knockout, and the bigger number where two need the same count.
+     */
+    for (const stat of ['atk', 'spa'] as const) {
+      const category = stat === 'atk' ? 'Physical' : 'Special'
+      const mine = moves.filter((m) => m.category === category)
+      if (!mine.length) continue
+
+      let best: { move: Move; live: Hit } | null = null
+      for (const move of mine) {
+        const live = damage(meNow, o.side, move, chart, doubles)
+        const top = (h: Hit) => h.rolls[h.rolls.length - 1] ?? 0
+        if (!best
+          || live.worstCase < best.live.worstCase
+          || (live.worstCase === best.live.worstCase && top(live) > top(best.live))) {
+          best = { move, live }
+        }
+      }
+      if (!best) continue
+      const { move, live } = best
+      const hits = live.worstCase
+      const soonest = live.bestCase
       const curve = koCurve(live, MEANINGFUL_HITS)
-      const span = {
-        worst: damage(worstMe, o.side, move, chart, doubles).worstCase,
-        best: damage(bestMe, o.side, move, chart, doubles).worstCase,
-      }
-      const reachable = sweep((evs) => damage(meAt(stat, evs), o.side, move, chart, doubles).worstCase)
-      for (const step of priced(stat, reachable, span)) {
-        out[stat].push({
-          ...step, target: o.id, targetName: o.pokemon.name,
-          move: move.name, moveName: move.name,
-          statAt: needs((v) =>
-            damage(withStat(meNow, stat, v), o.side, move, chart, doubles).worstCase <= step.to),
-          // The outcome being reached, and how often it happens already.
-          at: step.to, chance: curve[step.to - 1] ?? 0,
-          via: live.via,
-        })
-      }
+
+      /*
+       * The next EV total that changes anything here.
+       *
+       * Either end of the roll counts as a change, and the best one does
+       * most of the work: guaranteeing a knockout one hit sooner means all
+       * sixteen rolls have to kill, which for most pairings no amount of
+       * Attack reaches, so pricing only that printed a dash on every row.
+       * Making the one-shot possible at all is both reachable and the thing
+       * a coach is actually buying.
+       */
+      const sweepWorst = sweep((evs) => damage(meAt(stat, evs), o.side, move, chart, doubles).worstCase)
+      const sweepBest = sweep((evs) => damage(meAt(stat, evs), o.side, move, chart, doubles).bestCase)
+      const moves_ = (worst: number, best: number) => best < soonest || worst < hits
+      const step = Number.isFinite(hits)
+        ? sweepWorst.findIndex((_, i) => moves_(sweepWorst[i], sweepBest[i]))
+        : -1
+
+      out[stat].push({
+        // No `unreachable` flag even where there is no next step: these rows
+        // are readings, and a Pokémon already being one-shot does not belong
+        // under a heading that means "this cannot be done".
+        evs: step < 0 ? Infinity : step * EV_STEP,
+        target: o.id,
+        targetName: o.pokemon.name,
+        move: move.name,
+        moveName: move.name,
+        statAt: step < 0 ? undefined : needs((v) => {
+          const h = damage(withStat(meNow, stat, v), o.side, move, chart, doubles)
+          return moves_(h.worstCase, h.bestCase)
+        }),
+        at: soonest,
+        chance: curve[soonest - 1] ?? 0,
+        via: live.via,
+        shot: {
+          low: live.hp ? ((live.rolls[0] ?? 0) / live.hp) * 100 : 0,
+          high: live.hp ? ((live.rolls[live.rolls.length - 1] ?? 0) / live.hp) * 100 : 0,
+          hits,
+          soonest,
+        },
+      })
     }
 
     // ---- getting there first, at each speed they might be built to ----
@@ -663,6 +740,15 @@ export function planFor(input: PlanInput): Plan {
      * Infinity sorts last on its own, which puts the out-of-reach rows after
      * everything buyable without a second rule.
      */
+    // Readings sort by how close the Pokemon is to falling, which is the
+    // order you read them in. Thresholds sort by what they cost, which is
+    // the order you buy them in.
+    if (stat === 'atk' || stat === 'spa') {
+      out[stat].sort((a, b) => (a.shot?.hits ?? Infinity) - (b.shot?.hits ?? Infinity)
+        || (b.shot?.high ?? 0) - (a.shot?.high ?? 0)
+        || a.targetName.localeCompare(b.targetName))
+      continue
+    }
     out[stat].sort((a, b) => a.evs - b.evs
       || (b.chance ?? 0) - (a.chance ?? 0)
       || a.targetName.localeCompare(b.targetName))

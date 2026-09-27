@@ -7,7 +7,7 @@ import {
 import {
   ASSUME_BARE, EV_BUDGET, EV_MAX, EV_STATS, EV_STEP, SET_SIZE, emptySpread, opponentsFrom,
   planFor, spent, statOfSpread, usualMoves,
-  type Assume, type Assumptions, type Spread, type Threshold,
+  type Assume, type Assumptions, type Shot, type Spread, type Threshold,
 } from '../../lib/evPlan'
 import { Sprite } from '../../components/Sprite'
 import { MoveCategory } from '../../components/MoveCategory'
@@ -28,8 +28,11 @@ import type { Team, TeamEntry } from './TeamEditor'
  * brought. Both teams are already on screen here, so the question can be
  * answered rather than left.
  *
- * One column per stat, each listing what that stat could buy against them,
- * cheapest first, with a slider that lights up everything it pays for.
+ * One column per stat, each with a slider above it. The three defensive
+ * ones and Speed list what that stat could buy against them, cheapest
+ * first, lighting up as the slider pays for it. Attack and Special Attack
+ * are not lists of purchases but readings: one row per Pokémon over there,
+ * saying what the chosen set does to it and how the odds move as you spend.
  */
 
 /** The nature a stat can be given, as the multiplier the maths wants. */
@@ -130,19 +133,63 @@ function odds(p: number): string {
   return `${(p * 100).toFixed(p < 0.1 ? 1 : 0)}%`
 }
 
+/**
+ * The knockout in words: the soonest it can happen, how often, and the
+ * number of hits it is guaranteed in.
+ *
+ * Two numbers rather than one because either alone misleads. "2HKO" hides
+ * that it only lands three times in sixteen; "guaranteed 3HKO" hides that
+ * it usually takes two. Where the rolls all agree there is only one number
+ * to print, and it prints one.
+ */
+function ShotOutcome({ shot, chance }: { shot: Shot; chance: number }) {
+  if (!Number.isFinite(shot.hits)) return <>no damage</>
+  if (shot.soonest === shot.hits) return <>{shot.hits}HKO</>
+  return (
+    <>
+      {shot.hits}HKO
+      {chance > 0 && (
+        <>
+          {' · '}
+          <span title={`${odds(chance)} to ${shot.soonest}HKO as it stands`}>
+            {shot.soonest}HKO {odds(chance)}
+          </span>
+        </>
+      )}
+    </>
+  )
+}
+
+/** A percentage of someone's HP, to one place, without a trailing zero. */
+const pct = (n: number) => `${Math.round(n * 10) / 10}`
+
 function ThresholdRow({
   row, lit, tied, target,
 }: { row: Threshold; lit: boolean; tied: boolean; target?: Pokemon }) {
-  const out = row.unreachable
+  /*
+   * A dash where there is no price, and a dashed border only where the row
+   * itself is out of reach.
+   *
+   * A reading with no next step is not out of reach — it is a Pokemon this
+   * move already does everything to it is going to do, which is worth
+   * reading rather than something to grey out.
+   */
+  const dash = row.unreachable || row.statAt == null
+  const out = Boolean(row.unreachable)
   return (
     <li className={`ev-row${lit ? ' is-lit' : ''}${tied ? ' is-tied' : ''}${out ? ' is-out' : ''}`}>
       {/* The price in both currencies: what it costs in EVs, and what the
           stat has to read for it. One of those is what you spend and the
           other is what you are aiming at, and neither implies the other
           without the arithmetic this tool exists to save. */}
-      <span className="ev-cost" title={out ? 'Out of reach' : `${row.evs} EVs — the stat reads ${row.statAt}`}>
-        <span className="ev-cost-evs">{out ? '—' : row.evs}</span>
-        <span className="ev-cost-stat">{out ? '—' : row.statAt}</span>
+      <span
+        className="ev-cost"
+        title={dash
+          ? (row.shot ? 'Nothing more to buy here' : 'Out of reach')
+          : `${row.evs} EVs — the stat reads ${row.statAt}`}
+      >
+        <span className="ev-cost-evs">{dash ? '—' : row.evs}</span>
+        <span className="ev-cost-stat">{dash ? '—' : row.statAt}</span>
       </span>
       {/* Which Pokémon this is about, read before the words. A column of
           twelve rows is a column of names otherwise. */}
@@ -160,6 +207,20 @@ function ThresholdRow({
           <span className="ev-detail">
             {row.tier} · {row.outspeed}{tied ? ' · tied' : ''}
           </span>
+        ) : row.shot ? (
+          /* What the move does, and how often it does it — both moving with
+             the slider. The range is the sixteen rolls end to end, which is
+             the number every damage calculator prints and the one a coach
+             reads before anything else. */
+          <>
+            <span className="ev-detail">{row.moveName}</span>
+            <span className="ev-detail ev-swing">
+              <ShotOutcome shot={row.shot} chance={row.chance ?? 0} />
+              <em className="ev-odds" title="Worst roll to best, as a share of its HP">
+                {pct(row.shot.low)}–{pct(row.shot.high)}%
+              </em>
+            </span>
+          </>
         ) : (
           <>
             <span className="ev-detail">{row.moveName}</span>
@@ -266,12 +327,28 @@ function StatRows({ stat, evs, rows, faces, note }: {
    * and Speed has no rolls at all.
    */
   const defensive = stat === 'hp' || stat === 'def' || stat === 'spd'
-  const lit = (r: Threshold) => (defensive && r.chance != null
-    ? r.chance < 0.5 - EPSILON
-    : evs >= r.evs)
-  const tied = (r: Threshold) => (defensive && r.chance != null
-    ? Math.abs(r.chance - 0.5) <= EPSILON
-    : r.tieAt != null && evs >= r.tieAt && evs < r.evs)
+  /*
+   * An offensive reading is lit on the same rule as a defensive one, read
+   * the other way round: there, green means the hit more often than not
+   * fails to land; here, that the knockout more often than not does. Both
+   * move continuously with the slider rather than jumping at a threshold,
+   * which is what these rows are for.
+   *
+   * Where every roll agrees there is no coin to flip and the reading is
+   * certain, so a guaranteed knockout counts as one that lands.
+   */
+  const certainty = (r: Threshold) =>
+    (r.shot && r.shot.soonest === r.shot.hits ? 1 : r.chance ?? 0)
+  const lit = (r: Threshold) => {
+    if (r.shot) return Number.isFinite(r.shot.soonest) && certainty(r) > 0.5 + EPSILON
+    return defensive && r.chance != null ? r.chance < 0.5 - EPSILON : evs >= r.evs
+  }
+  const tied = (r: Threshold) => {
+    if (r.shot) return Math.abs(certainty(r) - 0.5) <= EPSILON
+    return defensive && r.chance != null
+      ? Math.abs(r.chance - 0.5) <= EPSILON
+      : r.tieAt != null && evs >= r.tieAt && evs < r.evs
+  }
   return (
     <div className="ev-col">
       {rows.length ? (
@@ -1052,8 +1129,10 @@ export function EvCalcBody({
 
           <p className="ev-note">
             Hits are guaranteed ones: the worst roll every time, with the odds beside them.
-            Each Pokémon threatens with its most-used set plus the moves the format plays
-            that it can learn
+            The two attacking columns read from the four moves chosen under the picker,
+            taking whichever of them does most to each Pokémon.
+            Each Pokémon over there threatens with its most-used set plus the moves the
+            format plays that it can learn
             {guessed.length > 0 && (
               <> — {guessed.map((o) => o.pokemon.name).join(', ')} {guessed.length === 1 ? 'has' : 'have'} no
                 set on record, so that second list is all there is for {guessed.length === 1 ? 'it' : 'them'}</>
