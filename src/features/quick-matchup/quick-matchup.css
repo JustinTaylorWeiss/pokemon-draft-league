@@ -1303,9 +1303,13 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
  */
 /* Just wider than the sprite, so a chip under it has a little room to say
    something before trailing off and the six of them still sit close. */
+/* Wide enough for three pills under the sprite rather than for the sprite
+   alone: "Choice Specs" is the longest thing that regularly goes there and
+   it wants five rems at this size. Anything longer still truncates, with
+   the whole of it on hover. */
 .ev-mine, .ev-foe-slot {
   display: inline-flex; flex-direction: column; align-items: center;
-  justify-content: flex-start; gap: 0.1rem; width: 4.5rem;
+  justify-content: flex-start; gap: 0.1rem; width: 5rem;
 }
 .ev-gear {
   position: relative; display: inline-flex; flex-direction: column;
@@ -1316,13 +1320,19 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
    inside a single outline read as one thing said at length rather than
    three things said. */
 .ev-gear-chip {
-  display: block; max-width: 100%; padding: 0.05rem 0.4rem; line-height: 1.3;
+  display: block; max-width: 100%; padding: 0.05rem 0.3rem; line-height: 1.3;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   background: none; border: 1px solid var(--team-accent, var(--accent));
   border-radius: 999px; color: var(--team-accent, var(--accent));
   font: inherit; font-size: 0.6rem; font-weight: 600; cursor: pointer;
 }
 .ev-gear-chip:hover { border-color: var(--fg); }
+/* The count of what did not fit. Dashed and grey, because it is not a
+   thing this Pokemon has — it is the panel saying there is more inside. */
+.ev-gear-chip.is-more {
+  border-style: dashed; border-color: var(--line); color: var(--muted);
+}
+.ev-gear-chip.is-more:hover { border-color: var(--muted); color: var(--fg); }
 /* Round, and it stays round: its own button rather than a line inside the
    one above, which stretched it to whatever was written there. */
 .ev-gear-open {

@@ -463,6 +463,23 @@ function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
   const chosen = [...raised, ...dropped, gear?.ability, gear?.item].filter(Boolean) as string[]
 
   /*
+   * Three pills is what fits under a sprite, and the third is a count once
+   * there are more than three.
+   *
+   * Which two survive is not the order they are written in. An item and an
+   * ability are things this Pokémon brought and the rest is how it was
+   * built, and "Choice Band" changes a row by half where "Def 252" moves it
+   * a few points — so those two are kept first and whatever is left fills
+   * the remaining slot. They still print in the usual order once chosen:
+   * which pills are shown is a different question from where they go.
+   */
+  const CHIPS = 3
+  const priority = [gear?.ability, gear?.item, ...raised, ...dropped].filter(Boolean) as string[]
+  const keeping = new Set(chosen.length > CHIPS ? priority.slice(0, CHIPS - 1) : chosen)
+  const shown = chosen.filter((c) => keeping.has(c))
+  const hidden = chosen.filter((c) => !keeping.has(c))
+
+  /*
    * A Mega has neither to give. The stone is in its item slot, and its
    * ability comes with the forme rather than being one of three — Showdown
    * files exactly one against every Mega and Primal. So there is nothing to
@@ -524,7 +541,7 @@ function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
       {/* What has been said, and the way to say more — two buttons rather
           than one, so the plus can keep its own shape instead of stretching
           to whatever is written above it. Either opens the same panel. */}
-      {chosen.map((what) => (
+      {shown.map((what) => (
         <button
           key={what}
           type="button"
@@ -536,6 +553,17 @@ function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
           {what}
         </button>
       ))}
+      {hidden.length > 0 && (
+        <button
+          type="button"
+          className="ev-gear-chip is-more"
+          aria-expanded={open}
+          title={hidden.join(' · ')}
+          onClick={() => setOpen((v) => !v)}
+        >
+          {hidden.length} more
+        </button>
+      )}
       <button
         type="button"
         className={`ev-gear-open${chosen.length ? ' has-gear' : ''}`}
@@ -573,23 +601,6 @@ function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
                 />
               </div>
             )}
-            {abilities.length > 0 && (
-              <label>
-                <span>Ability</span>
-                {/* No blank option: it already has an ability, and "its
-                    set's" was a way of naming it without saying which. */}
-                <select
-                  value={gear?.ability || usual}
-                  onChange={(e) => onChange({ ...gear, ability: e.target.value })}
-                >
-                  {abilities.map((a) => (
-                  <option key={a} value={a}>
-                    {a}{MODELLED_ABILITIES.has(a) ? '' : ' — no effect here'}
-                  </option>
-                ))}
-                </select>
-              </label>
-            )}
             {/* Dropped IVs. Two of the six are dropped on purpose and often:
                 zero Attack takes a third off Foul Play and confusion, zero
                 Speed is how anything gets under a Trick Room. The other four
@@ -618,6 +629,23 @@ function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
                 ))}
               </div>
             </div>
+            {abilities.length > 0 && (
+              <label>
+                <span>Ability</span>
+                {/* No blank option: it already has an ability, and "its
+                    set's" was a way of naming it without saying which. */}
+                <select
+                  value={gear?.ability || usual}
+                  onChange={(e) => onChange({ ...gear, ability: e.target.value })}
+                >
+                  {abilities.map((a) => (
+                  <option key={a} value={a}>
+                    {a}{MODELLED_ABILITIES.has(a) ? '' : ' — no effect here'}
+                  </option>
+                ))}
+                </select>
+              </label>
+            )}
             {!mega && (
             <label>
               <span>Item</span>
