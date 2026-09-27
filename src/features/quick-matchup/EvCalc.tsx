@@ -300,12 +300,18 @@ export interface Gear { item?: string; ability?: string }
  * fifth of the Special Defense column, and Multiscale is half of every
  * defensive row at once.
  */
-function GearPicker({ pokemon, usual, gear, onChange }: {
+function GearPicker({ pokemon, usual, gear, onChange, assume, onAssume }: {
   pokemon: Pokemon
   /** The ability it is reckoned to have when nobody has said otherwise. */
   usual: string
   gear: Gear | undefined
   onChange: (next: Gear) => void
+  /**
+   * What this one is credited with, for an opponent. Absent for the Pokémon
+   * the spread is being built for, whose numbers are the sliders below.
+   */
+  assume?: Assumptions
+  onAssume?: (next: Assumptions) => void
 }) {
   const [open, setOpen] = useState(false)
   const chosen = [gear?.ability, gear?.item].filter(Boolean)
@@ -363,8 +369,9 @@ function GearPicker({ pokemon, usual, gear, onChange }: {
     }
   }, [pokemon])
 
-  // Nothing either list can offer, so nothing to open.
-  if (mega || (!abilities.length && !plain.length && !boosters.length)) return null
+  // Nothing to choose at all: no lists, and no spread to credit it with.
+  const nothing = mega || (!abilities.length && !plain.length && !boosters.length)
+  if (nothing && !assume) return null
 
   return (
     <span className="ev-gear">
@@ -386,6 +393,26 @@ function GearPicker({ pokemon, usual, gear, onChange }: {
               expects of something that opened over the page. */}
           <button type="button" className="ev-gear-away" aria-label="Close" onClick={() => setOpen(false)} />
           <div className="ev-gear-pop">
+            {/* What it is built like, per Pokémon rather than one setting for
+                the whole side: they are not all built the same way, and a
+                spread chosen against "everything at 252" is chosen against a
+                team nobody brought. */}
+            {assume && onAssume && (
+              <div className="ev-gear-assumes">
+                <AssumePicker
+                  label="HP" value={assume.hp} states={['set', 'max']}
+                  onPick={(hp) => onAssume({ ...assume, hp: hp as 'set' | 'max' })}
+                />
+                <AssumePicker
+                  label="Def / SpD" value={assume.bulk} states={['set', 'max', 'max+']}
+                  onPick={(bulk) => onAssume({ ...assume, bulk })}
+                />
+                <AssumePicker
+                  label="Atk / SpA" value={assume.power} states={['set', 'max', 'max+']}
+                  onPick={(power) => onAssume({ ...assume, power })}
+                />
+              </div>
+            )}
             {abilities.length > 0 && (
               <label>
                 <span>Ability</span>
@@ -403,6 +430,7 @@ function GearPicker({ pokemon, usual, gear, onChange }: {
                 </select>
               </label>
             )}
+            {!mega && (
             <label>
               <span>Item</span>
               <select
@@ -422,6 +450,7 @@ function GearPicker({ pokemon, usual, gear, onChange }: {
                 )}
               </select>
             </label>
+            )}
             {chosen.length > 0 && (
               <button
                 type="button" className="link-btn"
@@ -466,8 +495,9 @@ export function EvCalcBody({
    * ones that matter.
    */
   const [off, setOff] = useState<Set<string>>(() => new Set())
-  /** What the other side is credited with, where their set is not the answer. */
-  const [assume, setAssume] = useState<Assumptions>(ASSUME_SET)
+  /** What each of the other side is credited with, one answer per Pokémon. */
+  const [assume, setAssume] = useState<Record<string, Assumptions>>({})
+  const credit = (id: string) => assume[id] ?? ASSUME_SET
   /** Moves named by hand, credited to every opponent that can learn one. */
   const [extra, setExtra] = useState<string[]>([])
   const [query, setQuery] = useState('')
@@ -524,7 +554,7 @@ export function EvCalcBody({
     // the same door — a move named by hand belongs to whoever can learn it,
     // and that includes this one.
     return opponentsFrom(
-      [picked.entry], known.length ? sets : null, moves, learnsets, played, level, ASSUME_SET, extra,
+      [picked.entry], known.length ? sets : null, moves, learnsets, played, level, {}, extra,
     )[0].moves
   }, [picked, sets, moves, learnsets, played, level, extra])
 
@@ -719,6 +749,8 @@ export function EvCalcBody({
                   pokemon={m.pokemon}
                   usual={usualAbility(m.id, m.pokemon)}
                   gear={gear[m.id]} onChange={(g) => give(m.id, g)}
+                  assume={credit(m.id)}
+                  onAssume={(next) => setAssume((prev) => ({ ...prev, [m.id]: next }))}
                 />
               </span>
             ))}
@@ -739,26 +771,9 @@ export function EvCalcBody({
 
       {picked && (
         <>
-          {/* What to credit them with. Their set is one spread off a ladder;
-              "does this hold against a max-invested one" is the question a
-              spread is actually chosen to answer. */}
           <div className="ev-assumes">
-            <span className="ev-against">they run</span>
-            <AssumePicker
-              label="HP" value={assume.hp} states={['set', 'max']}
-              onPick={(hp) => setAssume((a) => ({ ...a, hp: hp as 'set' | 'max' }))}
-            />
-            <AssumePicker
-              label="Def / SpD" value={assume.bulk} states={['set', 'max', 'max+']}
-              onPick={(bulk) => setAssume((a) => ({ ...a, bulk }))}
-            />
-            <AssumePicker
-              label="Atk / SpA" value={assume.power} states={['set', 'max', 'max+']}
-              onPick={(power) => setAssume((a) => ({ ...a, power }))}
-            />
-
-            {/* And anything they might be carrying that their set does not
-                say. Added to everyone over there who can learn it. */}
+            {/* Anything they might be carrying that their set does not say.
+                Added to everyone over there who can learn it. */}
             <span className="ev-add">
               <input
                 type="search" value={query} placeholder="Add a move…"
@@ -847,7 +862,7 @@ export function EvCalcBody({
                 set on record, so that second list is all there is for {guessed.length === 1 ? 'it' : 'them'}</>
             )}
             . Weather, terrain, screens, boosts and Intimidate are not counted.
-            {(assume.bulk === 'max+' || assume.power === 'max+') && (
+            {Object.values(assume).some((a) => a.bulk === 'max+' || a.power === 'max+') && (
               <> A boosting nature is credited to whichever of the pair each
                 calculation reads, which no single Pokémon could have both of.</>
             )}

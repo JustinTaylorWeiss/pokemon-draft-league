@@ -274,7 +274,8 @@ export function opponentsFrom(
   learnsets: LearnsetDex | null,
   played: string[] | null,
   level: number,
-  assume: Assumptions = ASSUME_SET,
+  /** Per Pokémon, because they are not all built the same way. */
+  assume: Record<string, Assumptions> = {},
   /**
    * Moves to credit every opponent that can learn one with, on top of
    * whatever its set or its movepool already said.
@@ -311,10 +312,11 @@ export function opponentsFrom(
     if (worn?.ability !== undefined) side.ability = worn.ability || undefined
 
     // Credited with more than the set says, where that is what was asked.
-    if (assume.hp === 'max') side.evs = { ...side.evs, hp: EV_MAX }
+    const credit = assume[id] ?? ASSUME_SET
+    if (credit.hp === 'max') side.evs = { ...side.evs, hp: EV_MAX }
     for (const [choice, stats] of [
-      [assume.bulk, ['def', 'spd']],
-      [assume.power, ['atk', 'spa']],
+      [credit.bulk, ['def', 'spd']],
+      [credit.power, ['atk', 'spa']],
     ] as [Assume, StatKey[]][]) {
       if (choice === 'set') continue
       side.evs = { ...side.evs, ...Object.fromEntries(stats.map((k) => [k, EV_MAX])) }

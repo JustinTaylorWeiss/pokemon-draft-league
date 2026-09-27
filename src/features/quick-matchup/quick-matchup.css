@@ -949,7 +949,7 @@ button.type-chip { cursor: pointer; }
 .ev-foe.is-off img { opacity: 0.3; filter: grayscale(1); }
 
 /* What the other side is credited with, and anything else it might bring. */
-.ev-assumes { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 0.5rem 0.9rem; }
+.ev-assumes { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.9rem; }
 /* The label over its segments rather than beside them: three of these in a
    row read as one long sentence otherwise, and which words belong to which
    control is the first thing you need. */
@@ -1171,11 +1171,18 @@ button.type-chip { cursor: pointer; }
 .ev-gear-away { position: fixed; inset: 0; z-index: 20; background: none; border: 0; cursor: default; }
 .ev-gear-pop {
   position: absolute; top: calc(100% + 0.3rem); left: 50%; transform: translateX(-50%);
-  z-index: 21; display: flex; flex-direction: column; gap: 0.4rem;
-  padding: 0.5rem; min-width: 11rem;
+  z-index: 21; display: flex; flex-direction: column; gap: 0.45rem;
+  padding: 0.55rem; min-width: 13rem;
   background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
   box-shadow: 0 10px 28px rgb(0 0 0 / 45%);
 }
+/* The spread it is credited with, above what it is holding: the first is
+   about how it was built and the second about what it brought. */
+.ev-gear-assumes {
+  display: flex; flex-direction: column; gap: 0.35rem;
+  padding-bottom: 0.45rem; border-bottom: 1px solid var(--line);
+}
+.ev-gear-assumes .ev-assume { flex-direction: row; align-items: center; justify-content: space-between; }
 .ev-gear-pop label { display: flex; flex-direction: column; gap: 0.15rem; }
 .ev-gear-pop span {
   font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em;
