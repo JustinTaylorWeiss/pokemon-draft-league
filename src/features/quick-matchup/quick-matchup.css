@@ -91,8 +91,15 @@
    a scroll down. `is-stacked` is the header's switch, for the tabs where half
    a card is too tight. A phone stacks them either way. */
 .panel-pair { display: flex; gap: 1.1rem; align-items: start; }
-.panel-pair.is-stacked { flex-direction: column; gap: 1.4rem; }
+.panel-pair.is-stacked { flex-direction: column; gap: 1.4rem; align-items: center; }
 .panel-side { flex: 1 1 0; min-width: 0; }
+/*
+ * Full width when stacked, so each panel centres its own content in the card
+ * rather than the flex box shrinking the panel to its content and leaving it
+ * against the left edge. `flex` is reset because down a column the basis is
+ * a height, and a 0 basis there is asking two panels to share the card's.
+ */
+.panel-pair.is-stacked > .panel-side { flex: 0 0 auto; width: 100%; }
 .panel-side > h3 {
   margin: 0 0 0.5rem; text-align: center; font-size: 0.92rem; line-height: 1.25;
   padding-bottom: 0.35rem; border-bottom: 2px solid var(--team, var(--accent));
