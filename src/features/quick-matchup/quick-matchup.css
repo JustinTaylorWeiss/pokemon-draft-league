@@ -1247,13 +1247,23 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 .ev-shot { padding-left: 0.2rem; }
 .ev-line { display: flex; align-items: baseline; gap: 0.4rem; min-width: 0; }
 .ev-shot .ev-target { flex: 0 1 auto; }
-.ev-move { flex: none; margin-left: auto; white-space: nowrap; }
+/* Each line is a label and a number: the label takes what it needs and
+   truncates, the number is pushed to the right edge so the two columns of
+   figures read down the list. */
+.ev-move { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ev-row .ev-range {
-  flex: 0 1 auto; font-variant-numeric: tabular-nums; letter-spacing: 0.01em;
+  flex: none; margin-left: auto;
+  font-variant-numeric: tabular-nums; letter-spacing: 0.01em;
   color: var(--fg); white-space: nowrap;
 }
 .ev-row.is-lit .ev-range { color: #2ea078; }
 .ev-shot .ev-odds { flex: none; margin-left: auto; }
+.ev-shot.is-lit .ev-odds {
+  background: rgb(46 160 120 / 18%); color: #2ea078; font-weight: 600;
+}
+.ev-shot.is-tied .ev-odds {
+  background: rgb(224 130 74 / 18%); color: #e0824a; font-weight: 600;
+}
 /* How often it actually happens, as things stand. Set apart from the hit
    counts beside it, which are the guaranteed ones and do not move. */
 .ev-odds {

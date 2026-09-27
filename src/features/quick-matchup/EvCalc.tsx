@@ -163,9 +163,10 @@ const pct = (n: number) => `${Math.round(n * 10) / 10}`
  * next breakpoint filled it with dashes, because for most pairings no amount
  * of Attack moves the hit count at all.
  *
- * Two lines: who and what on the first, how much and how often on the
- * second. The four facts pair off that way and a row half as tall is twice
- * as many Pokemon on screen without scrolling.
+ * Two lines: the Pokemon and what happens to it on the first, the move and
+ * what it does on the second. The outcome is the answer and belongs beside
+ * the name being asked about; the move and its roll range are the working
+ * that produced it.
  */
 function ShotRow({
   row, shot, lit, tied, target,
@@ -176,7 +177,9 @@ function ShotRow({
       <span className="ev-what">
         <span className="ev-line">
           <span className="ev-target">{row.targetName}</span>
-          <span className="ev-detail ev-move">{row.moveName}</span>
+          <em className="ev-odds">
+            <ShotOutcome shot={shot} chance={row.chance ?? 0} />
+          </em>
         </span>
         {/* What is making this number what it is, where anything is. */}
         {row.via?.length ? (
@@ -184,13 +187,11 @@ function ShotRow({
             {row.via.join(' · ')}
           </span>
         ) : null}
-        <span className="ev-line ev-swing">
+        <span className="ev-line">
+          <span className="ev-detail ev-move">{row.moveName}</span>
           <span className="ev-range" title="Worst roll to best, as a share of its HP">
             {pct(shot.low)}–{pct(shot.high)}%
           </span>
-          <em className="ev-odds">
-            <ShotOutcome shot={shot} chance={row.chance ?? 0} />
-          </em>
         </span>
       </span>
     </li>
