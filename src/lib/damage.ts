@@ -63,22 +63,24 @@ const ITEM_TYPE: Record<string, TypeName> = {
 export const typeBoosted = (item: string): TypeName | undefined => ITEM_TYPE[item]
 
 /**
- * What an item does, in the shortest form that is still the whole of it.
+ * How much an item is worth, beside its name in a list.
  *
- * Beside the name in a list, because "Muscle Band" and "Choice Band" are a
- * tenth and a half apart and nothing about the two names says which.
+ * The number and nothing else: "Muscle Band" and "Choice Band" are a tenth
+ * and a half apart and nothing about the two names says which, but what each
+ * one applies to is the name's job. A type booster keeps its type, which is
+ * which item it is rather than an explanation of it.
  */
 const ITEM_EFFECT: Record<string, string> = {
   'Life Orb': '×1.3',
-  'Choice Band': '×1.5 phys',
-  'Choice Specs': '×1.5 spec',
-  'Muscle Band': '×1.1 phys',
-  'Wise Glasses': '×1.1 spec',
-  'Expert Belt': '×1.2 if super effective',
-  'Assault Vest': '×1.5 SpD',
-  Eviolite: '×1.5 Def and SpD',
-  'Light Ball': '×2 Atk and SpA',
-  'Choice Scarf': '×1.5 Spe',
+  'Choice Band': '×1.5',
+  'Choice Specs': '×1.5',
+  'Muscle Band': '×1.1',
+  'Wise Glasses': '×1.1',
+  'Expert Belt': '×1.2',
+  'Assault Vest': '×1.5',
+  Eviolite: '×1.5',
+  'Light Ball': '×2',
+  'Choice Scarf': '×1.5',
 }
 
 export function itemEffect(item: string): string {

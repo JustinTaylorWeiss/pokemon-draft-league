@@ -14,7 +14,7 @@ import { TypeChip } from '../../components/TypeChip'
 import { PokemonLink } from '../../components/PokemonLink'
 import { toId } from '../../data/load'
 import { DropPicker, type DropItem } from '../../components/DropPicker'
-import type { LeagueDex } from '../../data/league'
+import { isMega, type LeagueDex } from '../../data/league'
 import type { Team, TeamEntry } from './TeamEditor'
 
 /**
@@ -309,6 +309,14 @@ function GearPicker({ pokemon, gear, onChange }: {
   const chosen = [gear?.ability, gear?.item].filter(Boolean)
 
   /*
+   * A Mega has neither to give. The stone is in its item slot, and its
+   * ability comes with the forme rather than being one of three — Showdown
+   * files exactly one against every Mega and Primal. So there is nothing to
+   * choose and no plus.
+   */
+  const mega = isMega(pokemon)
+
+  /*
    * All three, or none.
    *
    * Only offering the ones this calculation reads was half right: it kept
@@ -354,7 +362,7 @@ function GearPicker({ pokemon, gear, onChange }: {
   }, [pokemon])
 
   // Nothing either list can offer, so nothing to open.
-  if (!abilities.length && !plain.length && !boosters.length) return null
+  if (mega || (!abilities.length && !plain.length && !boosters.length)) return null
 
   return (
     <span className="ev-gear">
