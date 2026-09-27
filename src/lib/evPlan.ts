@@ -680,14 +680,18 @@ export function planFor(input: PlanInput): Plan {
      * everything buyable without a second rule.
      */
     /*
-     * Readings sort by how near the knockout is — theirs going down the
-     * attacking columns, mine going down the defensive ones.
+     * Readings sort in passes: the best move against each Pokémon, then the
+     * second best against each, and so on down.
      *
-     * By Pokémon first, because the attacking columns carry a row per move
-     * and four rows about one Pokémon scattered down the list are four
-     * rows you have to gather by eye. The group goes where its best row
-     * would have gone, so the order of the Pokémon is unchanged from when
-     * each had only one.
+     * Not by Pokémon. The attacking columns carry a row per move, and four
+     * rows about one Pokémon stacked together make the column a set of
+     * blocks to be compared across — where the question being asked is
+     * "what is my best answer to each of them", which is the first pass
+     * read straight down. The rows you would click are the top six.
+     *
+     * Within a pass, by how near the knockout is: theirs going down the
+     * attacking columns, mine going down the defensive ones, where every
+     * Pokémon has one row and there is only ever one pass.
      *
      * Speed is still a list of purchases and sorts by what each costs.
      */
@@ -696,16 +700,21 @@ export function planFor(input: PlanInput): Plan {
         (a.shot?.soonest ?? Infinity) - (b.shot?.soonest ?? Infinity)
         || (a.shot?.hits ?? Infinity) - (b.shot?.hits ?? Infinity)
         || (b.shot?.high ?? 0) - (a.shot?.high ?? 0)
-      const best = new Map<string, Threshold>()
+        || (a.moveName ?? '').localeCompare(b.moveName ?? '')
+      const pass = new Map<Threshold, number>()
+      const byTarget = new Map<string, Threshold[]>()
       for (const r of out[stat]) {
-        const held = best.get(r.target)
-        if (!held || nearest(r, held) < 0) best.set(r.target, r)
+        const held = byTarget.get(r.target)
+        if (held) held.push(r)
+        else byTarget.set(r.target, [r])
       }
-      const lead = (r: Threshold) => best.get(r.target) ?? r
-      out[stat].sort((a, b) => nearest(lead(a), lead(b))
-        || a.targetName.localeCompare(b.targetName)
+      for (const rows of byTarget.values()) {
+        rows.sort(nearest)
+        rows.forEach((r, i) => pass.set(r, i))
+      }
+      out[stat].sort((a, b) => (pass.get(a) ?? 0) - (pass.get(b) ?? 0)
         || nearest(a, b)
-        || (a.moveName ?? '').localeCompare(b.moveName ?? ''))
+        || a.targetName.localeCompare(b.targetName))
       continue
     }
     out[stat].sort((a, b) => a.evs - b.evs
