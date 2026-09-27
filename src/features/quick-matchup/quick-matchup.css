@@ -1460,6 +1460,23 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 }
 /* Still red on the way out, which the rule above would otherwise outweigh. */
 .ev-gear-moves button.ev-set-slot:hover { border-color: #e05563; }
+/*
+ * The search, told apart from the rows above it.
+ *
+ * Chip-coloured with a hairline border it was the same shape and nearly
+ * the same tone as the move rows it sits under, so it read as one more of
+ * them rather than as the way to add another. A darker ground, the team's
+ * colour on the border, and a rule above to end the list.
+ */
+.ev-gear-moves input {
+  margin-top: 0.25rem; padding-top: 0.05rem;
+  background: var(--bg);
+  border-color: color-mix(in oklab, var(--team-accent, var(--accent)), transparent 55%);
+}
+.ev-gear-moves input::placeholder { color: var(--muted); opacity: 1; }
+.ev-gear-moves input:hover {
+  border-color: color-mix(in oklab, var(--team-accent, var(--accent)), transparent 25%);
+}
 .ev-gear-moves .ev-set-none { padding-left: 0; }
 /* Six of them across two rows, behind a click. Five of the six are almost
    always 31, so open they are mostly six boxes standing between the

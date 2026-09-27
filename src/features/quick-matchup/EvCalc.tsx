@@ -1009,7 +1009,7 @@ function GearPicker({
                   </p>
                 )}
                 <input
-                  type="search" value={find} placeholder="Add a move…"
+                  type="search" value={find} placeholder="＋ Add a move…"
                   aria-label={`Add a move ${pokemon.name} might carry`}
                   onChange={(e) => setFind(e.target.value)}
                 />
