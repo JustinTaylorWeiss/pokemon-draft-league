@@ -335,7 +335,9 @@
   border-radius: 999px; padding: 0.18rem 0.4rem; font: inherit; font-size: 0.78rem;
   cursor: pointer;
 }
-.level-picker select:hover { border-color: var(--team-both); }
+/* The bar's red, like everything else hanging off it. */
+.level-picker select:hover { border-color: var(--team-accent, var(--accent)); }
+.level-picker select:focus-visible { outline: 2px solid var(--team-accent, var(--accent)); outline-offset: 1px; }
 
 .filter-btn {
   display: inline-flex; align-items: center; gap: 0.35rem;
@@ -343,7 +345,9 @@
   color: var(--muted); font: inherit; font-size: 0.78rem;
   padding: 0.22rem 0.7rem; cursor: pointer;
 }
-.filter-btn:hover, .filter-btn.is-open { color: var(--team-both); border-color: var(--team-both); }
+.filter-btn:hover, .filter-btn.is-open {
+  color: var(--team-accent, var(--accent)); border-color: var(--team-accent, var(--accent));
+}
 
 .filter-pop {
   position: absolute; z-index: 30; top: calc(100% + 0.4rem); right: 0;

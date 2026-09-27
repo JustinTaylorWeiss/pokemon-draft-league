@@ -93,13 +93,8 @@ export function useSpeedTiersPanel(teamOne: Team, teamTwo: Team, dex: LeagueDex)
   return {
     actions: (
       <>
-        <SpeedFilter
-          rows={rows}
-          oneName={teamOne.name || 'Team 1'}
-          twoName={teamTwo.name || 'Team 2'}
-          filterOne={filterOne} filterTwo={filterTwo}
-          onChange={setFilter} onReset={reset}
-        />
+        {/* Level first: every column on the tab is read at it, and the filter
+            decides which rows appear within that. */}
         <label className="level-picker">
           <span>Lv</span>
           <select value={level} onChange={(e) => setLevel(Number(e.target.value))}>
@@ -107,6 +102,13 @@ export function useSpeedTiersPanel(teamOne: Team, teamTwo: Team, dex: LeagueDex)
             <option value={100}>100</option>
           </select>
         </label>
+        <SpeedFilter
+          rows={rows}
+          oneName={teamOne.name || 'Team 1'}
+          twoName={teamTwo.name || 'Team 2'}
+          filterOne={filterOne} filterTwo={filterTwo}
+          onChange={setFilter} onReset={reset}
+        />
       </>
     ),
     body: (
