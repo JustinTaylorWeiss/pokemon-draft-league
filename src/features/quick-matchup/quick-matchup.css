@@ -979,6 +979,13 @@ button.type-chip { cursor: pointer; }
 /* Counted by default. Switched off it goes grey and flat, which says "not in
    the numbers" without taking it off the row and leaving a gap. */
 .ev-open.is-off img { opacity: 0.3; filter: grayscale(1); }
+/* The one being read on its own. A box round it rather than the other
+   five dimmed: they are set aside for a moment, not decided about, and
+   five greyed sprites is a row that looks broken. */
+.ev-open.is-only {
+  border-color: var(--team-accent, var(--accent));
+  background: color-mix(in oklab, var(--team-accent, var(--accent)), transparent 88%);
+}
 /* In or out of the columns, at the top of the panel. Reads as pressed while
    it is out, which is the state worth being able to see at a glance. */
 .ev-hide {
