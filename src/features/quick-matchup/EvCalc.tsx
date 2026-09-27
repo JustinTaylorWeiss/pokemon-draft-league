@@ -956,7 +956,7 @@ function GearPicker({
                   than under them: two lines of small print about the same
                   spread, so one line. */}
               {assume && (
-                <p className="ev-assume-total">{spent(assume)} / {EV_BUDGET}</p>
+                <p className="ev-assume-total">{spent(assume)} / {EV_BUDGET} EVs</p>
               )}
               </div>
               {ivsOpen && (
