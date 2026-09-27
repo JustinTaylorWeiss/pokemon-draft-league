@@ -154,18 +154,52 @@ function ShotOutcome({ shot, chance }: { shot: Shot; chance: number }) {
 /** A percentage of someone's HP, to one place, without a trailing zero. */
 const pct = (n: number) => `${Math.round(n * 10) / 10}`
 
+/**
+ * An attacking row: who, with what, for how much, and how often.
+ *
+ * No price column. The other four stats are lists of purchases and the two
+ * numbers on their left are what each costs; these are readings of what the
+ * chosen set already does, and there is no price to put there — pricing the
+ * next breakpoint filled it with dashes, because for most pairings no amount
+ * of Attack moves the hit count at all.
+ *
+ * Two lines: who and what on the first, how much and how often on the
+ * second. The four facts pair off that way and a row half as tall is twice
+ * as many Pokemon on screen without scrolling.
+ */
+function ShotRow({
+  row, shot, lit, tied, target,
+}: { row: Threshold; shot: Shot; lit: boolean; tied: boolean; target?: Pokemon }) {
+  return (
+    <li className={`ev-row ev-shot${lit ? ' is-lit' : ''}${tied ? ' is-tied' : ''}`}>
+      {target && <Sprite pokemon={target} className="ev-face" width={26} height={22} />}
+      <span className="ev-what">
+        <span className="ev-line">
+          <span className="ev-target">{row.targetName}</span>
+          <span className="ev-detail ev-move">{row.moveName}</span>
+        </span>
+        {/* What is making this number what it is, where anything is. */}
+        {row.via?.length ? (
+          <span className="ev-via" title={`Because of ${row.via.join(' and ')}`}>
+            {row.via.join(' · ')}
+          </span>
+        ) : null}
+        <span className="ev-line ev-swing">
+          <span className="ev-range" title="Worst roll to best, as a share of its HP">
+            {pct(shot.low)}–{pct(shot.high)}%
+          </span>
+          <em className="ev-odds">
+            <ShotOutcome shot={shot} chance={row.chance ?? 0} />
+          </em>
+        </span>
+      </span>
+    </li>
+  )
+}
+
 function ThresholdRow({
   row, lit, tied, target,
 }: { row: Threshold; lit: boolean; tied: boolean; target?: Pokemon }) {
-  /*
-   * A dash where there is no price, and a dashed border only where the row
-   * itself is out of reach.
-   *
-   * A reading with no next step is not out of reach — it is a Pokemon this
-   * move already does everything to it is going to do, which is worth
-   * reading rather than something to grey out.
-   */
-  const dash = row.unreachable || row.statAt == null
   const out = Boolean(row.unreachable)
   return (
     <li className={`ev-row${lit ? ' is-lit' : ''}${tied ? ' is-tied' : ''}${out ? ' is-out' : ''}`}>
@@ -173,14 +207,9 @@ function ThresholdRow({
           stat has to read for it. One of those is what you spend and the
           other is what you are aiming at, and neither implies the other
           without the arithmetic this tool exists to save. */}
-      <span
-        className="ev-cost"
-        title={dash
-          ? (row.shot ? 'Nothing more to buy here' : 'Out of reach')
-          : `${row.evs} EVs — the stat reads ${row.statAt}`}
-      >
-        <span className="ev-cost-evs">{dash ? '—' : row.evs}</span>
-        <span className="ev-cost-stat">{dash ? '—' : row.statAt}</span>
+      <span className="ev-cost" title={out ? 'Out of reach' : `${row.evs} EVs — the stat reads ${row.statAt}`}>
+        <span className="ev-cost-evs">{out ? '—' : row.evs}</span>
+        <span className="ev-cost-stat">{out ? '—' : row.statAt}</span>
       </span>
       {/* Which Pokémon this is about, read before the words. A column of
           twelve rows is a column of names otherwise. */}
@@ -198,20 +227,6 @@ function ThresholdRow({
           <span className="ev-detail">
             {row.tier} · {row.outspeed}{tied ? ' · tied' : ''}
           </span>
-        ) : row.shot ? (
-          /* What the move does, then how often that is enough — both moving
-             with the slider. The range leads because it is the number every
-             damage calculator prints and the one a coach reads first; the
-             knockout under it is what the range adds up to. */
-          <>
-            <span className="ev-detail">{row.moveName}</span>
-            <span className="ev-detail ev-range" title="Worst roll to best, as a share of its HP">
-              {pct(row.shot.low)}–{pct(row.shot.high)}%
-            </span>
-            <span className="ev-detail ev-swing">
-              <ShotOutcome shot={row.shot} chance={row.chance ?? 0} />
-            </span>
-          </>
         ) : (
           <>
             <span className="ev-detail">{row.moveName}</span>
@@ -345,15 +360,21 @@ function StatRows({ stat, evs, rows, faces, note }: {
       {rows.length ? (
         <>
           <ul className="ev-rows">
-            {reachable.map((r, i) => (
-              <ThresholdRow
-                key={`${r.target}-${r.move ?? r.tier}-${i}`}
-                row={r}
-                lit={lit(r)}
-                tied={tied(r)}
-                target={faces[r.target]}
-              />
-            ))}
+            {reachable.map((r, i) => {
+              const key = `${r.target}-${r.move ?? r.tier}-${i}`
+              return r.shot
+                ? (
+                  <ShotRow
+                    key={key} row={r} shot={r.shot}
+                    lit={lit(r)} tied={tied(r)} target={faces[r.target]}
+                  />
+                )
+                : (
+                  <ThresholdRow
+                    key={key} row={r} lit={lit(r)} tied={tied(r)} target={faces[r.target]}
+                  />
+                )
+            })}
           </ul>
           {/* Held apart, because these are not more of the list above. That
               list is what the stat can buy; this is what it cannot. */}

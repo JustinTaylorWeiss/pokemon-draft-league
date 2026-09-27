@@ -1240,11 +1240,18 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 /* The rolls end to end, above the knockout they add up to. Reads as the
    number it is rather than as a chip, because it is the line being led
    with rather than a note beside something else. */
+/* An attacking row pairs its four facts onto two lines: who and what, then
+   how much and how often. No price column — see ShotRow. */
+.ev-shot { padding-left: 0.2rem; }
+.ev-line { display: flex; align-items: baseline; gap: 0.4rem; min-width: 0; }
+.ev-shot .ev-target { flex: 0 1 auto; }
+.ev-move { flex: none; margin-left: auto; white-space: nowrap; }
 .ev-row .ev-range {
-  font-variant-numeric: tabular-nums; letter-spacing: 0.01em;
-  color: var(--fg);
+  flex: 0 1 auto; font-variant-numeric: tabular-nums; letter-spacing: 0.01em;
+  color: var(--fg); white-space: nowrap;
 }
 .ev-row.is-lit .ev-range { color: #2ea078; }
+.ev-shot .ev-odds { flex: none; margin-left: auto; }
 /* How often it actually happens, as things stand. Set apart from the hit
    counts beside it, which are the guaranteed ones and do not move. */
 .ev-odds {
