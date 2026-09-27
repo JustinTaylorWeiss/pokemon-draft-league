@@ -298,8 +298,10 @@ export interface Gear { item?: string; ability?: string }
  * fifth of the Special Defense column, and Multiscale is half of every
  * defensive row at once.
  */
-function GearPicker({ pokemon, gear, onChange }: {
+function GearPicker({ pokemon, threats, gear, onChange }: {
   pokemon: Pokemon
+  /** What it is reckoned to be attacking with, which decides its plates. */
+  threats: Move[]
   gear: Gear | undefined
   onChange: (next: Gear) => void
 }) {
@@ -330,13 +332,27 @@ function GearPicker({ pokemon, gear, onChange }: {
    * says which type it lends to, since half of them are named after a
    * mineral rather than the type it belongs to.
    */
+  /*
+   * A plate is worth a fifth of one type, so the ones worth offering are
+   * the types this Pokemon actually throws — not the types it is.
+   *
+   * Its own types would be the obvious filter and the wrong one: a Garchomp
+   * running Fire Blast holds a Flame Plate for it, and Fire is not one of
+   * Garchomp's types. Its moves are what the plate reads, so its moves are
+   * what the list follows. Every one of the twenty-two was on offer to
+   * everything before this, masks included.
+   */
   const { plain, boosters } = useMemo(() => {
+    const thrown = new Set(threats.map((m) => m.type))
     const usable = GIVEABLE_ITEMS.filter((n) => itemMatters(n, pokemon))
     return {
       plain: usable.filter((n) => !typeBoosted(n)),
-      boosters: usable.filter((n) => typeBoosted(n)),
+      boosters: usable.filter((n) => {
+        const type = typeBoosted(n)
+        return type != null && thrown.has(type)
+      }),
     }
-  }, [pokemon])
+  }, [pokemon, threats])
 
   // Nothing either list can offer, so nothing to open.
   if (!abilities.length && !plain.length && !boosters.length) return null
@@ -649,7 +665,7 @@ export function EvCalcBody({
               <Sprite pokemon={picked.entry.pokemon} width={40} height={33} />
             </PokemonLink>
             <GearPicker
-              pokemon={picked.entry.pokemon}
+              pokemon={picked.entry.pokemon} threats={myMoves}
               gear={gear[picked.entry.id]} onChange={(g) => give(picked.entry.id, g)}
             />
           </span>
@@ -676,6 +692,7 @@ export function EvCalcBody({
                 </button>
                 <GearPicker
                   pokemon={m.pokemon}
+                  threats={opponents.find((o) => o.id === m.id)?.moves ?? []}
                   gear={gear[m.id]} onChange={(g) => give(m.id, g)}
                 />
               </span>

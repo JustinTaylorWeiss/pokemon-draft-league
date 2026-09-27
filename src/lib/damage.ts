@@ -100,16 +100,28 @@ const ALWAYS_MATTERS = new Set([
  * a picker built off the dex could never offer it. Everything here is a
  * standard item; nothing the regulation bans reads as anything anyway,
  * because the maths has no rule for it.
- *
- * Two of them are conditional and `itemMatters` decides those per Pokemon.
  */
 export const GIVEABLE_ITEMS: readonly string[] = [
   ...ALWAYS_MATTERS, 'Eviolite', 'Light Ball',
 ].sort((a, b) => a.localeCompare(b))
+/*
+ * Two of them are conditional and `itemMatters` decides those per Pokemon,
+ * along with the four that belong to one species: Ogerpon's three masks were
+ * being offered to everything, and a Light Ball is Pikachu's alone.
+ */
+
+/** Items only one Pokémon can hold at all. */
+const SPECIES_ONLY: Record<string, string> = {
+  'Wellspring Mask': 'Ogerpon',
+  'Hearthflame Mask': 'Ogerpon',
+  'Cornerstone Mask': 'Ogerpon',
+  'Light Ball': 'Pikachu',
+}
 
 export function itemMatters(item: string, pokemon: Pokemon): boolean {
+  const only = SPECIES_ONLY[item]
+  if (only) return (pokemon.baseSpecies ?? pokemon.name) === only
   if (item === 'Eviolite') return Boolean(pokemon.evos?.length)
-  if (item === 'Light Ball') return (pokemon.baseSpecies ?? pokemon.name) === 'Pikachu'
   return ALWAYS_MATTERS.has(item)
 }
 
