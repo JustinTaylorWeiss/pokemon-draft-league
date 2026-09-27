@@ -946,10 +946,7 @@ button.type-chip { cursor: pointer; }
   width: 12px; height: 12px; border-radius: 50%;
   background: var(--team-accent, var(--accent)); border: 0;
 }
-.ev-slider output {
-  flex: 0 0 1.8rem; text-align: right; font-size: 0.72rem;
-  font-variant-numeric: tabular-nums; color: var(--muted);
-}
+
 
 .ev-rows { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; }
 /*
@@ -971,6 +968,11 @@ button.type-chip { cursor: pointer; }
   border-color: #2ea078; background: rgb(46 160 120 / 12%);
 }
 .ev-row.is-lit .ev-cost-evs { color: #2ea078; }
+/* A speed tie is its own outcome and neither of the other two: not a win,
+   because the turn order is a coin flip, and not nothing, because it is
+   usually four EVs short of a win. Orange, between the two. */
+.ev-row.is-tied { border-color: #e0824a; background: rgb(224 130 74 / 12%); }
+.ev-row.is-tied .ev-cost-evs, .ev-row.is-tied .ev-detail { color: #e0824a; }
 /* Out of reach: still readable, but the cost column has nothing to say. */
 .ev-row.is-out { border-style: dashed; }
 .ev-row.is-out .ev-target { color: var(--muted); }

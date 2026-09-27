@@ -42,6 +42,14 @@ export interface Threshold {
   unreachable?: boolean
   /** What the stat reads at that many EVs — the number, not the price. */
   statAt?: number
+  /**
+   * Speed rows: the least EVs that match their number exactly.
+   *
+   * A tie is its own outcome and neither of the other two. It is not a win —
+   * the turn order is a coin flip — and it is not nothing, because it is
+   * usually four EVs short of a win and worth knowing you are standing on it.
+   */
+  tieAt?: number
 }
 
 /**
@@ -332,7 +340,7 @@ export function planFor(input: PlanInput): Plan {
     // ---- getting there first, at each speed they might be built to ----
     const base = o.pokemon.baseStats.spe
     let firstMissed: { label: string; speed: number } | null = null
-    const priced: { label: string; speed: number; need: number }[] = []
+    const priced: { label: string; speed: number; need: number; tie?: number }[] = []
     for (const tier of SPEED_TIERS) {
       const theirs = statAtLevel(base, tier.evs, tier.nature, false, 31, level)
       let need: number | null = null
@@ -342,7 +350,11 @@ export function planFor(input: PlanInput): Plan {
       // Only the cheapest one out of reach is worth saying. The ones above it
       // are out of reach for the same reason and add nothing.
       if (need == null) { firstMissed ??= { label: tier.label, speed: theirs }; continue }
-      priced.push({ label: tier.label, speed: theirs, need })
+      let tie: number | undefined
+      for (let ev = 0; ev <= EV_MAX; ev += EV_STEP) {
+        if (statOf(meAt('spe', ev), 'spe') === theirs) { tie = ev; break }
+      }
+      priced.push({ label: tier.label, speed: theirs, need, tie })
     }
 
     /*
@@ -366,6 +378,7 @@ export function planFor(input: PlanInput): Plan {
         outspeed: top.speed,
         tier: all && i === 0 && last === priced.length - 1 ? 'any spread' : top.label,
         statAt: reads('spe', cost),
+        tieAt: top.tie,
       })
       i = last
     }

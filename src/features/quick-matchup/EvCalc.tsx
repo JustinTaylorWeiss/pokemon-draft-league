@@ -40,10 +40,12 @@ const natureIsLegal = (s: Spread) => {
 /** HP has no nature: no nature in the games touches it. */
 const takesNature = (stat: StatKey) => stat !== 'hp'
 
-function ThresholdRow({ row, lit, target }: { row: Threshold; lit: boolean; target?: Pokemon }) {
+function ThresholdRow({
+  row, lit, tied, target,
+}: { row: Threshold; lit: boolean; tied: boolean; target?: Pokemon }) {
   const out = row.unreachable
   return (
-    <li className={`ev-row${lit ? ' is-lit' : ''}${out ? ' is-out' : ''}`}>
+    <li className={`ev-row${lit ? ' is-lit' : ''}${tied ? ' is-tied' : ''}${out ? ' is-out' : ''}`}>
       {/* The price in both currencies: what it costs in EVs, and what the
           stat has to read for it. One of those is what you spend and the
           other is what you are aiming at, and neither implies the other
@@ -58,7 +60,9 @@ function ThresholdRow({ row, lit, target }: { row: Threshold; lit: boolean; targ
       <span className="ev-what">
         <span className="ev-target">{row.targetName}</span>
         {row.outspeed != null ? (
-          <span className="ev-detail">{row.tier} · {row.outspeed}</span>
+          <span className="ev-detail">
+            {row.tier} · {row.outspeed}{tied ? ' · tied' : ''}
+          </span>
         ) : (
           <>
             <span className="ev-detail">{row.moveName}</span>
@@ -89,11 +93,11 @@ function StatColumn({
   const beyond = rows.filter((r) => r.unreachable)
   return (
     <section className="ev-col">
-      {/* Where it starts, before a single EV: the number every row below is
-          measured from. */}
+      {/* What the stat reads right now, EVs and nature and all — the number
+          the rows below are aiming at, so it moves with the slider. */}
       <header className="ev-col-head">
         <span className="ev-stat">{STAT_LABELS[stat]}</span>
-        <strong className="ev-value" title={`${STAT_LABELS[stat]} with no EVs`}>{bare}</strong>
+        <strong className="ev-value" title={`${bare} before EVs`}>{value}</strong>
       </header>
 
       {/* And what is being spent on it. */}
@@ -123,7 +127,6 @@ function StatColumn({
           aria-label={`${STAT_LABELS[stat]} EVs`}
           onChange={(e) => onEvs(Number(e.target.value))}
         />
-        <output title="Where the stat ends up">{value}</output>
       </label>
 
       {rows.length ? (
@@ -132,7 +135,10 @@ function StatColumn({
             {reachable.map((r, i) => (
               <ThresholdRow
                 key={`${r.target}-${r.move ?? r.tier}-${i}`}
-                row={r} lit={evs >= r.evs} target={faces[r.target]}
+                row={r}
+                lit={evs >= r.evs}
+                tied={r.tieAt != null && evs >= r.tieAt && evs < r.evs}
+                target={faces[r.target]}
               />
             ))}
           </ul>
@@ -141,7 +147,7 @@ function StatColumn({
           {beyond.length > 0 && (
             <ul className="ev-rows ev-beyond">
               {beyond.map((r, i) => (
-                <ThresholdRow key={`${r.target}-out-${i}`} row={r} lit={false} target={faces[r.target]} />
+                <ThresholdRow key={`${r.target}-out-${i}`} row={r} lit={false} tied={false} target={faces[r.target]} />
               ))}
             </ul>
           )}
