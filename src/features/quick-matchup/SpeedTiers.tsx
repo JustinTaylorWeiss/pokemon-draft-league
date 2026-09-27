@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import { speedTiers, statAtLevel } from '../../lib/stats'
 import type { Team, TeamEntry } from './TeamEditor'
 import { Sprite } from '../../components/Sprite'
-import { TeamsBody } from './Overview'
 
 interface Props {
   teamOne: Team
@@ -23,9 +22,8 @@ interface Props {
  * see who actually outruns whom. Each Pokémon appears once per spread and
  * multiplier combination its side has switched on.
  *
- * The rosters, then the base stat, what it comes to invested at this level,
- * what that becomes with a positive nature on top, and then every tier the
- * filters allow.
+ * Four columns: the base stat, what it is at this level on perfect IVs
+ * alone, what it is fully invested, and then every tier the filters allow.
  *
  * Selection and the filter live in the parent so the shared card header can own
  * them while this renders only the body.
@@ -52,10 +50,6 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
 
   if (!all.length) return null
 
-  /** The side as it was drafted, without the formes added for the chart. */
-  const drafted = (team: Team): Team =>
-    ({ ...team, members: team.members.filter((m) => !preMega.has(m.id)) })
-
   const toggle = (id: string) => onSelect(selected === id ? null : id)
   /** The only place it is said: why an undrafted forme is on the chart. */
   const title = (id: string, name: string) =>
@@ -65,17 +59,6 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
 
   return (
     <div className="speed-layout">
-        {/* The rosters as they were drafted, which is what the card that used
-            to sit beside this one showed. Pre-Mega formes are left out: this
-            is who is on the team, not who is on the chart. */}
-        <div className="speed-rosters">
-          <h3>Teams</h3>
-          <TeamsBody
-            teamOne={drafted(teamOne)} teamTwo={drafted(teamTwo)}
-            level={level} solo={!teamTwo.members.length}
-          />
-        </div>
-
         <div className="speed-bases">
           <h3>Base</h3>
           <ul>
@@ -91,28 +74,23 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
         </div>
 
         {/*
-          * Base, then the invested stat at this level, then that with a
-          * positive nature on top.
-          *
-          * "+ IVs" is the league's shorthand for the invested number rather
-          * than a literal reading of the spread — it is 252 EVs and 31 IVs,
-          * and at Lv 50 the EVs are worth the 32 points that makes 170 into
-          * 202. The heading carries the league's words and the tooltip the
-          * actual spread, because the number people quote each other is this
-          * one and it should be labelled the way they say it.
+          * Base, then what that is at this level with perfect IVs and nothing
+          * else — no EVs, no nature — and then the fully invested figure.
+          * Three points on the same line, which is what makes them worth
+          * putting side by side.
           *
           * All three run in Base's order, since each is a function of it, so
           * a row reads straight across.
           */}
         <div className="speed-level">
-          <h3 title={`252 EVs, 31 IVs, neutral nature, at level ${level}`}>
+          <h3 title={`31 IVs, no EVs, neutral nature, at level ${level}`}>
             Lv {level} <span className="is-inline">+ IVs</span>
           </h3>
           <ul>
             {bases.map((b) => (
               <li key={b.id} className={rowClass(b.id)}>
                 <button type="button" onClick={() => toggle(b.id)} title={title(b.id, b.pokemon.name)}>
-                  <strong>{statAtLevel(b.pokemon.baseStats.spe, 252, 1, false, 31, level)}</strong>
+                  <strong>{statAtLevel(b.pokemon.baseStats.spe, 0, 1, false, 31, level)}</strong>
                   <Sprite pokemon={b.pokemon} width={32} height={26} />
                 </button>
               </li>

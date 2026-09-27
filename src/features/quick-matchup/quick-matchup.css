@@ -262,47 +262,13 @@
 .mx-strong-weak { background: rgb(200 50 60 / 60%); }
 
 /* ---- speed tiers ---- */
-/* ---- the rosters, second one mirrored ---- */
-/* Two columns while they fit, one below that. */
-.overview-wrapper {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px;
-}
-.team-container { min-width: 0; }
-.team-name-title {
-  font-weight: 700; font-size: 0.92rem; text-align: center; line-height: 1.25;
-  padding-bottom: 0.4rem; margin-bottom: 0.3rem;
-  border-bottom: 2px solid var(--team, var(--accent)); color: var(--team, var(--accent));
-}
-.team-body { display: flex; flex-direction: column; }
-.overview-row {
-  display: grid; grid-template-columns: 46px 1fr 2.2rem;
-  align-items: center; gap: 0.3rem; padding: 0.22rem 0.2rem;
-}
-.team-container.alternate .overview-row {
-  grid-template-columns: 2.2rem 1fr 46px;
-  direction: rtl;
-}
-.team-container.alternate .overview-row > * { direction: ltr; }
-.overview-row.header {
-  font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.05em;
-  color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 0.2rem;
-}
-.overview-row .name-cell {
-  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.82rem;
-}
-.overview-row .speed-cell { text-align: right; font-variant-numeric: tabular-nums; font-size: 0.82rem; }
-.team-container.alternate .overview-row .speed-cell { text-align: left; }
-.overview-row .sprite-cell { display: flex; }
-.overview-row img { image-rendering: pixelated; object-fit: contain; }
 
-/* The rosters, then four even columns: what each species is worth on paper,
-   what that comes to at this level uninvested and fully invested, and every
-   tier it can actually sit at. Even because none of them is the one you read
-   first — the comparison runs across. The rosters get more room for holding
-   two teams inside. */
+/* Four even columns: what each species is worth on paper, what that is at
+   this level on IVs alone, what it is fully invested, and every tier it can
+   actually sit at. Even because none of them is the one you read first — the
+   comparison runs across. */
 .speed-layout { display: flex; gap: 0.6rem; }
 .speed-bases, .speed-level, .speed-max, .speed-groups { flex: 1 1 0; min-width: 0; }
-.speed-rosters { flex: 1.8 1 0; min-width: 0; }
 .speed-layout h3 { margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase; color: var(--team-both); letter-spacing: 0.05em; }
 .speed-layout h3 span { float: right; text-transform: none; font-size: 0.68rem; }
 /* Stays beside the word it qualifies. Held right it read as a second heading
