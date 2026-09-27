@@ -56,10 +56,21 @@ export interface Side {
   natureBy?: Partial<Record<StatKey, number>>
   item?: string
   ability?: string
+  /**
+   * A stat handed over outright, skipping the EVs, the nature and everything
+   * else that would have produced it.
+   *
+   * For asking the question the other way round: not "what does this spread
+   * do" but "what would this stat have to be". The answer to that is a
+   * number, not a spread, and it does not change when the spread does.
+   */
+  flat?: Partial<Record<StatKey, number>>
 }
 
 /** A stat as it actually is, for one side. Speed included, for the tier list. */
 export function statOf(side: Side, stat: StatKey): number {
+  const given = side.flat?.[stat]
+  if (given != null) return given
   const base = side.pokemon.baseStats[stat]
   const ev = side.evs[stat] ?? 0
   const nature = side.natureBy?.[stat] ?? natureMultiplier(side.nature, stat)

@@ -40,7 +40,13 @@ export interface Threshold {
   tier?: string
   /** Speed rows no amount of EVs reaches. One per Pokémon, listed apart. */
   unreachable?: boolean
-  /** What the stat reads at that many EVs — the number, not the price. */
+  /**
+   * What the stat has to reach, whatever it costs to get there.
+   *
+   * The requirement, not a reading of the current spread: a row that another
+   * stat has already paid for still needs the same number, and a stat already
+   * past it still needed it. It does not move when the sliders do.
+   */
   statAt?: number
   /**
    * How likely the outcome is as things stand — not at the threshold, now.
@@ -396,9 +402,27 @@ export function planFor(input: PlanInput): Plan {
   const { pokemon, moves, item, ability, spread, opponents, chart, level, doubles } = input
   const out: Plan = { hp: [], atk: [], def: [], spa: [], spd: [], spe: [] }
 
-  /** What the stat itself reads there, which is the other half of the price. */
-  const reads = (stat: StatKey, evs: number) =>
-    statAtLevel(pokemon.baseStats[stat], evs, spread.nature[stat], stat === 'hp', 31, level)
+  /**
+   * The least this stat can be and still do it — the other half of the price.
+   *
+   * Searched over the stat rather than over EVs, because that is the question
+   * being asked: "Defense 64" is true of every spread that gets there and
+   * stays true when the spread changes, where "44 EVs" is only true of this
+   * one. Binary, since a hit count only moves one way as a stat rises.
+   */
+  const needs = (reaches: (statValue: number) => boolean) => {
+    let lo = 1
+    let hi = 1500
+    if (!reaches(hi)) return undefined
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1
+      if (reaches(mid)) hi = mid
+      else lo = mid + 1
+    }
+    return lo
+  }
+  const withStat = (side: Side, stat: StatKey, value: number): Side =>
+    ({ ...side, flat: { ...side.flat, [stat]: value } })
 
   /** Me, with one stat moved to the value being tried and the rest as they are. */
   const meAt = (stat: StatKey, evs: number): Side =>
@@ -448,7 +472,8 @@ export function planFor(input: PlanInput): Plan {
           out[stat].push({
             ...step, target: o.id, targetName: o.pokemon.name,
             move: move.name, moveName: move.name,
-            statAt: Number.isFinite(step.evs) ? reads(stat, step.evs) : undefined,
+            statAt: needs((v) =>
+              damage(o.side, withStat(meNow, stat, v), move, chart, doubles).worstCase >= step.to),
             // The outcome being escaped, and how often it still happens.
             at: step.from, chance: curve[step.from - 1] ?? 0,
           })
@@ -469,7 +494,8 @@ export function planFor(input: PlanInput): Plan {
         out[stat].push({
           ...step, target: o.id, targetName: o.pokemon.name,
           move: move.name, moveName: move.name,
-          statAt: Number.isFinite(step.evs) ? reads(stat, step.evs) : undefined,
+          statAt: needs((v) =>
+            damage(withStat(meNow, stat, v), o.side, move, chart, doubles).worstCase <= step.to),
           // The outcome being reached, and how often it happens already.
           at: step.to, chance: curve[step.to - 1] ?? 0,
         })
@@ -516,7 +542,7 @@ export function planFor(input: PlanInput): Plan {
         targetName: o.pokemon.name,
         outspeed: top.speed,
         tier: all && i === 0 && last === catchable.length - 1 ? 'any spread' : top.label,
-        statAt: reads('spe', cost),
+        statAt: top.speed + 1,
         tieAt: top.tie,
       })
       i = last
