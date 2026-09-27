@@ -743,6 +743,18 @@ function GearPicker({
     setFind('')
   }
 
+  /*
+   * Whether anything has been said about it at all.
+   *
+   * Wider than the pills under the sprite, which is what this used to
+   * read: a move named or struck off shows nowhere out there and is still
+   * something a reset would undo, and so is being hidden.
+   */
+  const said = chosen.length > 0
+    || Boolean(out)
+    || (named ?? []).length > 0
+    || (gear?.without ?? []).length > 0
+
   // Nothing to choose at all: no lists, and no spread to credit it with.
   const nothing = mega || (!abilities.length && !plain.length && !boosters.length)
   if (nothing && !assume && !onHide && !onNamed) return null
@@ -962,14 +974,21 @@ function GearPicker({
                 )}
               </div>
             )}
-            {/* Everything said about this one, unsaid. Shown only where
-                there is something to undo — the pills above the plus are
-                exactly what it clears, so no pills means no button. */}
-            {chosen.length > 0 && (
+            {/* Everything said about this one, unsaid — the spread it is
+                credited with, its ability, its item, any IV, any move
+                named or struck off, and being hidden. Shown only where
+                one of those has happened: a reset with nothing to reset
+                is a button that does nothing and looks like it does. */}
+            {said && (
               <button
                 type="button"
-                className="link-btn"
-                onClick={() => { onChange({}); onAssume?.(ASSUME_BARE); onNamed?.([]) }}
+                className="ev-gear-reset"
+                onClick={() => {
+                  onChange({})
+                  onAssume?.(ASSUME_BARE)
+                  onNamed?.([])
+                  onHide?.(false)
+                }}
               >
                 Reset {pokemon.name}
               </button>

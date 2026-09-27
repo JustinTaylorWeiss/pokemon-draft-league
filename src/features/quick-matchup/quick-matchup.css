@@ -1405,6 +1405,15 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   border-radius: 6px; padding: 0.2rem 0.3rem; font: inherit; font-size: 0.75rem; cursor: pointer;
 }
 .ev-gear-pop .link-btn { align-self: flex-start; font-size: 0.68rem; }
+/* Under everything it undoes, and set apart from it: a rule above, and the
+   red this site uses for anything that takes something away. */
+.ev-gear-reset {
+  width: 100%; margin-top: 0.15rem; padding: 0.25rem 0.5rem; line-height: 1.3;
+  background: none; border: 1px solid var(--line); border-radius: 999px;
+  color: var(--muted); font: inherit; font-size: 0.68rem; cursor: pointer;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ev-gear-reset:hover { border-color: #e05563; color: #e05563; }
 /* What it might be carrying that its set does not say. Same shape as the
    four-move overlay, because it is the same job asked of one Pokemon. */
 .ev-gear-moves { display: flex; flex-direction: column; gap: 0.25rem; }
