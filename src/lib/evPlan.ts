@@ -385,15 +385,16 @@ export function opponentsFrom(
   /** Per Pokémon, because they are not all built the same way. */
   assume: Record<string, Assumptions> = {},
   /**
-   * Moves to credit every opponent that can learn one with, on top of
-   * whatever its set or its movepool already said.
+   * Moves to credit one Pokémon with, on top of whatever its set or its
+   * movepool already said, keyed by which Pokémon.
    *
    * A set is four moves and a coach picks them; the one that beats you may
-   * not be among the four this Pokémon is usually seen with. Naming it adds
-   * it wherever it is legal, which is the question "what if they bring
-   * Ice Beam" asked of the whole team at once.
+   * not be among the four this Pokémon is usually seen with. Named per
+   * Pokémon rather than across the team, because "what if this one has Ice
+   * Beam" is the question actually being asked — crediting it to everything
+   * over there that can learn it answers a wider one nobody wanted.
    */
-  extra: string[] = [],
+  extra: Record<string, string[]> = {},
   /** An item, an ability or dropped IVs chosen by hand, over the set's word. */
   gear: Record<string, {
     item?: string; ability?: string; ivs?: Partial<Record<StatKey, number>>
@@ -461,7 +462,7 @@ export function opponentsFrom(
     const usual = [...byKey.values()]
 
     const own = learnsets?.[id]
-    const named = extra
+    const named = (extra[id] ?? [])
       .filter((mv) => own?.[mv])
       .map((mv) => moveDex[mv])
       .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0)

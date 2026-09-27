@@ -206,8 +206,9 @@ export function EvHelp({ onClose }: { onClose: () => void }) {
             <li>
               The <code>{'\u22ef'}</code> under each sprite on the red side opens that
               Pokémon. You can hide it from the columns, credit it with 252 HP or a
-              boosting nature, lower an IV, give it an item, or switch its ability. Each
-              choice appears as a pill under the sprite, and the columns update.
+              boosting nature, lower an IV, give it an item, switch its ability, or add a
+              move to the ones it is reckoned to have. Each choice appears as a pill under
+              the sprite, and the columns update.
             </li>
           </ol>
 
@@ -248,9 +249,10 @@ export function EvHelp({ onClose }: { onClose: () => void }) {
 
           <h3>Adding a move</h3>
           <p>
-            The search beside the enemy team credits a move to every Pokémon over there that
-            can learn it. Those rows are grouped above the rest, under
-            &ldquo;Added&rdquo;.
+            Each Pokémon&rsquo;s <code>{'\u22ef'}</code> menu has a search that credits it
+            with a move on top of the set it is reckoned to have. Only moves that Pokémon
+            can learn are offered, and the move counts for that Pokémon alone. Its rows are
+            grouped above the rest, under &ldquo;Added&rdquo;.
           </p>
 
           <p className="ev-help-small">
@@ -542,12 +544,24 @@ export interface Gear {
  */
 function GearPicker({
   pokemon, usual, gear, onChange, assume, onAssume, out, onHide,
+  learnset, moves, played, named, onNamed,
 }: {
   pokemon: Pokemon
   /** The ability it is reckoned to have when nobody has said otherwise. */
   usual: string
   gear: Gear | undefined
   onChange: (next: Gear) => void
+  /**
+   * Its movepool and what has been credited to it out of that, for the
+   * opponents. A move named here is named for this Pokémon and no other:
+   * "what if this one has Ice Beam" is the question, and answering it for
+   * everything on the team that can learn Ice Beam answers a wider one.
+   */
+  learnset?: Record<string, unknown>
+  moves?: MoveDex
+  played?: string[]
+  named?: string[]
+  onNamed?: (next: string[]) => void
   /**
    * What this one is credited with, for an opponent. Absent for the Pokémon
    * the spread is being built for, whose numbers are the sliders below.
@@ -563,6 +577,7 @@ function GearPicker({
   onHide?: (next: boolean) => void
 }) {
   const [open, setOpen] = useState(false)
+  const [find, setFind] = useState('')
   /*
    * What has been said about this Pokemon, on the button itself: the spread
    * it is credited with first, then what it is holding. Closed, the button
@@ -581,7 +596,10 @@ function GearPicker({
   // Only the dropped ones. Everything is 31 unless somebody said otherwise,
   // so a pill for each of six perfect IVs would be six pills saying nothing.
   const dropped = lowered(gear?.ivs).map(([stat, iv]) => `${STAT_LABELS[stat]} ${iv} IV`)
-  const chosen = [...raised, ...dropped, gear?.ability, gear?.item].filter(Boolean) as string[]
+  const brought = (named ?? []).map((id) => moves?.[id]?.name ?? id)
+  const chosen = [
+    ...raised, ...dropped, gear?.ability, gear?.item, ...brought,
+  ].filter(Boolean) as string[]
 
   /*
    * Three pills is what fits under a sprite, and the third is a count once
@@ -595,7 +613,9 @@ function GearPicker({
    * which pills are shown is a different question from where they go.
    */
   const CHIPS = 3
-  const priority = [gear?.ability, gear?.item, ...raised, ...dropped].filter(Boolean) as string[]
+  const priority = [
+    gear?.ability, gear?.item, ...brought, ...raised, ...dropped,
+  ].filter(Boolean) as string[]
   const keeping = new Set(chosen.length > CHIPS ? priority.slice(0, CHIPS - 1) : chosen)
   const shown = chosen.filter((c) => keeping.has(c))
   const hidden = chosen.filter((c) => !keeping.has(c))
@@ -653,9 +673,30 @@ function GearPicker({
     }
   }, [pokemon])
 
+  /*
+   * Its whole damaging movepool, popular first, minus what it is already
+   * reckoned to have. Ordered by how often the format clicks each one so
+   * the few worth considering are at the top and the long tail of
+   * universal TMs is below them rather than mixed in alphabetically.
+   */
+  const addable = useMemo(() => {
+    if (!open || !onNamed || !learnset || !moves) return []
+    const rank = new Map((played ?? []).map((id, i) => [id, i]))
+    const q = find.trim().toLowerCase()
+    return Object.keys(learnset)
+      .filter((id) => !named?.includes(id))
+      .map((id) => moves[id])
+      .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0
+        && (!q || m.name.toLowerCase().includes(q)))
+      .sort((a, b) => (rank.get(toId(a.name)) ?? Infinity) - (rank.get(toId(b.name)) ?? Infinity)
+        || b.basePower - a.basePower
+        || a.name.localeCompare(b.name))
+      .slice(0, 40)
+  }, [open, onNamed, learnset, moves, played, named, find])
+
   // Nothing to choose at all: no lists, and no spread to credit it with.
   const nothing = mega || (!abilities.length && !plain.length && !boosters.length)
-  if (nothing && !assume && !onHide) return null
+  if (nothing && !assume && !onHide && !onNamed) return null
 
   return (
     <span className="ev-gear">
@@ -801,6 +842,56 @@ function GearPicker({
               </select>
             </label>
             )}
+            {/* Anything it might be carrying that its set does not say.
+                Its own movepool and nothing else: a move it cannot learn
+                is not a thing it might bring. */}
+            {onNamed && moves && (
+              <div className="ev-gear-moves">
+                <span>Moves</span>
+                {(named ?? []).length > 0 && (
+                  <ol className="ev-set-slots">
+                    {(named ?? []).map((id) => {
+                      const move = moves[id]
+                      return (
+                        <li key={id}>
+                          <button
+                            type="button"
+                            className="ev-set-slot"
+                            title={`Drop ${move?.name ?? id}`}
+                            onClick={() => onNamed((named ?? []).filter((x) => x !== id))}
+                          >
+                            {move && <MoveCategory category={move.category} />}
+                            <span className="ev-set-name">{move?.name ?? id}</span>
+                            {move && <TypeChip type={move.type} />}
+                            <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
+                          </button>
+                        </li>
+                      )
+                    })}
+                  </ol>
+                )}
+                <input
+                  type="search" value={find} placeholder="Add a move…"
+                  aria-label={`Add a move ${pokemon.name} might carry`}
+                  onChange={(e) => setFind(e.target.value)}
+                />
+                <ul className="ev-set-list">
+                  {addable.map((m) => (
+                    <li key={m.name}>
+                      <button
+                        type="button"
+                        onClick={() => { onNamed([...(named ?? []), toId(m.name)]); setFind('') }}
+                      >
+                        <MoveCategory category={m.category} />
+                        <span className="ev-set-name">{m.name}</span>
+                        <em>{m.type} · {m.basePower}</em>
+                      </button>
+                    </li>
+                  ))}
+                  {addable.length === 0 && <li className="ev-set-none">Nothing matches.</li>}
+                </ul>
+              </div>
+            )}
             {/* Everything said about this one, unsaid. Shown only where
                 there is something to undo — the pills above the plus are
                 exactly what it clears, so no pills means no button. */}
@@ -808,7 +899,7 @@ function GearPicker({
               <button
                 type="button"
                 className="link-btn"
-                onClick={() => { onChange({}); onAssume?.(ASSUME_BARE) }}
+                onClick={() => { onChange({}); onAssume?.(ASSUME_BARE); onNamed?.([]) }}
               >
                 Reset {pokemon.name}
               </button>
@@ -853,8 +944,9 @@ export function EvCalcBody({
   const [assume, setAssume] = useState<Record<string, Assumptions>>({})
   const credit = (id: string) => assume[id] ?? ASSUME_BARE
   /** Moves named by hand, credited to every opponent that can learn one. */
-  const [extra, setExtra] = useState<string[]>([])
-  const [query, setQuery] = useState('')
+  const [extra, setExtra] = useState<Record<string, string[]>>({})
+  const names = (id: string, next: string[]) =>
+    setExtra((prev) => ({ ...prev, [id]: next }))
   /** Which shape to read it in, for the ones that have more than one. */
   const [shape, setShape] = useState<string | null>(null)
   /**
@@ -967,32 +1059,6 @@ export function EvCalcBody({
     icon: <Sprite pokemon={m.pokemon} width={28} height={24} />,
   })))
 
-  /**
-   * Moves matching what has been typed, that somebody over there can learn.
-   *
-   * Filtered against the other side rather than the whole move list: a move
-   * none of them has is a move that would be added to nobody, and offering
-   * it is offering a button that does nothing.
-   *
-   * The other side only. This Pokémon's own four are chosen in the overlay
-   * under the picker now, and a second way in that quietly made it five
-   * would undercut the first.
-   */
-  const matches = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    if (q.length < 2 || !picked) return []
-    const legal = new Set<string>()
-    for (const m of picked.foes) {
-      for (const id of Object.keys(learnsets?.[m.id] ?? {})) legal.add(id)
-    }
-    return [...legal]
-      .map((id) => moves[id])
-      .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0
-        && m.name.toLowerCase().includes(q) && !extra.includes(toId(m.name)))
-      .sort((a, b) => a.name.localeCompare(b.name))
-      .slice(0, 8)
-  }, [query, picked, learnsets, moves, extra])
-
   const choose = (id: string) => {
     setChosen(id)
     // A spread belongs to the Pokémon it was chosen for, and so does a
@@ -1016,11 +1082,6 @@ export function EvCalcBody({
     if (setIds.includes(id) || setIds.length >= SET_SIZE) return
     setMyset([...setIds, id])
     setMoveQuery('')
-  }
-
-  const addMove = (move: Move) => {
-    setExtra((prev) => (prev.includes(toId(move.name)) ? prev : [...prev, toId(move.name)]))
-    setQuery('')
   }
 
   const plan = useMemo(() => {
@@ -1280,6 +1341,11 @@ export function EvCalcBody({
                       gear={gear[m.id]} onChange={(g) => give(m.id, g)}
                       assume={credit(m.id)}
                       onAssume={(next) => setAssume((prev) => ({ ...prev, [m.id]: next }))}
+                      learnset={learnsets?.[m.id]}
+                      moves={moves}
+                      played={played}
+                      named={extra[m.id]}
+                      onNamed={(next) => names(m.id, next)}
                       out={off.has(m.id)}
                       onHide={(next) => setOff((prev) => {
                         const now = new Set(prev)
@@ -1293,56 +1359,6 @@ export function EvCalcBody({
               </div>
             )}
 
-            {/* Anything they might be carrying that their set does not say,
-                and everything named so far. Beside the team it is about:
-                it adds a move to whoever over there can learn it, so the
-                row of sprites to its left is its answer. */}
-            <div className="ev-added">
-            {/* Anything they might be carrying that their set does not say.
-                Added to everyone over there who can learn it. */}
-            <span className="ev-add">
-              <input
-                type="search" value={query} placeholder="Add a move to enemy team…"
-                aria-label="Add a move the other side might carry"
-                onChange={(e) => setQuery(e.target.value)}
-              />
-              {matches.length > 0 && (
-                <ul className="ev-matches">
-                  {matches.map((m) => (
-                    <li key={m.name}>
-                      <button type="button" onClick={() => addMove(m)}>
-                        <MoveCategory category={m.category} />
-                        <span>{m.name}</span>
-                        <em>{m.type} · {m.basePower}</em>
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </span>
-            {extra.map((id) => {
-              const move = moves[id]
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  className="ev-extra"
-                  title={`${move?.name ?? id} — click to drop it`}
-                  onClick={() => setExtra((prev) => prev.filter((x) => x !== id))}
-                >
-                  {/* What it is, then what it is called, then how hard it
-                      hits — the two badges together on the left rather than
-                      one either side of the name, so a row of these can be
-                      read down the badges without reading the names. */}
-                  {move && <MoveCategory category={move.category} />}
-                  {move && <TypeChip type={move.type} />}
-                  <span className="ev-extra-name">{move?.name ?? id}</span>
-                  {move && <em className="ev-extra-power">{move.basePower}</em>}
-                  <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
-                </button>
-              )
-            })}
-            </div>
           </div>
         )}
       </div>

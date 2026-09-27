@@ -993,14 +993,6 @@ button.type-chip { cursor: pointer; }
 }
 
 /* What the other side is credited with, and anything else it might bring. */
-/* The search and everything it has added, to the right of the team it acts
-   on. Its own width rather than a share of the row, so the sprites keep
-   theirs and this wraps under them when the row runs out. Room above it
-   because the focus ring it draws when selected sits outside its box. */
-.ev-added {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 0.3rem;
-  flex: none; width: var(--ev-control); margin-left: auto; padding-top: 0.15rem;
-}
 /* The label over its segments rather than beside them: three of these in a
    row read as one long sentence otherwise, and which words belong to which
    control is the first thing you need. */
@@ -1063,19 +1055,21 @@ button.type-chip { cursor: pointer; }
 }
 button.ev-set-slot { cursor: pointer; }
 button.ev-set-slot:hover { border-color: #e05563; }
+/* The × on the row, which is what says it can be dropped. */
+.ev-extra-drop { color: var(--muted); font-size: 0.95rem; line-height: 1; padding: 0 0.15rem; }
 button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 .ev-set-slot.is-empty {
   color: var(--muted); border-style: dashed; background: none;
   justify-content: center; font-size: 0.68rem;
 }
-.ev-set-slot .type-chip { min-width: 0; font-size: 0.58rem; padding: 0.05rem 0.35rem; margin-left: auto; }
+.ev-set-slot .type-chip, .ev-gear-moves .type-chip { min-width: 0; font-size: 0.58rem; padding: 0.05rem 0.35rem; margin-left: auto; }
 .ev-set-name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ev-set-pop input {
+.ev-set-pop input, .ev-gear-moves input {
   height: 1.5rem; padding: 0 0.5rem; font-size: 0.75rem;
   background: var(--chip); border: 1px solid var(--line); border-radius: 999px;
   color: var(--fg); font-family: inherit;
 }
-.ev-set-pop input:focus-visible { outline: 2px solid var(--team-accent, var(--accent)); outline-offset: 1px; }
+.ev-set-pop input:focus-visible, .ev-gear-moves input:focus-visible { outline: 2px solid var(--team-accent, var(--accent)); outline-offset: 1px; }
 .ev-set-list {
   list-style: none; margin: 0; padding: 0;
   max-height: 13rem; overflow-y: auto;
@@ -1091,45 +1085,6 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 .ev-set-list button.is-chosen { color: var(--team-accent, var(--accent)); font-weight: 600; }
 .ev-set-list em { font-style: normal; font-size: 0.64rem; color: var(--muted); margin-left: auto; white-space: nowrap; }
 .ev-set-none { padding: 0.3rem 0.35rem; color: var(--muted); font-size: 0.72rem; }
-
-.ev-add { position: relative; display: inline-flex; }
-.ev-add input {
-  height: 1.55rem; width: var(--ev-control); padding: 0 0.5rem; font-size: 0.75rem;
-  background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
-  color: var(--fg); font-family: inherit;
-}
-.ev-add input:focus-visible { outline: 2px solid var(--team-accent, var(--accent)); outline-offset: 1px; }
-.ev-matches {
-  position: absolute; top: calc(100% + 0.3rem); left: 0; z-index: 30;
-  list-style: none; margin: 0; padding: 0.25rem; min-width: 15rem;
-  background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
-  box-shadow: 0 10px 28px rgb(0 0 0 / 45%);
-}
-.ev-matches button {
-  width: 100%; display: flex; align-items: center; gap: 0.4rem;
-  background: none; border: 0; border-radius: 6px; cursor: pointer;
-  padding: 0.28rem 0.4rem; font: inherit; font-size: 0.75rem; color: var(--fg); text-align: left;
-}
-.ev-matches button:hover { background: var(--chip); }
-.ev-matches em { font-style: normal; font-size: 0.65rem; color: var(--muted); margin-left: auto; }
-/* A move added by hand, wearing the same badges it wore in the list it was
-   picked from, so it is recognisably the thing that was chosen. */
-.ev-extra {
-  display: inline-flex; align-items: center; gap: 0.35rem;
-  height: 1.7rem; padding: 0 0.35rem 0 0.4rem; border-radius: 999px;
-  background: var(--chip); border: 1px solid var(--line); color: var(--fg);
-  font: inherit; font-size: 0.8rem; cursor: pointer;
-}
-.ev-extra:hover { border-color: #e05563; }
-.ev-extra .type-chip { min-width: 0; font-size: 0.6rem; padding: 0.08rem 0.4rem; }
-.ev-extra-name { font-weight: 600; white-space: nowrap; }
-/* Its base power, which is the number the badges do not give. */
-.ev-extra-power {
-  font-style: normal; font-size: 0.7rem; color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-.ev-extra-drop { color: var(--muted); font-size: 0.95rem; line-height: 1; padding: 0 0.15rem; }
-.ev-extra:hover .ev-extra-drop { color: #e05563; }
 
 .ev-hint, .ev-note { margin: 0; color: var(--muted); font-size: 0.75rem; line-height: 1.45; }
 /* Drawn rather than counted out: 508 is a number you have to subtract from,
@@ -1401,7 +1356,7 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 .ev-gear-pop {
   position: absolute; top: calc(100% + 0.4rem); left: 50%; transform: translateX(-50%);
   z-index: 21; display: flex; flex-direction: column; gap: 0.45rem;
-  padding: 0.55rem; min-width: 13rem;
+  padding: 0.55rem; width: 15rem; max-width: 80vw;
   background: var(--surface); border: 1px solid var(--line); border-radius: 10px;
   box-shadow: 0 10px 28px rgb(0 0 0 / 45%);
 }
@@ -1435,6 +1390,11 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   border-radius: 6px; padding: 0.2rem 0.3rem; font: inherit; font-size: 0.75rem; cursor: pointer;
 }
 .ev-gear-pop .link-btn { align-self: flex-start; font-size: 0.68rem; }
+/* What it might be carrying that its set does not say. Same shape as the
+   four-move overlay, because it is the same job asked of one Pokemon. */
+.ev-gear-moves { display: flex; flex-direction: column; gap: 0.25rem; }
+.ev-gear-moves .ev-set-list { max-height: 9rem; }
+.ev-gear-moves .ev-set-slot { font-size: 0.68rem; }
 /* Six of them across two rows. Small, because five of the six are almost
    always 31 and the panel should not look like six decisions to make. */
 .ev-gear-ivs { display: flex; flex-direction: column; gap: 0.15rem; }
@@ -1532,10 +1492,6 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   .ev-ours { flex-wrap: wrap; }
   .ev-side { flex: 1 1 12rem; min-height: 0; }
   .ev-mons { flex: 1 1 auto; }
-  /* Under the sprites rather than beside them, since there is no room to
-     be beside them, and the whole width once it is down there. */
-  .ev-mons { flex-wrap: wrap; }
-  .ev-added { width: 100%; margin-left: 0; }
   .ev-set, .ev-picker, .ev-picker .drop-current { width: 100%; }
   .ev-budget { width: 100%; }
   /* Sitting still would take most of the screen, and what is worth seeing
