@@ -1392,7 +1392,11 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 }
 .ev-gear-assumes .ev-assume { flex-direction: row; align-items: center; justify-content: space-between; }
 .ev-gear-pop label { display: flex; flex-direction: column; gap: 0.15rem; }
-.ev-gear-pop span {
+/* The label over each control, and only that. As `.ev-gear-pop span` it
+   also caught the word inside every category badge in the move list —
+   white on a coloured tile everywhere else on the site, grey here — a rule
+   aimed at two labels reaching a dozen spans it knew nothing about. */
+.ev-gear-pop label > span {
   font-size: 0.6rem; font-weight: 700; letter-spacing: 0.05em;
   text-transform: uppercase; color: var(--muted);
 }
