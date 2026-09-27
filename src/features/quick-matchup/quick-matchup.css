@@ -1350,9 +1350,15 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   font: inherit; font-size: 0.6rem; font-weight: 600; cursor: pointer;
 }
 .ev-gear-chip:hover { border-color: var(--fg); }
-/* Three stat names fit at the size the other pills use now that the
-   figures have come off, so it reads at that size. */
-.ev-gear-chip.is-spread { letter-spacing: 0.01em; }
+/* Square, because it is not the same kind of thing as the two beside it.
+   An item and an ability are each one named object; this is a shape — how
+   the Pokemon was built — and reads faster for not being mistaken for
+   another thing it is holding. */
+.ev-gear-chip.is-spread {
+  letter-spacing: 0.01em; border-radius: 4px;
+  border-color: var(--line); color: var(--fg);
+}
+.ev-gear-chip.is-spread:hover { border-color: var(--fg); }
 /* The count of what did not fit. Dashed and grey, because it is not a
    thing this Pokemon has — it is the panel saying there is more inside. */
 .ev-gear-chip.is-more {
@@ -1438,6 +1444,18 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   grid-column: 1 / -1; width: 100%; min-width: 0;
 }
 .ev-assume-stat .ev-nature { width: 1.05rem; height: 1.05rem; padding: 0; border-radius: 4px; }
+/* A mark at each end of the bar, where the step past the EVs sets the
+   nature. Painted on the track rather than added as elements, so it
+   travels with the bar at any width. */
+.ev-assume-stat input.has-notches::-webkit-slider-runnable-track,
+.ev-assume-stat input.has-notches::-moz-range-track {
+  background:
+    linear-gradient(90deg,
+      var(--muted) 0 3px,
+      transparent 3px calc(100% - 3px),
+      var(--muted) calc(100% - 3px) 100%),
+    var(--chip);
+}
 /* HP has no nature, and its cell should still be the shape of the others. */
 .ev-assume-stat > i { display: block; width: 1.05rem; height: 1.05rem; }
 /* What the six come to. Over 508 is not a build, and says so rather than
