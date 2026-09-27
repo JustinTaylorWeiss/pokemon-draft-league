@@ -1427,8 +1427,13 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   align-items: center; gap: 0.35rem; font-size: 0.68rem;
 }
 .ev-gear-moves .ev-set-slot { grid-template-columns: minmax(0, 1fr) 3.35rem 1.4rem 0.8rem; }
+/* The base power is half of what the row is for, so it is read rather than
+   noted: muted grey at two-thirds of a rem was the dimmest thing on a row
+   whose only other content is a coloured name. A step under the name's
+   weight, not three. */
 .ev-gear-moves em {
-  font-style: normal; font-size: 0.66rem; color: var(--muted);
+  font-style: normal; font-size: 0.74rem; font-weight: 600;
+  color: color-mix(in oklab, var(--fg), var(--muted) 25%);
   text-align: right; font-variant-numeric: tabular-nums;
 }
 .ev-gear-moves .ev-extra-drop { text-align: center; padding: 0; }
