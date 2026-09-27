@@ -280,6 +280,54 @@ export interface Hit {
   bestCase: number
 }
 
+/**
+ * What is going on around the two of them.
+ *
+ * Left out of this calculation for a long time on the grounds that a
+ * spread is chosen against the neutral case — which is true of the spread
+ * and false of the turn it is chosen for. Half this format is played
+ * under a terrain somebody set on purpose, and a Reflect changes every
+ * physical row on the page by a third.
+ *
+ * `reflect` and `lightScreen` are the defender's, because a screen only
+ * ever matters to the side behind it; `helpingHand` is the attacker's,
+ * for the same reason the other way round.
+ */
+export interface Field {
+  weather?: 'Sun' | 'Rain' | 'Sand' | 'Snow'
+  terrain?: 'Electric' | 'Grassy' | 'Psychic' | 'Misty'
+  reflect?: boolean
+  lightScreen?: boolean
+  helpingHand?: boolean
+  /** The attacker's, like the Helping Hand. */
+  crit?: boolean
+}
+
+/** What each weather does to a move of one type. */
+const WEATHER: Record<string, Partial<Record<TypeName, number>>> = {
+  Sun: { Fire: 1.5, Water: 0.5 },
+  Rain: { Water: 1.5, Fire: 0.5 },
+}
+
+/** The type each terrain lends a third to, for a Pokémon standing in it. */
+const TERRAIN: Record<string, TypeName> = {
+  Electric: 'Electric',
+  Grassy: 'Grass',
+  Psychic: 'Psychic',
+}
+
+/**
+ * Whether the ground reaches it, which is what every terrain asks first.
+ *
+ * Flying types and Levitate float; so does an Air Balloon, which is not
+ * modelled anywhere else here and is not modelled here either.
+ */
+const grounded = (side: Side) =>
+  !side.pokemon.types.includes('Flying') && side.ability !== 'Levitate'
+
+/** The three Ground moves Grassy Terrain smothers. */
+const SMOTHERED = new Set(['Earthquake', 'Bulldoze', 'Magnitude'])
+
 /** A move that does nothing to this target — immune, or not a damaging move. */
 const NO_HIT = (hp: number, via: string[] = []): Hit =>
   ({ rolls: [], hp, via, worstCase: Infinity, bestCase: Infinity })
@@ -296,6 +344,7 @@ function core(
   move: Move,
   chart: TypeChart,
   doubles: boolean,
+  field: Field = {},
 ): { rolls: number[]; hp: number } {
   const hp = statOf(defender, 'hp')
   if (move.category === 'Status' || move.basePower <= 0) return { rolls: [], hp }
@@ -353,7 +402,16 @@ function core(
   const atkMult = (lends && lends.type === kind ? lends.mult : 1)
     * (mine === 'Gorilla Tactics' || mine === 'Hustle' ? (physical ? 1.5 : 1) : 1)
     * (RUIN[guard] === (physical ? 'atk' : 'spa') ? 0.75 : 1)
-  const defMult = RUIN[mine] === (physical ? 'def' : 'spd') ? 0.75 : 1
+  /*
+   * Sand gives a Rock type half again its Special Defense and Snow gives
+   * an Ice type half again its Defense — the only two weathers that touch
+   * a stat rather than a move.
+   */
+  const weathered = (field.weather === 'Sand' && !physical
+    && shielded.pokemon.types.includes('Rock'))
+    || (field.weather === 'Snow' && physical && shielded.pokemon.types.includes('Ice'))
+    ? 1.5 : 1
+  const defMult = (RUIN[mine] === (physical ? 'def' : 'spd') ? 0.75 : 1) * weathered
   const atk = Math.floor(statOf(attacker, physical ? 'atk' : 'spa') * atkMult)
   const def = Math.max(1, Math.floor(statOf(shielded, physical ? 'def' : 'spd') * defMult))
 
@@ -407,8 +465,35 @@ function core(
   const aura = guard === 'Aura Guard' && move.contact ? 0.5 : 1
   const lens = mine === 'Tinted Lens' && effect < 1 ? 2 : 1
   const force = mine === 'Neuroforce' && effect > 1 ? 1.25 : 1
+  /*
+   * And what is going on around them.
+   *
+   * A terrain lends a third to one type, but only to something standing
+   * in it — a Flying type or a Levitate is above it. Misty is the other
+   * way round and halves Dragon against whatever is standing in it, and
+   * Grassy smothers the three Ground moves that shake it.
+   *
+   * A screen is a third off in doubles rather than half, which is the
+   * number the games use with more than one Pokémon out.
+   */
+  const sky = WEATHER[field.weather ?? '']?.[kind] ?? 1
+  const lifts = TERRAIN[field.terrain ?? ''] === kind && grounded(attacker) ? 1.3 : 1
+  const mist = field.terrain === 'Misty' && kind === 'Dragon' && grounded(shielded) ? 0.5 : 1
+  const grass = field.terrain === 'Grassy' && SMOTHERED.has(move.name) && grounded(shielded)
+    ? 0.5 : 1
+  /*
+   * A critical hit is half again, and it goes through a screen — which
+   * is the other half of what makes one worth asking about. It also
+   * ignores stat stages, and there are none of those here.
+   */
+  const crit = field.crit ? 1.5 : 1
+  const screen = !field.crit && (physical ? field.reflect : field.lightScreen) && effect > 0
+    ? (doubles ? 2732 / 4096 : 0.5) : 1
+  // The other Pokemon on your side, pushing. Half again, whatever it is.
+  const hand = field.helpingHand ? 1.5 : 1
   const after = itemMult * shield * belt * claws * tech * ated
     * bond * reckless * punk * aura * lens * force
+    * sky * lifts * mist * grass * screen * hand * crit
 
   const rolls: number[] = []
   for (let r = 85; r <= 100; r++) {
@@ -434,8 +519,9 @@ export function damage(
   move: Move,
   chart: TypeChart,
   doubles: boolean,
+  field: Field = {},
 ): Hit {
-  const { rolls, hp } = core(attacker, defender, move, chart, doubles)
+  const { rolls, hp } = core(attacker, defender, move, chart, doubles, field)
 
   /*
    * What gets named is what made a difference — worked out by taking each
@@ -450,7 +536,7 @@ export function damage(
    */
   const via: string[] = []
   const unchanged = (a: Side, d: Side) => {
-    const other = core(a, d, move, chart, doubles)
+    const other = core(a, d, move, chart, doubles, field)
     return other.hp === hp
       && other.rolls.length === rolls.length
       && other.rolls.every((r, i) => r === rolls[i])

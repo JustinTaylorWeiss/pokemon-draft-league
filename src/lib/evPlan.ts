@@ -1,7 +1,7 @@
 import type {
   LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart, TypeName,
 } from '../data/types'
-import { damage, koCurve, statOf, type Side } from './damage'
+import { damage, koCurve, statOf, type Field, type Side } from './damage'
 import { natureMultiplier, statAtLevel } from './stats'
 
 /**
@@ -537,13 +537,66 @@ interface PlanInput {
   chart: TypeChart
   level: number
   doubles: boolean
+  /**
+   * What is going on around them, if anything.
+   *
+   * The screens are named by whose side they are on rather than by whose
+   * they are useful against, because that is how a coach says it — and
+   * each column picks the one facing the move it is reading.
+   */
+  field?: PlanField
+}
+
+/** Everything around the pair: the sky, the ground, and each side's own. */
+export interface PlanField {
+  weather?: Field['weather']
+  terrain?: Field['terrain']
+  mine?: SideField
+  theirs?: SideField
+}
+
+/** What one side has put up around itself. */
+export interface SideField {
+  reflect?: boolean
+  lightScreen?: boolean
+  tailwind?: boolean
+  helpingHand?: boolean
+  crit?: boolean
 }
 
 /** The plan: one list of thresholds per stat, in EV order. */
 export type Plan = Record<StatKey, Threshold[]>
 
 export function planFor(input: PlanInput): Plan {
-  const { pokemon, moves, item, ability, ivs, spread, opponents, chart, level, doubles } = input
+  const {
+    pokemon, moves, item, ability, ivs, spread, opponents, chart, level, doubles,
+  } = input
+  const around = input.field ?? {}
+  /*
+   * Reading a hit landing on me, and reading one landing on them.
+   *
+   * A screen belongs to whoever is behind it and a Helping Hand to
+   * whoever is throwing, so each direction takes one from each side.
+   */
+  const taking: Field = {
+    weather: around.weather,
+    terrain: around.terrain,
+    reflect: around.mine?.reflect,
+    lightScreen: around.mine?.lightScreen,
+    helpingHand: around.theirs?.helpingHand,
+    crit: around.theirs?.crit,
+  }
+  const landing: Field = {
+    weather: around.weather,
+    terrain: around.terrain,
+    reflect: around.theirs?.reflect,
+    lightScreen: around.theirs?.lightScreen,
+    helpingHand: around.mine?.helpingHand,
+    crit: around.mine?.crit,
+  }
+  /** Tailwind doubles a side's Speed, which only the Speed column reads. */
+  const myWind = around.mine?.tailwind ? 2 : 1
+  const theirWind = around.theirs?.tailwind ? 2 : 1
   const out: Plan = { hp: [], atk: [], def: [], spa: [], spd: [], spe: [] }
 
   /**
@@ -594,7 +647,7 @@ export function planFor(input: PlanInput): Plan {
    * with its odds — because it is the same question asked from either end.
    */
   const readMove = (from: Side, to: Side, move: Move): Threshold & { shot: Shot } => {
-    const live = damage(from, to, move, chart, doubles)
+    const live = damage(from, to, move, chart, doubles, to === meNow ? taking : landing)
     const curve = koCurve(live, MEANINGFUL_HITS)
     return {
       // No price. Both halves of the panel used to carry one — "this many
@@ -639,7 +692,7 @@ export function planFor(input: PlanInput): Plan {
         // The most hits this stat alone could ever make it take. Where the
         // row already reads that number, the column has nothing left to
         // give against that move and says so.
-        const peak = damage(o.side, meMax(stat), move, chart, doubles).worstCase
+        const peak = damage(o.side, meMax(stat), move, chart, doubles, taking).worstCase
         const row = readMove(o.side, meNow, move)
         out[stat].push({
           ...row,
@@ -681,7 +734,7 @@ export function planFor(input: PlanInput): Plan {
       for (const move of moves.filter((m) => m.category === category)) {
         // The fewest hits this stat alone could ever guarantee, which is
         // what the row goes green for.
-        const peak = damage(meMax(stat), o.side, move, chart, doubles).worstCase
+        const peak = damage(meMax(stat), o.side, move, chart, doubles, landing).worstCase
         const row = readMove(meNow, o.side, move)
         out[stat].push({
           ...row,
@@ -711,14 +764,17 @@ export function planFor(input: PlanInput): Plan {
     // and a spread sitting between two of them is not either of them.
     const sameTier = (t: { evs: number; nature: number }) =>
       o.speed.evs === t.evs && o.speed.nature === t.nature
+    // A tailwind doubles a side's Speed, so the number to beat and the
+    // number you are beating it with are each read behind their own.
+    const mySpeed = (ev: number) => statOf(meAt('spe', ev), 'spe') * myWind
     for (const tier of SPEED_TIERS) {
       const theirs = statOf(
         { ...o.side, evs: { ...o.side.evs, spe: tier.evs }, natureBy: { spe: tier.nature } },
         'spe',
-      )
+      ) * theirWind
       let need: number | null = null
       for (let ev = 0; ev <= EV_MAX; ev += EV_STEP) {
-        if (statOf(meAt('spe', ev), 'spe') > theirs) { need = ev; break }
+        if (mySpeed(ev) > theirs) { need = ev; break }
       }
       // Only the cheapest one out of reach is worth saying. The ones above it
       // are out of reach for the same reason and add nothing.
@@ -728,7 +784,7 @@ export function planFor(input: PlanInput): Plan {
       }
       let tie: number | undefined
       for (let ev = 0; ev <= EV_MAX; ev += EV_STEP) {
-        if (statOf(meAt('spe', ev), 'spe') === theirs) { tie = ev; break }
+        if (mySpeed(ev) === theirs) { tie = ev; break }
       }
       catchable.push({
         label: tier.label, speed: theirs, need, tie, expected: sameTier(tier),

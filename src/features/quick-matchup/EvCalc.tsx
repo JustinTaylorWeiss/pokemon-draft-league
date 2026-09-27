@@ -8,6 +8,7 @@ import {
   EV_BUDGET, EV_MAX, EV_STATS, EV_STEP, IV_MAX, SET_SIZE, assumeFrom,
   emptySpread, lowered,
   opponentsFrom, planFor, spent, statOfSpread, usualMoves,
+  type PlanField, type SideField,
   type Assumptions, type Shot, type Spread, type Threshold,
 } from '../../lib/evPlan'
 import { Sprite } from '../../components/Sprite'
@@ -279,13 +280,102 @@ export function EvHelp({ onClose }: { onClose: () => void }) {
             grouped above the rest, under &ldquo;Added&rdquo;.
           </p>
 
+          <h3>The turn around them</h3>
+          <p>
+            The row above the columns sets the weather, the terrain, and what each side has
+            up — Reflect, Light Screen, Tailwind, Helping Hand, and a critical hit. The
+            screens belong to whoever is behind them and the rest to whoever is throwing, so
+            each column reads the ones facing the move it is about.
+          </p>
+
           <p className="ev-help-small">
-            Not counted: weather, terrain, screens, stat stages, Intimidate, burn and Tera.
-            Hit counts are the guaranteed ones — the lowest roll every time — with the odds
-            of the faster result beside them.
+            Not counted: stat stages, Intimidate, burn and Tera. Hit counts are the
+            guaranteed ones — the lowest roll every time — with the odds of the faster
+            result beside them.
           </p>
         </div>
       </div>
+    </div>
+  )
+}
+
+const WEATHERS = ['Sun', 'Rain', 'Sand', 'Snow'] as const
+const TERRAINS = ['Electric', 'Grassy', 'Psychic', 'Misty'] as const
+/** What one side can have up, and what to call it. */
+const SIDE_FIELD: { key: keyof SideField; label: string }[] = [
+  { key: 'reflect', label: 'Reflect' },
+  { key: 'lightScreen', label: 'Light Screen' },
+  { key: 'tailwind', label: 'Tailwind' },
+  { key: 'helpingHand', label: 'Helping Hand' },
+  { key: 'crit', label: 'Crit' },
+]
+
+/**
+ * The turn around the two of them, above the columns.
+ *
+ * Everything here was left out on the grounds that a spread is chosen
+ * against the neutral case — true of the spread and false of the turn it
+ * is chosen for. Half this format is played under a terrain somebody set
+ * on purpose, and a Reflect takes a third off every physical row.
+ *
+ * Above the columns rather than in either Pokémon's menu, because none of
+ * it belongs to a Pokémon: it is the weather, and it is the same weather
+ * for all thirteen of them.
+ */
+function FieldBar({ field, onChange }: {
+  field: PlanField
+  onChange: (next: PlanField) => void
+}) {
+  const one = <T extends string>(now: T | undefined, pick: T) => (now === pick ? undefined : pick)
+  const side = (which: 'mine' | 'theirs', key: keyof SideField) => ({
+    on: Boolean(field[which]?.[key]),
+    flip: () => onChange({
+      ...field,
+      [which]: { ...field[which], [key]: !field[which]?.[key] },
+    }),
+  })
+  return (
+    <div className="ev-field">
+      <span className="ev-field-set">
+        <em>Weather</em>
+        {WEATHERS.map((w) => (
+          <button
+            key={w} type="button" className="ev-field-pill"
+            aria-pressed={field.weather === w}
+            onClick={() => onChange({ ...field, weather: one(field.weather, w) })}
+          >
+            {w}
+          </button>
+        ))}
+      </span>
+      <span className="ev-field-set">
+        <em>Terrain</em>
+        {TERRAINS.map((t) => (
+          <button
+            key={t} type="button" className="ev-field-pill"
+            aria-pressed={field.terrain === t}
+            onClick={() => onChange({ ...field, terrain: one(field.terrain, t) })}
+          >
+            {t}
+          </button>
+        ))}
+      </span>
+      {([['mine', 'Yours'], ['theirs', 'Theirs']] as const).map(([which, label]) => (
+        <span key={which} className={`ev-field-set is-${which}`}>
+          <em>{label}</em>
+          {SIDE_FIELD.map(({ key, label: name }) => {
+            const { on, flip } = side(which, key)
+            return (
+              <button
+                key={key} type="button" className="ev-field-pill"
+                aria-pressed={on} onClick={flip}
+              >
+                {name}
+              </button>
+            )
+          })}
+        </span>
+      ))}
     </div>
   )
 }
@@ -1253,6 +1343,8 @@ export function EvCalcBody({
   const [moveQuery, setMoveQuery] = useState('')
   /** Items and abilities given out by hand, on either side. */
   const [gear, setGear] = useState<Record<string, Gear>>({})
+  /** The turn around all of them, which belongs to none of them. */
+  const [field, setField] = useState<PlanField>({})
   /** Which Pokémon everything above is about, once one has been picked. */
   const mine = chosen ?? ''
   const shape = shapes[mine] ?? null
@@ -1409,6 +1501,7 @@ export function EvCalcBody({
     || Object.keys(assume).length > 0
     || Object.keys(extra).length > 0
     || off.size > 0
+    || Object.keys(field).length > 0
   const startOver = () => {
     setSpreads({})
     setMysets({})
@@ -1417,6 +1510,7 @@ export function EvCalcBody({
     setAssume({})
     setExtra({})
     setOff(new Set())
+    setField({})
   }
 
   const dropFromSet = (id: string) => setMyset(setIds.filter((x) => x !== id))
@@ -1448,8 +1542,9 @@ export function EvCalcBody({
       level,
       // The league plays doubles, which takes a quarter off the spread moves.
       doubles: true,
+      field,
     })
-  }, [picked, myMoves, opponents, spread, chart, level, sets, gear])
+  }, [picked, myMoves, opponents, spread, chart, level, sets, gear, field])
 
   /** Any of this one's own dropped below 31, which every stat above reads. */
   const myIvs = picked ? gear[picked.entry.id]?.ivs : undefined
@@ -1738,6 +1833,8 @@ export function EvCalcBody({
         )}
       </div>
 
+      {picked && <FieldBar field={field} onChange={setField} />}
+
       {/* The headings and their sliders in one grid, the lists in
           another below it, both on the same six columns. Two grids
           rather than six columns of both, so the whole top can stick
@@ -1788,7 +1885,8 @@ export function EvCalcBody({
               <> — {guessed.map((o) => o.pokemon.name).join(', ')} {guessed.length === 1 ? 'has' : 'have'} no
                 set on record, so that second list is all there is for {guessed.length === 1 ? 'it' : 'them'}</>
             )}
-            . Weather, terrain, screens, boosts and Intimidate are not counted.
+            . Stat stages, Intimidate, burn and Tera are not counted; the weather,
+            the terrain and what each side has up are the row above the columns.
 
           </p>
         </>
