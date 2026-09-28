@@ -655,8 +655,8 @@ export function DraftTeams({ league, dex }: Props) {
         <ConfirmModal
           title={pending.kind === 'add' ? `Add ${pending.name}?` : `Remove ${pending.name}?`}
           note={pending.kind === 'add'
-            ? `The draft is over, so this is a trade rather than a pick. ${pending.name} comes off the board onto your team, and the change is recorded against your name.`
-            : `The draft is over, so this is a trade rather than an undo. ${pending.name} leaves your team and goes back on the board for anyone to take, and the change is recorded against your name.`}
+            ? `The draft is over, so this is a trade rather than a pick. ${pending.name} comes off the board onto your team.`
+            : `The draft is over, so this is a trade rather than an undo. ${pending.name} leaves your team and goes back on the board for anyone to take.`}
           action={pending.kind === 'add' ? 'Add to my team' : 'Remove from my team'}
           danger={pending.kind === 'drop'}
           busy={busy}
