@@ -634,6 +634,21 @@
 
 /* One gate, one look, wherever it is asked for. */
 .passphrase-modal { width: min(520px, 100%); }
+
+/* Same shape as the passphrase gate, because it is the same kind of thing:
+   a stop before something that is awkward to undo. */
+.confirm-modal { width: min(460px, 100%); }
+.confirm-actions { display: flex; gap: 0.5rem; justify-content: flex-end; }
+.confirm-no {
+  font: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+  padding: 0.45rem 1rem; border-radius: 999px;
+  background: var(--chip); border: 1px solid var(--line); color: var(--fg);
+}
+.confirm-no:hover { border-color: var(--muted); }
+.confirm-no:disabled { opacity: 0.55; cursor: default; }
+/* Red only for the ones that take something away — the difference between
+   giving a Pokemon up and picking one up should be visible before the click. */
+.report-go.is-danger { background: var(--nav-red); border-color: var(--nav-red); }
 .passphrase-form { display: flex; align-items: center; gap: 0.5rem; }
 .passphrase-form input {
   flex: 1 1 auto; font: inherit; font-size: 0.9rem; color: var(--fg);

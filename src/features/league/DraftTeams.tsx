@@ -13,6 +13,7 @@ import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
 import { PokemonLink } from '../../components/PokemonLink'
 import { Sprite } from '../../components/Sprite'
+import { ConfirmModal } from '../../components/ConfirmModal'
 
 /**
  * How long ago something was, in the largest two units that say anything.
@@ -69,6 +70,9 @@ function Elapsed({ from, label }: { from: number; label: string }) {
 
 /** Best to worst, which is the order the board and the rules use. */
 const TIER_PILLS = [...TIER_ORDER].reverse()
+
+/** A roster change waiting to be agreed to, named so the dialog can say it. */
+interface RosterChange { kind: 'add' | 'drop'; id: string; name: string }
 
 interface Props {
   league: League
@@ -128,6 +132,39 @@ export function DraftTeams({ league, dex }: Props) {
     () => (draft?.status === 'active' ? snakeDraft(league.players, league.rosters) : null),
     [draft, league.players, league.rosters],
   )
+
+  /*
+   * Outside a running draft, a roster change is asked about first.
+   *
+   * During one it is not: a draft is timed and everyone is watching the
+   * clock, and a dialog between deciding and picking is the last thing
+   * that screen needs. Once it closes the same two buttons stop being
+   * picks and start being trades — the board is settled, the change is
+   * recorded against your name, and it is worth a second to be sure the
+   * click landed on the Pokémon you meant.
+   *
+   * A missing draft row counts as no draft, which is the cautious way
+   * round: the cost of asking when it turns out to be a draft is one
+   * extra click, and the cost of not asking is somebody's team.
+   */
+  const drafting = draft?.status === 'active'
+  const [pending, setPending] = useState<RosterChange | null>(null)
+
+  /** Does it, once it is agreed to — or straight away, mid-draft. */
+  const change = (next: RosterChange) => {
+    if (drafting) void commit(next)
+    else setPending(next)
+  }
+  const commit = async (next: RosterChange) => {
+    setPending(null)
+    await run(async () => {
+      const msg = next.kind === 'add'
+        ? await claimPokemon(me, next.id)
+        : await releasePokemon(me, next.id)
+      if (next.kind === 'add') setQuery('')
+      return msg
+    })
+  }
 
   /**
    * What each coach has taken, in the order they took it.
@@ -489,7 +526,11 @@ export function DraftTeams({ league, dex }: Props) {
                         <td>
                           <button
                             type="button" className="draft-drop" disabled={busy}
-                            onClick={() => run(() => releasePokemon(me, pick.pokemon))}
+                            onClick={() => change({
+                              kind: 'drop',
+                              id: pick.pokemon,
+                              name: mon?.name ?? pick.pokemon,
+                            })}
                           >
                             Remove
                           </button>
@@ -527,10 +568,8 @@ export function DraftTeams({ league, dex }: Props) {
                         className={`draft-result${why ? ' is-gone' : ''}`}
                         disabled={busy || Boolean(why)}
                         title={why ?? `Draft ${mon?.name ?? entry.name}`}
-                        onClick={() => run(async () => {
-                          const msg = await claimPokemon(me, id)
-                          setQuery('')
-                          return msg
+                        onClick={() => change({
+                          kind: 'add', id, name: mon?.name ?? entry.name,
                         })}
                       >
                         {budget == null
@@ -611,6 +650,20 @@ export function DraftTeams({ league, dex }: Props) {
           )
         })}
       </div>
+
+      {pending && (
+        <ConfirmModal
+          title={pending.kind === 'add' ? `Add ${pending.name}?` : `Remove ${pending.name}?`}
+          note={pending.kind === 'add'
+            ? `The draft is over, so this is a trade rather than a pick. ${pending.name} comes off the board onto your team, and the change is recorded against your name.`
+            : `The draft is over, so this is a trade rather than an undo. ${pending.name} leaves your team and goes back on the board for anyone to take, and the change is recorded against your name.`}
+          action={pending.kind === 'add' ? 'Add to my team' : 'Remove from my team'}
+          danger={pending.kind === 'drop'}
+          busy={busy}
+          onClose={() => setPending(null)}
+          onConfirm={() => void commit(pending)}
+        />
+      )}
     </div>
   )
 }
