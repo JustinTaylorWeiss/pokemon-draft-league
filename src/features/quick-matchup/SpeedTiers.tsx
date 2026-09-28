@@ -68,6 +68,16 @@ function BuildRow({
           <Sprite pokemon={entry.pokemon} width={32} height={26} />
           <span>{entry.pokemon.name}</span>
         </button>
+        {/* Against the name, because it is about the Pokémon and not about
+            the build: the toggles below all change the number, and this
+            one decides whether to look at it at all. */}
+        <button
+          type="button" className={`speed-flag speed-hide${hidden ? ' is-on' : ''}`}
+          aria-pressed={hidden} onClick={onHide}
+          title={hidden ? 'Put it back in the rankings' : 'Take it out of the rankings'}
+        >
+          Hide
+        </button>
         <div className="speed-slider">
           <input
             type="range" min={0} max={RULES[rules].max} step={RULES[rules].step}
@@ -78,16 +88,6 @@ function BuildRow({
           <span>{build.ev}<em>{RULES[rules].unit}</em></span>
         </div>
         <strong>{speedOf(entry.pokemon, build, level, rules)}</strong>
-        {/* Up here rather than among the toggles: it is not one of them —
-            they all change the number and this one decides whether to
-            look at it — and the toggles want the whole of their line. */}
-        <button
-          type="button" className={`speed-flag speed-hide${hidden ? ' is-on' : ''}`}
-          aria-pressed={hidden} onClick={onHide}
-          title={hidden ? 'Put it back in the rankings' : 'Take it out of the rankings'}
-        >
-          Hide
-        </button>
       </div>
 
       <div className="speed-knobs">

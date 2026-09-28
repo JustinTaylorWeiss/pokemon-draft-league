@@ -403,9 +403,11 @@
    are fixed, so the numbers down the column line up with each other. */
 .speed-top { display: flex; align-items: center; gap: 0.35rem; min-width: 0; }
 .speed-top > strong { flex: none; margin-left: 0; min-width: 2.1rem; text-align: right; }
-.speed-hide { flex: none; padding: 0.16rem 0.38rem; }
+/* Hugs the name, and pushes the bar and the Speed to the far end so
+   the numbers still line up down the column. */
+.speed-hide { flex: none; margin-right: auto; padding: 0.16rem 0.38rem; }
 .speed-who {
-  display: flex; align-items: center; gap: 0.4rem; flex: 1 1 0; min-width: 0;
+  display: flex; align-items: center; gap: 0.4rem; flex: 0 1 auto; min-width: 0;
   padding: 0; background: none; border: 0; color: inherit;
   font: inherit; font-size: inherit; cursor: pointer; text-align: left;
 }
