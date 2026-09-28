@@ -314,7 +314,7 @@
    in a way that spacing never quite did. */
 .speed-live {
   display: grid; align-items: start; column-gap: 0.6rem;
-  grid-template-columns: minmax(0, 1.18fr) minmax(0, 1.18fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr) minmax(0, 1.18fr);
   padding: 0.7rem; border: 1px solid var(--line); border-radius: 12px;
   background: var(--bg);
 }
@@ -967,8 +967,12 @@ button.type-chip { cursor: pointer; }
   .speed-live { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); row-gap: 0.9rem; }
   /* The teams take a column each and the ranking they produce runs under
      both of them, which is the shape the group has anyway — two inputs and
-     what they come to. */
-  .speed-live > .speed-groups { grid-column: 1 / -1; }
+     what they come to. Placed by hand, because the ranking sits between
+     the teams in the markup and auto-placement would put the second team
+     below it rather than beside the first. */
+  .speed-live > .speed-side:first-child { grid-area: 1 / 1; }
+  .speed-live > .speed-side:last-child { grid-area: 1 / 2; }
+  .speed-live > .speed-groups { grid-area: 2 / 1 / 3 / -1; }
 }
 
 @media (max-width: 620px) {
@@ -981,6 +985,13 @@ button.type-chip { cursor: pointer; }
   .builder-columns { gap: 0.75rem; }
   .custom-teams { grid-template-columns: 1fr; }
   .speed-live { grid-template-columns: minmax(0, 1fr); row-gap: 0.9rem; }
+  /* One column, and the ranking goes to the end of it: between the teams
+     here would mean scrolling past it to reach the second team's controls.
+     Spelled with the same pseudo-classes as the rule above, or it loses on
+     specificity and both teams stay pinned to row one on top of each other. */
+  .speed-live > .speed-side:first-child,
+  .speed-live > .speed-side:last-child { grid-area: auto; }
+  .speed-live > .speed-groups { grid-area: auto; order: 1; }
 }
 
 /* The league's own valuation of a drafted Pokemon — a cost or a tier. */

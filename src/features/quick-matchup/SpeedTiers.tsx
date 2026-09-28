@@ -220,6 +220,51 @@ export function SpeedTiersBody({
   const rowClass = (id: string) =>
     selected === id ? 'is-selected' : selected ? 'is-dimmed' : ''
 
+  /*
+   * Nothing is in the stat until you put it there, which is the honest
+   * default and a spread nobody runs — so the first thing anyone does is
+   * drag six sliders to the end. One button, and the same button back,
+   * since a bare team is the other thing worth being one click from.
+   */
+  const column = (s: { key: 'one' | 'two'; name: string; members: TeamEntry[] }) => {
+    const full = s.members.length > 0 && s.members.every((m) => {
+      const b = buildOf(m.id)
+      return b.ev === most && b.nature > 1
+    })
+    const fill = () => {
+      for (const m of s.members) {
+        onBuild(m.id, full ? { ev: 0, nature: 1 } : { ev: most, nature: 1.1 })
+      }
+    }
+    return (
+      <div className={`speed-side side-${s.key}`} key={s.key}>
+        <h3>
+          <span>{s.name}</span>
+          {s.members.length > 0 && (
+            <button
+              type="button" className={`speed-fill${full ? ' is-on' : ''}`}
+              aria-pressed={full} onClick={fill}
+              title={full
+                ? 'Put the whole side back to nothing spent and a neutral nature'
+                : `Give the whole side ${most} ${RULES[rules].unit} and a positive nature`}
+            >
+              Max
+            </button>
+          )}
+        </h3>
+        <ul>
+          {s.members.map((m) => (
+            <BuildRow
+              key={m.id} entry={m} side={s.key} build={buildOf(m.id)} onBuild={onBuild}
+              level={level} rules={rules} klass={rowClass(m.id)}
+              title={title(m.id, m.pokemon.name)} onSelect={() => toggle(m.id)}
+            />
+          ))}
+        </ul>
+      </div>
+    )
+  }
+
   const ranking = (rows: ReturnType<typeof speedRows>) => (
       <ul>
         {rows.map((t, i) => (
@@ -243,60 +288,23 @@ export function SpeedTiersBody({
 
   return (
     <div className="speed-layout">
-      {/* The two teams and what they come to: one thing, read left to right. */}
+      {/*
+        * One side, what the two of them come to, the other side. The
+        * ranking is between the teams because that is what it is between:
+        * every row in it came from a column to its left or its right, and
+        * a Pokemon's own row is never more than one column away.
+        */}
       <div className="speed-live">
-        {sides.map((s) => {
-          /*
-           * Nothing is in the stat until you put it there, which is the
-           * honest default and a spread nobody runs — so the first thing
-           * anyone does is drag six sliders to the end. One button, and
-           * the same button back, since a bare team is the other thing
-           * worth being one click from.
-           */
-          const full = s.members.length > 0 && s.members.every((m) => {
-            const b = buildOf(m.id)
-            return b.ev === most && b.nature > 1
-          })
-          const fill = () => {
-            for (const m of s.members) {
-              onBuild(m.id, full ? { ev: 0, nature: 1 } : { ev: most, nature: 1.1 })
-            }
-          }
-          return (
-            <div className={`speed-side side-${s.key}`} key={s.key}>
-              <h3>
-                <span>{s.name}</span>
-                {s.members.length > 0 && (
-                  <button
-                    type="button" className={`speed-fill${full ? ' is-on' : ''}`}
-                    aria-pressed={full} onClick={fill}
-                    title={full
-                      ? 'Put the whole side back to nothing spent and a neutral nature'
-                      : `Give the whole side ${most} ${RULES[rules].unit} and a positive nature`}
-                  >
-                    Max
-                  </button>
-                )}
-              </h3>
-              <ul>
-                {s.members.map((m) => (
-                  <BuildRow
-                    key={m.id} entry={m} side={s.key} build={buildOf(m.id)} onBuild={onBuild}
-                    level={level} rules={rules} klass={rowClass(m.id)}
-                    title={title(m.id, m.pokemon.name)} onSelect={() => toggle(m.id)}
-                  />
-                ))}
-              </ul>
-            </div>
-          )
-        })}
+        {column(sides[0])}
 
         <div className="speed-groups">
-          <h3 title="Every Pokémon at the builds set on the left">
+          <h3 title="Every Pokémon at the builds set either side">
             <span>From team speed filters</span>
           </h3>
           {ranking(live)}
         </div>
+
+        {column(sides[1])}
       </div>
 
       {/* And the chart, which the three on the left cannot reach. Its own
