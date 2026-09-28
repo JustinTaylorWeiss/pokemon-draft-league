@@ -307,15 +307,20 @@
  */
 .speed-layout {
   display: grid; align-items: stretch; column-gap: 1.1rem;
-  grid-template-columns: minmax(0, 3.24fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(0, 3.4fr) minmax(0, 1.1fr);
 }
+/* Boxed, because a gap is only a hint. The three inside it move together
+   and the chart outside it does not, and a line you can point at says so
+   in a way that spacing never quite did. */
 .speed-live {
   display: grid; align-items: start; column-gap: 0.6rem;
-  grid-template-columns: minmax(0, 1.12fr) minmax(0, 1.12fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1.18fr) minmax(0, 1.18fr) minmax(0, 1fr);
+  padding: 0.7rem; border: 1px solid var(--line); border-radius: 12px;
+  background: var(--bg);
 }
-/* The rule is the whole of the separation, so it runs the full height
-   rather than stopping wherever the shorter of the two ends. */
-.speed-chart { border-left: 1px solid var(--line); padding-left: 1.1rem; }
+/* Level with the first heading inside the box, which sits a border and a
+   padding lower than the box itself. */
+.speed-chart { padding-top: calc(0.7rem + 1px); }
 .speed-chart-head {
   display: flex; align-items: center; justify-content: space-between;
   gap: 0.5rem; min-height: 1.45rem; margin-bottom: 0.4rem;
@@ -335,10 +340,10 @@
    two sides are named everywhere else on these tabs. */
 .speed-side.side-one > h3 { color: var(--team-one); }
 .speed-side.side-two > h3 { color: var(--team-two); }
-/* The name is in a span of its own because the heading is a flex row, and
-   text-overflow has nothing to clip in one of those — a long team name was
-   cut off mid-letter with no ellipsis to say so. */
-.speed-side > h3 > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Every heading's text is in a span of its own because the heading is a
+   flex row, and text-overflow has nothing to clip in one of those — a long
+   team name was cut off mid-letter with no ellipsis to say so. */
+.speed-layout h3 > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .speed-layout ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
 
 .speed-layout li {
@@ -373,8 +378,12 @@
  * place — the two rankings are for reading it against everyone else.
  */
 .speed-build { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.3rem 0.4rem; }
+/* Name, bar, number. The name takes the slack and ellipsises; the other two
+   are fixed, so the numbers down the column line up with each other. */
+.speed-top { display: flex; align-items: center; gap: 0.35rem; min-width: 0; }
+.speed-top > strong { flex: none; margin-left: 0; min-width: 2.1rem; text-align: right; }
 .speed-who {
-  display: flex; align-items: center; gap: 0.4rem; width: 100%; min-width: 0;
+  display: flex; align-items: center; gap: 0.4rem; flex: 1 1 0; min-width: 0;
   padding: 0; background: none; border: 0; color: inherit;
   font: inherit; font-size: inherit; cursor: pointer; text-align: left;
 }
@@ -386,12 +395,15 @@
    beside it are what the row is mostly for. Wrapping to its own line
    under a narrow column costs nothing: a row is as tall as it needs to
    be and has nothing to line up with. */
-.speed-slider { display: flex; align-items: center; gap: 0.4rem; flex: 0 1 auto; }
-.speed-slider input[type="range"] { flex: 0 0 4.5rem; width: 4.5rem; }
+.speed-slider { display: flex; align-items: center; gap: 0.3rem; flex: none; }
+.speed-slider input[type="range"] { flex: 0 0 3.5rem; width: 3.5rem; }
 .speed-slider > span {
   font-size: 0.7rem; color: var(--muted); white-space: nowrap;
-  font-variant-numeric: tabular-nums; min-width: 3.1rem;
+  font-variant-numeric: tabular-nums; min-width: 2.2rem;
 }
+/* The unit is smaller than the count and unspaced from it, because the
+   count is what changes and the row has no width to spare. */
+.speed-slider > span em { font-style: normal; font-size: 0.86em; opacity: 0.75; margin-left: 0.2em; }
 
 .speed-knobs { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.35rem; }
 /* Two halves of one control, so they touch and share their middle edge. */
@@ -409,9 +421,18 @@
   background: none; border: 1px solid var(--line); border-radius: 999px;
   color: var(--muted); font: inherit; font-size: 0.7rem; line-height: 1; cursor: pointer;
 }
-.speed-nature button:hover, .speed-flag:hover { color: var(--fg); border-color: var(--team-accent, var(--accent)); }
+/* Thirteen stages is too many for a row of pills, so this one is a menu.
+   Shaped like the pills beside it, and red on the same terms. */
+.speed-stage {
+  padding: 0.16rem 0.2rem 0.16rem 0.4rem;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
+  color: var(--muted); font: inherit; font-size: 0.7rem; line-height: 1.25; cursor: pointer;
+}
+.speed-nature button:hover, .speed-flag:hover, .speed-stage:hover { color: var(--fg); border-color: var(--team-accent, var(--accent)); }
+.speed-stage:focus-visible { outline: 2px solid var(--team-accent, var(--accent)); outline-offset: 1px; }
 /* Red text and a red outline, never a solid fill — the same way every
    other toggle on these tabs reads as on. */
+.speed-stage.is-on { color: var(--team-accent, var(--accent)); border-color: var(--team-accent, var(--accent)); }
 .speed-nature button.is-on, .speed-flag.is-on {
   color: var(--team-accent, var(--accent)); border-color: var(--team-accent, var(--accent));
   position: relative; z-index: 1;
@@ -931,14 +952,13 @@ button.type-chip { cursor: pointer; }
   .moves-controls { flex-wrap: wrap; }
   .moves-controls input { flex-basis: 100%; }
   .tag-row { flex-basis: 100%; }
-  /* The chart goes under the group, and the rule between them with it. */
+  /* The chart goes under the box rather than beside it. */
   .speed-layout { grid-template-columns: minmax(0, 1fr); row-gap: 1.1rem; }
   .speed-live { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); row-gap: 0.9rem; }
   /* The teams take a column each and the ranking they produce runs under
      both of them, which is the shape the group has anyway — two inputs and
      what they come to. */
   .speed-live > .speed-groups { grid-column: 1 / -1; }
-  .speed-chart { border-left: 0; border-top: 1px solid var(--line); padding: 1rem 0 0; }
 }
 
 @media (max-width: 620px) {

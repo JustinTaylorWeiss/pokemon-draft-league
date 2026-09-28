@@ -173,7 +173,7 @@ export interface SpeedTier {
   pokemon: Pokemon
   /** What is in the stat and which way the nature bends it: "32+", "0−". */
   investment: string
-  /** Stage label ("+1") when one is applied; never set by a build. */
+  /** Stage label ("+1") when one is applied. */
   stage: string | null
   /** Every multiplier stacked onto this row, in the order applied. */
   modifiers: string[]
@@ -190,13 +190,32 @@ export interface SpeedBuild {
   ev: number
   /** 1.1, 1 or 0.9. */
   nature: number
+  /** Boost stage, −6 to +6. */
+  stage: number
   scarf: boolean
   tailwind: boolean
   ability: boolean
 }
 
 export const bareBuild = (): SpeedBuild =>
-  ({ ev: 0, nature: 1, scarf: false, tailwind: false, ability: false })
+  ({ ev: 0, nature: 1, stage: 0, scarf: false, tailwind: false, ability: false })
+
+/**
+ * What a boost stage multiplies a stat by, as the integer fraction the
+ * games use: +n is (2+n)/2 and −n is 2/(2+n), so +6 quadruples and −6
+ * quarters. Kept as a fraction rather than a decimal because the result
+ * is floored, and 2/3 of 151 is not 0.666 × 151.
+ */
+export function stageFraction(stage: number): { num: number; den: number } {
+  const n = Math.max(-6, Math.min(6, Math.trunc(stage)))
+  return n >= 0 ? { num: 2 + n, den: 2 } : { num: 2, den: 2 - n }
+}
+
+/** "+2", "−1", or nothing at all when the stage is neutral. */
+export function stageLabel(stage: number): string | null {
+  if (!stage) return null
+  return `${stage > 0 ? '+' : '\u2212'}${Math.abs(stage)}`
+}
 
 /**
  * The one ability this Pokémon has that changes its Speed, if it has one.
@@ -222,6 +241,11 @@ export function speedOf(
   pokemon: Pokemon, build: SpeedBuild, level = 50, rules: Rules = 'gen9',
 ): number {
   let speed = statAtLevel(pokemon.baseStats.spe, build.ev, build.nature, false, 31, level, rules)
+  // The stage is part of the stat, so it lands before anything multiplying it.
+  if (build.stage) {
+    const { num, den } = stageFraction(build.stage)
+    speed = Math.floor((speed * num) / den)
+  }
   if (build.scarf) speed = Math.floor(speed * UNIVERSAL_MODIFIERS['Choice Scarf'])
   const ability = speedAbility(pokemon)
   if (build.ability && ability) speed = Math.floor(speed * SPEED_ABILITIES[ability])
@@ -242,7 +266,7 @@ export function speedRows(
       id,
       pokemon,
       investment: `${build.ev}${build.nature > 1 ? '+' : build.nature < 1 ? '\u2212' : ''}`,
-      stage: null,
+      stage: stageLabel(build.stage),
       modifiers: [
         ...(build.scarf ? ['Choice Scarf'] : []),
         ...(build.ability && speedAbility(pokemon) ? [speedAbility(pokemon) as string] : []),

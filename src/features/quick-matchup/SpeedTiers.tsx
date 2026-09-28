@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { ReactNode } from 'react'
 import {
-  speedRows, speedTiers, speedOf, speedAbility, RULES,
+  speedRows, speedTiers, speedOf, speedAbility, stageLabel, RULES,
   type Rules, type SpeedBuild,
 } from '../../lib/stats'
 import type { Team, TeamEntry } from './TeamEditor'
@@ -28,6 +28,9 @@ interface Props {
   onSelect: (id: string | null) => void
 }
 
+/** +6 down to −6, listed the way a stat rises: the best is at the top. */
+const STAGES = [6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -6]
+
 /** A Pokémon on its own side's column, under the build it has been given. */
 function BuildRow({
   entry, side, build, onBuild, level, rules, klass, title, onSelect,
@@ -48,11 +51,29 @@ function BuildRow({
 
   return (
     <li className={`speed-build side-${side} ${klass}`}>
-      <button type="button" className="speed-who" onClick={onSelect} title={title}>
-        <Sprite pokemon={entry.pokemon} width={32} height={26} />
-        <span>{entry.pokemon.name}</span>
+      {/*
+        * The bar sits on the name line rather than down with the toggles:
+        * what is in the stat is the thing you reach for first and the
+        * thing the number beside it answers, so the two read together.
+        * An input cannot live inside a button, which is why the name is
+        * its own button in a row rather than the row itself.
+        */}
+      <div className="speed-top">
+        <button type="button" className="speed-who" onClick={onSelect} title={title}>
+          <Sprite pokemon={entry.pokemon} width={32} height={26} />
+          <span>{entry.pokemon.name}</span>
+        </button>
+        <div className="speed-slider">
+          <input
+            type="range" min={0} max={RULES[rules].max} step={RULES[rules].step}
+            value={build.ev}
+            aria-label={`${entry.pokemon.name} Speed ${RULES[rules].unit}`}
+            onChange={(e) => onBuild(entry.id, { ev: Number(e.target.value) })}
+          />
+          <span>{build.ev}<em>{RULES[rules].unit}</em></span>
+        </div>
         <strong>{speedOf(entry.pokemon, build, level, rules)}</strong>
-      </button>
+      </div>
 
       <div className="speed-knobs">
         <div className="speed-nature">
@@ -71,6 +92,16 @@ function BuildRow({
             +
           </button>
         </div>
+        <select
+          className={`speed-stage${build.stage ? ' is-on' : ''}`}
+          value={build.stage} title="Boost stage"
+          aria-label={`${entry.pokemon.name} Speed stage`}
+          onChange={(e) => onBuild(entry.id, { stage: Number(e.target.value) })}
+        >
+          {STAGES.map((n) => (
+            <option key={n} value={n}>{stageLabel(n) ?? '\u00b10'}</option>
+          ))}
+        </select>
         <button
           type="button" className={`speed-flag${build.scarf ? ' is-on' : ''}`}
           aria-pressed={build.scarf}
@@ -94,16 +125,6 @@ function BuildRow({
             {ability}
           </button>
         )}
-
-        <div className="speed-slider">
-          <input
-            type="range" min={0} max={RULES[rules].max} step={RULES[rules].step}
-            value={build.ev}
-            aria-label={`${entry.pokemon.name} Speed ${RULES[rules].unit}`}
-            onChange={(e) => onBuild(entry.id, { ev: Number(e.target.value) })}
-          />
-          <span>{build.ev} {RULES[rules].unit}</span>
-        </div>
       </div>
     </li>
   )
@@ -224,7 +245,9 @@ export function SpeedTiersBody({
         ))}
 
         <div className="speed-groups">
-          <h3 title="Every Pokémon at the builds set on the left">Lv {level} Tiers</h3>
+          <h3 title="Every Pokémon at the builds set on the left">
+            <span>From team speed filters</span>
+          </h3>
           {ranking(live)}
         </div>
       </div>
@@ -236,7 +259,7 @@ export function SpeedTiersBody({
       <div className="speed-chart speed-groups">
         <div className="speed-chart-head">
           <h3 title="Every spread and multiplier the filter has switched on, whatever the builds say">
-            Chart
+            <span>Speed tiers</span>
           </h3>
           {filter}
         </div>
