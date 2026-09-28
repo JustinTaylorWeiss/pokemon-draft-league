@@ -298,7 +298,7 @@
 .speed-layout {
   display: grid; align-items: start; column-gap: 0.6rem;
   grid-template-columns:
-    minmax(0, 1.5fr) minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
+    minmax(0, 1.12fr) minmax(0, 1.12fr) minmax(0, 1fr) minmax(0, 1.2fr);
 }
 .speed-layout h3 { margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase; color: var(--team-both); letter-spacing: 0.05em; }
 /* A team column is headed by the team, in the team's colour, the way the
@@ -352,14 +352,16 @@
 .speed-who > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .speed-who img { width: 42px; height: 34px; }
 
-/* Last on the line and the only thing that stretches, so the toggles keep
-   their size and the bar takes whatever is left. It wraps to its own line
-   under a narrow column, which costs nothing: a row is as tall as it needs
-   to be and has nothing to line up with. */
-.speed-slider { display: flex; align-items: center; gap: 0.45rem; flex: 1 1 9rem; min-width: 8rem; }
+/* A short fixed bar rather than one that eats the rest of the line. It is
+   32 points end to end, so length buys no precision, and the toggles
+   beside it are what the row is mostly for. Wrapping to its own line
+   under a narrow column costs nothing: a row is as tall as it needs to
+   be and has nothing to line up with. */
+.speed-slider { display: flex; align-items: center; gap: 0.4rem; flex: 0 1 auto; }
+.speed-slider input[type="range"] { flex: 0 0 4.5rem; width: 4.5rem; }
 .speed-slider > span {
   font-size: 0.7rem; color: var(--muted); white-space: nowrap;
-  font-variant-numeric: tabular-nums; min-width: 3.4rem; text-align: right;
+  font-variant-numeric: tabular-nums; min-width: 3.1rem;
 }
 
 .speed-knobs { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.35rem; }
@@ -385,6 +387,66 @@
   color: var(--team-accent, var(--accent)); border-color: var(--team-accent, var(--accent));
   position: relative; z-index: 1;
 }
+
+/* ---- speed tiers filter ---- */
+/* A checkbox on each side of the label, so the two teams filter independently:
+   left box is team one, right box is team two, coloured to match. */
+.speed-filter { position: relative; }
+.filter-btn {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  background: none; border: 1px solid var(--line); border-radius: 999px;
+  color: var(--muted); font: inherit; font-size: 0.78rem;
+  padding: 0.22rem 0.7rem; cursor: pointer;
+}
+.filter-btn:hover, .filter-btn.is-open {
+  color: var(--team-accent, var(--accent)); border-color: var(--team-accent, var(--accent));
+}
+
+.filter-pop {
+  position: absolute; z-index: 30; top: calc(100% + 0.4rem); right: 0;
+  min-width: 15rem; padding: 0.5rem;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 45%);
+}
+.filter-pop-head {
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  gap: 0.5rem; padding: 0 0.15rem 0.4rem; border-bottom: 1px solid var(--line);
+}
+.filter-side {
+  font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 700;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.filter-side.one { color: var(--team-one); }
+.filter-side.two { color: var(--team-two); text-align: right; }
+.filter-pop .link-btn { font-size: 0.72rem; }
+
+/* A hairline between stages, spreads and multipliers. */
+.filter-group + .filter-group { border-top: 1px solid var(--line); margin-top: 0.3rem; padding-top: 0.3rem; }
+.option-row {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center;
+  gap: 0.6rem; padding: 0.12rem 0.15rem;
+}
+.option-row:hover { background: var(--chip); border-radius: 6px; }
+.filter-label { font-size: 0.78rem; text-align: center; }
+.option-row input[type="checkbox"] {
+  appearance: none; width: 0.95rem; height: 0.95rem; margin: 0; flex: none;
+  border: 1px solid var(--line); border-radius: 4px; background: var(--surface);
+  cursor: pointer; position: relative;
+}
+.option-row input[type="checkbox"]::after {
+  content: ''; position: absolute; inset: 0;
+  background: currentColor;
+  clip-path: polygon(14% 47%, 0 61%, 40% 100%, 100% 22%, 85% 10%, 38% 71%);
+  opacity: 0; transition: opacity 0.1s;
+}
+.option-row input[type="checkbox"]:checked::after { opacity: 1; }
+.option-row .cb-one:checked { border-color: var(--team-one); color: var(--team-one); }
+.option-row .cb-two:checked { border-color: var(--team-two); color: var(--team-two); }
+.option-row .cb-one:hover { border-color: var(--team-one); }
+.option-row .cb-two:hover { border-color: var(--team-two); }
+.option-row input[type="checkbox"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.badge-stage { color: var(--team-both); }
 
 /* ---- the level picker in the bar ---- */
 .level-picker {

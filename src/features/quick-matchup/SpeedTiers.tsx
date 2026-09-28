@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import {
-  speedRows, speedOf, speedAbility, RULES,
+  speedRows, speedTiers, speedOf, speedAbility, RULES,
   type Rules, type SpeedBuild,
 } from '../../lib/stats'
 import type { Team, TeamEntry } from './TeamEditor'
@@ -15,6 +15,9 @@ interface Props {
   preMega: Set<string>
   /** Which numbers the spreads are spent in. */
   rules: Rules
+  /** Enabled filter rows per side, for the chart column on the right. */
+  filterOne: Set<string>
+  filterTwo: Set<string>
   /** How one Pokémon is built, and how to change it. */
   buildOf: (id: string) => SpeedBuild
   onBuild: (id: string, next: Partial<SpeedBuild>) => void
@@ -72,6 +75,13 @@ function BuildRow({
         >
           Scarf
         </button>
+        <button
+          type="button" className={`speed-flag${build.tailwind ? ' is-on' : ''}`}
+          aria-pressed={build.tailwind}
+          onClick={() => onBuild(entry.id, { tailwind: !build.tailwind })}
+        >
+          Tailwind
+        </button>
         {ability && (
           <button
             type="button" className={`speed-flag${build.ability ? ' is-on' : ''}`}
@@ -115,10 +125,9 @@ function BuildRow({
  * them while this renders only the body.
  */
 export function SpeedTiersBody({
-  teamOne, teamTwo, preMega, level, rules, buildOf, onBuild, selected, onSelect,
+  teamOne, teamTwo, preMega, level, rules, filterOne, filterTwo,
+  buildOf, onBuild, selected, onSelect,
 }: Props) {
-  const most = RULES[rules].max
-  const unit = RULES[rules].unit
 
   const side = useMemo(() => {
     const map = new Map<string, 'one' | 'two'>()
@@ -153,15 +162,16 @@ export function SpeedTiersBody({
     everyone.map((e) => ({ id: e.id, pokemon: e.pokemon, build: buildOf(e.id) })),
     level, rules,
   )
-  /* The same list with the controls ignored: everything at full investment. */
-  const fixed = speedRows(
-    everyone.map((e) => ({
-      id: e.id,
-      pokemon: e.pokemon,
-      build: { ev: most, nature: 1.1, scarf: false, ability: false },
-    })),
-    level, rules,
-  )
+  /*
+   * The chart, untouched by anything on the left: every spread, stage and
+   * multiplier the filter has switched on for that Pokémon's side, one row
+   * per combination. It is the reference the live column is read against,
+   * and it moves only when the filter does.
+   */
+  const chart = speedTiers([
+    ...teamOne.members.map((m) => ({ ...m, enabled: filterOne })),
+    ...teamTwo.members.map((m) => ({ ...m, enabled: filterTwo })),
+  ], level, rules)
 
   const toggle = (id: string) => onSelect(selected === id ? null : id)
   /** The only place it is said: why an undrafted forme is on the chart. */
@@ -170,18 +180,20 @@ export function SpeedTiersBody({
   const rowClass = (id: string) =>
     selected === id ? 'is-selected' : selected ? 'is-dimmed' : ''
 
-  const ranking = (
-    heading: string, hint: string, rows: ReturnType<typeof speedRows>, badges: boolean,
-  ) => (
+  const ranking = (heading: string, hint: string, rows: ReturnType<typeof speedRows>) => (
     <div className="speed-groups">
       <h3 title={hint}>{heading}</h3>
       <ul>
-        {rows.map((t) => (
-          <li key={t.id} className={`side-${side.get(t.id)} ${rowClass(t.id)}`}>
+        {rows.map((t, i) => (
+          <li
+            key={`${t.id}-${t.investment}-${t.stage ?? ''}-${t.modifiers.join()}-${i}`}
+            className={`side-${side.get(t.id)} ${rowClass(t.id)}`}
+          >
             <button type="button" onClick={() => toggle(t.id)} title={title(t.id, t.pokemon.name)}>
               <Sprite pokemon={t.pokemon} width={32} height={26} />
-              {badges && t.investment !== '0' && <span className="badge">{t.investment}</span>}
-              {badges && t.modifiers.map((m) => (
+              {t.investment !== '0' && <span className="badge">{t.investment}</span>}
+              {t.stage && <span className="badge badge-stage">{t.stage}</span>}
+              {t.modifiers.map((m) => (
                 <span key={m} className="badge badge-ability">{m}</span>
               ))}
               <strong>{t.speed}</strong>
@@ -209,11 +221,11 @@ export function SpeedTiersBody({
         </div>
       ))}
 
-      {ranking(`Lv ${level} Tiers`, 'Every Pokémon at the builds set on the left', live, true)}
+      {ranking(`Lv ${level} Tiers`, 'Every Pokémon at the builds set on the left', live)}
       {ranking(
-        `Max ${unit} + Nature`,
-        `Every Pokémon at ${most} ${unit} and a positive nature, whatever the builds say`,
-        fixed, false,
+        'Chart',
+        'Every spread and multiplier the filter has switched on, whatever the builds say',
+        chart,
       )}
     </div>
   )

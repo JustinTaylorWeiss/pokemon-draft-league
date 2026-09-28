@@ -1,7 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { SpeedTiersBody } from './SpeedTiers'
-import { bareBuild, type Rules, type SpeedBuild } from '../../lib/stats'
+import { SpeedFilter } from './SpeedFilter'
+import {
+  bareBuild, defaultSpeedFilter, speedFilterRows,
+  type Rules, type SpeedBuild,
+} from '../../lib/stats'
 import { isMega, megaBaseId, type LeagueDex } from '../../data/league'
 import type { Team, TeamEntry } from './TeamEditor'
 
@@ -79,14 +83,62 @@ export function useSpeedTiersPanel(teamOne: Team, teamTwo: Team, dex: LeagueDex,
   const reset = () => setBuilds({})
   const touched = Object.keys(builds).length > 0
 
+  /*
+   * And the filter, which drives the chart column on the right and nothing
+   * else. The two are not the same question: the builds say what these
+   * twelve Pokémon are actually running, and the chart says what the
+   * spreads anyone might run come to. Neither answers for the other, which
+   * is why both are on the tab.
+   */
+  const both = useMemo(
+    () => [...one.team.members, ...two.team.members],
+    [one.team.members, two.team.members],
+  )
+  const rows = useMemo(() => speedFilterRows(both, rules), [both, rules])
+  const [filterOne, setFilterOne] = useState<Set<string>>(() => defaultSpeedFilter(both, rules))
+  const [filterTwo, setFilterTwo] = useState<Set<string>>(() => defaultSpeedFilter(both, rules))
+
+  // A roster change can add or remove ability rows, so the defaults are
+  // recomputed rather than left pointing at abilities nobody has any more.
+  useEffect(() => {
+    setFilterOne(defaultSpeedFilter(both, rules))
+    setFilterTwo(defaultSpeedFilter(both, rules))
+  }, [both, rules])
+
+  const setFilter = (side: 'one' | 'two', key: string, on: boolean) => {
+    const apply = (prev: Set<string>) => {
+      const next = new Set(prev)
+      if (on) next.add(key)
+      else next.delete(key)
+      return next
+    }
+    if (side === 'one') setFilterOne(apply)
+    else setFilterTwo(apply)
+  }
+
+  const resetFilter = () => {
+    setFilterOne(defaultSpeedFilter(both, rules))
+    setFilterTwo(defaultSpeedFilter(both, rules))
+  }
+
   return {
-    actions: touched ? (
-      <button type="button" onClick={reset}>Reset speeds</button>
-    ) : null,
+    actions: (
+      <>
+        {touched && <button type="button" onClick={reset}>Reset speeds</button>}
+        <SpeedFilter
+          rows={rows}
+          oneName={teamOne.name || 'Team 1'}
+          twoName={teamTwo.name || 'Team 2'}
+          filterOne={filterOne} filterTwo={filterTwo}
+          onChange={setFilter} onReset={resetFilter}
+        />
+      </>
+    ),
     body: (
       <SpeedTiersBody
         teamOne={one.team} teamTwo={two.team} preMega={preMega}
         level={level} rules={rules}
+        filterOne={filterOne} filterTwo={filterTwo}
         buildOf={buildOf} onBuild={setBuild}
         selected={selected} onSelect={setSelected}
       />
