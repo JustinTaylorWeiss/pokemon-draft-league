@@ -295,21 +295,50 @@
  * line up across them now. A team column is read down, and the two
  * rankings are in their own order by definition.
  */
+/*
+ * Two halves, not four columns.
+ *
+ * The three on the left are one reading: these teams, built this way,
+ * come out in this order — change a toggle in the first and the third
+ * moves. The chart on the right is a different question with a different
+ * control, and nothing on the left reaches it. Four even columns said
+ * they were four of a kind, and the first thing anyone did was look for
+ * the fourth one's slider.
+ */
 .speed-layout {
-  display: grid; align-items: start; column-gap: 0.6rem;
-  grid-template-columns:
-    minmax(0, 1.12fr) minmax(0, 1.12fr) minmax(0, 1fr) minmax(0, 1.2fr);
+  display: grid; align-items: stretch; column-gap: 1.1rem;
+  grid-template-columns: minmax(0, 3.24fr) minmax(0, 1.2fr);
 }
-.speed-layout h3 { margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase; color: var(--team-both); letter-spacing: 0.05em; }
+.speed-live {
+  display: grid; align-items: start; column-gap: 0.6rem;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 1.12fr) minmax(0, 1fr);
+}
+/* The rule is the whole of the separation, so it runs the full height
+   rather than stopping wherever the shorter of the two ends. */
+.speed-chart { border-left: 1px solid var(--line); padding-left: 1.1rem; }
+.speed-chart-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.5rem; min-height: 1.45rem; margin-bottom: 0.4rem;
+}
+.speed-chart-head h3 { min-height: 0; margin-bottom: 0; }
+/* Half the size it is in the bar: it is a column's control now, not the
+   tab's, and it sits on the heading line rather than beside a title. */
+.speed-chart-head .filter-btn { padding: 0.12rem 0.45rem; font-size: 0.7rem; }
+/* One height for all four heading rows, so the lists start level even
+   though one of them carries a button. */
+.speed-layout h3 {
+  display: flex; align-items: center; min-height: 1.45rem;
+  margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase;
+  color: var(--team-both); letter-spacing: 0.05em;
+}
 /* A team column is headed by the team, in the team's colour, the way the
    two sides are named everywhere else on these tabs. */
 .speed-side.side-one > h3 { color: var(--team-one); }
 .speed-side.side-two > h3 { color: var(--team-two); }
-.speed-side > h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* Beside the word it qualifies, not floated off to the far edge: held there
-   it read as a second heading for the column rather than the rest of the
-   first one. */
-.speed-layout h3 span { text-transform: none; font-size: 0.68rem; }
+/* The name is in a span of its own because the heading is a flex row, and
+   text-overflow has nothing to clip in one of those — a long team name was
+   cut off mid-letter with no ellipsis to say so. */
+.speed-side > h3 > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .speed-layout ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
 
 .speed-layout li {
@@ -902,9 +931,14 @@ button.type-chip { cursor: pointer; }
   .moves-controls { flex-wrap: wrap; }
   .moves-controls input { flex-basis: 100%; }
   .tag-row { flex-basis: 100%; }
-  /* Two and two: the teams keep enough width for a slider, and the two
-     rankings sit under them rather than being squeezed to a digit. */
-  .speed-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); row-gap: 0.9rem; }
+  /* The chart goes under the group, and the rule between them with it. */
+  .speed-layout { grid-template-columns: minmax(0, 1fr); row-gap: 1.1rem; }
+  .speed-live { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); row-gap: 0.9rem; }
+  /* The teams take a column each and the ranking they produce runs under
+     both of them, which is the shape the group has anyway — two inputs and
+     what they come to. */
+  .speed-live > .speed-groups { grid-column: 1 / -1; }
+  .speed-chart { border-left: 0; border-top: 1px solid var(--line); padding: 1rem 0 0; }
 }
 
 @media (max-width: 620px) {
@@ -916,7 +950,7 @@ button.type-chip { cursor: pointer; }
   .widget-tabs button { font-size: 0.82rem; padding: 0.15rem 0.3rem 0.35rem; }
   .builder-columns { gap: 0.75rem; }
   .custom-teams { grid-template-columns: 1fr; }
-  .speed-layout { grid-template-columns: minmax(0, 1fr); row-gap: 0.9rem; }
+  .speed-live { grid-template-columns: minmax(0, 1fr); row-gap: 0.9rem; }
 }
 
 /* The league's own valuation of a drafted Pokemon — a cost or a tier. */

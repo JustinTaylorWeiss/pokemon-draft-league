@@ -122,23 +122,25 @@ export function useSpeedTiersPanel(teamOne: Team, teamTwo: Team, dex: LeagueDex,
   }
 
   return {
-    actions: (
-      <>
-        {touched && <button type="button" onClick={reset}>Reset speeds</button>}
-        <SpeedFilter
-          rows={rows}
-          oneName={teamOne.name || 'Team 1'}
-          twoName={teamTwo.name || 'Team 2'}
-          filterOne={filterOne} filterTwo={filterTwo}
-          onChange={setFilter} onReset={resetFilter}
-        />
-      </>
-    ),
+    // The bar keeps only what governs the whole tab. The filter governs one
+    // column, so it travels with it.
+    actions: touched ? (
+      <button type="button" onClick={reset}>Reset speeds</button>
+    ) : null,
     body: (
       <SpeedTiersBody
         teamOne={one.team} teamTwo={two.team} preMega={preMega}
         level={level} rules={rules}
         filterOne={filterOne} filterTwo={filterTwo}
+        filter={(
+          <SpeedFilter
+            rows={rows}
+            oneName={teamOne.name || 'Team 1'}
+            twoName={teamTwo.name || 'Team 2'}
+            filterOne={filterOne} filterTwo={filterTwo}
+            onChange={setFilter} onReset={resetFilter}
+          />
+        )}
         buildOf={buildOf} onBuild={setBuild}
         selected={selected} onSelect={setSelected}
       />

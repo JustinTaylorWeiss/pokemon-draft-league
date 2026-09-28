@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import type { ReactNode } from 'react'
 import {
   speedRows, speedTiers, speedOf, speedAbility, RULES,
   type Rules, type SpeedBuild,
@@ -18,6 +19,8 @@ interface Props {
   /** Enabled filter rows per side, for the chart column on the right. */
   filterOne: Set<string>
   filterTwo: Set<string>
+  /** The control for those, which belongs over the column it governs. */
+  filter: ReactNode
   /** How one Pokémon is built, and how to change it. */
   buildOf: (id: string) => SpeedBuild
   onBuild: (id: string, next: Partial<SpeedBuild>) => void
@@ -125,7 +128,7 @@ function BuildRow({
  * them while this renders only the body.
  */
 export function SpeedTiersBody({
-  teamOne, teamTwo, preMega, level, rules, filterOne, filterTwo,
+  teamOne, teamTwo, preMega, level, rules, filterOne, filterTwo, filter,
   buildOf, onBuild, selected, onSelect,
 }: Props) {
 
@@ -180,9 +183,7 @@ export function SpeedTiersBody({
   const rowClass = (id: string) =>
     selected === id ? 'is-selected' : selected ? 'is-dimmed' : ''
 
-  const ranking = (heading: string, hint: string, rows: ReturnType<typeof speedRows>) => (
-    <div className="speed-groups">
-      <h3 title={hint}>{heading}</h3>
+  const ranking = (rows: ReturnType<typeof speedRows>) => (
       <ul>
         {rows.map((t, i) => (
           <li
@@ -201,32 +202,46 @@ export function SpeedTiersBody({
           </li>
         ))}
       </ul>
-    </div>
   )
 
   return (
     <div className="speed-layout">
-      {sides.map((s) => (
-        <div className={`speed-side side-${s.key}`} key={s.key}>
-          <h3>{s.name}</h3>
-          <ul>
-            {s.members.map((m) => (
-              <BuildRow
-                key={m.id} entry={m} side={s.key} build={buildOf(m.id)} onBuild={onBuild}
-                level={level} rules={rules} klass={rowClass(m.id)}
-                title={title(m.id, m.pokemon.name)} onSelect={() => toggle(m.id)}
-              />
-            ))}
-          </ul>
-        </div>
-      ))}
+      {/* The two teams and what they come to: one thing, read left to right. */}
+      <div className="speed-live">
+        {sides.map((s) => (
+          <div className={`speed-side side-${s.key}`} key={s.key}>
+            <h3><span>{s.name}</span></h3>
+            <ul>
+              {s.members.map((m) => (
+                <BuildRow
+                  key={m.id} entry={m} side={s.key} build={buildOf(m.id)} onBuild={onBuild}
+                  level={level} rules={rules} klass={rowClass(m.id)}
+                  title={title(m.id, m.pokemon.name)} onSelect={() => toggle(m.id)}
+                />
+              ))}
+            </ul>
+          </div>
+        ))}
 
-      {ranking(`Lv ${level} Tiers`, 'Every Pokémon at the builds set on the left', live)}
-      {ranking(
-        'Chart',
-        'Every spread and multiplier the filter has switched on, whatever the builds say',
-        chart,
-      )}
+        <div className="speed-groups">
+          <h3 title="Every Pokémon at the builds set on the left">Lv {level} Tiers</h3>
+          {ranking(live)}
+        </div>
+      </div>
+
+      {/* And the chart, which the three on the left cannot reach. Its own
+          control sits on it rather than in the bar, because the bar is
+          where the things that govern the whole tab live and this governs
+          one column. */}
+      <div className="speed-chart speed-groups">
+        <div className="speed-chart-head">
+          <h3 title="Every spread and multiplier the filter has switched on, whatever the builds say">
+            Chart
+          </h3>
+          {filter}
+        </div>
+        {ranking(chart)}
+      </div>
     </div>
   )
 }
