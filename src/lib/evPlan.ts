@@ -140,15 +140,21 @@ export interface Threshold {
  * single row hid that it was on offer.
  */
 /*
- * Labelled in the numbers actually being spent: 31 is perfect IVs and
- * nothing else, and the other is everything the stat will take — 252 EVs
- * under Gen 9 and 32 SP under Champions. The plus is a boosting nature.
+ * Labelled in the numbers actually being spent: nothing in the stat, and
+ * everything the stat will take — 252 EVs under Gen 9 and 32 SP under
+ * Champions. The plus is a boosting nature.
+ *
+ * "Nothing" is 31 under Gen 9, meaning perfect IVs and no EVs on top, and
+ * 0 under Champions, which has no IVs to be perfect. Calling both of them
+ * 31 would have put "31" and "32" side by side meaning untrained and
+ * fully trained.
  */
 const speedTiers = (rules: Rules): { label: string; evs: number; nature: number }[] => {
   const most = RULES[rules].max
+  const bare = RULES[rules].ivs ? '31' : '0'
   return [
-    { label: '31', evs: 0, nature: 1 },
-    { label: '31+', evs: 0, nature: 1.1 },
+    { label: bare, evs: 0, nature: 1 },
+    { label: `${bare}+`, evs: 0, nature: 1.1 },
     { label: `${most}`, evs: most, nature: 1 },
     { label: `${most}+`, evs: most, nature: 1.1 },
   ]

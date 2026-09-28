@@ -21,9 +21,18 @@ export const RULES: Record<Rules, {
   budget: number
   max: number
   step: number
+  /**
+   * Whether IVs are a thing at all.
+   *
+   * Champions has none — not "everything is 31", but nothing to breed
+   * for and nothing to drop. The stat it gives is the one a perfect
+   * Gen 9 Pokémon has, so the maths keeps the same baseline and the
+   * panel stops offering six boxes for a number nobody has.
+   */
+  ivs: boolean
 }> = {
-  champions: { label: 'Champions', unit: 'SP', budget: 66, max: 32, step: 1 },
-  gen9: { label: 'Gen 9', unit: 'EVs', budget: 508, max: 252, step: 4 },
+  champions: { label: 'Champions', unit: 'SP', budget: 66, max: 32, step: 1, ivs: false },
+  gen9: { label: 'Gen 9', unit: 'EVs', budget: 508, max: 252, step: 4, ivs: true },
 }
 
 /**
@@ -41,7 +50,10 @@ export function statAtLevel(
   rules: Rules = 'gen9',
 ): number {
   const sp = rules === 'champions'
-  const common = Math.floor(((2 * base + iv + (sp ? 0 : Math.floor(ev / 4))) * level) / 100)
+  // No IVs under Champions: the stat it gives is the one a Gen 9 Pokemon
+  // has at 31, so the term stays at its best rather than dropping out.
+  const perfect = sp ? 31 : iv
+  const common = Math.floor(((2 * base + perfect + (sp ? 0 : Math.floor(ev / 4))) * level) / 100)
     + (sp ? ev : 0)
   // Shedinja is the one species whose HP is a flat 1 at every level.
   if (isHp) return base === 1 ? 1 : common + level + 10

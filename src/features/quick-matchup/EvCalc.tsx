@@ -249,7 +249,9 @@ export function EvHelp({ onClose }: { onClose: () => void }) {
             time, or 508 EVs with 252 to a stat and four at a time. Both come to the same
             place fully invested at level 50 — 252 EVs is 31 points of a stat and 32 SP is
             32 — so what changes is what a partial investment costs and how finely it can
-            be cut. Champions is where it starts, being what the league plays.
+            be cut. Champions also has no IVs: the stat it gives is the one a Gen 9 Pokémon
+            has at 31, and there is nothing to breed for or drop, so the six IV boxes are
+            not offered. Champions is where it starts, being what the league plays.
           </p>
 
           <h3>Setting it up</h3>
@@ -266,9 +268,9 @@ export function EvHelp({ onClose }: { onClose: () => void }) {
             <li>
               The <code>{'\u22ef'}</code> under each sprite on the red side opens that
               Pokémon. You can hide it from the columns, credit it with 252 HP or a
-              boosting nature, lower an IV, give it an item, switch its ability, or add a
-              move to the ones it is reckoned to have. Each choice appears as a pill under
-              the sprite, and the columns update.
+              boosting nature, give it an item, switch its ability, lower an IV where the
+              rules have any, or add a move to the ones it is reckoned to have. Each choice
+              appears as a pill under the sprite, and the columns update.
             </li>
           </ol>
 
@@ -302,9 +304,12 @@ export function EvHelp({ onClose }: { onClose: () => void }) {
           <h3>Speed</h3>
           <p>
             Speed has no damage rolls, so its rows are thresholds rather than readings. Each
-            is one build of theirs — <code>31</code> for perfect IVs and nothing else,
-            <code>252</code> for full investment, <code>+</code> for a boosting nature — with
-            the EVs and the Speed needed to outrun it. Orange marks a tie.
+            is one build of theirs — nothing in the stat, full investment, and a
+            <code>+</code> for a boosting nature on either — with what it takes to outrun
+            it and the Speed that comes to. Orange marks a tie. The numbers naming them are
+            whichever the rules spend: <code>31</code> and <code>252</code> under Gen 9,
+            where an untrained stat still has perfect IVs, and <code>0</code> and
+            <code>32</code> under Champions, which has no IVs to be perfect.
           </p>
 
           <h3>Adding a move</h3>
@@ -913,7 +918,9 @@ function GearPicker({
   )
   // Only the dropped ones. Everything is 31 unless somebody said otherwise,
   // so a pill for each of six perfect IVs would be six pills saying nothing.
-  const dropped = lowered(gear?.ivs).map(([stat, iv]) => `${STAT_LABELS[stat]} ${iv}`)
+  const dropped = limits.ivs
+    ? lowered(gear?.ivs).map(([stat, iv]) => `${STAT_LABELS[stat]} ${iv}`)
+    : []
   /*
    * Moves are not among them. A spread, an ability and an item are one
    * fact each and fit under a sprite; a movepool is six or seven rows and
@@ -1178,13 +1185,16 @@ function GearPicker({
                 ))}
               </div>
             )}
-            {/* Dropped IVs. Two of the six are dropped on purpose and often:
-                zero Attack takes a third off Foul Play and confusion, zero
-                Speed is how anything gets under a Trick Room. The other four
-                are here because leaving them out would mean explaining why. */}
+            {/* Dropped IVs, under Gen 9 only — Champions has none, so there
+                is nothing to fold away. Two of the six are dropped on
+                purpose and often: zero Attack takes a third off Foul Play
+                and confusion, zero Speed is how anything gets under a
+                Trick Room. The other four are here because leaving them
+                out would mean explaining why. */}
             {open === 'spread' && (
             <div className="ev-gear-ivs">
               <div className="ev-gear-line">
+              {limits.ivs && (
               <button
                 type="button"
                 className="ev-gear-fold"
@@ -1197,6 +1207,7 @@ function GearPicker({
                 <em>{dropped.length ? dropped.join(' · ') : 'Change IVs'}</em>
                 <i aria-hidden="true">{ivsOpen ? '\u25b4' : '\u25be'}</i>
               </button>
+              )}
               {/* What the six bars above come to, beside the IVs rather
                   than under them: two lines of small print about the same
                   spread, so one line. */}
@@ -1206,7 +1217,7 @@ function GearPicker({
                 </p>
               )}
               </div>
-              {ivsOpen && (
+              {limits.ivs && ivsOpen && (
               <div className="ev-iv-grid">
                 {EV_STATS.map((stat) => (
                   <label key={stat} className="ev-iv">
