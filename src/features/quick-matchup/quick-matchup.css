@@ -307,7 +307,7 @@
  */
 .speed-layout {
   display: grid; align-items: stretch; column-gap: 1.1rem;
-  grid-template-columns: minmax(0, 3.4fr) minmax(0, 1.1fr);
+  grid-template-columns: minmax(0, 4.45fr) minmax(0, 1fr);
 }
 /* Boxed, because a gap is only a hint. The three inside it move together
    and the chart outside it does not, and a line you can point at says so
@@ -318,7 +318,7 @@
      ranking between them is a sprite, a badge or two and a number. Set
      where it is so a Pokemon's toggles sit on one line rather than
      wrapping the last pill onto a line of its own. */
-  grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr) minmax(0, 1.85fr);
+  grid-template-columns: minmax(0, 1.23fr) minmax(0, 1fr) minmax(0, 1.23fr);
   padding: 0.7rem; border: 1px solid var(--line); border-radius: 12px;
   background: var(--bg);
 }
@@ -429,7 +429,7 @@
    count is what changes and the row has no width to spare. */
 .speed-slider > span em { font-style: normal; font-size: 0.86em; opacity: 0.75; margin-left: 0.2em; }
 
-.speed-knobs { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
+.speed-knobs { display: flex; flex-wrap: wrap; align-items: center; gap: 0.28rem; }
 /* Two halves of one control, so they touch and share their middle edge. */
 .speed-nature { display: inline-flex; }
 .speed-nature button {
@@ -441,7 +441,7 @@
 .speed-nature button:first-child { border-radius: 999px 0 0 999px; }
 .speed-nature button:last-child { border-radius: 0 999px 999px 0; margin-left: -1px; }
 .speed-flag {
-  padding: 0.22rem 0.38rem; white-space: nowrap;
+  padding: 0.22rem 0.36rem; white-space: nowrap;
   background: none; border: 1px solid var(--line); border-radius: 999px;
   color: var(--muted); font: inherit; font-size: 0.7rem; line-height: 1; cursor: pointer;
 }
@@ -979,14 +979,18 @@ button.type-chip { cursor: pointer; }
 }
 
 /*
- * Four across needs about thirteen hundred pixels: a team column holds
- * seven controls and a name, and below that it starts paying for the
- * fourth column by cutting the name to a letter. So the chart goes under
- * the box, the teams take a column each, and the ranking they produce
- * runs under both — which is the shape the group has anyway, two inputs
- * and what they come to.
+ * Four across works at exactly one width: the page's own maximum. A team
+ * column has to hold seven controls and a name on one line, which takes
+ * about three hundred and ninety pixels, and two of those plus a ranking
+ * and a chart is the whole of a maxed-out page. A hair narrower and every
+ * Pokemon with a long ability name spends a second line on it.
+ *
+ * So below the cap the chart goes under the box, the teams take a column
+ * each and the ranking they produce runs under both — which is the shape
+ * the group has anyway, two inputs and what they come to, and which has
+ * width to spare at every size it covers.
  */
-@media (max-width: 1300px) {
+@media (max-width: 1480px) {
   .speed-layout { grid-template-columns: minmax(0, 1fr); row-gap: 1.1rem; }
   .speed-live { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); row-gap: 0.9rem; }
   /* Placed by hand, because the ranking sits between the teams in the
