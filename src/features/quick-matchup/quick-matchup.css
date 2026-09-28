@@ -982,10 +982,11 @@ button.type-chip { cursor: pointer; }
 
 /* Which shape to read it in. Uses the segment styling the assumptions use,
    because it is the same kind of choice: one of a short fixed set. */
-/* Centred in the column. Everything else down the left box is a control
-   the width of the box, so a short pill group packed against the left
-   edge reads as one of them that failed to fill. */
-.ev-side > .ev-formes { align-self: center; justify-content: center; }
+/* The width of the controls above and below it, with its segments
+   sharing that evenly. A short pill group in a column of full-width
+   controls read as one of them that had failed to fill. */
+.ev-side > .ev-formes { width: var(--ev-control); }
+.ev-side > .ev-formes .ev-seg { flex: 1 1 0; min-width: 0; }
 .ev-formes .ev-seg { font-size: 0.66rem; text-align: center; }
 
 /* Tops aligned, not middles: a Mega has no gear button under it, so its
@@ -1143,6 +1144,15 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 /* A rule between them: six lists of short rows run together otherwise, and
    which column a row belongs to is the first thing you need from it. */
 .ev-col + .ev-col { border-left: 1px solid var(--line); padding-left: 0.5rem; }
+/*
+ * Narrower than six across, a column is one cell holding its heading and
+ * its list, so the two wrap together. The rule between columns moves out
+ * to the cell, and the two halves inside it stop drawing one.
+ */
+.ev-col-cell { min-width: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+.ev-col-cell + .ev-col-cell { border-left: 1px solid var(--line); padding-left: 0.5rem; }
+.ev-col-cell > .ev-col + .ev-col { border-left: 0; padding-left: 0; }
+.ev-col-cell > .ev-col-fixed { justify-content: flex-start; }
 /* The stat as it stands with no EVs in it, which is what the rows below are
    measured from, and under a rule the EVs going into it. */
 .ev-col-head {

@@ -128,6 +128,17 @@ const ATE: Record<string, TypeName> = {
 }
 
 /**
+ * Abilities that lend to a kind of move rather than to a type. Each reads
+ * one flag the build now records, and nothing else does.
+ */
+const MOVE_POWER: Record<string, { flag: keyof Move; mult: number }> = {
+  'Iron Fist': { flag: 'punch', mult: 1.2 },
+  'Strong Jaw': { flag: 'bite', mult: 1.5 },
+  'Mega Launcher': { flag: 'pulse', mult: 1.5 },
+  Sharpness: { flag: 'slicing', mult: 1.5 },
+}
+
+/**
  * The four Ruin abilities, each taking a quarter off one stat of every
  * Pokémon that does not share it — so they read across the pair, which
  * is what makes them something this can model at all.
@@ -142,12 +153,13 @@ const RUIN: Record<string, StatKey> = {
 export const MODELLED_ABILITIES: ReadonlySet<string> = new Set([
   ...DEFENSIVE_ABILITIES,
   ...Object.keys(TYPE_POWER),
+  ...Object.keys(MOVE_POWER),
   ...Object.keys(ATE),
   ...Object.keys(RUIN),
   'Adaptability', 'Huge Power', 'Pure Power', 'Fur Coat', 'Ice Scales',
   'Multiscale', 'Shadow Shield', 'Tough Claws', 'Technician',
   'Normalize', 'Liquid Voice', 'Neuroforce', 'Tinted Lens', 'Aura Guard',
-  'Punk Rock', 'Soundproof', 'Reckless', 'Parental Bond', 'Gorilla Tactics',
+  'Punk Rock', 'Soundproof', 'Bulletproof', 'Reckless', 'Parental Bond', 'Gorilla Tactics',
   'Hustle', 'Protean', 'Mold Breaker',
 ])
 
@@ -388,8 +400,10 @@ function core(
    */
   const effect = defensiveMultiplier(chart, kind, shielded.pokemon, true, guard)
   if (effect === 0) return { rolls: [], hp }
-  // Nothing at all gets through a Soundproof to a sound move.
+  // Nothing at all gets through a Soundproof to a sound move, or a
+  // Bulletproof to anything thrown.
   if (guard === 'Soundproof' && move.sound) return { rolls: [], hp }
+  if (guard === 'Bulletproof' && move.bullet) return { rolls: [], hp }
 
   const physical = move.category === 'Physical'
   /*
@@ -450,6 +464,8 @@ function core(
    */
   const claws = mine === 'Tough Claws' && move.contact ? 1.3 : 1
   const tech = mine === 'Technician' && move.basePower <= 60 ? 1.5 : 1
+  const kindOf = MOVE_POWER[mine]
+  const lent = kindOf && move[kindOf.flag] ? kindOf.mult : 1
   /*
    * The rest of what reads only this pairing and this move.
    *
@@ -491,7 +507,7 @@ function core(
     ? (doubles ? 2732 / 4096 : 0.5) : 1
   // The other Pokemon on your side, pushing. Half again, whatever it is.
   const hand = field.helpingHand ? 1.5 : 1
-  const after = itemMult * shield * belt * claws * tech * ated
+  const after = itemMult * shield * belt * claws * tech * lent * ated
     * bond * reckless * punk * aura * lens * force
     * sky * lifts * mist * grass * screen * hand * crit
 

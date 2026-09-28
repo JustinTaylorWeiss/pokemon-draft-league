@@ -95,6 +95,11 @@ export interface Move {
   heal?: [number, number]
   sound?: boolean
   contact?: boolean
+  punch?: boolean
+  bite?: boolean
+  pulse?: boolean
+  slicing?: boolean
+  bullet?: boolean
   reflectable?: boolean
   wind?: boolean
   pivot?: boolean

@@ -306,10 +306,12 @@ export function EvHelp({ onClose }: { onClose: () => void }) {
 
           <h3>The turn around them</h3>
           <p>
-            The row above the columns sets the weather, the terrain, and what each side has
-            up — Reflect, Light Screen, Tailwind, Helping Hand, and a critical hit. The
-            screens belong to whoever is behind them and the rest to whoever is throwing, so
-            each column reads the ones facing the move it is about.
+            The row above the columns sets the format, the weather, the terrain, and what
+            each side has up — Reflect, Light Screen, Tailwind, Helping Hand, and a critical
+            hit. The screens belong to whoever is behind them and the rest to whoever is
+            throwing, so each column reads the ones facing the move it is about. Doubles is
+            where it starts, being what the league plays: a spread move is a quarter weaker
+            with two Pokémon out, and a screen stops a third rather than a half.
           </p>
 
           <p className="ev-help-small">
@@ -346,9 +348,11 @@ const SIDE_FIELD: { key: keyof SideField; label: string }[] = [
  * it belongs to a Pokémon: it is the weather, and it is the same weather
  * for all thirteen of them.
  */
-function FieldBar({ field, onChange }: {
+function FieldBar({ field, onChange, doubles, onDoubles }: {
   field: PlanField
   onChange: (next: PlanField) => void
+  doubles: boolean
+  onDoubles: (next: boolean) => void
 }) {
   const one = <T extends string>(now: T | undefined, pick: T) => (now === pick ? undefined : pick)
   const side = (which: 'mine' | 'theirs', key: keyof SideField) => ({
@@ -360,6 +364,22 @@ function FieldBar({ field, onChange }: {
   })
   return (
     <div className="ev-field">
+      {/* First, because everything to its right is read under it: a
+          spread move is a quarter weaker with two Pokémon out and a
+          screen a third rather than a half. The league plays doubles,
+          so that is where it starts. */}
+      <span className="ev-field-set">
+        <em>Format</em>
+        {([[true, 'Doubles'], [false, 'Singles']] as const).map(([on, label]) => (
+          <button
+            key={label} type="button" className="ev-field-pill"
+            aria-pressed={doubles === on}
+            onClick={() => onDoubles(on)}
+          >
+            {label}
+          </button>
+        ))}
+      </span>
       <span className="ev-field-set">
         <em>Weather</em>
         {WEATHERS.map((w) => (
@@ -402,6 +422,28 @@ function FieldBar({ field, onChange }: {
       ))}
     </div>
   )
+}
+
+/**
+ * Whether a media query holds, as a value that re-renders when it stops.
+ *
+ * For the one thing CSS cannot do here: the headings and the lists are
+ * two grids so that the headings can stick while the lists run under
+ * them, and two grids wrap independently. Six across they line up; three
+ * across the second grid starts over, so the fourth column's heading
+ * sits above the first column's list. Below that width they have to be
+ * one grid, which is a different tree rather than different rules.
+ */
+function useWide(query: string) {
+  const [wide, setWide] = useState(() => window.matchMedia(query).matches)
+  useEffect(() => {
+    const mq = window.matchMedia(query)
+    const seen = () => setWide(mq.matches)
+    seen()
+    mq.addEventListener('change', seen)
+    return () => mq.removeEventListener('change', seen)
+  }, [query])
+  return wide
 }
 
 /** What each sweep of the other side is, above the rows that make it up. */
@@ -1371,6 +1413,8 @@ export function EvCalcBody({
   const [gear, setGear] = useState<Record<string, Gear>>({})
   /** The turn around all of them, which belongs to none of them. */
   const [field, setField] = useState<PlanField>({})
+  /** The league plays doubles; singles is a question someone might ask. */
+  const [doubles, setDoubles] = useState(true)
   /** Which Pokémon everything above is about, once one has been picked. */
   const mine = chosen ?? ''
   const shape = shapes[mine] ?? null
@@ -1535,6 +1579,7 @@ export function EvCalcBody({
     || Object.keys(extra).length > 0
     || off.size > 0
     || Object.keys(field).length > 0
+    || !doubles
   const startOver = () => {
     setSpreads({})
     setMysets({})
@@ -1544,6 +1589,7 @@ export function EvCalcBody({
     setExtra({})
     setOff(new Set())
     setField({})
+    setDoubles(true)
   }
 
   const dropFromSet = (id: string) => setMyset(setIds.filter((x) => x !== id))
@@ -1573,11 +1619,12 @@ export function EvCalcBody({
       opponents,
       chart,
       level,
-      // The league plays doubles, which takes a quarter off the spread moves.
-      doubles: true,
+      // Doubles takes a quarter off a spread move and a third rather than
+      // a half off what a screen stops.
+      doubles,
       field,
     })
-  }, [picked, myMoves, opponents, spread, chart, level, sets, gear, field])
+  }, [picked, myMoves, opponents, spread, chart, level, sets, gear, field, doubles])
 
   /** Any of this one's own dropped below 31, which every stat above reads. */
   const myIvs = picked ? gear[picked.entry.id]?.ivs : undefined
@@ -1592,6 +1639,22 @@ export function EvCalcBody({
     () => Object.fromEntries(opponents.map((o) => [o.id, o.pokemon])),
     [opponents],
   )
+
+  /*
+   * Six across, the headings stick above the lists as their own grid.
+   * Narrower, two grids wrap independently and the fourth column's
+   * heading lands over the first column's list, so each heading goes
+   * into the cell with the list it belongs to.
+   */
+  const wide = useWide('(min-width: 1101px)')
+  const head = (stat: StatKey) => ({
+    stat,
+    bare: picked ? statOfSpread(picked.entry.pokemon, level, bareSpread, stat, myIvs) : 0,
+    value: picked ? statOfSpread(picked.entry.pokemon, level, spread, stat, myIvs) : 0,
+    spread,
+    onEvs: (n: number) => setEvs(stat, n),
+    onNature: (m: number) => setNature(stat, m),
+  })
 
   const used = spent(spread)
   const left = EV_BUDGET - used
@@ -1866,24 +1929,21 @@ export function EvCalcBody({
         )}
       </div>
 
-      {picked && <FieldBar field={field} onChange={setField} />}
-
-      {/* The headings and their sliders in one grid, the lists in
-          another below it, both on the same six columns. Two grids
-          rather than six columns of both, so the whole top can stick
-          while the lists run under it. */}
       {picked && (
+        <FieldBar
+          field={field} onChange={setField}
+          doubles={doubles} onDoubles={setDoubles}
+        />
+      )}
+
+      {/* Six across, the headings and their sliders are a grid of their
+          own above the lists, so the whole top can stick while the lists
+          run under it. Narrower than that they are one grid with the
+          lists — see `useWide`. */}
+      {picked && wide && (
         <div className="ev-cols ev-heads">
           {EV_STATS.map((stat) => (
-            <StatHead
-              key={stat}
-              stat={stat}
-              bare={statOfSpread(picked.entry.pokemon, level, bareSpread, stat, myIvs)}
-              value={statOfSpread(picked.entry.pokemon, level, spread, stat, myIvs)}
-              spread={spread}
-              onEvs={(n) => setEvs(stat, n)}
-              onNature={(m) => setNature(stat, m)}
-            />
+            <StatHead key={stat} {...head(stat)} />
           ))}
         </div>
       )}
@@ -1895,16 +1955,18 @@ export function EvCalcBody({
         <>
           <div className="ev-cols">
             {EV_STATS.map((stat) => (
-              <StatRows
-                key={stat}
-                stat={stat}
-                evs={spread.evs[stat]}
-                rows={plan?.[stat] ?? []}
-                faces={faces}
-                note={(stat === 'atk' || stat === 'spa') && !myMoves.some(
-                  (m) => m.category === (stat === 'atk' ? 'Physical' : 'Special'),
-                ) ? `No ${stat === 'atk' ? 'physical' : 'special'} moves on this set.` : undefined}
-              />
+              <div key={stat} className="ev-col-cell">
+                {!wide && <StatHead {...head(stat)} />}
+                <StatRows
+                  stat={stat}
+                  evs={spread.evs[stat]}
+                  rows={plan?.[stat] ?? []}
+                  faces={faces}
+                  note={(stat === 'atk' || stat === 'spa') && !myMoves.some(
+                    (m) => m.category === (stat === 'atk' ? 'Physical' : 'Special'),
+                  ) ? `No ${stat === 'atk' ? 'physical' : 'special'} moves on this set.` : undefined}
+                />
+              </div>
             ))}
           </div>
 

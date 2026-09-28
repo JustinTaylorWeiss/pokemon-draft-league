@@ -240,6 +240,13 @@ async function main() {
       ...(m.heal && { heal: m.heal }),
       ...(m.flags?.sound && { sound: true }),
       ...(m.flags?.contact && { contact: true }),
+      // The five an ability asks about and nothing else does: Iron Fist,
+      // Strong Jaw, Mega Launcher, Sharpness and Bulletproof.
+      ...(m.flags?.punch && { punch: true }),
+      ...(m.flags?.bite && { bite: true }),
+      ...(m.flags?.pulse && { pulse: true }),
+      ...(m.flags?.slicing && { slicing: true }),
+      ...(m.flags?.bullet && { bullet: true }),
       ...(m.flags?.reflectable && { reflectable: true }),
       ...(m.flags?.wind && { wind: true }),
       ...(m.flags?.pivot && { pivot: true }),
