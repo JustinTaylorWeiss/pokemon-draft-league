@@ -3,13 +3,16 @@
 -- `report_match` always inserted. So a week scheduled in advance ended up
 -- with two rows for every game played: the blank fixture nobody could now
 -- remove, and the reported match sitting on top of it. Week 1 of Mega M-C
--- has five such pairs and the Matches tab counts thirteen matches where
+-- had five such pairs and the Matches tab counted thirteen matches where
 -- eight were played.
 --
 -- Now it looks first. A fixture in the same season and week, between the
 -- same two sides, with no result on it, is the row this result belongs in.
 -- Where there is none — an unscheduled match, or a rematch in a week whose
 -- fixture is already filled — it inserts as before.
+--
+-- The five pairs already made were cleared by hand before this ran, so
+-- there is nothing here to clean up: this only changes what happens next.
 
 -- Sides are stored in the order they were entered, and a report can name
 -- them the other way round from the schedule. Compared as sets.
@@ -127,26 +130,3 @@ begin
   return new_match;
 end;
 $$;
-
--- And the pairs already made. An unplayed fixture with a played twin in the
--- same season and week, between the same two sides, is the row the result
--- should have gone into; the played one carries the games and the lines, so
--- the empty one is what goes. Safe to run more than once.
-delete from matches m
-where m.score_a is null
-  and m.score_b is null
-  and not exists (select 1 from games gg where gg.match_id = m.id)
-  and exists (
-    select 1 from matches o
-    where o.id <> m.id
-      and o.season_id = m.season_id
-      and o.week = m.week
-      and o.score_a is not null
-      and (
-        (sorted_ids(o.side_a) = sorted_ids(m.side_a)
-          and sorted_ids(o.side_b) = sorted_ids(m.side_b))
-        or
-        (sorted_ids(o.side_a) = sorted_ids(m.side_b)
-          and sorted_ids(o.side_b) = sorted_ids(m.side_a))
-      )
-  );
