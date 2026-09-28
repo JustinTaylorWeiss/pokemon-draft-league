@@ -377,13 +377,21 @@ const STAT_CELLS: Record<StatColumn, {
   label: string
   cell: (t: PokemonTotals, mon: LeaguePokemon | undefined) => ReactNode
 }> = {
-  tier: {
-    label: 'Tier',
+  /*
+   * What it cost, not what tier it was in.
+   *
+   * The tier column was the season's opinion of a Pokemon back when a
+   * season had tiers. This one drafts on points, and the board was
+   * rebuilt from the point list without the tiers being rebuilt with it:
+   * Top ran from 8 points to 21 and Low from 1 to 17, so the badge was
+   * last season's opinion sitting beside this season's cost. The Draft
+   * List had already swapped one for the other; this table had not.
+   */
+  points: {
+    label: 'Pts',
     cell: (_t, mon) => (
-      <td>
-        {mon?.draftTier
-          ? <span className={tierClass(mon.draftTier)}>{mon.draftTier}</span>
-          : <em className="none">{'\u2014'}</em>}
+      <td className="num">
+        {mon?.points != null ? mon.points : <em className="none">{'\u2014'}</em>}
       </td>
     ),
   },
@@ -413,20 +421,20 @@ const STAT_CELLS: Record<StatColumn, {
 
 /** Diff, then K/D, then the rest of the power ranking. */
 const SEASON_COLUMNS: StatColumn[] =
-  ['tier', 'diff', 'kd', 'killsPerGame', 'kills', 'gamesPlayed', 'deaths']
+  ['points', 'diff', 'kd', 'killsPerGame', 'kills', 'gamesPlayed', 'deaths']
 
 /**
  * The all-time chain, which leads with the rate.
  *
- * No Tier either. A tier is a season's opinion of a Pokemon, written on that
- * season's board; across all of them there is no such opinion — Season 3
- * priced Omanyte for Little Cup and Season 4 never listed it — so the column
- * would be a rule of dashes and a sort by nothing.
+ * No cost either. A price is a season's opinion of a Pokemon, written on
+ * that season's board; across all of them there is no such opinion — Season
+ * 3 priced Omanyte for Little Cup and Season 4 never listed it — so the
+ * column would be a rule of dashes and a sort by nothing.
  */
 const ALL_TIME_COLUMNS: StatColumn[] =
   ['killsPerGame', 'kd', 'gamesPlayed', 'diff', 'kills', 'deaths']
 
-type StatSort = 'kills' | 'deaths' | 'diff' | 'gamesPlayed' | 'killsPerGame' | 'kd' | 'name' | 'tier'
+type StatSort = 'kills' | 'deaths' | 'diff' | 'gamesPlayed' | 'killsPerGame' | 'kd' | 'name' | 'points'
 
 function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
   // dir 0 is the power ranking above; a column cycles through both directions
@@ -436,7 +444,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
   const toggleSort = (key: StatSort) =>
     setSort((prev) => {
       // Numbers open highest-first; the name column opens A-Z.
-      const first: 1 | -1 = key === 'name' || key === 'tier' ? 1 : -1
+      const first: 1 | -1 = key === 'name' ? 1 : -1
       if (prev.key !== key) return { key, dir: first }
       if (prev.dir === first) return { key, dir: (first === 1 ? -1 : 1) as 1 | -1 }
       if (prev.dir !== 0) return { key, dir: 0 }
@@ -514,10 +522,13 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           return (allTime ? byAllTimeRanking : byPowerRanking)(a, b) || nameA.localeCompare(nameB)
         }
         if (sort.key === 'name') return nameA.localeCompare(nameB) * sort.dir
-        // Best tier first, not "Banned, High, Low, Mid, Top" alphabetically.
-        if (sort.key === 'tier') {
-          return byTier(dex[a.pokemon]?.draftTier ?? null, dex[b.pokemon]?.draftTier ?? null) * sort.dir
-            || nameA.localeCompare(nameB)
+        // Dearest first, and a Pokemon with no price on this season's
+        // board sorts below every one that has a price rather than
+        // counting as free.
+        if (sort.key === 'points') {
+          const at = dex[a.pokemon]?.points ?? -1
+          const bt = dex[b.pokemon]?.points ?? -1
+          return (bt - at) * sort.dir || nameA.localeCompare(nameB)
         }
         // dir -1 is descending, so subtract in ascending order and flip.
         return (finite(a[sort.key]) - finite(b[sort.key])) * sort.dir

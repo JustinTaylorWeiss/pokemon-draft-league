@@ -11,6 +11,15 @@ interface Props {
   team: Team
   chart: TypeChart
   useAbilities: boolean
+  /**
+   * Whether the two teams are side by side.
+   *
+   * Stacked, each chart has the whole page to fill and fitting it to the
+   * width blows eighteen columns up until a six-Pokémon roster is taller
+   * than the screen. Fitted to the box in both directions instead, it
+   * settles at whatever shows the whole chart at once.
+   */
+  abreast?: boolean
 }
 
 /**
@@ -57,7 +66,7 @@ function cellClass(mult: number): string {
 const label = (m: number) => (m === 1 ? '' : m === 0 ? '0' : String(m))
 
 /** The Abilities toggle is owned by the parent card's header. */
-export function DefensiveChartBody({ team, chart, useAbilities }: Props) {
+export function DefensiveChartBody({ team, chart, useAbilities, abreast = true }: Props) {
 
   const { rows, summary } = useMemo(
     () => defensiveChart(chart, team.members, useAbilities),
@@ -114,10 +123,15 @@ export function DefensiveChartBody({ team, chart, useAbilities }: Props) {
     return out
   }, [team.members, chart, useAbilities])
 
-  // Width only: all eighteen type columns stay on screen whatever the roster,
-  // and a roster too tall for the card scrolls rather than shrinking the chart
-  // until it cannot be read.
-  const fitRef = useFitToBox<HTMLDivElement>('width', SCALE)
+  /*
+   * Side by side, width only: all eighteen type columns stay on screen
+   * whatever the roster, and a roster too tall for its half scrolls
+   * rather than shrinking the chart until it cannot be read.
+   *
+   * Stacked, both: a chart with the whole page to fill has no reason to
+   * fill it, and fitting only the width made the cells enormous.
+   */
+  const fitRef = useFitToBox<HTMLDivElement>(abreast ? 'width' : 'both', SCALE)
 
   if (!rows.length) return null
 

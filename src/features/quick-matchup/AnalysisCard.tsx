@@ -250,7 +250,9 @@ export function AnalysisCard({
       {tab === 'types' && (
         <TeamPair one={teamOne} two={teamTwo} abreast={abreast}>
           {(team) => (
-            <DefensiveChartBody team={team} chart={chart} useAbilities={defenseAbilities} />
+            <DefensiveChartBody
+              team={team} chart={chart} useAbilities={defenseAbilities} abreast={abreast}
+            />
           )}
         </TeamPair>
       )}
