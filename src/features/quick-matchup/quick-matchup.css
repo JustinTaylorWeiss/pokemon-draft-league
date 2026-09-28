@@ -1132,6 +1132,12 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 }
 .type-credits li { display: flex; align-items: baseline; gap: 0.35rem; }
 .type-credits b { font-weight: 600; color: var(--fg); }
+/* The ability in the accent, the effect in the muted text around it: the
+   name is the thing being credited and the rest is what it comes to. */
+.type-credits em {
+  font-style: normal; font-weight: 600;
+  color: var(--team-accent, var(--accent));
+}
 
 .ev-hint, .ev-note { margin: 0; color: var(--muted); font-size: 0.75rem; line-height: 1.45; }
 /* Drawn rather than counted out: 508 is a number you have to subtract from,

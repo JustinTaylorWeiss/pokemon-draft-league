@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { TypeChart } from '../../data/types'
+import type { TypeChart, TypeName } from '../../data/types'
 import { BATTLE_TYPES, defensiveChart, defensiveMultiplier } from '../../lib/matchup'
 import { TypeIconChip } from '../../components/TypeIcon'
 import type { Team } from './TeamEditor'
@@ -80,14 +80,36 @@ export function DefensiveChartBody({ team, chart, useAbilities }: Props) {
    */
   const credited = useMemo(() => {
     if (!useAbilities) return []
-    const out: { id: string; name: string; abilities: string[] }[] = []
+    const out: { key: string; name: string; ability: string; does: string }[] = []
     for (const { id, pokemon } of team.members) {
-      const own = [...new Set(Object.values(pokemon.abilities))]
-      const doing = own.filter((ability) => BATTLE_TYPES.some((t) => (
-        defensiveMultiplier(chart, t, pokemon, true, ability)
-        !== defensiveMultiplier(chart, t, pokemon, false)
-      )))
-      if (doing.length) out.push({ id, name: pokemon.name, abilities: doing })
+      for (const ability of new Set(Object.values(pokemon.abilities))) {
+        /*
+         * Every type it changes, gathered by what it changes them to.
+         * Thick Fat halves Fire and Ice, which is one thing said about
+         * two types rather than two things.
+         */
+        const groups = new Map<number, TypeName[]>()
+        for (const t of BATTLE_TYPES) {
+          const raw = defensiveMultiplier(chart, t, pokemon, false)
+          const now = defensiveMultiplier(chart, t, pokemon, true, ability)
+          if (now === raw) continue
+          const how = now === 0 ? 0 : now / raw
+          groups.set(how, [...(groups.get(how) ?? []), t])
+        }
+        if (!groups.size) continue
+        const does = [...groups]
+          .sort((a, b) => a[0] - b[0])
+          .map(([how, types]) => {
+            // Past a handful the names are longer than the chart they are
+            // about; Wonder Guard turns off fifteen of the eighteen.
+            const which = types.length > 5
+              ? `${types.length} types`
+              : types.join(', ')
+            return how === 0 ? `immune to ${which}` : `${which} ×${+how.toFixed(2)}`
+          })
+          .join('; ')
+        out.push({ key: `${id}-${ability}`, name: pokemon.name, ability, does })
+      }
     }
     return out
   }, [team.members, chart, useAbilities])
@@ -152,9 +174,10 @@ export function DefensiveChartBody({ team, chart, useAbilities }: Props) {
       {credited.length > 0 && (
         <ul className="type-credits">
           {credited.map((c) => (
-            <li key={c.id}>
+            <li key={c.key}>
               <b>{c.name}</b>
-              {c.abilities.join(', ')}
+              <em>{c.ability}</em>
+              <span>{c.does}</span>
             </li>
           ))}
         </ul>
