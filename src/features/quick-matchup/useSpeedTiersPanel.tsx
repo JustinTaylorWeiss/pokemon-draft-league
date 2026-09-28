@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { SpeedTiersBody } from './SpeedTiers'
 import { SpeedFilter } from './SpeedFilter'
-import { defaultSpeedFilter, speedFilterRows, RULES, type Rules,
+import { defaultSpeedFilter, speedFilterRows, type Rules,
 } from '../../lib/stats'
 import { isMega, megaBaseId, type LeagueDex } from '../../data/league'
 import type { Team, TeamEntry } from './TeamEditor'
@@ -48,10 +48,17 @@ export function useSpeedTiersPanel(teamOne: Team, teamTwo: Team, dex: LeagueDex,
   footnote: string
 } {
   /*
-   * Which numbers the spreads are named in. Champions spends 32 SP where
-   * Gen 9 spends 252 EVs, and has no IVs to drop for a minimum-Speed row.
+   * Champions, and only Champions, for as long as that is what the season
+   * plays. The tab was given a toggle and it was a toggle between the
+   * league's rules and rules the league does not use — one of the two
+   * settings was always wrong and neither was worth a control in the bar.
+   *
+   * Kept as a value rather than written through the file, because the
+   * season after this one may not be Champions and the difference is one
+   * line either way. The EV calculator keeps its toggle: asking "what
+   * would this cost in EVs" is a question someone might have there.
    */
-  const [rules, setRules] = useState<Rules>('champions')
+  const rules: Rules = 'champions'
   const one = useMemo(() => withMegaBases(teamOne, dex), [teamOne, dex])
   const two = useMemo(() => withMegaBases(teamTwo, dex), [teamTwo, dex])
   const preMega = useMemo(() => new Set([...one.added, ...two.added]), [one.added, two.added])
@@ -97,29 +104,13 @@ export function useSpeedTiersPanel(teamOne: Team, teamTwo: Team, dex: LeagueDex,
 
   return {
     actions: (
-      <>
-        {/* The same choice the EV calculator offers, in the bar rather
-            than over the columns: this tab has no field row to put it in. */}
-        {(['champions', 'gen9'] as const).map((r) => (
-          <button
-            key={r}
-            type="button"
-            className="pill-toggle"
-            aria-pressed={rules === r}
-            title={`${RULES[r].budget} ${RULES[r].unit}, ${RULES[r].max} to a stat`}
-            onClick={() => setRules(r)}
-          >
-            {RULES[r].label}
-          </button>
-        ))}
-        <SpeedFilter
+      <SpeedFilter
         rows={rows}
         oneName={teamOne.name || 'Team 1'}
         twoName={teamTwo.name || 'Team 2'}
         filterOne={filterOne} filterTwo={filterTwo}
-          onChange={setFilter} onReset={reset}
-        />
-      </>
+        onChange={setFilter} onReset={reset}
+      />
     ),
     body: (
       <SpeedTiersBody
