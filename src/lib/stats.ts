@@ -185,6 +185,14 @@ export interface SpeedTier {
  * its nature bends it, and the three things that multiply what comes out —
  * a Choice Scarf, Tailwind, and where it has one, its own ability.
  */
+/**
+ * The two held items that change Speed. One control rather than two
+ * toggles, because a Pokémon holds one item and a pair of switches that
+ * must not both be on is a pair of switches waiting to both be on.
+ */
+export type SpeedItem = '' | 'Choice Scarf' | 'Iron Ball'
+export const SPEED_ITEMS: SpeedItem[] = ['', 'Choice Scarf', 'Iron Ball']
+
 export interface SpeedBuild {
   /** SP under Champions, EVs under Gen 9. */
   ev: number
@@ -192,13 +200,15 @@ export interface SpeedBuild {
   nature: number
   /** Boost stage, −6 to +6. */
   stage: number
-  scarf: boolean
+  item: SpeedItem
+  paralysis: boolean
   tailwind: boolean
   ability: boolean
 }
 
-export const bareBuild = (): SpeedBuild =>
-  ({ ev: 0, nature: 1, stage: 0, scarf: false, tailwind: false, ability: false })
+export const bareBuild = (): SpeedBuild => ({
+  ev: 0, nature: 1, stage: 0, item: '', paralysis: false, tailwind: false, ability: false,
+})
 
 /**
  * What a boost stage multiplies a stat by, as the integer fraction the
@@ -236,6 +246,11 @@ export function speedAbility(pokemon: Pokemon): string | null {
  * reproduced DraftZone's numbers exactly (546 -> Tailwind 1092 -> Scarf
  * 1638). IVs are perfect where the rules have them; a Pokémon nobody is
  * building to be slow has no reason to be read at zero.
+ *
+ * Paralysis halves last. The games apply every multiplier as one chain
+ * and round once, so a halving and a doubling cancel exactly; flooring
+ * in sequence only reproduces that if the halving comes after — Tailwind
+ * on a paralysed 151 is 151, and taking the half first makes it 150.
  */
 export function speedOf(
   pokemon: Pokemon, build: SpeedBuild, level = 50, rules: Rules = 'gen9',
@@ -246,12 +261,16 @@ export function speedOf(
     const { num, den } = stageFraction(build.stage)
     speed = Math.floor((speed * num) / den)
   }
-  if (build.scarf) speed = Math.floor(speed * UNIVERSAL_MODIFIERS['Choice Scarf'])
+  if (build.item) speed = Math.floor(speed * UNIVERSAL_MODIFIERS[build.item])
   const ability = speedAbility(pokemon)
+  const quickFeet = build.ability && ability === 'Quick Feet'
   if (build.ability && ability) speed = Math.floor(speed * SPEED_ABILITIES[ability])
-  // Last, and the order matters: the games doubles for Tailwind after the
-  // item and the ability, so a Scarf's 1.5 is floored before the 2 lands.
   if (build.tailwind) speed = Math.floor(speed * UNIVERSAL_MODIFIERS.Tailwind)
+  // Quick Feet wants the status and then ignores what it does to Speed,
+  // which is the whole point of it.
+  if (build.paralysis && !quickFeet) {
+    speed = Math.floor(speed * UNIVERSAL_MODIFIERS.Paralysis)
+  }
   return speed
 }
 
@@ -268,9 +287,10 @@ export function speedRows(
       investment: `${build.ev}${build.nature > 1 ? '+' : build.nature < 1 ? '\u2212' : ''}`,
       stage: stageLabel(build.stage),
       modifiers: [
-        ...(build.scarf ? ['Choice Scarf'] : []),
+        ...(build.item ? [build.item] : []),
         ...(build.ability && speedAbility(pokemon) ? [speedAbility(pokemon) as string] : []),
         ...(build.tailwind ? ['Tailwind'] : []),
+        ...(build.paralysis ? ['Paralysis'] : []),
       ],
       speed: speedOf(pokemon, build, level, rules),
     }))

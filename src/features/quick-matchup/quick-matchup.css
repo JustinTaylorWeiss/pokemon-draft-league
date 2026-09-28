@@ -344,6 +344,16 @@
    flex row, and text-overflow has nothing to clip in one of those — a long
    team name was cut off mid-letter with no ellipsis to say so. */
 .speed-layout h3 > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Pushed to the far end of the heading so the two sides' buttons line up
+   with each other rather than trailing names of different lengths. */
+.speed-fill {
+  flex: none; margin-left: auto; padding: 0.1rem 0.45rem;
+  background: none; border: 1px solid var(--line); border-radius: 999px;
+  color: var(--muted); font: inherit; font-size: 0.66rem; line-height: 1.4;
+  text-transform: none; letter-spacing: 0; cursor: pointer;
+}
+.speed-fill:hover { color: var(--fg); border-color: var(--team-accent, var(--accent)); }
+.speed-fill.is-on { color: var(--team-accent, var(--accent)); border-color: var(--team-accent, var(--accent)); }
 .speed-layout ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
 
 .speed-layout li {
@@ -417,14 +427,14 @@
 .speed-nature button:first-child { border-radius: 999px 0 0 999px; }
 .speed-nature button:last-child { border-radius: 0 999px 999px 0; margin-left: -1px; }
 .speed-flag {
-  padding: 0.22rem 0.5rem; white-space: nowrap;
+  padding: 0.22rem 0.42rem; white-space: nowrap;
   background: none; border: 1px solid var(--line); border-radius: 999px;
   color: var(--muted); font: inherit; font-size: 0.7rem; line-height: 1; cursor: pointer;
 }
 /* Thirteen stages is too many for a row of pills, so this one is a menu.
    Shaped like the pills beside it, and red on the same terms. */
 .speed-stage {
-  padding: 0.16rem 0.2rem 0.16rem 0.4rem;
+  padding: 0.16rem 0.1rem 0.16rem 0.32rem;
   background: var(--surface); border: 1px solid var(--line); border-radius: 999px;
   color: var(--muted); font: inherit; font-size: 0.7rem; line-height: 1.25; cursor: pointer;
 }
