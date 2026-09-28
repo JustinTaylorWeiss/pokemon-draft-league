@@ -87,12 +87,26 @@ const UNIVERSAL_MODIFIERS: Record<string, number> = {
 }
 
 /** EV/IV/nature spreads, widest first so the list reads top-down. */
-export const SPEED_SPREADS: { key: string; ev: number; iv: number; nature: number }[] = [
-  { key: '252+', ev: 252, iv: 31, nature: 1.1 },
-  { key: '252', ev: 252, iv: 31, nature: 1 },
-  { key: '0', ev: 0, iv: 31, nature: 1 },
-  { key: '0- 0ivs', ev: 0, iv: 0, nature: 0.9 },
-]
+/**
+ * The four investments anyone actually picks, named in whichever numbers
+ * are being spent.
+ *
+ * The last is the minimum-Speed spread, which under Gen 9 means dropping
+ * the IVs to nothing as well as the nature. Champions has no IVs, so
+ * there is only the nature to drop and the row says so.
+ */
+export function speedSpreads(
+  rules: Rules = 'gen9',
+): { key: string; ev: number; iv: number; nature: number }[] {
+  const most = RULES[rules].max
+  const floorKey = RULES[rules].ivs ? '0- 0ivs' : '0-'
+  return [
+    { key: `${most}+`, ev: most, iv: 31, nature: 1.1 },
+    { key: `${most}`, ev: most, iv: 31, nature: 1 },
+    { key: '0', ev: 0, iv: 31, nature: 1 },
+    { key: floorKey, ev: 0, iv: RULES[rules].ivs ? 0 : 31, nature: 0.9 },
+  ]
+}
 
 /** Boost stages as the integer fractions the games actually use. */
 export const SPEED_STAGES: { key: string; num: number; den: number }[] = [
@@ -104,7 +118,7 @@ export const SPEED_STAGES: { key: string; num: number; den: number }[] = [
 export const UNIVERSAL_MODIFIER_KEYS = Object.keys(UNIVERSAL_MODIFIERS)
 
 /** Rows to show in the filter: stages, spreads, then whatever applies here. */
-export function speedFilterRows(entries: { pokemon: Pokemon }[]): {
+export function speedFilterRows(entries: { pokemon: Pokemon }[], rules: Rules = 'gen9'): {
   stages: string[]
   spreads: string[]
   modifiers: string[]
@@ -115,7 +129,7 @@ export function speedFilterRows(entries: { pokemon: Pokemon }[]): {
   }
   return {
     stages: SPEED_STAGES.map((s) => s.key),
-    spreads: SPEED_SPREADS.map((s) => s.key),
+    spreads: speedSpreads(rules).map((s) => s.key),
     // Alphabetical, matching how DraftZone orders this block.
     modifiers: [...UNIVERSAL_MODIFIER_KEYS, ...abilities].sort((a, b) => a.localeCompare(b)),
   }
@@ -132,10 +146,13 @@ export function speedFilterRows(entries: { pokemon: Pokemon }[]): {
  * actually runs. DraftZone ships those two on — switch them on in the filter to
  * match it.
  */
-export function defaultSpeedFilter(entries: { pokemon: Pokemon }[]): Set<string> {
-  const rows = speedFilterRows(entries)
+export function defaultSpeedFilter(
+  entries: { pokemon: Pokemon }[], rules: Rules = 'gen9',
+): Set<string> {
+  const rows = speedFilterRows(entries, rules)
+  const most = RULES[rules].max
   return new Set([
-    '252+', '252',
+    `${most}+`, `${most}`,
     ...rows.modifiers.filter((m) => !(m in UNIVERSAL_MODIFIERS)),
   ])
 }
@@ -177,8 +194,10 @@ export function speedTiers(
   entries: { id: string; pokemon: Pokemon; enabled: Set<string> }[],
   /** VGC is played at 50; singles ladders at 100. */
   level = 50,
+  rules: Rules = 'gen9',
 ): SpeedTier[] {
   const tiers: SpeedTier[] = []
+  const spreads = speedSpreads(rules)
 
   for (const { id, pokemon, enabled } of entries) {
     const base = pokemon.baseStats.spe
@@ -190,9 +209,9 @@ export function speedTiers(
     // to each other, since a Pokémon cannot be at +1 and +2 at once.
     const stages = [null, ...SPEED_STAGES.filter((s) => enabled.has(s.key))]
 
-    for (const spread of SPEED_SPREADS) {
+    for (const spread of spreads) {
       if (!enabled.has(spread.key)) continue
-      const raw = statAtLevel(base, spread.ev, spread.nature, false, spread.iv, level)
+      const raw = statAtLevel(base, spread.ev, spread.nature, false, spread.iv, level, rules)
 
       for (const stage of stages) {
         const staged = stage ? Math.floor((raw * stage.num) / stage.den) : raw

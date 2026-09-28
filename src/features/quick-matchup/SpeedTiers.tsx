@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { speedTiers, statAtLevel } from '../../lib/stats'
+import { speedTiers, statAtLevel, RULES, type Rules } from '../../lib/stats'
 import type { Team, TeamEntry } from './TeamEditor'
 import { Sprite } from '../../components/Sprite'
 
@@ -13,6 +13,8 @@ interface Props {
   level: number
   /** Ids on the chart only as the forme a Mega starts in, named so on hover. */
   preMega: Set<string>
+  /** Which numbers the spreads are spent in. */
+  rules: Rules
   selected: string | null
   onSelect: (id: string | null) => void
 }
@@ -29,7 +31,12 @@ interface Props {
  * Selection and the filter live in the parent so the shared card header can own
  * them while this renders only the body.
  */
-export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo, level, selected, onSelect }: Props) {
+export function SpeedTiersBody({
+  teamOne, teamTwo, preMega, filterOne, filterTwo, level, rules, selected, onSelect,
+}: Props) {
+  const most = RULES[rules].max
+  const unit = RULES[rules].unit
+  const hasIvs = RULES[rules].ivs
 
   const side = useMemo(() => {
     const map = new Map<string, 'one' | 'two'>()
@@ -41,7 +48,7 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
   const all = useMemo(() => speedTiers([
     ...teamOne.members.map((m) => ({ ...m, enabled: filterOne })),
     ...teamTwo.members.map((m) => ({ ...m, enabled: filterTwo })),
-  ], level), [teamOne.members, teamTwo.members, filterOne, filterTwo, level])
+  ], level, rules), [teamOne.members, teamTwo.members, filterOne, filterTwo, level, rules])
 
   const bases = useMemo(() => {
     const seen = new Map<string, TeamEntry>()
@@ -76,24 +83,31 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
 
         {/*
           * The same Pokemon's Speed with one more thing added each time:
-          * perfect IVs, then max EVs on top of those, then a positive nature
-          * on top of both. Each heading spells out what is in it, because a
-          * column of Speeds is worthless if you have to remember which spread
-          * it belongs to — and four of them side by side is exactly the
-          * arithmetic a draft argument runs on.
+          * nothing spent, then everything in the stat, then a positive
+          * nature on top of that. Each heading spells out what is in it,
+          * because a column of Speeds is worthless if you have to remember
+          * which spread it belongs to — and four of them side by side is
+          * exactly the arithmetic a draft argument runs on.
+          *
+          * Named in whichever numbers are being spent: Gen 9's columns say
+          * IVs and EVs, and Champions' say SP and mention no IVs, having
+          * none. The first column is the untrained Speed either way.
           *
           * All of them run in Base's order, since each is a function of it,
           * so a row reads straight across.
           */}
         <div className="speed-level">
-          <h3 title={`31 IVs, no EVs, neutral nature, at level ${level}`}>
-            Lv {level} <span>+ IVs</span>
+          <h3 title={hasIvs
+            ? `31 IVs, no EVs, neutral nature, at level ${level}`
+            : `Nothing spent, neutral nature, at level ${level}`}
+          >
+            Lv {level}{hasIvs && <span>+ IVs</span>}
           </h3>
           <ul>
             {bases.map((b) => (
               <li key={b.id} className={rowClass(b.id)}>
                 <button type="button" onClick={() => toggle(b.id)} title={title(b.id, b.pokemon.name)}>
-                  <strong>{statAtLevel(b.pokemon.baseStats.spe, 0, 1, false, 31, level)}</strong>
+                  <strong>{statAtLevel(b.pokemon.baseStats.spe, 0, 1, false, 31, level, rules)}</strong>
                   <Sprite pokemon={b.pokemon} width={32} height={26} />
                 </button>
               </li>
@@ -102,14 +116,14 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
         </div>
 
         <div className="speed-evs">
-          <h3 title={`252 EVs, 31 IVs, neutral nature, at level ${level}`}>
-            Lv {level} <span>+ IVs + Max EVs</span>
+          <h3 title={`${most} ${unit}${hasIvs ? ', 31 IVs' : ''}, neutral nature, at level ${level}`}>
+            Lv {level} <span>{hasIvs && '+ IVs '}+ Max {unit}</span>
           </h3>
           <ul>
             {bases.map((b) => (
               <li key={b.id} className={rowClass(b.id)}>
                 <button type="button" onClick={() => toggle(b.id)} title={title(b.id, b.pokemon.name)}>
-                  <strong>{statAtLevel(b.pokemon.baseStats.spe, 252, 1, false, 31, level)}</strong>
+                  <strong>{statAtLevel(b.pokemon.baseStats.spe, most, 1, false, 31, level, rules)}</strong>
                   <Sprite pokemon={b.pokemon} width={32} height={26} />
                 </button>
               </li>
@@ -118,14 +132,14 @@ export function SpeedTiersBody({ teamOne, teamTwo, preMega, filterOne, filterTwo
         </div>
 
         <div className="speed-max">
-          <h3 title={`252 EVs, 31 IVs, a positive nature, at level ${level}`}>
-            Lv {level} <span>+ IVs + Max EVs + Nature</span>
+          <h3 title={`${most} ${unit}${hasIvs ? ', 31 IVs' : ''}, a positive nature, at level ${level}`}>
+            Lv {level} <span>{hasIvs && '+ IVs '}+ Max {unit} + Nature</span>
           </h3>
           <ul>
             {bases.map((b) => (
               <li key={b.id} className={rowClass(b.id)}>
                 <button type="button" onClick={() => toggle(b.id)} title={title(b.id, b.pokemon.name)}>
-                  <strong>{statAtLevel(b.pokemon.baseStats.spe, 252, 1.1, false, 31, level)}</strong>
+                  <strong>{statAtLevel(b.pokemon.baseStats.spe, most, 1.1, false, 31, level, rules)}</strong>
                   <Sprite pokemon={b.pokemon} width={32} height={26} />
                 </button>
               </li>

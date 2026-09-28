@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import { SpeedTiersBody } from './SpeedTiers'
 import { SpeedFilter } from './SpeedFilter'
-import { defaultSpeedFilter, speedFilterRows } from '../../lib/stats'
+import { defaultSpeedFilter, speedFilterRows, RULES, type Rules,
+} from '../../lib/stats'
 import { isMega, megaBaseId, type LeagueDex } from '../../data/league'
 import type { Team, TeamEntry } from './TeamEditor'
 
@@ -46,6 +47,11 @@ export function useSpeedTiersPanel(teamOne: Team, teamTwo: Team, dex: LeagueDex,
   body: ReactNode
   footnote: string
 } {
+  /*
+   * Which numbers the spreads are named in. Champions spends 32 SP where
+   * Gen 9 spends 252 EVs, and has no IVs to drop for a minimum-Speed row.
+   */
+  const [rules, setRules] = useState<Rules>('champions')
   const one = useMemo(() => withMegaBases(teamOne, dex), [teamOne, dex])
   const two = useMemo(() => withMegaBases(teamTwo, dex), [teamTwo, dex])
   const preMega = useMemo(() => new Set([...one.added, ...two.added]), [one.added, two.added])
@@ -60,16 +66,18 @@ export function useSpeedTiersPanel(teamOne: Team, teamTwo: Team, dex: LeagueDex,
   )
   // Which rows the filter offers depends on the rosters: the spreads and stages
   // are fixed, but an ability row only appears if someone actually has it.
-  const rows = useMemo(() => speedFilterRows(both), [both])
-  const [filterOne, setFilterOne] = useState<Set<string>>(() => defaultSpeedFilter(both))
-  const [filterTwo, setFilterTwo] = useState<Set<string>>(() => defaultSpeedFilter(both))
+  const rows = useMemo(() => speedFilterRows(both, rules), [both, rules])
+  const [filterOne, setFilterOne] = useState<Set<string>>(() => defaultSpeedFilter(both, rules))
+  const [filterTwo, setFilterTwo] = useState<Set<string>>(() => defaultSpeedFilter(both, rules))
 
   // A roster change can add or remove ability rows, so the defaults are
   // recomputed rather than left pointing at abilities nobody has any more.
+  // A roster change, or a change of rules — the spread rows are named for
+  // the numbers being spent, so the old keys stop matching anything.
   useEffect(() => {
-    setFilterOne(defaultSpeedFilter(both))
-    setFilterTwo(defaultSpeedFilter(both))
-  }, [both])
+    setFilterOne(defaultSpeedFilter(both, rules))
+    setFilterTwo(defaultSpeedFilter(both, rules))
+  }, [both, rules])
 
   const setFilter = (side: 'one' | 'two', key: string, on: boolean) => {
     const apply = (prev: Set<string>) => {
@@ -83,24 +91,40 @@ export function useSpeedTiersPanel(teamOne: Team, teamTwo: Team, dex: LeagueDex,
   }
 
   const reset = () => {
-    setFilterOne(defaultSpeedFilter(both))
-    setFilterTwo(defaultSpeedFilter(both))
+    setFilterOne(defaultSpeedFilter(both, rules))
+    setFilterTwo(defaultSpeedFilter(both, rules))
   }
 
   return {
     actions: (
-      <SpeedFilter
+      <>
+        {/* The same choice the EV calculator offers, in the bar rather
+            than over the columns: this tab has no field row to put it in. */}
+        {(['champions', 'gen9'] as const).map((r) => (
+          <button
+            key={r}
+            type="button"
+            className="pill-toggle"
+            aria-pressed={rules === r}
+            title={`${RULES[r].budget} ${RULES[r].unit}, ${RULES[r].max} to a stat`}
+            onClick={() => setRules(r)}
+          >
+            {RULES[r].label}
+          </button>
+        ))}
+        <SpeedFilter
         rows={rows}
         oneName={teamOne.name || 'Team 1'}
         twoName={teamTwo.name || 'Team 2'}
         filterOne={filterOne} filterTwo={filterTwo}
-        onChange={setFilter} onReset={reset}
-      />
+          onChange={setFilter} onReset={reset}
+        />
+      </>
     ),
     body: (
       <SpeedTiersBody
         teamOne={one.team} teamTwo={two.team} preMega={preMega}
-        filterOne={filterOne} filterTwo={filterTwo} level={level}
+        filterOne={filterOne} filterTwo={filterTwo} level={level} rules={rules}
         selected={selected} onSelect={setSelected}
       />
     ),
