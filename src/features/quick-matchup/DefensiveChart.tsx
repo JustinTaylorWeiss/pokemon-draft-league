@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import type { TypeChart } from '../../data/types'
-import { BATTLE_TYPES, defensiveChart } from '../../lib/matchup'
+import { BATTLE_TYPES, defensiveChart, defensiveMultiplier } from '../../lib/matchup'
 import { TypeIconChip } from '../../components/TypeIcon'
 import type { Team } from './TeamEditor'
 import { PokemonLink } from '../../components/PokemonLink'
@@ -64,6 +64,34 @@ export function DefensiveChartBody({ team, chart, useAbilities }: Props) {
     [chart, team.members, useAbilities],
   )
 
+  /**
+   * Which abilities are actually moving a number in the chart above.
+   *
+   * Not every defensive ability a team happens to have: Thick Fat on
+   * something already resistant to Fire and Ice changes the figure, and
+   * Flash Fire on something that is not going to be hit by Fire does not
+   * change the column it is named for. Each one is tried against every
+   * type on the Pokémon that has it and kept where the answer differs
+   * from the raw type chart.
+   *
+   * Worth saying under the chart because the chart cannot: a cell reading
+   * 0 looks like the type chart until you know the Pokémon is holding it
+   * up, and the toggle above only says that abilities are on.
+   */
+  const credited = useMemo(() => {
+    if (!useAbilities) return []
+    const out: { id: string; name: string; abilities: string[] }[] = []
+    for (const { id, pokemon } of team.members) {
+      const own = [...new Set(Object.values(pokemon.abilities))]
+      const doing = own.filter((ability) => BATTLE_TYPES.some((t) => (
+        defensiveMultiplier(chart, t, pokemon, true, ability)
+        !== defensiveMultiplier(chart, t, pokemon, false)
+      )))
+      if (doing.length) out.push({ id, name: pokemon.name, abilities: doing })
+    }
+    return out
+  }, [team.members, chart, useAbilities])
+
   // Width only: all eighteen type columns stay on screen whatever the roster,
   // and a roster too tall for the card scrolls rather than shrinking the chart
   // until it cannot be read.
@@ -121,6 +149,16 @@ export function DefensiveChartBody({ team, chart, useAbilities }: Props) {
             ))}
           </tfoot>
       </table>
+      {credited.length > 0 && (
+        <ul className="type-credits">
+          {credited.map((c) => (
+            <li key={c.id}>
+              <b>{c.name}</b>
+              {c.abilities.join(', ')}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }

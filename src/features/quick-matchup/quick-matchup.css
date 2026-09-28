@@ -1122,6 +1122,17 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 .ev-set-list em { font-style: normal; font-size: 0.64rem; color: var(--muted); margin-left: auto; white-space: nowrap; }
 .ev-set-none { padding: 0.3rem 0.35rem; color: var(--muted); font-size: 0.72rem; }
 
+/* Which abilities are holding a number up, under the chart that shows it.
+   A cell reading 0 looks like the type chart until you know a Levitate is
+   doing it, and the toggle above only says abilities are on at all. */
+.type-credits {
+  list-style: none; margin: 0.7rem 0 0; padding: 0;
+  display: flex; flex-wrap: wrap; gap: 0.25rem 1rem;
+  font-size: 0.72rem; color: var(--muted);
+}
+.type-credits li { display: flex; align-items: baseline; gap: 0.35rem; }
+.type-credits b { font-weight: 600; color: var(--fg); }
+
 .ev-hint, .ev-note { margin: 0; color: var(--muted); font-size: 0.75rem; line-height: 1.45; }
 /* Drawn rather than counted out: 508 is a number you have to subtract from,
    and a bar is a thing you can see the end of. */
