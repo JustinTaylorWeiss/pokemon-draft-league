@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { fetchReplay, replayId, type ReplayGame } from '../../lib/parseReplay'
 import { currentSeasonId, db, errorText, reportMatch, updateRow } from '../../data/supabase'
+import { ConfirmModal } from '../../components/ConfirmModal'
 import { toId } from '../../data/load'
 import type { League } from '../../data/league'
 
@@ -182,6 +183,28 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
     }
   }
 
+  const nameOf = (id: string) => league.players.find((p) => p.id === id)?.name ?? id
+
+  /*
+   * The result already sitting in this week for these two, if there is one.
+   *
+   * Saving replaces it rather than adding a second row — two coaches play
+   * one series in a week, so a second report of them is that series again.
+   * Which is what makes this worth saying out loud first: the report being
+   * replaced may not be yours, and the only sign it ever existed would be
+   * the event log.
+   */
+  function reportedAlready(playerA: string, playerB: string) {
+    const same = (x: string[], y: string[]) =>
+      x.length === y.length && [...x].sort().join() === [...y].sort().join()
+    return league.schedule.find((m) =>
+      m.week === week
+      && m.scoreA !== null && m.scoreB !== null
+      && ((same(m.a, [playerA]) && same(m.b, [playerB]))
+        || (same(m.a, [playerB]) && same(m.b, [playerA]))))
+  }
+  const [replacing, setReplacing] = useState<{ a: string; b: string; was: string } | null>(null)
+
   async function save() {
     if (!games || !accounts) return
     const playerA = mapping[normalise(accounts[0])]
@@ -195,10 +218,16 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
       return
     }
 
+    const standing = reportedAlready(playerA, playerB)
+    if (standing && !replacing) {
+      setReplacing({ a: playerA, b: playerB, was: `${standing.scoreA}\u2013${standing.scoreB}` })
+      return
+    }
+    setReplacing(null)
+
     setBusy(true)
     setError(null)
     try {
-      const nameOf = (id: string) => league.players.find((p) => p.id === id)?.name ?? id
       const summed = totals(games)
 
       // One id per Pokemon across the whole series. Team preview masks formes,
@@ -359,6 +388,18 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
                 {busy ? 'Saving…' : 'Save match'}
               </button>
             </div>
+
+            {replacing && (
+              <ConfirmModal
+                title={`Week ${week} is already reported`}
+                note={`${nameOf(replacing.a)} vs ${nameOf(replacing.b)} is already in as ${replacing.was}. Saving replaces that result and its games with this one rather than adding a second row.`}
+                action="Replace it"
+                danger
+                busy={busy}
+                onClose={() => setReplacing(null)}
+                onConfirm={() => void save()}
+              />
+            )}
           </>
         )}
       </div>
