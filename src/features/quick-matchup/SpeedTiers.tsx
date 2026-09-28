@@ -78,6 +78,16 @@ function BuildRow({
           <span>{build.ev}<em>{RULES[rules].unit}</em></span>
         </div>
         <strong>{speedOf(entry.pokemon, build, level, rules)}</strong>
+        {/* Up here rather than among the toggles: it is not one of them —
+            they all change the number and this one decides whether to
+            look at it — and the toggles want the whole of their line. */}
+        <button
+          type="button" className={`speed-flag speed-hide${hidden ? ' is-on' : ''}`}
+          aria-pressed={hidden} onClick={onHide}
+          title={hidden ? 'Put it back in the rankings' : 'Take it out of the rankings'}
+        >
+          Hide
+        </button>
       </div>
 
       <div className="speed-knobs">
@@ -140,13 +150,6 @@ function BuildRow({
             {ability}
           </button>
         )}
-        <button
-          type="button" className={`speed-flag${hidden ? ' is-on' : ''}`}
-          aria-pressed={hidden} onClick={onHide}
-          title={hidden ? 'Put it back in the rankings' : 'Take it out of the rankings'}
-        >
-          Hide
-        </button>
       </div>
     </li>
   )

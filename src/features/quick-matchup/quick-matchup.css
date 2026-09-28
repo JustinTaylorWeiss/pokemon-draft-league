@@ -314,7 +314,11 @@
    in a way that spacing never quite did. */
 .speed-live {
   display: grid; align-items: start; column-gap: 0.6rem;
-  grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr) minmax(0, 1.18fr);
+  /* The teams are much the wider because they hold the controls, and the
+     ranking between them is a sprite, a badge or two and a number. Set
+     where it is so a Pokemon's toggles sit on one line rather than
+     wrapping the last pill onto a line of its own. */
+  grid-template-columns: minmax(0, 1.85fr) minmax(0, 1fr) minmax(0, 1.85fr);
   padding: 0.7rem; border: 1px solid var(--line); border-radius: 12px;
   background: var(--bg);
 }
@@ -399,6 +403,7 @@
    are fixed, so the numbers down the column line up with each other. */
 .speed-top { display: flex; align-items: center; gap: 0.35rem; min-width: 0; }
 .speed-top > strong { flex: none; margin-left: 0; min-width: 2.1rem; text-align: right; }
+.speed-hide { flex: none; padding: 0.16rem 0.38rem; }
 .speed-who {
   display: flex; align-items: center; gap: 0.4rem; flex: 1 1 0; min-width: 0;
   padding: 0; background: none; border: 0; color: inherit;
@@ -422,19 +427,19 @@
    count is what changes and the row has no width to spare. */
 .speed-slider > span em { font-style: normal; font-size: 0.86em; opacity: 0.75; margin-left: 0.2em; }
 
-.speed-knobs { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.35rem; }
+.speed-knobs { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; }
 /* Two halves of one control, so they touch and share their middle edge. */
 .speed-nature { display: inline-flex; }
 .speed-nature button {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 1.6rem; height: 1.3rem; padding: 0;
+  width: 1.45rem; height: 1.3rem; padding: 0;
   background: none; border: 1px solid var(--line); color: var(--muted);
   font: inherit; font-size: 0.8rem; line-height: 1; cursor: pointer;
 }
 .speed-nature button:first-child { border-radius: 999px 0 0 999px; }
 .speed-nature button:last-child { border-radius: 0 999px 999px 0; margin-left: -1px; }
 .speed-flag {
-  padding: 0.22rem 0.42rem; white-space: nowrap;
+  padding: 0.22rem 0.38rem; white-space: nowrap;
   background: none; border: 1px solid var(--line); border-radius: 999px;
   color: var(--muted); font: inherit; font-size: 0.7rem; line-height: 1; cursor: pointer;
 }
@@ -969,14 +974,22 @@ button.type-chip { cursor: pointer; }
   .moves-controls { flex-wrap: wrap; }
   .moves-controls input { flex-basis: 100%; }
   .tag-row { flex-basis: 100%; }
-  /* The chart goes under the box rather than beside it. */
+}
+
+/*
+ * Four across needs about thirteen hundred pixels: a team column holds
+ * seven controls and a name, and below that it starts paying for the
+ * fourth column by cutting the name to a letter. So the chart goes under
+ * the box, the teams take a column each, and the ranking they produce
+ * runs under both — which is the shape the group has anyway, two inputs
+ * and what they come to.
+ */
+@media (max-width: 1300px) {
   .speed-layout { grid-template-columns: minmax(0, 1fr); row-gap: 1.1rem; }
   .speed-live { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); row-gap: 0.9rem; }
-  /* The teams take a column each and the ranking they produce runs under
-     both of them, which is the shape the group has anyway — two inputs and
-     what they come to. Placed by hand, because the ranking sits between
-     the teams in the markup and auto-placement would put the second team
-     below it rather than beside the first. */
+  /* Placed by hand, because the ranking sits between the teams in the
+     markup and auto-placement would put the second team below it rather
+     than beside the first. */
   .speed-live > .speed-side:first-child { grid-area: 1 / 1; }
   .speed-live > .speed-side:last-child { grid-area: 1 / 2; }
   .speed-live > .speed-groups { grid-area: 2 / 1 / 3 / -1; }
