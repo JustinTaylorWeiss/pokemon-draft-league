@@ -123,7 +123,25 @@ export function CoverageBody({
   )
 
   /**
-   * Strongest first, with the Pokémon that have no most-used set on record
+   * The order the rows sit in, fixed by where they started.
+   *
+   * Read off the sets rather than off what is currently toggled: turning a
+   * type off drops a Pokémon's percentage, and sorting live meant the row
+   * you had just clicked slid out from under the pointer while the ones
+   * you were comparing it against moved too. The order is a property of
+   * the matchup; the percentages are what you are changing.
+   */
+  const order = useMemo(() => {
+    const base = coverage(
+      chart, attackers.members, defenders.members, learnsets, moves,
+      useAbilities, defaults, minPower, sets ?? undefined,
+    )
+    base.sort((a, b) => b.percent - a.percent || a.pokemon.name.localeCompare(b.pokemon.name))
+    return new Map(base.map((r, i) => [r.id, i]))
+  }, [chart, attackers.members, defenders.members, learnsets, moves, useAbilities, defaults, minPower, sets])
+
+  /**
+   * In that order, with the Pokémon that have no most-used set on record
    * held back into their own group below.
    *
    * Their percentage is answering a different question — what the whole
@@ -134,7 +152,7 @@ export function CoverageBody({
    */
   const { ranked, noSet } = useMemo(() => {
     const byThreat = [...results].sort(
-      (a, b) => b.percent - a.percent || a.pokemon.name.localeCompare(b.pokemon.name),
+      (a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0),
     )
     // Still loading: nothing is known to be missing a set yet.
     if (!sets) return { ranked: byThreat, noSet: [] as typeof byThreat }
@@ -142,7 +160,7 @@ export function CoverageBody({
       ranked: byThreat.filter((r) => sets[r.id]),
       noSet: byThreat.filter((r) => !sets[r.id]),
     }
-  }, [results, sets])
+  }, [results, sets, order])
 
   const [tip, setTip] = useState<
     { rect: DOMRect; id: string; category: Category; type: TypeName } | null
@@ -296,6 +314,11 @@ function MoveTip({ type, category, list }: { type: TypeName; category: Category;
         </ul>
       ) : <p className="tip-empty">Nothing at this power floor.</p>}
       {list.length > shown.length && <p className="tip-more">{`+${list.length - shown.length} more`}</p>}
+      {/* What the mark means, where the mark is. A legend somewhere else
+          on the page is a legend nobody reads while looking at this. */}
+      {shown.some((m) => m.inSet) && (
+        <p className="tip-key">★ in its most-used set</p>
+      )}
     </>
   )
 }

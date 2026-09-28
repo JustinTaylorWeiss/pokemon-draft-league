@@ -469,6 +469,12 @@ button.type-chip { cursor: pointer; }
 .tip-moves .in-set { color: var(--fg); font-weight: 600; }
 .tip-power { font-variant-numeric: tabular-nums; }
 .tip-more, .tip-empty { margin: 0.4rem 0 0; color: var(--muted); }
+/* What the star on the lit rows above means, under a rule so it reads as
+   a note about the list rather than another entry in it. */
+.tip-key {
+  margin: 0.4rem 0 0; padding-top: 0.35rem; border-top: 1px solid var(--line);
+  color: var(--muted); font-size: 0.68rem;
+}
 
 /* ---- learned moves ---- */
 /* Search and its count on the first line, the tags across the full width

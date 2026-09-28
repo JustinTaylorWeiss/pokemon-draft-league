@@ -204,7 +204,7 @@ export function AnalysisCard({
 
   const footnote = {
     types: 'Delta is resists minus weaknesses. Negative columns are types this team struggles to switch into.',
-    coverage: 'Lit types are the Pokémon’s most-used set; the dim ones are everything else it can learn. Click any to toggle.',
+    coverage: 'Lit types are the Pokémon’s most-used set; the dim ones are everything else it can learn. Click any to toggle — the order is fixed by where each Pokémon started, so nothing moves under you. Hovering a type lists its moves, with a ★ on the ones in that most-used set.',
     speed: speed.footnote,
   }[tab]
 
