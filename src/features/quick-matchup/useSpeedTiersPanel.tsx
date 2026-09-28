@@ -18,10 +18,19 @@ import type { Team, TeamEntry } from './TeamEditor'
  *
  * Skipped when the side already holds the base as a pick of its own: this
  * league drafts the two apart, so a roster can legitimately carry both.
+ *
+ * `owner` maps each added forme back to the Mega that brought it, because
+ * the two are one pick and share one build — the controls are on the Mega
+ * and the base reads them.
  */
-function withMegaBases(team: Team, dex: LeagueDex): { team: Team; added: string[] } {
+function withMegaBases(team: Team, dex: LeagueDex): {
+  team: Team
+  added: string[]
+  owner: [string, string][]
+} {
   const held = new Set(team.members.map((m) => m.id))
   const extra: TeamEntry[] = []
+  const owner: [string, string][] = []
   for (const m of team.members) {
     if (!isMega(m.pokemon)) continue
     const baseId = megaBaseId(m.pokemon)
@@ -29,10 +38,12 @@ function withMegaBases(team: Team, dex: LeagueDex): { team: Team; added: string[
     if (!baseId || !base || held.has(baseId)) continue
     held.add(baseId)
     extra.push({ id: baseId, pokemon: base })
+    owner.push([baseId, m.id])
   }
   return {
     team: extra.length ? { ...team, members: [...team.members, ...extra] } : team,
     added: extra.map((e) => e.id),
+    owner,
   }
 }
 
@@ -64,6 +75,10 @@ export function useSpeedTiersPanel(teamOne: Team, teamTwo: Team, dex: LeagueDex,
   const one = useMemo(() => withMegaBases(teamOne, dex), [teamOne, dex])
   const two = useMemo(() => withMegaBases(teamTwo, dex), [teamTwo, dex])
   const preMega = useMemo(() => new Set([...one.added, ...two.added]), [one.added, two.added])
+  const megaOwner = useMemo(
+    () => new Map([...one.owner, ...two.owner]),
+    [one.owner, two.owner],
+  )
 
   const [selected, setSelected] = useState<string | null>(null)
 
@@ -77,7 +92,9 @@ export function useSpeedTiersPanel(teamOne: Team, teamTwo: Team, dex: LeagueDex,
    * the build you give it.
    */
   const [builds, setBuilds] = useState<Record<string, SpeedBuild>>({})
-  const buildOf = (id: string) => builds[id] ?? bareBuild()
+  // A Mega's base forme has no controls of its own: it is the same pick
+  // earlier in the turn, so it reads the Mega's.
+  const buildOf = (id: string) => builds[megaOwner.get(id) ?? id] ?? bareBuild()
   const setBuild = (id: string, next: Partial<SpeedBuild>) =>
     setBuilds((prev) => ({ ...prev, [id]: { ...(prev[id] ?? bareBuild()), ...next } }))
   const reset = () => setBuilds({})

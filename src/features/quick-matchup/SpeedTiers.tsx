@@ -167,7 +167,12 @@ export function SpeedTiersBody({
    * columns on the right are where reordering belongs.
    */
   const order = (team: Team) =>
-    [...team.members].sort((a, b) => b.pokemon.baseStats.spe - a.pokemon.baseStats.spe)
+    team.members
+      // A Mega's base forme is not a second pick and gets no second set of
+      // controls; it is the Mega's own row, read before it Mega Evolves,
+      // and it appears in the rankings on the Mega's build.
+      .filter((m) => !preMega.has(m.id))
+      .sort((a, b) => b.pokemon.baseStats.spe - a.pokemon.baseStats.spe)
   const sides: { key: 'one' | 'two'; name: string; members: TeamEntry[] }[] = [
     { key: 'one', name: teamOne.name || 'Team 1', members: order(teamOne) },
     { key: 'two', name: teamTwo.name || 'Team 2', members: order(teamTwo) },
