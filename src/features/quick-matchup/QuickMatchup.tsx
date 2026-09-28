@@ -8,6 +8,7 @@ import { AnalysisCard } from './AnalysisCard'
 import './quick-matchup.css'
 import { LoadingBall } from '../../components/LoadingBall'
 import { clearSolo, soloTeam, subscribeSolo } from './handoff'
+import { useRoute } from '../../lib/route'
 
 type Step = 'team1' | 'team2' | 'results'
 
@@ -49,6 +50,8 @@ function restoreTeams(dex: LeagueDex): { one: Team; two: Team } | null {
 }
 
 export function QuickMatchup() {
+  // Which analysis tab, so a link can name one and a reload keeps it.
+  const [route, go] = useRoute()
   const [core, setCore] = useState<Core | null>(null)
   const [learnsets, setLearnsets] = useState<LearnsetDex | null>(null)
   const [league, setLeague] = useState<League | null>(null)
@@ -173,6 +176,7 @@ export function QuickMatchup() {
       <AnalysisCard
         chart={core.typechart} moves={core.moves} learnsets={learnsets} played={core.played}
         teamOne={teamOne} teamTwo={teamTwo} dex={dex}
+        routed={route.tab} onTab={(tab, settling) => go({ tab }, settling)}
         trail={(
           <button type="button" className="btn ghost sm" onClick={() => setStep('team1')}>
             Edit teams

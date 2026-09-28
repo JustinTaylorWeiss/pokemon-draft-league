@@ -46,6 +46,9 @@ interface Props {
   /** One team, read on its own: no opponent, so no Coverage. */
   solo?: boolean
   /** What sits at the left of the bar, before the tabs. The page's, not ours. */
+  /** Which tab to show, where the page is keeping that in its address. */
+  routed?: string
+  onTab?: (next: string, settling?: boolean) => void
   lead?: ReactNode
   /** And what sits at the far right of it, past this card's own controls. */
   trail?: ReactNode
@@ -62,9 +65,22 @@ interface Props {
  * not looking at.
  */
 export function AnalysisCard({
-  chart, moves, learnsets, teamOne, teamTwo, dex, played, solo, lead, trail,
+  chart, moves, learnsets, teamOne, teamTwo, dex, played, solo, routed, onTab, lead, trail,
 }: Props) {
-  const [tab, setTab] = useState('summary')
+  /*
+   * Which tab, out of the address bar when the page is routed there.
+   *
+   * The solo card is a second copy of this on the same screen's worth of
+   * state, so it keeps its own — one address cannot name two of them, and
+   * the solo view is somewhere you arrive rather than somewhere you link.
+   */
+  const [own, setOwn] = useState('summary')
+  const named = TABS.some((t) => t.key === routed) ? routed : undefined
+  const tab = named ?? own
+  const setTab = (next: string) => {
+    if (onTab) onTab(next)
+    else setOwn(next)
+  }
   const [neutral, setNeutral] = useState(80)
   const [defenseAbilities, setDefenseAbilities] = useState(true)
   const [coverageAbilities, setCoverageAbilities] = useState(true)
@@ -94,7 +110,12 @@ export function AnalysisCard({
   const tabs = solo ? TABS.filter((t) => t.key !== 'coverage' && t.key !== 'evs') : TABS
   useEffect(() => {
     if (solo && (tab === 'coverage' || tab === 'evs')) setTab(TABS[0].key)
-  }, [solo, tab])
+    // An address naming no tab, or one this card does not have, settles on
+    // the one being shown — and says so, rather than leaving the bar and
+    // the address disagreeing about where you are.
+    else if (onTab && !named) onTab(tab, true)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [solo, tab, named])
 
   const [sets, setSets] = useState<SetDex | null>(null)
   useEffect(() => { loadSets().then(setSets, () => {}) }, [])

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useRoute } from './lib/route'
 import { useElementHeight } from './lib/useElementHeight'
 import { QuickMatchup } from './features/quick-matchup/QuickMatchup'
 import { LeagueView } from './features/league/LeagueView'
@@ -33,9 +34,19 @@ const VIEWS: { key: View; label: string }[] = [
 ]
 
 export default function App() {
-  const [view, setView] = useState<View>('league')
+  /*
+   * Which view and which tab, out of the address bar.
+   *
+   * So a link to a tab is a link somebody can send, and a reload lands
+   * where it left rather than at the start. The two nav bars write to it
+   * and read back from it, which also makes the browser's back button
+   * step through tabs the way anyone would expect it to.
+   */
+  const [route, go] = useRoute()
+  const view = (VIEWS.some((v) => v.key === route.view) ? route.view : 'league') as View
+  const setView = (next: View) => go({ view: next, tab: '' })
   // Lifted so the secondary bar can sit directly under the primary one.
-  const [leagueTab, setLeagueTab] = useState<LeagueTab>('my-team')
+  const setLeagueTab = (next: LeagueTab) => go({ tab: next })
   // Loaded here too so the secondary nav can name the season; the loader caches,
   // so this shares one fetch with the views below.
   const [league, setLeague] = useState<League | null>(null)
@@ -88,9 +99,18 @@ export default function App() {
     () => tabsFor(SEASONS.find((s) => s.id === season) ?? SEASONS[0]),
     [season],
   )
+  /*
+   * The tab, once the season has said which ones it has. An address
+   * naming one this season does not offer — or naming none — settles on
+   * the first, and the bar is corrected rather than left disagreeing
+   * with the page under it.
+   */
+  const leagueTab = (tabs.some((t) => t.key === route.tab) ? route.tab : tabs[0].key) as LeagueTab
   useEffect(() => {
-    setLeagueTab((tab) => (tabs.some((t) => t.key === tab) ? tab : tabs[0].key))
-  }, [tabs])
+    if (view === 'league' && route.tab !== leagueTab) go({ view, tab: leagueTab }, true)
+    // Only when the address and the tabs on offer actually disagree.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, route.tab, leagueTab])
 
   /**
    * Asked whenever the site does not know who it is talking to in a season it
