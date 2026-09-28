@@ -1,6 +1,6 @@
 import type { Move, Pokemon, StatKey, TypeChart, TypeName } from '../data/types'
 import { DEFENSIVE_ABILITIES, defensiveMultiplier } from './matchup'
-import { natureMultiplier, statAtLevel } from './stats'
+import { natureMultiplier, statAtLevel, type Rules } from './stats'
 
 /**
  * What a move does to a Pokémon, close enough to decide an EV spread on.
@@ -237,6 +237,8 @@ export interface Side {
    * here, so both belong in the arithmetic rather than in a footnote.
    */
   ivs?: Partial<Record<StatKey, number>>
+  /** Which training system its numbers are spent in. Gen 9 unless said. */
+  rules?: Rules
 }
 
 /** A stat as it actually is, for one side. Speed included, for the tier list. */
@@ -246,7 +248,9 @@ export function statOf(side: Side, stat: StatKey): number {
   const base = side.pokemon.baseStats[stat]
   const ev = side.evs[stat] ?? 0
   const nature = side.natureBy?.[stat] ?? natureMultiplier(side.nature, stat)
-  const raw = statAtLevel(base, ev, nature, stat === 'hp', side.ivs?.[stat] ?? 31, side.level)
+  const raw = statAtLevel(
+    base, ev, nature, stat === 'hp', side.ivs?.[stat] ?? 31, side.level, side.rules,
+  )
   if (stat === 'hp') return raw
 
   const ability = side.ability ?? ''

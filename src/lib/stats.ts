@@ -1,15 +1,48 @@
 import type { Pokemon, StatKey } from '../data/types'
 
 /**
+ * The two ways a Pokémon can be trained, and what each calls its numbers.
+ *
+ * Gen 9 spends EVs: 508 of them, 252 into any one stat, and four buying a
+ * point of that stat at level 100. Champions spends SP, which are the
+ * points themselves — 66 to spread, 32 into any one stat, one at a time —
+ * so where an EV has to be divided and scaled to reach the stat, an SP is
+ * already there.
+ *
+ * Both maxima come to about the same place at level 50, which is where
+ * the league reads: 252 EVs is 31 points of stat and 32 SP is 32.
+ */
+export type Rules = 'champions' | 'gen9'
+
+export const RULES: Record<Rules, {
+  label: string
+  /** What one of them is called, for a readout. */
+  unit: string
+  budget: number
+  max: number
+  step: number
+}> = {
+  champions: { label: 'Champions', unit: 'SP', budget: 66, max: 32, step: 1 },
+  gen9: { label: 'Gen 9', unit: 'EVs', budget: 508, max: 252, step: 4 },
+}
+
+/**
  * Gen 3+ stat formula at any level. Reduces exactly to the level-100 form, so
  * it stays verified against DraftZone's speed tiers: Dragapult 252+ -> 421,
  * Iron Valiant 252+ with Quark Drive -> 546, and Amoonguss on the 0 EV / 0 IV /
  * negative-nature spread -> 58.
+ *
+ * Under Champions the same formula with the training taken out of the part
+ * that scales by level and added after it, because an SP is a point of the
+ * stat rather than a quarter of one before scaling.
  */
 export function statAtLevel(
   base: number, ev = 252, nature = 1, isHp = false, iv = 31, level = 100,
+  rules: Rules = 'gen9',
 ): number {
-  const common = Math.floor(((2 * base + iv + Math.floor(ev / 4)) * level) / 100)
+  const sp = rules === 'champions'
+  const common = Math.floor(((2 * base + iv + (sp ? 0 : Math.floor(ev / 4))) * level) / 100)
+    + (sp ? ev : 0)
   // Shedinja is the one species whose HP is a flat 1 at every level.
   if (isHp) return base === 1 ? 1 : common + level + 10
   return Math.floor((common + 5) * nature)

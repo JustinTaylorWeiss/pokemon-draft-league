@@ -1,11 +1,11 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
 import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../../data/types'
-import { STAT_LABELS } from '../../lib/stats'
+import { STAT_LABELS, RULES, type Rules } from '../../lib/stats'
 import {
   GIVEABLE_ITEMS, MODELLED_ABILITIES, itemEffect, itemMatters, typeBoosted,
 } from '../../lib/damage'
 import {
-  EV_BUDGET, EV_MAX, EV_STATS, EV_STEP, IV_MAX, SET_SIZE, assumeFrom,
+  EV_STATS, IV_MAX, SET_SIZE, assumeFrom,
   emptySpread, lowered,
   opponentsFrom, planFor, spent, statOfSpread, usualMoves,
   type PlanField, type SideField,
@@ -120,9 +120,10 @@ const SPRITE_H = 53
  * Defense had no way of being said and came out as either nothing or
  * everything, neither of which is what it does.
  */
-function AssumeStat({ stat, spread, onEvs, onNature }: {
+function AssumeStat({ stat, spread, limits, onEvs, onNature }: {
   stat: StatKey
   spread: Spread
+  limits: Limits
   onEvs: (n: number) => void
   onNature: (mult: number) => void
 }) {
@@ -169,8 +170,8 @@ function AssumeStat({ stat, spread, onEvs, onNature }: {
           that looked like 256 EVs at the end of a bar that stops at
           252 — the pill above says the nature. */}
       <input
-        type="range" min={0} max={EV_MAX} step={EV_STEP} value={evs}
-        aria-label={`${STAT_LABELS[stat]} EVs`}
+        type="range" min={0} max={limits.max} step={limits.step} value={evs}
+        aria-label={`${STAT_LABELS[stat]} ${limits.unit}`}
         onChange={(e) => onEvs(Number(e.target.value))}
       />
     </label>
@@ -239,6 +240,16 @@ export function EvHelp({ onClose }: { onClose: () => void }) {
             This tab works out what EVs do for one Pokémon against the team it is facing.
             Both teams are already loaded, so each figure refers to a specific Pokémon on
             the other side rather than to the stat on its own.
+          </p>
+
+          <h3>Which numbers</h3>
+          <p>
+            Champions spends SP and Gen 9 spends EVs. The toggle at the left of the row
+            above the columns picks between them: 66 SP with 32 to a stat and one at a
+            time, or 508 EVs with 252 to a stat and four at a time. Both come to the same
+            place fully invested at level 50 — 252 EVs is 31 points of a stat and 32 SP is
+            32 — so what changes is what a partial investment costs and how finely it can
+            be cut. Champions is where it starts, being what the league plays.
           </p>
 
           <h3>Setting it up</h3>
@@ -325,6 +336,9 @@ export function EvHelp({ onClose }: { onClose: () => void }) {
   )
 }
 
+/** How much there is to spend, in whichever system is picked. */
+type Limits = (typeof RULES)[Rules]
+
 const WEATHERS = ['Sun', 'Rain', 'Sand', 'Snow'] as const
 const TERRAINS = ['Electric', 'Grassy', 'Psychic', 'Misty'] as const
 /** What one side can have up, and what to call it. */
@@ -348,11 +362,13 @@ const SIDE_FIELD: { key: keyof SideField; label: string }[] = [
  * it belongs to a Pokémon: it is the weather, and it is the same weather
  * for all thirteen of them.
  */
-function FieldBar({ field, onChange, doubles, onDoubles }: {
+function FieldBar({ field, onChange, doubles, onDoubles, rules, onRules }: {
   field: PlanField
   onChange: (next: PlanField) => void
   doubles: boolean
   onDoubles: (next: boolean) => void
+  rules: Rules
+  onRules: (next: Rules) => void
 }) {
   const one = <T extends string>(now: T | undefined, pick: T) => (now === pick ? undefined : pick)
   const side = (which: 'mine' | 'theirs', key: keyof SideField) => ({
@@ -368,6 +384,19 @@ function FieldBar({ field, onChange, doubles, onDoubles }: {
           spread move is a quarter weaker with two Pokémon out and a
           screen a third rather than a half. The league plays doubles,
           so that is where it starts. */}
+      <span className="ev-field-set">
+        <em>Rules</em>
+        {(['champions', 'gen9'] as const).map((r) => (
+          <button
+            key={r} type="button" className="ev-field-pill"
+            aria-pressed={rules === r}
+            title={`${RULES[r].budget} ${RULES[r].unit}, ${RULES[r].max} to a stat`}
+            onClick={() => onRules(r)}
+          >
+            {RULES[r].label}
+          </button>
+        ))}
+      </span>
       <span className="ev-field-set">
         <em>Format</em>
         {([[true, 'Doubles'], [false, 'Singles']] as const).map(([on, label]) => (
@@ -559,13 +588,14 @@ function ThresholdRow({
  * move the slider and then back down to see what it did.
  */
 function StatHead({
-  stat, bare, value, spread, onEvs, onNature,
+  stat, bare, value, spread, limits, onEvs, onNature,
 }: {
   stat: StatKey
-  /** The stat before any EVs go in, which is where every decision starts. */
+  /** The stat before any training goes in, which is where a decision starts. */
   bare: number
   value: number
   spread: Spread
+  limits: Limits
   onEvs: (n: number) => void
   onNature: (mult: number) => void
 }) {
@@ -626,10 +656,10 @@ function StatHead({
           reading left to right in that order. The total is above; this line
           is only the controls. */}
       <div className="ev-spend">
-        <span className="ev-evs" title={`${evs} EVs`}>{evs}</span>
+        <span className="ev-evs" title={`${evs} ${limits.unit}`}>{evs}</span>
         <input
-          type="range" min={0} max={EV_MAX} step={EV_STEP} value={evs}
-          aria-label={`${STAT_LABELS[stat]} EVs`}
+          type="range" min={0} max={limits.max} step={limits.step} value={evs}
+          aria-label={`${STAT_LABELS[stat]} ${limits.unit}`}
           onChange={(e) => onEvs(Number(e.target.value))}
         />
       </div>
@@ -753,7 +783,7 @@ export interface Gear {
  */
 function GearPicker({
   pokemon, ability: usualAbilityName, gear, onChange, assume, onAssume, base,
-  id, out, learnset, moves, played, named, onNamed, carrying,
+  id, limits, out, learnset, moves, played, named, onNamed, carrying,
 }: {
   pokemon: Pokemon
   /** The ability it is reckoned to have when nobody has said otherwise. */
@@ -792,6 +822,8 @@ function GearPicker({
    */
   /** Its id, for the link to its page at the top of the panel. */
   id: string
+  /** How much there is to spend and in what steps. */
+  limits: Limits
   /** Out of the columns, which the sprite itself toggles. */
   out?: boolean
 }) {
@@ -858,7 +890,7 @@ function GearPicker({
    * counts as that, and Speed comes first where it belongs.
    */
   const weigh = (k: StatKey) =>
-    (assume ? assume.evs[k] + (assume.nature[k] > 1 ? EV_MAX / 2 : 0) : 0)
+    (assume ? assume.evs[k] + (assume.nature[k] > 1 ? limits.max / 2 : 0) : 0)
   const invested = assume
     ? EV_STATS.filter((k) => assume.evs[k] > 0)
       .sort((a, b) => weigh(b) - weigh(a) || EV_STATS.indexOf(a) - EV_STATS.indexOf(b))
@@ -1128,13 +1160,14 @@ function GearPicker({
                     key={stat}
                     stat={stat}
                     spread={assume}
+                    limits={limits}
                     // Held to 508, the same as the spread being built on
                     // the other side. A slider that stops is a clearer way
                     // of saying there is nothing left than a total that
                     // goes red after the fact.
                     onEvs={(n) => {
                       const elsewhere = spent(assume) - assume.evs[stat]
-                      const room = Math.max(0, Math.min(n, EV_BUDGET - elsewhere))
+                      const room = Math.max(0, Math.min(n, limits.budget - elsewhere))
                       onAssume({ ...assume, evs: { ...assume.evs, [stat]: room } })
                     }}
                     onNature={(mult) => {
@@ -1168,8 +1201,8 @@ function GearPicker({
                   than under them: two lines of small print about the same
                   spread, so one line. */}
               {assume && (
-                <p className={`ev-assume-total${spent(assume) === EV_BUDGET ? ' is-full' : ''}`}>
-                  {spent(assume)} / {EV_BUDGET} EVs
+                <p className={`ev-assume-total${spent(assume) === limits.budget ? ' is-full' : ''}`}>
+                  {spent(assume)} / {limits.budget} {limits.unit}
                 </p>
               )}
               </div>
@@ -1391,7 +1424,7 @@ export function EvCalcBody({
   // How it is usually built, until somebody says otherwise. A Pokémon over
   // there is far likelier to be built the way it is usually built than to
   // have nothing anywhere, which is where these used to start.
-  const credit = (id: string) => assume[id] ?? assumeFrom(sets?.[id])
+  const credit = (id: string) => assume[id] ?? assumeFrom(sets?.[id], rules)
   /** Moves named by hand, credited to every opponent that can learn one. */
   const [extra, setExtra] = useState<Record<string, string[]>>({})
   const names = (id: string, next: string[]) =>
@@ -1415,6 +1448,14 @@ export function EvCalcBody({
   const [field, setField] = useState<PlanField>({})
   /** The league plays doubles; singles is a question someone might ask. */
   const [doubles, setDoubles] = useState(true)
+  /*
+   * Champions spends SP and Gen 9 spends EVs — 66 points with 32 to a
+   * stat against 508 with 252, and one at a time rather than four. Both
+   * come to the same place maxed at level 50, so the difference is what
+   * a partial investment costs and how finely it can be cut.
+   */
+  const [rules, setRules] = useState<Rules>('champions')
+  const limits = RULES[rules]
   /** Which Pokémon everything above is about, once one has been picked. */
   const mine = chosen ?? ''
   const shape = shapes[mine] ?? null
@@ -1523,7 +1564,7 @@ export function EvCalcBody({
     () => (picked
       ? opponentsFrom(
         picked.foes.filter((m) => !off.has(m.id)),
-        sets, moves, learnsets, played, level, assume, extra, gear,
+        sets, moves, learnsets, played, level, assume, extra, gear, rules,
       // Struck off here rather than inside the solver: what a Pokémon is
       // reckoned to have is the solver's business, and what somebody has
       // said it is not carrying is this panel's.
@@ -1534,7 +1575,7 @@ export function EvCalcBody({
           : o
       })
       : []),
-    [picked, off, sets, moves, learnsets, played, level, assume, extra, gear],
+    [picked, off, sets, moves, learnsets, played, level, assume, extra, gear, rules],
   )
 
   /** Everything on either side, for the picker. */
@@ -1580,6 +1621,7 @@ export function EvCalcBody({
     || off.size > 0
     || Object.keys(field).length > 0
     || !doubles
+    || rules !== 'champions'
   const startOver = () => {
     setSpreads({})
     setMysets({})
@@ -1590,6 +1632,7 @@ export function EvCalcBody({
     setOff(new Set())
     setField({})
     setDoubles(true)
+    setRules('champions')
   }
 
   const dropFromSet = (id: string) => setMyset(setIds.filter((x) => x !== id))
@@ -1623,8 +1666,9 @@ export function EvCalcBody({
       // a half off what a screen stops.
       doubles,
       field,
+      rules,
     })
-  }, [picked, myMoves, opponents, spread, chart, level, sets, gear, field, doubles])
+  }, [picked, myMoves, opponents, spread, chart, level, sets, gear, field, doubles, rules])
 
   /** Any of this one's own dropped below 31, which every stat above reads. */
   const myIvs = picked ? gear[picked.entry.id]?.ivs : undefined
@@ -1649,15 +1693,16 @@ export function EvCalcBody({
   const wide = useWide('(min-width: 1101px)')
   const head = (stat: StatKey) => ({
     stat,
-    bare: picked ? statOfSpread(picked.entry.pokemon, level, bareSpread, stat, myIvs) : 0,
-    value: picked ? statOfSpread(picked.entry.pokemon, level, spread, stat, myIvs) : 0,
+    bare: picked ? statOfSpread(picked.entry.pokemon, level, bareSpread, stat, myIvs, rules) : 0,
+    value: picked ? statOfSpread(picked.entry.pokemon, level, spread, stat, myIvs, rules) : 0,
     spread,
+    limits,
     onEvs: (n: number) => setEvs(stat, n),
     onNature: (m: number) => setNature(stat, m),
   })
 
   const used = spent(spread)
-  const left = EV_BUDGET - used
+  const left = limits.budget - used
   const guessed = opponents.filter((o) => o.guessed)
 
   // Capped at what is left rather than allowed to go over and be corrected
@@ -1666,7 +1711,8 @@ export function EvCalcBody({
   const setEvs = (stat: StatKey, n: number) =>
     setSpread((s) => {
       const elsewhere = spent(s) - s.evs[stat]
-      return { ...s, evs: { ...s.evs, [stat]: Math.max(0, Math.min(n, EV_MAX, EV_BUDGET - elsewhere)) } }
+      const room = Math.max(0, Math.min(n, limits.max, limits.budget - elsewhere))
+      return { ...s, evs: { ...s.evs, [stat]: room } }
     })
   const setNature = (stat: StatKey, mult: number) =>
     setSpread((s) => {
@@ -1834,10 +1880,10 @@ export function EvCalcBody({
             {picked && (
               <span className={`ev-budget${left === 0 ? ' is-full' : ''}`}>
                 <span className="ev-budget-bar">
-                  <span style={{ width: `${(used / EV_BUDGET) * 100}%` }} />
+                  <span style={{ width: `${(used / limits.budget) * 100}%` }} />
                 </span>
                 <span className="ev-budget-read">
-                  {used}<i>/{EV_BUDGET}</i>
+                  {used}<i>/{limits.budget}</i>
                 </span>
               </span>
             )}
@@ -1871,6 +1917,7 @@ export function EvCalcBody({
               <GearPicker
                 pokemon={picked.entry.pokemon}
                 id={picked.entry.id}
+                limits={limits}
                 ability={usualAbility(picked.entry.id, picked.entry.pokemon)}
                 gear={gear[picked.entry.id]} onChange={(g) => give(picked.entry.id, g)}
               />
@@ -1907,7 +1954,8 @@ export function EvCalcBody({
                     <GearPicker
                       pokemon={m.pokemon}
                       ability={usualAbility(m.id, m.pokemon)}
-                      base={assumeFrom(sets?.[m.id])}
+                      base={assumeFrom(sets?.[m.id], rules)}
+                      limits={limits}
                       gear={gear[m.id]} onChange={(g) => give(m.id, g)}
                       assume={credit(m.id)}
                       onAssume={(next) => setAssume((prev) => ({ ...prev, [m.id]: next }))}
@@ -1933,6 +1981,7 @@ export function EvCalcBody({
         <FieldBar
           field={field} onChange={setField}
           doubles={doubles} onDoubles={setDoubles}
+          rules={rules} onRules={setRules}
         />
       )}
 

@@ -2,7 +2,7 @@ import type {
   LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart, TypeName,
 } from '../data/types'
 import { damage, koCurve, statOf, type Field, type Side } from './damage'
-import { natureMultiplier, statAtLevel } from './stats'
+import { natureMultiplier, statAtLevel, RULES, type Rules } from './stats'
 
 /**
  * What each EV is actually buying, against the team on the other side.
@@ -17,6 +17,11 @@ import { natureMultiplier, statAtLevel } from './stats'
  * four EVs that actually do something.
  */
 
+/*
+ * The Gen 9 numbers, still the default everywhere outside this panel.
+ * Champions spends a smaller pool of whole points; `RULES` in stats.ts
+ * holds both and the panel passes whichever is picked.
+ */
 /** EVs come in fours; a fifth does nothing until the fourth after it. */
 export const EV_STEP = 4
 export const EV_MAX = 252
@@ -135,17 +140,19 @@ export interface Threshold {
  * single row hid that it was on offer.
  */
 /*
- * Labelled the way the pills under each sprite are, because they say the
- * same thing: 31 is perfect IVs and nothing else, 252 is everything in the
- * stat, and the plus is a boosting nature on top. "max EVs + nature" was
- * three words for what the rest of the panel says in four characters.
+ * Labelled in the numbers actually being spent: 31 is perfect IVs and
+ * nothing else, and the other is everything the stat will take — 252 EVs
+ * under Gen 9 and 32 SP under Champions. The plus is a boosting nature.
  */
-const SPEED_TIERS: { label: string; evs: number; nature: number }[] = [
-  { label: '31', evs: 0, nature: 1 },
-  { label: '31+', evs: 0, nature: 1.1 },
-  { label: '252', evs: EV_MAX, nature: 1 },
-  { label: '252+', evs: EV_MAX, nature: 1.1 },
-]
+const speedTiers = (rules: Rules): { label: string; evs: number; nature: number }[] => {
+  const most = RULES[rules].max
+  return [
+    { label: '31', evs: 0, nature: 1 },
+    { label: '31+', evs: 0, nature: 1.1 },
+    { label: `${most}`, evs: most, nature: 1 },
+    { label: `${most}+`, evs: most, nature: 1.1 },
+  ]
+}
 
 export interface Spread {
   evs: Record<StatKey, number>
@@ -171,8 +178,9 @@ export const spent = (s: Spread) => EV_STATS.reduce((n, k) => n + s.evs[k], 0)
 export function sideFrom(
   pokemon: Pokemon, level: number, s: Spread,
   item?: string, ability?: string, ivs?: Partial<Record<StatKey, number>>,
+  rules: Rules = 'gen9',
 ): Side {
-  return { pokemon, level, evs: s.evs, natureBy: s.nature, item, ability, ivs }
+  return { pokemon, level, evs: s.evs, natureBy: s.nature, item, ability, ivs, rules }
 }
 
 /** A Pokémon's IVs where any of them has been dropped below 31. */
@@ -243,13 +251,23 @@ export function usualSpread(
   return { evs: spread.evs, nature: spread.nature }
 }
 
-/** How usage says it is built, exactly, or nothing where usage has nothing. */
-export function assumeFrom(set: Parameters<typeof usualSpread>[0]): Assumptions {
+/**
+ * How usage says it is built, or nothing where usage has nothing.
+ *
+ * Usage is recorded in EVs, because it comes from Showdown. Under
+ * Champions the same spread is the same shares of the same maxima in
+ * smaller numbers, so each stat is scaled by the ratio of the two: 252
+ * EVs and 32 SP are both everything, and 96 EVs is 12 SP.
+ */
+export function assumeFrom(
+  set: Parameters<typeof usualSpread>[0], rules: Rules = 'gen9',
+): Assumptions {
   const built = usualSpread(set)
   const out = emptySpread()
   if (!built) return out
+  const scale = RULES[rules].max / EV_MAX
   for (const k of EV_STATS) {
-    out.evs[k] = built.evs[k] ?? 0
+    out.evs[k] = Math.round((built.evs[k] ?? 0) * scale)
     out.nature[k] = k === 'hp' ? 1 : natureMultiplier(built.nature, k)
   }
   return out
@@ -449,6 +467,8 @@ export function opponentsFrom(
   gear: Record<string, {
     item?: string; ability?: string; ivs?: Partial<Record<StatKey, number>>
   }> = {},
+  /** Which training system the numbers are spent in. */
+  rules: Rules = 'gen9',
 ): Opponent[] {
   return members.map(({ id, pokemon }) => {
     const set = sets?.[id]
@@ -460,11 +480,12 @@ export function opponentsFrom(
     // spread is being built for: a Choice Band is half again on every
     // physical row and a set's word is not enough to apply it unasked.
     const side: Side = spread
-      ? { pokemon, level, evs: { ...evs }, nature: spread.nature, ability: spread.ability }
+      ? { pokemon, level, rules, evs: { ...evs }, nature: spread.nature, ability: spread.ability }
       : {
         pokemon,
         level,
-        evs: { [physical ? 'atk' : 'spa']: EV_MAX, spe: EV_MAX },
+        rules,
+        evs: { [physical ? 'atk' : 'spa']: RULES[rules].max, spe: RULES[rules].max },
         ability: Object.values(pokemon.abilities)[0],
       }
 
@@ -479,7 +500,7 @@ export function opponentsFrom(
      * them — including where the answer is "as its set was", which reads
      * the spread here rather than leaving whatever was on the side.
      */
-    const credit = assume[id] ?? assumeFrom(set)
+    const credit = assume[id] ?? assumeFrom(set, rules)
     side.evs = { ...side.evs, ...credit.evs }
     side.natureBy = { ...side.natureBy, ...credit.nature }
 
@@ -537,6 +558,8 @@ interface PlanInput {
   chart: TypeChart
   level: number
   doubles: boolean
+  /** Which training system the numbers are spent in. Gen 9 unless said. */
+  rules?: Rules
   /**
    * What is going on around them, if anything.
    *
@@ -571,6 +594,9 @@ export function planFor(input: PlanInput): Plan {
   const {
     pokemon, moves, item, ability, ivs, spread, opponents, chart, level, doubles,
   } = input
+  const rules = input.rules ?? 'gen9'
+  const most = RULES[rules].max
+  const step = RULES[rules].step
   const around = input.field ?? {}
   /*
    * Reading a hit landing on me, and reading one landing on them.
@@ -613,15 +639,15 @@ export function planFor(input: PlanInput): Plan {
     sideFrom(
       pokemon, level,
       { evs: { ...spread.evs, [stat]: evs }, nature: spread.nature },
-      item, ability, ivs,
+      item, ability, ivs, rules,
     )
   /** And me exactly as the sliders have me, for the live odds. */
-  const meNow = sideFrom(pokemon, level, spread, item, ability, ivs)
+  const meNow = sideFrom(pokemon, level, spread, item, ability, ivs, rules)
   /**
    * The most one stat can do, everything else as the sliders have it.
    *
-   * The bound of "could this column do better than it is doing" — 252 in
-   * the stat and a boosting nature on it, which is all there is to spend.
+   * The bound of "could this column do better than it is doing" — the
+   * whole of the stat and a boosting nature on it, all there is to spend.
    * Per stat rather than everything at once, because that is the question
    * each column is asking: a Defense row wants to know what Defense can
    * still buy, not what Defense and HP together could.
@@ -630,12 +656,13 @@ export function planFor(input: PlanInput): Plan {
     pokemon,
     level,
     {
-      evs: { ...spread.evs, [stat]: EV_MAX },
+      evs: { ...spread.evs, [stat]: most },
       nature: { ...spread.nature, [stat]: 1.1 },
     },
     item,
     ability,
     ivs,
+    rules,
   )
 
 
@@ -767,13 +794,13 @@ export function planFor(input: PlanInput): Plan {
     // A tailwind doubles a side's Speed, so the number to beat and the
     // number you are beating it with are each read behind their own.
     const mySpeed = (ev: number) => statOf(meAt('spe', ev), 'spe') * myWind
-    for (const tier of SPEED_TIERS) {
+    for (const tier of speedTiers(rules)) {
       const theirs = statOf(
         { ...o.side, evs: { ...o.side.evs, spe: tier.evs }, natureBy: { spe: tier.nature } },
         'spe',
       ) * theirWind
       let need: number | null = null
-      for (let ev = 0; ev <= EV_MAX; ev += EV_STEP) {
+      for (let ev = 0; ev <= most; ev += step) {
         if (mySpeed(ev) > theirs) { need = ev; break }
       }
       // Only the cheapest one out of reach is worth saying. The ones above it
@@ -783,7 +810,7 @@ export function planFor(input: PlanInput): Plan {
         continue
       }
       let tie: number | undefined
-      for (let ev = 0; ev <= EV_MAX; ev += EV_STEP) {
+      for (let ev = 0; ev <= most; ev += step) {
         if (mySpeed(ev) === theirs) { tie = ev; break }
       }
       catchable.push({
@@ -902,10 +929,10 @@ export function planFor(input: PlanInput): Plan {
 /** The stat as the panel should print it, for the readout under each slider. */
 export function statOfSpread(
   pokemon: Pokemon, level: number, s: Spread, stat: StatKey,
-  ivs?: Partial<Record<StatKey, number>>,
+  ivs?: Partial<Record<StatKey, number>>, rules: Rules = 'gen9',
 ): number {
   return statAtLevel(
     pokemon.baseStats[stat], s.evs[stat], s.nature[stat], stat === 'hp',
-    ivs?.[stat] ?? IV_MAX, level,
+    ivs?.[stat] ?? IV_MAX, level, rules,
   )
 }
