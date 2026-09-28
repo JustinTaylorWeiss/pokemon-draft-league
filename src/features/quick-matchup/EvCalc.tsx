@@ -492,8 +492,8 @@ const passName = (n: number) => (n < 0 ? 'Added' : PASS_LABEL[n] ?? `${n + 1}th 
 const matches = (m: Move, q: string) =>
   !q || m.name.toLowerCase().includes(q) || m.type.toLowerCase().startsWith(q)
 
-/** A percentage of someone's HP, to one place, without a trailing zero. */
-const pct = (n: number) => `${Math.round(n * 10) / 10}`
+/** Already truncated to a tenth by the solver; printed with it showing. */
+const pct = (n: number) => n.toFixed(1)
 
 /**
  * An attacking row: who, with what, for how much, and how often.

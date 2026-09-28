@@ -394,6 +394,15 @@ function likelyMoves(
   return pick(learnable)
 }
 
+/**
+ * One roll as a share of the HP it is landing on, to a tenth, truncated.
+ *
+ * In whole numbers rather than by dividing and rounding after, because a
+ * tenth is the unit every calculator quotes and floating point would put
+ * an exact 36% at 35.9 often enough to notice.
+ */
+const share = (roll: number, hp: number) => (hp ? Math.floor((roll * 1000) / hp) / 10 : 0)
+
 /** How many moves a set holds. Four, everywhere, forever. */
 export const SET_SIZE = 4
 
@@ -688,9 +697,15 @@ export function planFor(input: PlanInput): Plan {
       at: live.bestCase,
       chance: curve[live.bestCase - 1] ?? 0,
       via: live.via,
+      /*
+       * Truncated to a tenth, in whole numbers, which is what every
+       * damage calculator prints — 30.9677% of its HP is quoted as 30.9
+       * and not 31. Rounding it put both ends of the range a tenth above
+       * the figure anyone would be comparing against.
+       */
       shot: {
-        low: live.hp ? ((live.rolls[0] ?? 0) / live.hp) * 100 : 0,
-        high: live.hp ? ((live.rolls[live.rolls.length - 1] ?? 0) / live.hp) * 100 : 0,
+        low: share(live.rolls[0] ?? 0, live.hp),
+        high: share(live.rolls[live.rolls.length - 1] ?? 0, live.hp),
         hits: live.worstCase,
         soonest: live.bestCase,
       },
