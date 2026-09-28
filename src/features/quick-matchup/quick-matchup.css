@@ -284,35 +284,35 @@
 /* ---- speed tiers ---- */
 
 /*
- * Controls on the left, numbers on the right.
+ * Four columns: a team, the other team, then the two rankings.
  *
- * The build column, the Speed it comes to and the Speed it could come to
- * share one grid, so a Pokemon's row reads straight across however tall
- * its controls make it. Three independent lists only ever lined up by
- * being identically shaped, and the moment the left one grew a slider and
- * a row of toggles they stopped.
+ * The teams are wider because they hold the controls — a slider and three
+ * toggles apiece — and the rankings are a sprite, a badge or two and a
+ * number. Even columns gave the rankings room they had nothing to put in
+ * and squeezed the sliders to a thumb's width.
  *
- * The ranking sits beside that grid rather than in it: it re-sorts as the
- * controls move, so it has no row to line up with.
+ * Each column is its own list rather than a shared grid: nothing has to
+ * line up across them now. A team column is read down, and the two
+ * rankings are in their own order by definition.
  */
 .speed-layout {
-  display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
-  column-gap: 0.6rem; align-items: start;
-}
-.speed-board {
-  display: grid; grid-template-columns: minmax(0, 1fr) auto auto;
-  column-gap: 0.5rem; row-gap: 0.15rem; align-items: stretch;
+  display: grid; align-items: start; column-gap: 0.6rem;
+  grid-template-columns:
+    minmax(0, 1.5fr) minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr);
 }
 .speed-layout h3 { margin: 0 0 0.4rem; font-size: 0.75rem; text-transform: uppercase; color: var(--team-both); letter-spacing: 0.05em; }
+/* A team column is headed by the team, in the team's colour, the way the
+   two sides are named everywhere else on these tabs. */
+.speed-side.side-one > h3 { color: var(--team-one); }
+.speed-side.side-two > h3 { color: var(--team-two); }
+.speed-side > h3 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 /* Beside the word it qualifies, not floated off to the far edge: held there
    it read as a second heading for the column rather than the rest of the
    first one. */
 .speed-layout h3 span { text-transform: none; font-size: 0.68rem; }
-/* The two number columns are read at their right edge, where the digits are. */
-.speed-board h3 + h3 { text-align: right; }
 .speed-layout ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.15rem; }
 
-.speed-layout li, .speed-build, .speed-num {
+.speed-layout li {
   border: 1px solid var(--line); border-radius: 6px; font-size: 0.8rem;
   transition: opacity 0.12s, border-color 0.12s;
 }
@@ -320,17 +320,17 @@
    Scarf and an ability made a row wider than the column, and a flex item
    does not shrink below its min-content, so the whole panel scrolled
    sideways to fit one row. Wrapped, the speed still lands at the end. */
-.speed-layout li button {
+.speed-groups li button {
   display: flex; align-items: center; gap: 0.35rem; width: 100%;
   flex-wrap: wrap; row-gap: 0.2rem;
   padding: 0.28rem 0.4rem; background: none; border: 0; color: inherit;
   font: inherit; font-size: inherit; cursor: pointer; text-align: left;
 }
 .speed-groups img { width: 38px; height: 34px; object-fit: contain; }
-.speed-layout li.side-one, .speed-board .side-one { border-left: 3px solid var(--team-one); }
-.speed-layout li.side-two, .speed-board .side-two { border-left: 3px solid var(--team-two); }
-.speed-layout li.is-selected, .speed-board .is-selected { border-color: var(--team-both); background: rgb(167 139 250 / 16%); }
-.speed-layout li.is-dimmed, .speed-board .is-dimmed { opacity: 0.28; }
+.speed-layout li.side-one { border-left: 3px solid var(--team-one); }
+.speed-layout li.side-two { border-left: 3px solid var(--team-two); }
+.speed-layout li.is-selected { border-color: var(--team-both); background: rgb(167 139 250 / 16%); }
+.speed-layout li.is-dimmed { opacity: 0.28; }
 .speed-layout strong { margin-left: auto; font-variant-numeric: tabular-nums; }
 .speed-layout img { image-rendering: pixelated; object-fit: contain; }
 .badge { font-size: 0.68rem; padding: 0.05rem 0.35rem; border-radius: 4px; background: var(--chip); color: var(--muted); }
@@ -338,9 +338,10 @@
 
 /* ---- one Pokemon's speed build ---- */
 /*
- * Name, then what is spent, then the two things that multiply it. No
- * Speed of its own: the whole column is the input side, and a number in
- * it would be read as the answer rather than the two columns that are.
+ * The name and what the build comes to on the first line, everything that
+ * decides it on the second. The number is on the row it belongs to rather
+ * than in a column of its own, so a change and its effect are read in one
+ * place — the two rankings are for reading it against everyone else.
  */
 .speed-build { display: flex; flex-direction: column; gap: 0.3rem; padding: 0.3rem 0.4rem; }
 .speed-who {
@@ -348,17 +349,13 @@
   padding: 0; background: none; border: 0; color: inherit;
   font: inherit; font-size: inherit; cursor: pointer; text-align: left;
 }
-.speed-who span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.speed-who > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .speed-who img { width: 42px; height: 34px; }
-.speed-num {
-  display: flex; align-items: center; justify-content: flex-end;
-  padding: 0.28rem 0.5rem; font-variant-numeric: tabular-nums;
-}
 
 /* Last on the line and the only thing that stretches, so the toggles keep
    their size and the bar takes whatever is left. It wraps to its own line
-   under a narrow column, which costs nothing: each Pokemon is a grid row
-   of its own and sizes to its own contents. */
+   under a narrow column, which costs nothing: a row is as tall as it needs
+   to be and has nothing to line up with. */
 .speed-slider { display: flex; align-items: center; gap: 0.45rem; flex: 1 1 9rem; min-width: 8rem; }
 .speed-slider > span {
   font-size: 0.7rem; color: var(--muted); white-space: nowrap;
@@ -843,6 +840,9 @@ button.type-chip { cursor: pointer; }
   .moves-controls { flex-wrap: wrap; }
   .moves-controls input { flex-basis: 100%; }
   .tag-row { flex-basis: 100%; }
+  /* Two and two: the teams keep enough width for a slider, and the two
+     rankings sit under them rather than being squeezed to a digit. */
+  .speed-layout { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); row-gap: 0.9rem; }
 }
 
 @media (max-width: 620px) {
@@ -855,7 +855,6 @@ button.type-chip { cursor: pointer; }
   .builder-columns { gap: 0.75rem; }
   .custom-teams { grid-template-columns: 1fr; }
   .speed-layout { grid-template-columns: minmax(0, 1fr); row-gap: 0.9rem; }
-  .speed-board { column-gap: 0.35rem; }
 }
 
 /* The league's own valuation of a drafted Pokemon — a cost or a tier. */
