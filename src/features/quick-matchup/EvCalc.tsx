@@ -1077,9 +1077,15 @@ function GearPicker({
    * read: a move named or struck off shows nowhere out there and is still
    * something a reset would undo, and so is being hidden.
    */
-  const said = moved
-    || dropped.length > 0
-    || Boolean(gear?.ability) || Boolean(gear?.item)
+  /*
+   * What each panel has to undo, counted separately.
+   *
+   * One reset for both did more than the panel it was standing in was
+   * about: clearing an item from a page of EV bars, or a spread from a
+   * page of moves. Each undoes its own now.
+   */
+  const spreadSaid = moved || dropped.length > 0
+  const kitSaid = Boolean(gear?.ability) || Boolean(gear?.item)
     || (named ?? []).length > 0
     || (gear?.without ?? []).length > 0
 
@@ -1362,24 +1368,50 @@ function GearPicker({
                 )}
               </div>
             )}
-            {/* Everything said about this one, unsaid — the spread it is
-                credited with, its ability, its item, any IV, any move
-                named or struck off. In both panels, because it undoes
-                what both of them set and either is somewhere to be
-                standing when you want it. Shown only where one of those
-                has happened: a reset with nothing to reset is a button
-                that does nothing and looks like it does. */}
-            {said && (
+            {/* Each panel undoes its own. Shown only where there is
+                something to undo: a reset with nothing to reset is a
+                button that does nothing and looks like it does. */}
+            {open === 'spread' && (
+              <div className="ev-gear-resets">
+                {/* Back to how usage says it is built, and the IVs it was
+                    born with. Not its item or its moves — those are the
+                    other panel's and are undone there. */}
+                {spreadSaid && (
+                  <button
+                    type="button"
+                    className="ev-gear-reset"
+                    onClick={() => {
+                      onAssume?.(base ?? emptySpread())
+                      onChange({ ...gear, ivs: undefined })
+                    }}
+                  >
+                    Reset spread
+                  </button>
+                )}
+                {/* And nothing at all in it, which is a different question
+                    from "as it is usually built" and the one you ask when
+                    working out what a stat is worth from the floor up. */}
+                {onAssume && (
+                  <button
+                    type="button"
+                    className="ev-gear-reset"
+                    onClick={() => onAssume(emptySpread())}
+                  >
+                    Clear to zero
+                  </button>
+                )}
+              </div>
+            )}
+            {open === 'kit' && kitSaid && (
               <button
                 type="button"
                 className="ev-gear-reset"
                 onClick={() => {
-                  onChange({})
-                  onAssume?.(base ?? emptySpread())
+                  onChange({ ivs: gear?.ivs })
                   onNamed?.([])
                 }}
               >
-                Reset {pokemon.name}
+                Reset loadout
               </button>
             )}
           </div>

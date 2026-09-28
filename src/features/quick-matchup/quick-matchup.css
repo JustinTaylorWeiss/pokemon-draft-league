@@ -1638,6 +1638,10 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 .ev-gear-pop .link-btn { align-self: flex-start; font-size: 0.68rem; }
 /* Under everything it undoes, and set apart from it: a rule above, and the
    red this site uses for anything that takes something away. */
+/* Two of them side by side in the spread panel: back to how it is built,
+   and back to nothing. Equal halves, because neither is the lesser. */
+.ev-gear-resets { display: flex; gap: 0.4rem; }
+.ev-gear-resets > .ev-gear-reset { flex: 1 1 0; min-width: 0; }
 .ev-gear-reset {
   width: 100%; margin-top: 0.15rem; padding: 0.25rem 0.5rem; line-height: 1.3;
   background: none; border: 1px solid var(--line); border-radius: 999px;
