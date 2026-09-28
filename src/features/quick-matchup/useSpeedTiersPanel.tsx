@@ -97,8 +97,28 @@ export function useSpeedTiersPanel(teamOne: Team, teamTwo: Team, dex: LeagueDex,
   const buildOf = (id: string) => builds[megaOwner.get(id) ?? id] ?? bareBuild()
   const setBuild = (id: string, next: Partial<SpeedBuild>) =>
     setBuilds((prev) => ({ ...prev, [id]: { ...(prev[id] ?? bareBuild()), ...next } }))
-  const reset = () => setBuilds({})
-  const touched = Object.keys(builds).length > 0
+  /*
+   * Which ones are out of the rankings.
+   *
+   * Twelve Pokémon in one ranked list is the whole point of the tab and
+   * also more than a question usually needs — "do I outrun their two
+   * fast ones" is four rows, not twelve. Hidden, a Pokémon keeps its
+   * row and its controls in its own team column, so it can be brought
+   * back from where it went.
+   */
+  const [hidden, setHidden] = useState<Set<string>>(() => new Set())
+  // A Mega's base forme has no row of its own to hide from, so it goes
+  // and comes back with the Mega, as it does for everything else.
+  const hiddenOf = (id: string) => hidden.has(megaOwner.get(id) ?? id)
+  const toggleHidden = (id: string) =>
+    setHidden((prev) => {
+      const next = new Set(prev)
+      if (!next.delete(id)) next.add(id)
+      return next
+    })
+
+  const reset = () => { setBuilds({}); setHidden(new Set()) }
+  const touched = Object.keys(builds).length > 0 || hidden.size > 0
 
   /*
    * And the filter, which drives the chart column on the right and nothing
@@ -142,13 +162,14 @@ export function useSpeedTiersPanel(teamOne: Team, teamTwo: Team, dex: LeagueDex,
     // The bar keeps only what governs the whole tab. The filter governs one
     // column, so it travels with it.
     actions: touched ? (
-      <button type="button" onClick={reset}>Reset speeds</button>
+      <button type="button" onClick={reset}>Reset</button>
     ) : null,
     body: (
       <SpeedTiersBody
         teamOne={one.team} teamTwo={two.team} preMega={preMega}
         level={level} rules={rules}
         filterOne={filterOne} filterTwo={filterTwo}
+        hiddenOf={hiddenOf} onHide={toggleHidden}
         filter={(
           <SpeedFilter
             rows={rows}

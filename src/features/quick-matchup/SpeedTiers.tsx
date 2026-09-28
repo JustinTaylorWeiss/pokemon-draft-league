@@ -21,6 +21,9 @@ interface Props {
   filterTwo: Set<string>
   /** The control for those, which belongs over the column it governs. */
   filter: ReactNode
+  /** Which ones are out of the rankings, and how to put one back. */
+  hiddenOf: (id: string) => boolean
+  onHide: (id: string) => void
   /** How one Pokémon is built, and how to change it. */
   buildOf: (id: string) => SpeedBuild
   onBuild: (id: string, next: Partial<SpeedBuild>) => void
@@ -33,7 +36,7 @@ const STAGES = [6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -6]
 
 /** A Pokémon on its own side's column, under the build it has been given. */
 function BuildRow({
-  entry, side, build, onBuild, level, rules, klass, title, onSelect,
+  entry, side, build, onBuild, level, rules, klass, title, onSelect, hidden, onHide,
 }: {
   entry: TeamEntry
   side: 'one' | 'two'
@@ -44,13 +47,15 @@ function BuildRow({
   klass: string
   title: string
   onSelect: () => void
+  hidden: boolean
+  onHide: () => void
 }) {
   const ability = speedAbility(entry.pokemon)
   /* Clicking the one already on puts the nature back to neutral. */
   const bend = (to: number) => onBuild(entry.id, { nature: build.nature === to ? 1 : to })
 
   return (
-    <li className={`speed-build side-${side} ${klass}`}>
+    <li className={`speed-build side-${side} ${klass}${hidden ? ' is-hidden' : ''}`}>
       {/*
         * The bar sits on the name line rather than down with the toggles:
         * what is in the stat is the thing you reach for first and the
@@ -135,6 +140,13 @@ function BuildRow({
             {ability}
           </button>
         )}
+        <button
+          type="button" className={`speed-flag${hidden ? ' is-on' : ''}`}
+          aria-pressed={hidden} onClick={onHide}
+          title={hidden ? 'Put it back in the rankings' : 'Take it out of the rankings'}
+        >
+          Hide
+        </button>
       </div>
     </li>
   )
@@ -160,7 +172,7 @@ function BuildRow({
  */
 export function SpeedTiersBody({
   teamOne, teamTwo, preMega, level, rules, filterOne, filterTwo, filter,
-  buildOf, onBuild, selected, onSelect,
+  buildOf, onBuild, hiddenOf, onHide, selected, onSelect,
 }: Props) {
   const most = RULES[rules].max
 
@@ -198,8 +210,12 @@ export function SpeedTiersBody({
 
   if (!everyone.length) return null
 
+  /* Hidden is about the Pokémon, not the build, so it empties out of
+     both rankings — leaving it in one of them would only raise the
+     question of why it was still there. */
+  const shown = everyone.filter((e) => !hiddenOf(e.id))
   const live = speedRows(
-    everyone.map((e) => ({ id: e.id, pokemon: e.pokemon, build: buildOf(e.id) })),
+    shown.map((e) => ({ id: e.id, pokemon: e.pokemon, build: buildOf(e.id) })),
     level, rules,
   )
   /*
@@ -209,8 +225,8 @@ export function SpeedTiersBody({
    * and it moves only when the filter does.
    */
   const chart = speedTiers([
-    ...teamOne.members.map((m) => ({ ...m, enabled: filterOne })),
-    ...teamTwo.members.map((m) => ({ ...m, enabled: filterTwo })),
+    ...teamOne.members.filter((m) => !hiddenOf(m.id)).map((m) => ({ ...m, enabled: filterOne })),
+    ...teamTwo.members.filter((m) => !hiddenOf(m.id)).map((m) => ({ ...m, enabled: filterTwo })),
   ], level, rules)
 
   const toggle = (id: string) => onSelect(selected === id ? null : id)
@@ -258,6 +274,7 @@ export function SpeedTiersBody({
               key={m.id} entry={m} side={s.key} build={buildOf(m.id)} onBuild={onBuild}
               level={level} rules={rules} klass={rowClass(m.id)}
               title={title(m.id, m.pokemon.name)} onSelect={() => toggle(m.id)}
+              hidden={hiddenOf(m.id)} onHide={() => onHide(m.id)}
             />
           ))}
         </ul>
@@ -265,8 +282,8 @@ export function SpeedTiersBody({
     )
   }
 
-  const ranking = (rows: ReturnType<typeof speedRows>) => (
-      <ul>
+  const ranking = (rows: ReturnType<typeof speedRows>, label?: string) => (
+      <ul aria-label={label}>
         {rows.map((t, i) => (
           <li
             key={`${t.id}-${t.investment}-${t.stage ?? ''}-${t.modifiers.join()}-${i}`}
@@ -298,10 +315,11 @@ export function SpeedTiersBody({
         {column(sides[0])}
 
         <div className="speed-groups">
-          <h3 title="Every Pokémon at the builds set either side">
-            <span>From team speed filters</span>
-          </h3>
-          {ranking(live)}
+          {/* No heading: it sits between the two columns it is the sum of,
+              which says what it is more plainly than a line of text over
+              it did. The blank keeps its list level with theirs. */}
+          <div className="speed-head-blank" aria-hidden="true" />
+          {ranking(live, 'Both teams at the builds set either side')}
         </div>
 
         {column(sides[1])}
