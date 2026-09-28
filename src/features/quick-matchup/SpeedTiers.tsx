@@ -248,7 +248,7 @@ export function SpeedTiersBody({
                 ? 'Put the whole side back to nothing spent and a neutral nature'
                 : `Give the whole side ${most} ${RULES[rules].unit} and a positive nature`}
             >
-              Max
+              Max all
             </button>
           )}
         </h3>
