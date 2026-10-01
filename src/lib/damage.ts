@@ -321,15 +321,6 @@ export interface Field {
   helpingHand?: boolean
   /** The attacker's, like the Helping Hand. */
   crit?: boolean
-  /**
-   * A flat multiplier on the attacker's damage, for everything this does
-   * not model: a boosted stat, an item nobody has listed, a second hit.
-   *
-   * Applied with the rest of the final modifiers and rounded with them,
-   * so ×2 is what a real doubling would have come to rather than twice a
-   * rounded number.
-   */
-  multiplier?: number
   /** Both screens at once, and the defender's like them. */
   auroraVeil?: boolean
   /** An ally's, taking a quarter off what the defender takes. Doubles only. */
@@ -643,11 +634,9 @@ function core(
    * paid it a third again above.
    */
   const burn = sick === 'Burn' && physical && mine !== 'Guts' ? 0.5 : 1
-  // And whatever has been asked for outright, last and with the rest.
-  const asked = field.multiplier ?? 1
   const after = itemMult * shield * belt * claws * tech * lent * ated
     * bond * reckless * punk * aura * lens * force
-    * sky * lifts * mist * grass * screen * hand * crit * burn * asked
+    * sky * lifts * mist * grass * screen * hand * crit * burn
     * friend * charged
 
   const rolls: number[] = []

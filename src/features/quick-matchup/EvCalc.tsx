@@ -370,27 +370,6 @@ const BOOSTED: StatKey[] = ['atk', 'def', 'spa', 'spd']
 const STAGES = [6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -6]
 
 /**
- * A flat multiplier on what this side's moves do, for everything the page
- * does not model: a boosted stat, an item nobody listed, a second hit.
- *
- * Halves either way from one. The downward half is written as a division
- * rather than as 0.4 and 0.67 — ÷2 is the same number as ×0.5 and reads as
- * the other end of the same scale, where a column of recurring decimals
- * reads as nothing at all.
- */
-const MULTIPLIERS: { value: number; label: string }[] = [
-  { value: 3, label: '\u00d73' },
-  { value: 2.5, label: '\u00d72.5' },
-  { value: 2, label: '\u00d72' },
-  { value: 1.5, label: '\u00d71.5' },
-  { value: 1, label: '\u00d71' },
-  { value: 1 / 1.5, label: '\u00f71.5' },
-  { value: 1 / 2, label: '\u00f72' },
-  { value: 1 / 2.5, label: '\u00f72.5' },
-  { value: 1 / 3, label: '\u00f73' },
-]
-
-/**
  * What a Pokémon can be suffering from.
  *
  * Only what changes a number here: a burn halves what it hits for
@@ -431,16 +410,14 @@ function FieldBar({ field, onChange, doubles, onDoubles, rules, onRules }: {
   })
   return (
     <div className="ev-field">
-      {/* First and down the left, because this is the half anyone came
-          to change. Each in its own colour, and boxed: everything to the
-          right is the turn both Pokémon are standing in, and everything
-          in these two belongs to one of them only — a screen is up for
-          whoever put it up and a burn is on whoever has it. */}
-      <div className="ev-field-sides">
+      {/* Three boxes down the page, a width each. The two sides first,
+          because they are the half anyone came to change, and the third
+          under them because it is the turn both Pokémon are standing in
+          — a screen is up for whoever put it up and a burn is on whoever
+          has it, where the weather is nobody's. */}
       {([['mine', 'Yours'], ['theirs', 'Theirs']] as const).map(([which, label]) => {
         const set = <K extends keyof SideField>(key: K, value: SideField[K]) =>
           onChange({ ...field, [which]: { ...field[which], [key]: value } })
-        const mult = field[which]?.multiplier ?? 1
         return (
           <span key={which} className={`ev-field-set is-${which}`}>
             <em>{label}</em>
@@ -455,9 +432,8 @@ function FieldBar({ field, onChange, doubles, onDoubles, rules, onRules }: {
                 </button>
               )
             })}
-            {/* Two menus rather than two more rows of pills: six statuses
-                and nine multipliers would be fifteen pills on a line that
-                already carries five. */}
+            {/* A menu rather than six more pills, which would be six on a
+                line that already carries eight. */}
             <select
               className={`ev-field-menu${field[which]?.status ? ' is-on' : ''}`}
               value={field[which]?.status ?? ''}
@@ -467,20 +443,6 @@ function FieldBar({ field, onChange, doubles, onDoubles, rules, onRules }: {
             >
               <option value="">Healthy</option>
               {STATUSES.map((st) => <option key={st} value={st}>{st}</option>)}
-            </select>
-            <select
-              className={`ev-field-menu${mult === 1 ? '' : ' is-on'}`}
-              value={String(mult)}
-              aria-label={`${label} damage multiplier`}
-              title={`A flat multiplier on what ${label.toLowerCase()} hit for`}
-              onChange={(e) => {
-                const value = Number(e.target.value)
-                set('multiplier', value === 1 ? undefined : value)
-              }}
-            >
-              {MULTIPLIERS.map((m) => (
-                <option key={m.label} value={String(m.value)}>{m.label}</option>
-              ))}
             </select>
             {/* One stage menu per stat that changes a number here. Speed
                 has its own tab and HP has no stage, so neither is here. */}
@@ -512,14 +474,13 @@ function FieldBar({ field, onChange, doubles, onDoubles, rules, onRules }: {
           </span>
         )
       })}
-      </div>
 
-      {/* What both Pokémon are standing in, to the right of the two
-          sides and after them: the format is read into everything in
-          those boxes — a spread move is a quarter weaker with two
-          Pokémon out and a screen a third rather than a half. The
-          league plays doubles, so that is where it starts. */}
-      <div className="ev-field-shared">
+      {/* Purple, being neither side's: the format is read into both of
+          the boxes above it — a spread move is a quarter weaker with two
+          Pokémon out and a screen a third rather than a half. The league
+          plays doubles, so that is where it starts. */}
+      <div className="ev-field-shared is-both">
+        <em>Both</em>
         <span className="ev-field-set">
           <em>Rules</em>
           {(['champions', 'gen9'] as const).map((r) => (

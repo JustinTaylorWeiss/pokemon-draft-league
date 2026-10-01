@@ -1558,46 +1558,53 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
  * Pokemon and every column reads it. Four groups that wrap as a block
  * each, so a group never breaks across a line.
  */
+/*
+ * Three boxes down the page, a width each: yours, theirs, and the one
+ * that is neither.
+ */
 .ev-field {
-  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  align-items: start; gap: 0.35rem 0.9rem;
+  display: flex; flex-direction: column; gap: 0.35rem;
   padding: 0.5rem 0; border-bottom: 1px solid var(--line);
 }
-/* The conditions keep the wrapping row they always were, in the half the
-   boxes leave them. */
+/* The conditions keep the wrapping row they always were, boxed like the
+   two sides above them and in a colour that is neither of theirs. */
 .ev-field-shared {
-  display: flex; flex-wrap: wrap; align-content: start; align-items: center;
-  gap: 0.35rem 0.9rem;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.9rem;
 }
 .ev-field-set { display: inline-flex; align-items: center; gap: 0.3rem; }
 /*
- * The two sides, stacked and boxed in their own colours.
+ * Each of the three boxed and tinted, so what a control belongs to is
+ * read before the control is. Blue and red are the pair already used for
+ * the two Pokemon a few rems above — blue is yours there too — and the
+ * third is purple, being neither.
  *
- * Full width so they take a line of their own under the conditions, and
- * one under the other rather than beside: these are two readings of the
- * same five questions, and reading down a column is how you compare them.
- * The boxes are the pair already used for the two Pokemon a few rems
- * above — blue is yours there too.
+ * One width on all three labels, so the controls line up down the page
+ * and the two sides can be compared by reading straight down.
  */
-.ev-field-sides { display: flex; flex-direction: column; gap: 0.35rem; }
-.ev-field-sides > .ev-field-set {
-  display: flex; flex-wrap: wrap; gap: 0.3rem;
+.ev-field > .ev-field-set,
+.ev-field > .ev-field-shared {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem;
   padding: 0.35rem 0.5rem; border-radius: 10px;
 }
-.ev-field-sides > .is-mine {
+.ev-field > * > em { min-width: 3.1rem; }
+.ev-field > .is-mine {
   border: 1px solid color-mix(in oklab, var(--nav-blue), transparent 60%);
   background: color-mix(in oklab, var(--nav-blue), transparent 94%);
 }
-.ev-field-sides > .is-theirs {
+.ev-field > .is-theirs {
   border: 1px solid color-mix(in oklab, var(--nav-red), transparent 60%);
   background: color-mix(in oklab, var(--nav-red), transparent 94%);
 }
-/* One width for both labels, so the two rows' controls line up with each
-   other and the comparison runs straight down. */
-.ev-field-sides > .ev-field-set > em { min-width: 3.1rem; }
-.ev-field-sides > .is-mine > em { color: var(--nav-blue); }
-.ev-field-sides > .is-theirs > em { color: var(--nav-red); }
-.ev-field-set > em {
+.ev-field > .is-both {
+  border: 1px solid color-mix(in oklab, var(--accent), transparent 60%);
+  background: color-mix(in oklab, var(--accent), transparent 94%);
+  gap: 0.35rem 0.9rem;
+}
+.ev-field > .is-mine > em { color: var(--nav-blue); }
+.ev-field > .is-theirs > em { color: var(--nav-red); }
+.ev-field > .is-both > em { color: var(--accent); }
+.ev-field-set > em,
+.ev-field-shared > em {
   font-style: normal; font-size: 0.6rem; font-weight: 700;
   letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted);
   margin-right: 0.05rem;
@@ -1651,10 +1658,6 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   border-color: var(--nav-red); color: var(--nav-red);
   background: color-mix(in oklab, var(--nav-red), transparent 88%);
 }
-
-/* Half a width stops holding a side's seven controls somewhere around
-   here, and the conditions have four groups of their own to place. */
-@media (max-width: 1100px) { .ev-field { grid-template-columns: minmax(0, 1fr); } }
 
 /* Six columns of this need real width; below it they go two and three up. */
 @media (max-width: 1100px) { .ev-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

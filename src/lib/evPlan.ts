@@ -604,8 +604,6 @@ export interface SideField {
   tailwind?: boolean
   helpingHand?: boolean
   crit?: boolean
-  /** A flat multiplier on what this side's moves do. 1, or absent, is off. */
-  multiplier?: number
   /** What this side is suffering from, which both sides' numbers can read. */
   status?: Status
   /** Both screens at once. */
@@ -652,7 +650,6 @@ export function planFor(input: PlanInput): Plan {
     helpingHand: around.theirs?.helpingHand,
     charge: around.theirs?.charge,
     crit: around.theirs?.crit,
-    multiplier: around.theirs?.multiplier,
   }
   const landing: Field = {
     weather: around.weather,
@@ -665,7 +662,6 @@ export function planFor(input: PlanInput): Plan {
     helpingHand: around.mine?.helpingHand,
     charge: around.mine?.charge,
     crit: around.mine?.crit,
-    multiplier: around.mine?.multiplier,
   }
   /*
    * A status belongs to the Pokémon rather than to the turn around it, so
