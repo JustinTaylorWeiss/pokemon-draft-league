@@ -348,13 +348,26 @@ type Limits = (typeof RULES)[Rules]
 const WEATHERS = ['Sun', 'Rain', 'Sand', 'Snow'] as const
 const TERRAINS = ['Electric', 'Grassy', 'Psychic', 'Misty'] as const
 /** What one side can have up, and what to call it. */
-const SIDE_FIELD: { key: keyof SideField; label: string }[] = [
+const SIDE_FIELD: { key: keyof SideField; label: string; title?: string }[] = [
   { key: 'reflect', label: 'Reflect' },
   { key: 'lightScreen', label: 'Light Screen' },
+  { key: 'auroraVeil', label: 'Aurora Veil', title: 'Both screens at once' },
   { key: 'tailwind', label: 'Tailwind' },
   { key: 'helpingHand', label: 'Helping Hand' },
+  { key: 'friendGuard', label: 'Friend Guard', title: 'An ally taking a quarter off what this side is hit for. Doubles only.' },
+  { key: 'charge', label: 'Charge', title: 'This side\u2019s next Electric move, doubled' },
   { key: 'crit', label: 'Crit' },
 ]
+
+/** What the whole field can be under, belonging to neither side. */
+const ROOMS: { key: 'magicRoom' | 'wonderRoom'; label: string; title: string }[] = [
+  { key: 'magicRoom', label: 'Magic Room', title: 'No held item does anything' },
+  { key: 'wonderRoom', label: 'Wonder Room', title: 'Defense and Special Defense trade places, for both Pok\u00e9mon' },
+]
+
+/** The stats a stage is worth setting, and what to call one in a menu. */
+const BOOSTED: StatKey[] = ['atk', 'def', 'spa', 'spd']
+const STAGES = [6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -6]
 
 /**
  * A flat multiplier on what this side's moves do, for everything the page
@@ -431,12 +444,12 @@ function FieldBar({ field, onChange, doubles, onDoubles, rules, onRules }: {
         return (
           <span key={which} className={`ev-field-set is-${which}`}>
             <em>{label}</em>
-            {SIDE_FIELD.map(({ key, label: name }) => {
+            {SIDE_FIELD.map(({ key, label: name, title }) => {
               const { on, flip } = side(which, key)
               return (
                 <button
                   key={key} type="button" className="ev-field-pill"
-                  aria-pressed={on} onClick={flip}
+                  aria-pressed={on} onClick={flip} title={title}
                 >
                   {name}
                 </button>
@@ -469,6 +482,33 @@ function FieldBar({ field, onChange, doubles, onDoubles, rules, onRules }: {
                 <option key={m.label} value={String(m.value)}>{m.label}</option>
               ))}
             </select>
+            {/* One stage menu per stat that changes a number here. Speed
+                has its own tab and HP has no stage, so neither is here. */}
+            {BOOSTED.map((stat) => {
+              const at = field[which]?.boosts?.[stat] ?? 0
+              return (
+                <select
+                  key={stat}
+                  className={`ev-field-menu is-stage${at ? ' is-on' : ''}`}
+                  value={at}
+                  aria-label={`${label} ${STAT_LABELS[stat]} stage`}
+                  title={`${STAT_LABELS[stat]} stages, the way a Swords Dance or an Intimidate leaves them`}
+                  onChange={(e) => {
+                    const next = { ...field[which]?.boosts, [stat]: Number(e.target.value) }
+                    if (!Number(e.target.value)) delete next[stat]
+                    set('boosts', Object.keys(next).length ? next : undefined)
+                  }}
+                >
+                  {STAGES.map((n) => (
+                    <option key={n} value={n}>
+                      {STAT_LABELS[stat]}
+                      {' '}
+                      {n > 0 ? `+${n}` : n < 0 ? `\u2212${-n}` : '\u00b10'}
+                    </option>
+                  ))}
+                </select>
+              )
+            })}
           </span>
         )
       })}
@@ -514,6 +554,18 @@ function FieldBar({ field, onChange, doubles, onDoubles, rules, onRules }: {
               onClick={() => onChange({ ...field, weather: one(field.weather, w) })}
             >
               {w}
+            </button>
+          ))}
+        </span>
+        <span className="ev-field-set">
+          <em>Room</em>
+          {ROOMS.map(({ key, label, title }) => (
+            <button
+              key={key} type="button" className="ev-field-pill"
+              aria-pressed={Boolean(field[key])} title={title}
+              onClick={() => onChange({ ...field, [key]: !field[key] })}
+            >
+              {label}
             </button>
           ))}
         </span>

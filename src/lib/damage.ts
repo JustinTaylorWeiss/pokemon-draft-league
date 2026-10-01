@@ -221,6 +221,8 @@ export interface Side {
   ability?: string
   /** What it is suffering from, where that changes a number here. */
   status?: Status
+  /** Stat stages, −6 to +6, as a Swords Dance or an Intimidate leaves them. */
+  boosts?: Partial<Record<StatKey, number>>
   /**
    * A stat handed over outright, skipping the EVs, the nature and everything
    * else that would have produced it.
@@ -328,6 +330,22 @@ export interface Field {
    * rounded number.
    */
   multiplier?: number
+  /** Both screens at once, and the defender's like them. */
+  auroraVeil?: boolean
+  /** An ally's, taking a quarter off what the defender takes. Doubles only. */
+  friendGuard?: boolean
+  /** The attacker's, doubling one Electric move. */
+  charge?: boolean
+  /** Nobody's item does anything. */
+  magicRoom?: boolean
+  /** Defense and Special Defense trade places, for both Pokémon. */
+  wonderRoom?: boolean
+}
+
+/** What a stat stage multiplies by, as the fraction the games divide with. */
+export function stageOf(stage: number): { num: number; den: number } {
+  const n = Math.max(-6, Math.min(6, Math.trunc(stage)))
+  return n >= 0 ? { num: 2 + n, den: 2 } : { num: 2, den: 2 - n }
 }
 
 /**
@@ -387,13 +405,21 @@ const NO_HIT = (hp: number, via: string[] = []): Hit =>
  * away, which is how it works out what to credit.
  */
 function core(
-  attacker: Side,
-  defender: Side,
+  attackerIn: Side,
+  defenderIn: Side,
   move: Move,
   chart: TypeChart,
   doubles: boolean,
   field: Field = {},
 ): { rolls: number[]; hp: number } {
+  /*
+   * Magic Room takes every item off the field, so it is done here rather
+   * than at each of the six places an item is read — including the three
+   * inside `statOf`, which this function never sees the inside of.
+   */
+  const attacker = field.magicRoom ? { ...attackerIn, item: undefined } : attackerIn
+  const defender = field.magicRoom ? { ...defenderIn, item: undefined } : defenderIn
+
   const hp = statOf(defender, 'hp')
   if (move.category === 'Status' || move.basePower <= 0) return { rolls: [], hp }
 
@@ -473,8 +499,40 @@ function core(
   // Marvel Scale wants its owner sick too, and pays the physical side.
   const scale = guard === 'Marvel Scale' && shielded.status && physical ? 1.5 : 1
   const defMult = (RUIN[mine] === (physical ? 'def' : 'spd') ? 0.75 : 1) * weathered * scale
-  const atk = Math.floor(statOf(attacker, physical ? 'atk' : 'spa') * atkMult)
-  const def = Math.max(1, Math.floor(statOf(shielded, physical ? 'def' : 'spd') * defMult))
+  /*
+   * Stat stages, applied to the stat before anything else multiplies it,
+   * which is where the games apply them.
+   *
+   * A critical hit ignores the two that would be in its way — the
+   * attacker's own drops and the defender's boosts — and keeps the two
+   * that help it. That asymmetry is the whole reason a crit through an
+   * Intimidate is worth asking about.
+   *
+   * Wonder Room trades the two defensive stats and leaves the stages
+   * where they are, so a physical hit reads Special Defense with the
+   * Defense stage still on it.
+   */
+  const offKey: StatKey = physical ? 'atk' : 'spa'
+  const defKey: StatKey = physical ? 'def' : 'spd'
+  const offStage = field.crit
+    ? Math.max(0, attacker.boosts?.[offKey] ?? 0)
+    : attacker.boosts?.[offKey] ?? 0
+  const defStage = field.crit
+    ? Math.min(0, shielded.boosts?.[defKey] ?? 0)
+    : shielded.boosts?.[defKey] ?? 0
+  const staged = (raw: number, stage: number) => {
+    if (!stage) return raw
+    const { num, den } = stageOf(stage)
+    return Math.floor((raw * num) / den)
+  }
+  const readKey: StatKey = field.wonderRoom
+    ? (physical ? 'spd' : 'def')
+    : defKey
+
+  const atk = Math.floor(staged(statOf(attacker, offKey), offStage) * atkMult)
+  const def = Math.max(
+    1, Math.floor(staged(statOf(shielded, readKey), defStage) * defMult),
+  )
 
   /*
    * What the move is worth before anything multiplies it.
@@ -565,10 +623,20 @@ function core(
    * ignores stat stages, and there are none of those here.
    */
   const crit = field.crit ? 1.5 : 1
-  const screen = !field.crit && (physical ? field.reflect : field.lightScreen) && effect > 0
+  // An Aurora Veil is both screens at once, so either one standing is
+  // the same question: is this side behind something.
+  const behind = (physical ? field.reflect : field.lightScreen) || field.auroraVeil
+  const screen = !field.crit && behind && effect > 0
     ? (doubles ? 2732 / 4096 : 0.5) : 1
   // The other Pokemon on your side, pushing. Half again, whatever it is.
   const hand = field.helpingHand ? 1.5 : 1
+  /*
+   * And the other one on theirs, in the way. Friend Guard is an ally's
+   * ability, so it needs an ally — in singles there is nobody to have it.
+   */
+  const friend = field.friendGuard && doubles ? 3072 / 4096 : 1
+  // Charge doubles one Electric move and then it is spent.
+  const charged = field.charge && kind === 'Electric' ? 2 : 1
   /*
    * A burn halves what the burned Pokémon hits for physically — unless
    * it has Guts, which is the whole point of Guts, and which has already
@@ -580,6 +648,7 @@ function core(
   const after = itemMult * shield * belt * claws * tech * lent * ated
     * bond * reckless * punk * aura * lens * force
     * sky * lifts * mist * grass * screen * hand * crit * burn * asked
+    * friend * charged
 
   const rolls: number[] = []
   for (let r = 85; r <= 100; r++) {

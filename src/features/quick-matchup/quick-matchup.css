@@ -1633,6 +1633,11 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   color: var(--muted); font: inherit; font-size: 0.66rem; cursor: pointer;
 }
 .ev-field-menu:hover { border-color: var(--fg); color: var(--fg); }
+/* A stage menu is mostly its own label, so it is narrower than the two
+   that carry words, and it says the stat as well as the number — four of
+   them in a row would otherwise be four numbers with nothing to say which
+   stat each belonged to. */
+.ev-field-menu.is-stage { padding-left: 0.32rem; font-variant-numeric: tabular-nums; }
 .ev-field-menu:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .ev-field-menu.is-on {
   border-color: var(--accent); color: var(--accent); font-weight: 600;

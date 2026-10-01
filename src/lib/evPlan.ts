@@ -589,6 +589,10 @@ interface PlanInput {
 export interface PlanField {
   weather?: Field['weather']
   terrain?: Field['terrain']
+  /** Nobody's item does anything. */
+  magicRoom?: boolean
+  /** Defense and Special Defense trade places, for both Pokémon. */
+  wonderRoom?: boolean
   mine?: SideField
   theirs?: SideField
 }
@@ -604,6 +608,14 @@ export interface SideField {
   multiplier?: number
   /** What this side is suffering from, which both sides' numbers can read. */
   status?: Status
+  /** Both screens at once. */
+  auroraVeil?: boolean
+  /** An ally of this side taking a quarter off what it is hit for. */
+  friendGuard?: boolean
+  /** This side's next Electric move, doubled. */
+  charge?: boolean
+  /** Stat stages on this side's Pokémon, −6 to +6. */
+  boosts?: Partial<Record<StatKey, number>>
 }
 
 /** The plan: one list of thresholds per stat, in EV order. */
@@ -623,21 +635,35 @@ export function planFor(input: PlanInput): Plan {
    * A screen belongs to whoever is behind it and a Helping Hand to
    * whoever is throwing, so each direction takes one from each side.
    */
+  /*
+   * A screen and a Friend Guard belong to whoever is behind them, and a
+   * Helping Hand, a Charge and a crit to whoever is throwing — so each
+   * direction takes one set from each side. The two rooms are nobody's.
+   */
+  const rooms = { magicRoom: around.magicRoom, wonderRoom: around.wonderRoom }
   const taking: Field = {
     weather: around.weather,
     terrain: around.terrain,
+    ...rooms,
     reflect: around.mine?.reflect,
     lightScreen: around.mine?.lightScreen,
+    auroraVeil: around.mine?.auroraVeil,
+    friendGuard: around.mine?.friendGuard,
     helpingHand: around.theirs?.helpingHand,
+    charge: around.theirs?.charge,
     crit: around.theirs?.crit,
     multiplier: around.theirs?.multiplier,
   }
   const landing: Field = {
     weather: around.weather,
     terrain: around.terrain,
+    ...rooms,
     reflect: around.theirs?.reflect,
     lightScreen: around.theirs?.lightScreen,
+    auroraVeil: around.theirs?.auroraVeil,
+    friendGuard: around.theirs?.friendGuard,
     helpingHand: around.mine?.helpingHand,
+    charge: around.mine?.charge,
     crit: around.mine?.crit,
     multiplier: around.mine?.multiplier,
   }
@@ -647,12 +673,12 @@ export function planFor(input: PlanInput): Plan {
    * be on both, because a burn reads from the attacker and Marvel Scale
    * from the defender and the same Pokémon is each in turn.
    */
-  const ailing = (side: Side, status: Status | undefined): Side =>
-    (status ? { ...side, status } : side)
-  const myStatus = around.mine?.status
-  const theirStatus = around.theirs?.status
-  const opponents = theirStatus
-    ? input.opponents.map((o) => ({ ...o, side: ailing(o.side, theirStatus) }))
+  const ailing = (side: Side, of?: SideField): Side =>
+    (of?.status || of?.boosts
+      ? { ...side, status: of.status, boosts: of.boosts }
+      : side)
+  const opponents = around.theirs?.status || around.theirs?.boosts
+    ? input.opponents.map((o) => ({ ...o, side: ailing(o.side, around.theirs) }))
     : input.opponents
   /** Tailwind doubles a side's Speed, which only the Speed column reads. */
   const myWind = around.mine?.tailwind ? 2 : 1
@@ -674,9 +700,9 @@ export function planFor(input: PlanInput): Plan {
       pokemon, level,
       { evs: { ...spread.evs, [stat]: evs }, nature: spread.nature },
       item, ability, ivs, rules,
-    ), myStatus)
+    ), around.mine)
   /** And me exactly as the sliders have me, for the live odds. */
-  const meNow = ailing(sideFrom(pokemon, level, spread, item, ability, ivs, rules), myStatus)
+  const meNow = ailing(sideFrom(pokemon, level, spread, item, ability, ivs, rules), around.mine)
   /**
    * The most one stat can do, everything else as the sliders have it.
    *
@@ -697,7 +723,7 @@ export function planFor(input: PlanInput): Plan {
     ability,
     ivs,
     rules,
-  ), myStatus)
+  ), around.mine)
 
 
   /**
