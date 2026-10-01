@@ -471,6 +471,12 @@ function FieldBar({ field, onChange, doubles, onDoubles, rules, onRules }: {
           </button>
         ))}
       </span>
+      {/* The two sides stack rather than running on from the conditions
+          above, each in its own colour: everything to the left of here is
+          the turn both Pokémon are standing in, and everything in these
+          two boxes belongs to one of them only. Side by side they read as
+          two more groups in the same row as Weather. */}
+      <div className="ev-field-sides">
       {([['mine', 'Yours'], ['theirs', 'Theirs']] as const).map(([which, label]) => {
         const set = <K extends keyof SideField>(key: K, value: SideField[K]) =>
           onChange({ ...field, [which]: { ...field[which], [key]: value } })
@@ -519,6 +525,7 @@ function FieldBar({ field, onChange, doubles, onDoubles, rules, onRules }: {
           </span>
         )
       })}
+      </div>
     </div>
   )
 }
