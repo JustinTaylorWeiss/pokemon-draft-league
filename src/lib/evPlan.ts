@@ -1,7 +1,7 @@
 import type {
   LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart, TypeName,
 } from '../data/types'
-import { damage, koCurve, statOf, type Field, type Side } from './damage'
+import { damage, koCurve, statOf, type Field, type Side, type Status } from './damage'
 import { natureMultiplier, statAtLevel, RULES, type Rules } from './stats'
 
 /**
@@ -593,13 +593,17 @@ export interface PlanField {
   theirs?: SideField
 }
 
-/** What one side has put up around itself. */
+/** What one side has put up around itself, and what it is carrying. */
 export interface SideField {
   reflect?: boolean
   lightScreen?: boolean
   tailwind?: boolean
   helpingHand?: boolean
   crit?: boolean
+  /** A flat multiplier on what this side's moves do. 1, or absent, is off. */
+  multiplier?: number
+  /** What this side is suffering from, which both sides' numbers can read. */
+  status?: Status
 }
 
 /** The plan: one list of thresholds per stat, in EV order. */
@@ -607,7 +611,7 @@ export type Plan = Record<StatKey, Threshold[]>
 
 export function planFor(input: PlanInput): Plan {
   const {
-    pokemon, moves, item, ability, ivs, spread, opponents, chart, level, doubles,
+    pokemon, moves, item, ability, ivs, spread, chart, level, doubles,
   } = input
   const rules = input.rules ?? 'gen9'
   const most = RULES[rules].max
@@ -626,6 +630,7 @@ export function planFor(input: PlanInput): Plan {
     lightScreen: around.mine?.lightScreen,
     helpingHand: around.theirs?.helpingHand,
     crit: around.theirs?.crit,
+    multiplier: around.theirs?.multiplier,
   }
   const landing: Field = {
     weather: around.weather,
@@ -634,7 +639,21 @@ export function planFor(input: PlanInput): Plan {
     lightScreen: around.theirs?.lightScreen,
     helpingHand: around.mine?.helpingHand,
     crit: around.mine?.crit,
+    multiplier: around.mine?.multiplier,
   }
+  /*
+   * A status belongs to the Pokémon rather than to the turn around it, so
+   * it is put on the side rather than passed in the field — and it has to
+   * be on both, because a burn reads from the attacker and Marvel Scale
+   * from the defender and the same Pokémon is each in turn.
+   */
+  const ailing = (side: Side, status: Status | undefined): Side =>
+    (status ? { ...side, status } : side)
+  const myStatus = around.mine?.status
+  const theirStatus = around.theirs?.status
+  const opponents = theirStatus
+    ? input.opponents.map((o) => ({ ...o, side: ailing(o.side, theirStatus) }))
+    : input.opponents
   /** Tailwind doubles a side's Speed, which only the Speed column reads. */
   const myWind = around.mine?.tailwind ? 2 : 1
   const theirWind = around.theirs?.tailwind ? 2 : 1
@@ -651,13 +670,13 @@ export function planFor(input: PlanInput): Plan {
 
   /** Me, with one stat moved to the value being tried and the rest as they are. */
   const meAt = (stat: StatKey, evs: number): Side =>
-    sideFrom(
+    ailing(sideFrom(
       pokemon, level,
       { evs: { ...spread.evs, [stat]: evs }, nature: spread.nature },
       item, ability, ivs, rules,
-    )
+    ), myStatus)
   /** And me exactly as the sliders have me, for the live odds. */
-  const meNow = sideFrom(pokemon, level, spread, item, ability, ivs, rules)
+  const meNow = ailing(sideFrom(pokemon, level, spread, item, ability, ivs, rules), myStatus)
   /**
    * The most one stat can do, everything else as the sliders have it.
    *
@@ -667,7 +686,7 @@ export function planFor(input: PlanInput): Plan {
    * each column is asking: a Defense row wants to know what Defense can
    * still buy, not what Defense and HP together could.
    */
-  const meMax = (stat: StatKey): Side => sideFrom(
+  const meMax = (stat: StatKey): Side => ailing(sideFrom(
     pokemon,
     level,
     {
@@ -678,7 +697,7 @@ export function planFor(input: PlanInput): Plan {
     ability,
     ivs,
     rules,
-  )
+  ), myStatus)
 
 
   /**

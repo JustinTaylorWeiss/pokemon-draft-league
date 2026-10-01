@@ -3,6 +3,7 @@ import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } 
 import { STAT_LABELS, RULES, type Rules } from '../../lib/stats'
 import {
   GIVEABLE_ITEMS, MODELLED_ABILITIES, itemEffect, itemMatters, typeBoosted,
+  type Status,
 } from '../../lib/damage'
 import {
   EV_STATS, IV_MAX, SET_SIZE, assumeFrom,
@@ -356,6 +357,38 @@ const SIDE_FIELD: { key: keyof SideField; label: string }[] = [
 ]
 
 /**
+ * A flat multiplier on what this side's moves do, for everything the page
+ * does not model: a boosted stat, an item nobody listed, a second hit.
+ *
+ * Halves either way from one. The downward half is written as a division
+ * rather than as 0.4 and 0.67 — ÷2 is the same number as ×0.5 and reads as
+ * the other end of the same scale, where a column of recurring decimals
+ * reads as nothing at all.
+ */
+const MULTIPLIERS: { value: number; label: string }[] = [
+  { value: 3, label: '\u00d73' },
+  { value: 2.5, label: '\u00d72.5' },
+  { value: 2, label: '\u00d72' },
+  { value: 1.5, label: '\u00d71.5' },
+  { value: 1, label: '\u00d71' },
+  { value: 1 / 1.5, label: '\u00f71.5' },
+  { value: 1 / 2, label: '\u00f72' },
+  { value: 1 / 2.5, label: '\u00f72.5' },
+  { value: 1 / 3, label: '\u00f73' },
+]
+
+/**
+ * What a Pokémon can be suffering from.
+ *
+ * Only what changes a number here: a burn halves what it hits for
+ * physically, Guts and the two Boost abilities want it sick, Marvel Scale
+ * thickens its hide, and five moves double against somebody who is.
+ * Badly poisoned is not offered, reading exactly as poisoned does —
+ * everything that separates them happens between turns.
+ */
+const STATUSES: Status[] = ['Burn', 'Poison', 'Paralysis', 'Sleep', 'Freeze']
+
+/**
  * The turn around the two of them, above the columns.
  *
  * Everything here was left out on the grounds that a spread is chosen
@@ -438,22 +471,54 @@ function FieldBar({ field, onChange, doubles, onDoubles, rules, onRules }: {
           </button>
         ))}
       </span>
-      {([['mine', 'Yours'], ['theirs', 'Theirs']] as const).map(([which, label]) => (
-        <span key={which} className={`ev-field-set is-${which}`}>
-          <em>{label}</em>
-          {SIDE_FIELD.map(({ key, label: name }) => {
-            const { on, flip } = side(which, key)
-            return (
-              <button
-                key={key} type="button" className="ev-field-pill"
-                aria-pressed={on} onClick={flip}
-              >
-                {name}
-              </button>
-            )
-          })}
-        </span>
-      ))}
+      {([['mine', 'Yours'], ['theirs', 'Theirs']] as const).map(([which, label]) => {
+        const set = <K extends keyof SideField>(key: K, value: SideField[K]) =>
+          onChange({ ...field, [which]: { ...field[which], [key]: value } })
+        const mult = field[which]?.multiplier ?? 1
+        return (
+          <span key={which} className={`ev-field-set is-${which}`}>
+            <em>{label}</em>
+            {SIDE_FIELD.map(({ key, label: name }) => {
+              const { on, flip } = side(which, key)
+              return (
+                <button
+                  key={key} type="button" className="ev-field-pill"
+                  aria-pressed={on} onClick={flip}
+                >
+                  {name}
+                </button>
+              )
+            })}
+            {/* Two menus rather than two more rows of pills: six statuses
+                and nine multipliers would be fifteen pills on a line that
+                already carries five. */}
+            <select
+              className={`ev-field-menu${field[which]?.status ? ' is-on' : ''}`}
+              value={field[which]?.status ?? ''}
+              aria-label={`${label} status`}
+              title={`What ${label.toLowerCase()} is suffering from`}
+              onChange={(e) => set('status', (e.target.value || undefined) as Status | undefined)}
+            >
+              <option value="">Healthy</option>
+              {STATUSES.map((st) => <option key={st} value={st}>{st}</option>)}
+            </select>
+            <select
+              className={`ev-field-menu${mult === 1 ? '' : ' is-on'}`}
+              value={String(mult)}
+              aria-label={`${label} damage multiplier`}
+              title={`A flat multiplier on what ${label.toLowerCase()} hit for`}
+              onChange={(e) => {
+                const value = Number(e.target.value)
+                set('multiplier', value === 1 ? undefined : value)
+              }}
+            >
+              {MULTIPLIERS.map((m) => (
+                <option key={m.label} value={String(m.value)}>{m.label}</option>
+              ))}
+            </select>
+          </span>
+        )
+      })}
     </div>
   )
 }

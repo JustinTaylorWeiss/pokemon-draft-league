@@ -219,6 +219,8 @@ export interface Side {
   natureBy?: Partial<Record<StatKey, number>>
   item?: string
   ability?: string
+  /** What it is suffering from, where that changes a number here. */
+  status?: Status
   /**
    * A stat handed over outright, skipping the EVs, the nature and everything
    * else that would have produced it.
@@ -317,7 +319,37 @@ export interface Field {
   helpingHand?: boolean
   /** The attacker's, like the Helping Hand. */
   crit?: boolean
+  /**
+   * A flat multiplier on the attacker's damage, for everything this does
+   * not model: a boosted stat, an item nobody has listed, a second hit.
+   *
+   * Applied with the rest of the final modifiers and rounded with them,
+   * so ×2 is what a real doubling would have come to rather than twice a
+   * rounded number.
+   */
+  multiplier?: number
 }
+
+/**
+ * What a Pokémon is suffering from, as far as damage is concerned.
+ *
+ * Badly poisoned is not here: everything below treats it exactly as
+ * poisoned, and the difference — the climbing chip each turn — is about
+ * what happens between hits, which nothing on this page reads. A control
+ * that changed no number is worse than no control.
+ */
+export type Status = 'Burn' | 'Poison' | 'Paralysis' | 'Sleep' | 'Freeze'
+
+/** Doubles against a target that is suffering, by which kinds count. */
+const STATUS_POWER: Record<string, 'any' | 'poison'> = {
+  Hex: 'any',
+  'Infernal Parade': 'any',
+  Venoshock: 'poison',
+  'Barb Barrage': 'poison',
+}
+
+/** Facade reads its own user's, and only these three of them. */
+const FACADE_STATUS = new Set<Status>(['Burn', 'Poison', 'Paralysis'])
 
 /** What each weather does to a move of one type. */
 const WEATHER: Record<string, Partial<Record<TypeName, number>>> = {
@@ -417,8 +449,17 @@ function core(
    * from the other side.
    */
   const lends = TYPE_POWER[mine]
+  /*
+   * The three abilities that want their owner sick. Guts takes any
+   * status at all and Toxic Boost only poison, both on the physical
+   * side; Flare Boost wants a burn and pays the special side.
+   */
+  const sick = attacker.status
   const atkMult = (lends && lends.type === kind ? lends.mult : 1)
     * (mine === 'Gorilla Tactics' || mine === 'Hustle' ? (physical ? 1.5 : 1) : 1)
+    * (mine === 'Guts' && sick && physical ? 1.5 : 1)
+    * (mine === 'Toxic Boost' && sick === 'Poison' && physical ? 1.5 : 1)
+    * (mine === 'Flare Boost' && sick === 'Burn' && !physical ? 1.5 : 1)
     * (RUIN[guard] === (physical ? 'atk' : 'spa') ? 0.75 : 1)
   /*
    * Sand gives a Rock type half again its Special Defense and Snow gives
@@ -429,13 +470,30 @@ function core(
     && shielded.pokemon.types.includes('Rock'))
     || (field.weather === 'Snow' && physical && shielded.pokemon.types.includes('Ice'))
     ? 1.5 : 1
-  const defMult = (RUIN[mine] === (physical ? 'def' : 'spd') ? 0.75 : 1) * weathered
+  // Marvel Scale wants its owner sick too, and pays the physical side.
+  const scale = guard === 'Marvel Scale' && shielded.status && physical ? 1.5 : 1
+  const defMult = (RUIN[mine] === (physical ? 'def' : 'spd') ? 0.75 : 1) * weathered * scale
   const atk = Math.floor(statOf(attacker, physical ? 'atk' : 'spa') * atkMult)
   const def = Math.max(1, Math.floor(statOf(shielded, physical ? 'def' : 'spd') * defMult))
 
+  /*
+   * What the move is worth before anything multiplies it.
+   *
+   * Five moves ask after somebody's health first and double if they like
+   * the answer. It happens here rather than among the modifiers below
+   * because the games set the base power itself — which is what
+   * Technician then reads, so a doubled Facade is a 140 and out of its
+   * reach rather than a 70 and inside it.
+   */
+  const reads = STATUS_POWER[move.name]
+  const doubled = (reads === 'any' && shielded.status)
+    || (reads === 'poison' && shielded.status === 'Poison')
+    || (move.name === 'Facade' && sick && FACADE_STATUS.has(sick))
+  const power = doubled ? move.basePower * 2 : move.basePower
+
   // The games' own order: three integer divisions, then the modifiers.
   let base = Math.floor(
-    Math.floor(Math.floor((2 * attacker.level) / 5 + 2) * move.basePower * atk / def) / 50,
+    Math.floor(Math.floor((2 * attacker.level) / 5 + 2) * power * atk / def) / 50,
   ) + 2
 
   // A move that hits everything adjacent is hitting two of them in doubles.
@@ -467,7 +525,7 @@ function core(
    * move that has the flag, and base power speaks for itself.
    */
   const claws = mine === 'Tough Claws' && move.contact ? 1.3 : 1
-  const tech = mine === 'Technician' && move.basePower <= 60 ? 1.5 : 1
+  const tech = mine === 'Technician' && power <= 60 ? 1.5 : 1
   const kindOf = MOVE_POWER[mine]
   const lent = kindOf && move[kindOf.flag] ? kindOf.mult : 1
   /*
@@ -511,9 +569,17 @@ function core(
     ? (doubles ? 2732 / 4096 : 0.5) : 1
   // The other Pokemon on your side, pushing. Half again, whatever it is.
   const hand = field.helpingHand ? 1.5 : 1
+  /*
+   * A burn halves what the burned Pokémon hits for physically — unless
+   * it has Guts, which is the whole point of Guts, and which has already
+   * paid it a third again above.
+   */
+  const burn = sick === 'Burn' && physical && mine !== 'Guts' ? 0.5 : 1
+  // And whatever has been asked for outright, last and with the rest.
+  const asked = field.multiplier ?? 1
   const after = itemMult * shield * belt * claws * tech * lent * ated
     * bond * reckless * punk * aura * lens * force
-    * sky * lifts * mist * grass * screen * hand * crit
+    * sky * lifts * mist * grass * screen * hand * crit * burn * asked
 
   const rolls: number[] = []
   for (let r = 85; r <= 100; r++) {
