@@ -1559,8 +1559,15 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
  * each, so a group never breaks across a line.
  */
 .ev-field {
-  display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.9rem;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start; gap: 0.35rem 0.9rem;
   padding: 0.5rem 0; border-bottom: 1px solid var(--line);
+}
+/* The conditions keep the wrapping row they always were, in the half the
+   boxes leave them. */
+.ev-field-shared {
+  display: flex; flex-wrap: wrap; align-content: start; align-items: center;
+  gap: 0.35rem 0.9rem;
 }
 .ev-field-set { display: inline-flex; align-items: center; gap: 0.3rem; }
 /*
@@ -1572,7 +1579,7 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
  * The boxes are the pair already used for the two Pokemon a few rems
  * above — blue is yours there too.
  */
-.ev-field-sides { flex: 1 1 100%; display: flex; flex-direction: column; gap: 0.35rem; }
+.ev-field-sides { display: flex; flex-direction: column; gap: 0.35rem; }
 .ev-field-sides > .ev-field-set {
   display: flex; flex-wrap: wrap; gap: 0.3rem;
   padding: 0.35rem 0.5rem; border-radius: 10px;
@@ -1639,6 +1646,10 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   border-color: var(--nav-red); color: var(--nav-red);
   background: color-mix(in oklab, var(--nav-red), transparent 88%);
 }
+
+/* Half a width stops holding a side's seven controls somewhere around
+   here, and the conditions have four groups of their own to place. */
+@media (max-width: 1100px) { .ev-field { grid-template-columns: minmax(0, 1fr); } }
 
 /* Six columns of this need real width; below it they go two and three up. */
 @media (max-width: 1100px) { .ev-cols { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

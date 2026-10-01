@@ -418,64 +418,11 @@ function FieldBar({ field, onChange, doubles, onDoubles, rules, onRules }: {
   })
   return (
     <div className="ev-field">
-      {/* First, because everything to its right is read under it: a
-          spread move is a quarter weaker with two Pokémon out and a
-          screen a third rather than a half. The league plays doubles,
-          so that is where it starts. */}
-      <span className="ev-field-set">
-        <em>Rules</em>
-        {(['champions', 'gen9'] as const).map((r) => (
-          <button
-            key={r} type="button" className="ev-field-pill"
-            aria-pressed={rules === r}
-            title={`${RULES[r].budget} ${RULES[r].unit}, ${RULES[r].max} to a stat`}
-            onClick={() => onRules(r)}
-          >
-            {RULES[r].label}
-          </button>
-        ))}
-      </span>
-      <span className="ev-field-set">
-        <em>Format</em>
-        {([[true, 'Doubles'], [false, 'Singles']] as const).map(([on, label]) => (
-          <button
-            key={label} type="button" className="ev-field-pill"
-            aria-pressed={doubles === on}
-            onClick={() => onDoubles(on)}
-          >
-            {label}
-          </button>
-        ))}
-      </span>
-      <span className="ev-field-set">
-        <em>Weather</em>
-        {WEATHERS.map((w) => (
-          <button
-            key={w} type="button" className="ev-field-pill"
-            aria-pressed={field.weather === w}
-            onClick={() => onChange({ ...field, weather: one(field.weather, w) })}
-          >
-            {w}
-          </button>
-        ))}
-      </span>
-      <span className="ev-field-set">
-        <em>Terrain</em>
-        {TERRAINS.map((t) => (
-          <button
-            key={t} type="button" className="ev-field-pill"
-            aria-pressed={field.terrain === t}
-            onClick={() => onChange({ ...field, terrain: one(field.terrain, t) })}
-          >
-            {t}
-          </button>
-        ))}
-      </span>
-      {/* The two sides stack rather than running on from the conditions
-          above, each in its own colour: everything to the left of here is
-          the turn both Pokémon are standing in, and everything in these
-          two boxes belongs to one of them only. Side by side they read as
-          two more groups in the same row as Weather. */}
+      {/* First and down the left, because this is the half anyone came
+          to change. Each in its own colour, and boxed: everything to the
+          right is the turn both Pokémon are standing in, and everything
+          in these two belongs to one of them only — a screen is up for
+          whoever put it up and a burn is on whoever has it. */}
       <div className="ev-field-sides">
       {([['mine', 'Yours'], ['theirs', 'Theirs']] as const).map(([which, label]) => {
         const set = <K extends keyof SideField>(key: K, value: SideField[K]) =>
@@ -525,6 +472,63 @@ function FieldBar({ field, onChange, doubles, onDoubles, rules, onRules }: {
           </span>
         )
       })}
+      </div>
+
+      {/* What both Pokémon are standing in, to the right of the two
+          sides and after them: the format is read into everything in
+          those boxes — a spread move is a quarter weaker with two
+          Pokémon out and a screen a third rather than a half. The
+          league plays doubles, so that is where it starts. */}
+      <div className="ev-field-shared">
+        <span className="ev-field-set">
+          <em>Rules</em>
+          {(['champions', 'gen9'] as const).map((r) => (
+            <button
+              key={r} type="button" className="ev-field-pill"
+              aria-pressed={rules === r}
+              title={`${RULES[r].budget} ${RULES[r].unit}, ${RULES[r].max} to a stat`}
+              onClick={() => onRules(r)}
+            >
+              {RULES[r].label}
+            </button>
+          ))}
+        </span>
+        <span className="ev-field-set">
+          <em>Format</em>
+          {([[true, 'Doubles'], [false, 'Singles']] as const).map(([on, label]) => (
+            <button
+              key={label} type="button" className="ev-field-pill"
+              aria-pressed={doubles === on}
+              onClick={() => onDoubles(on)}
+            >
+              {label}
+            </button>
+          ))}
+        </span>
+        <span className="ev-field-set">
+          <em>Weather</em>
+          {WEATHERS.map((w) => (
+            <button
+              key={w} type="button" className="ev-field-pill"
+              aria-pressed={field.weather === w}
+              onClick={() => onChange({ ...field, weather: one(field.weather, w) })}
+            >
+              {w}
+            </button>
+          ))}
+        </span>
+        <span className="ev-field-set">
+          <em>Terrain</em>
+          {TERRAINS.map((t) => (
+            <button
+              key={t} type="button" className="ev-field-pill"
+              aria-pressed={field.terrain === t}
+              onClick={() => onChange({ ...field, terrain: one(field.terrain, t) })}
+            >
+              {t}
+            </button>
+          ))}
+        </span>
       </div>
     </div>
   )
