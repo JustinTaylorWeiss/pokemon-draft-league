@@ -598,13 +598,26 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           const key = (o: Owner) => `${o.team ?? '\uffff'}\u0000${o.captain}`
           return key(oa).localeCompare(key(ob)) * sort.dir || nameA.localeCompare(nameB)
         }
-        // Dearest first, and a Pokemon with no price on this season's
-        // board sorts below every one that has a price rather than
-        // counting as free.
+        /*
+         * Subtracted in ascending order like every other number in this
+         * table, so the arrow on the heading means here what it means in
+         * the nine columns beside it. It did not: this one subtracted the
+         * other way round and then flipped as well, so clicking Pts under
+         * a ▼ put the cheapest Pokemon on the board at the top.
+         *
+         * A Pokemon with no price on this season's board sorts below
+         * every one that has a price, and does so whichever way the
+         * column is pointing — which is what the old comment claimed and
+         * a −1 standing in for "no price" could not do, being the
+         * smallest number rather than no number.
+         */
         if (sort.key === 'points') {
-          const at = dex[a.pokemon]?.points ?? -1
-          const bt = dex[b.pokemon]?.points ?? -1
-          return (bt - at) * sort.dir || nameA.localeCompare(nameB)
+          const at = dex[a.pokemon]?.points
+          const bt = dex[b.pokemon]?.points
+          if (at == null || bt == null) {
+            return (at == null ? 1 : 0) - (bt == null ? 1 : 0) || nameA.localeCompare(nameB)
+          }
+          return (at - bt) * sort.dir || nameA.localeCompare(nameB)
         }
         // dir -1 is descending, so subtract in ascending order and flip.
         return (finite(a[sort.key]) - finite(b[sort.key])) * sort.dir
