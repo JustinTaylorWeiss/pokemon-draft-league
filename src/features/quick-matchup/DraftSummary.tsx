@@ -1,4 +1,4 @@
-import { Fragment, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { StatKey } from '../../data/types'
 import { BST_ORDER, STAT_LABELS, summarize } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
@@ -8,6 +8,7 @@ import { usePokemonModal } from '../pokemon/PokemonModalContext'
 import { useFitToBox } from '../../lib/useFitToBox'
 import { Sprite } from '../../components/Sprite'
 import { DraftValue } from '../../components/DraftValue'
+import { byTier } from '../../data/league'
 
 /**
  * Colors a stat relative to the neutral value: below is red, above is green.
@@ -20,6 +21,62 @@ function heat(value: number, neutral: number): string {
     ? `rgba(46, 160, 120, ${alpha.toFixed(3)})`
     : `rgba(200, 60, 70, ${alpha.toFixed(3)})`
 }
+
+/**
+ * Which column the two rosters are read down, and which way.
+ *
+ * Owned by the card rather than by either table, the way `neutral` is,
+ * because the point of sorting here is to compare: two rosters each in
+ * their own order are two lists, and two rosters in the same order are a
+ * matchup. Clicking a heading on one side moves both.
+ */
+export type SummaryKey = StatKey | 'bst' | 'name' | 'value'
+export interface SummarySort { key: SummaryKey; dir: 1 | -1 }
+export const BY_BST: SummarySort = { key: 'bst', dir: -1 }
+
+/**
+ * Two Pokémon under one column, as a comparator.
+ *
+ * Out here rather than inside the table so it can be read and tested on
+ * its own — the direction is the easy thing to get backwards, and it is
+ * invisible either way until someone notices the weakest Pokémon at the
+ * top of a column they asked for the strongest of.
+ *
+ * `dir` is 1 for ascending throughout, which is what the heading's
+ * aria-sort claims, so every branch subtracts in ascending order and
+ * lets `dir` do the flipping.
+ */
+export function bySummary({ key, dir }: SummarySort) {
+  type Entry = { pokemon: { name: string; bst: number; baseStats: Record<StatKey, number>;
+    points?: number | null; draftTier?: string | null } }
+  const of = (e: Entry) => (key === 'bst' ? e.pokemon.bst : e.pokemon.baseStats[key as StatKey])
+  return (a: Entry, b: Entry): number => {
+    const tie = a.pokemon.name.localeCompare(b.pokemon.name)
+    if (key === 'name') return tie * dir
+    if (key === 'value') {
+      /* Priced seasons sort on the price and tiered ones on the band.
+         Either way something off the board sorts last whichever way the
+         column is pointing, rather than counting as free or as worst. */
+      const ap = a.pokemon.points
+      const bp = b.pokemon.points
+      if (ap != null || bp != null) {
+        if (ap == null || bp == null) return ap == null ? 1 : -1
+        return (ap - bp) * dir || tie
+      }
+      const at = a.pokemon.draftTier ?? null
+      const bt = b.pokemon.draftTier ?? null
+      if (!at || !bt) return at ? -1 : bt ? 1 : 0
+      return byTier(at, bt) * dir || tie
+    }
+    return (of(a) - of(b)) * dir || tie
+  }
+}
+
+/** Numbers open highest-first, which is what anyone wants of a stat; names A–Z. */
+export const nextSummarySort = (prev: SummarySort, key: SummaryKey): SummarySort =>
+  (prev.key === key
+    ? { key, dir: (prev.dir === 1 ? -1 : 1) as 1 | -1 }
+    : { key, dir: key === 'name' ? 1 : -1 })
 
 /** `neutral` is owned by the parent card so the slider can live in its header. */
 /**
@@ -76,12 +133,35 @@ function Abilities({ names }: { names: string[] }) {
   )
 }
 
-export function DraftSummaryBody({ team, neutral }: { team: Team; neutral: number }) {
-
-  const rows = useMemo(
-    () => [...team.members].sort((a, b) => b.pokemon.bst - a.pokemon.bst),
-    [team.members],
+/** One heading, which is also the control for sorting by it. */
+function Head({ k, sort, onSort, className, children }: {
+  k: SummaryKey
+  sort: SummarySort
+  onSort: (key: SummaryKey) => void
+  className?: string
+  children: ReactNode
+}) {
+  const on = sort.key === k
+  return (
+    <th
+      className={`sortable${on ? ' is-sorted' : ''}${className ? ` ${className}` : ''}`}
+      aria-sort={on ? (sort.dir === 1 ? 'ascending' : 'descending') : 'none'}
+    >
+      <button type="button" onClick={() => onSort(k)} title="Sort both rosters by this">
+        {children}
+        <span className="sort-arrow">{on ? (sort.dir === 1 ? '\u25b2' : '\u25bc') : ''}</span>
+      </button>
+    </th>
   )
+}
+
+export function DraftSummaryBody({ team, neutral, sort, onSort }: {
+  team: Team
+  neutral: number
+  sort: SummarySort
+  onSort: (key: SummaryKey) => void
+}) {
+  const rows = useMemo(() => [...team.members].sort(bySummary(sort)), [team.members, sort])
 
   const totals = useMemo(() => {
     const cols: Record<string, number[]> = {}
@@ -119,11 +199,20 @@ export function DraftSummaryBody({ team, neutral }: { team: Team; neutral: numbe
     <table className="stat-table summary-table">
           <thead>
             <tr>
-              <th className="col-name">Name</th>
-              {showValue && <th className="col-value">{priced ? 'Pts' : 'Tier'}</th>}
+              {/* Abilities is the one heading that is not a button: there
+                  is no order to put a list of names in that anybody wants
+                  a roster read down. */}
+              <Head k="name" sort={sort} onSort={onSort} className="col-name">Name</Head>
+              {showValue && (
+                <Head k="value" sort={sort} onSort={onSort} className="col-value">
+                  {priced ? 'Pts' : 'Tier'}
+                </Head>
+              )}
               <th className="col-abil">Abilities</th>
-              {BST_ORDER.map((k) => <th key={k}>{STAT_LABELS[k]}</th>)}
-              <th>BST</th>
+              {BST_ORDER.map((k) => (
+                <Head key={k} k={k} sort={sort} onSort={onSort}>{STAT_LABELS[k]}</Head>
+              ))}
+              <Head k="bst" sort={sort} onSort={onSort}>BST</Head>
             </tr>
           </thead>
           <tbody>

@@ -1022,6 +1022,25 @@ button.type-chip { cursor: pointer; }
 
 /* The league's own valuation of a drafted Pokemon — a cost or a tier. */
 .summary-table .col-value { width: 3.2rem; text-align: center; }
+/*
+ * Every heading but Abilities is the control for sorting by it, and the
+ * sort is the card's rather than the table's — so clicking one here puts
+ * both rosters in the same order, which is the only order worth reading
+ * two of them in.
+ */
+.summary-table th.sortable { padding: 0 !important; }
+.summary-table th.sortable button {
+  width: 100%; display: flex; align-items: center; justify-content: center;
+  gap: 0.2rem; padding: 0.3rem 0.35rem;
+  background: none; border: 0; color: inherit; font: inherit;
+  font-size: inherit; font-weight: inherit; cursor: pointer;
+}
+.summary-table th.sortable.col-name button { justify-content: flex-start; }
+.summary-table th.sortable button:hover { color: var(--fg); }
+.summary-table th.sortable.is-sorted { color: var(--team-accent, var(--accent)); }
+/* Holds its width whether or not an arrow is in it, so a heading does not
+   shuffle sideways as the sort moves off it. */
+.summary-table .sort-arrow { font-size: 0.6em; min-width: 0.7em; }
 .agg-spent { margin-left: 0.6rem; font-weight: 700; color: var(--fg); text-transform: none; }
 
 /* ---- EV calculator ---- */

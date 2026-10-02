@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { LearnsetDex, MoveDex, SetDex, TypeChart } from '../../data/types'
 import { loadSets } from '../../data/load'
-import { DraftSummaryBody } from './DraftSummary'
+import {
+  BY_BST, DraftSummaryBody, nextSummarySort, type SummaryKey, type SummarySort,
+} from './DraftSummary'
 import { DefensiveChartBody } from './DefensiveChart'
 import { buildMoveRows, LearnedMovesBody } from './LearnedMoves'
 import { CoverageBody } from './CoveragePanel'
 import { EvCalcBody, EvHelp } from './EvCalc'
 import { useSpeedTiersPanel } from './useSpeedTiersPanel'
 import { TeamName } from '../../components/TeamName'
+import { STAT_LABELS } from '../../lib/stats'
 import type { LeagueDex } from '../../data/league'
 import type { Team } from './TeamEditor'
 import { LoadingBall } from '../../components/LoadingBall'
@@ -82,6 +85,14 @@ export function AnalysisCard({
     else setOwn(next)
   }
   const [neutral, setNeutral] = useState(80)
+  /*
+   * One order for both rosters, held here rather than in either table:
+   * two rosters each sorted their own way are two lists, and two sorted
+   * the same way are a matchup. A heading on either side moves both.
+   */
+  const [summarySort, setSummarySort] = useState<SummarySort>(BY_BST)
+  const sortSummary = (key: SummaryKey) =>
+    setSummarySort((prev) => nextSummarySort(prev, key))
   const [defenseAbilities, setDefenseAbilities] = useState(true)
   const [coverageAbilities, setCoverageAbilities] = useState(true)
   /**
@@ -203,6 +214,11 @@ export function AnalysisCard({
   )
 
   const footnote = {
+    summary: `Click any column heading to sort \u2014 both rosters together, so the two stay comparable. ${
+      summarySort.key === 'name' ? 'Sorted by name' : `Sorted by ${
+        summarySort.key === 'bst' ? 'BST' : summarySort.key === 'value' ? 'draft value'
+          : STAT_LABELS[summarySort.key]}`}, ${
+      summarySort.dir === 1 ? 'lowest first' : 'highest first'}.`,
     types: 'Delta is resists minus weaknesses. Negative columns are types this team struggles to switch into.',
     coverage: 'Lit types are the Pokémon’s most-used set; the dim ones are everything else it can learn. Click any to toggle — the order is fixed by where each Pokémon started, so nothing moves under you. Hovering a type lists its moves, with a ★ on the ones in that most-used set.',
     speed: speed.footnote,
@@ -244,7 +260,12 @@ export function AnalysisCard({
       <div className="analysis-body">
       {tab === 'summary' && (
         <TeamPair one={teamOne} two={teamTwo} abreast={abreast}>
-          {(team) => <DraftSummaryBody team={team} neutral={neutral} />}
+          {(team) => (
+            <DraftSummaryBody
+              team={team} neutral={neutral}
+              sort={summarySort} onSort={sortSummary}
+            />
+          )}
         </TeamPair>
       )}
       {tab === 'types' && (

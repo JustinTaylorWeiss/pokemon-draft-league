@@ -548,6 +548,23 @@
   align-items: center; gap: 0.5rem;
   height: 100%; min-height: 2.6rem;
 }
+/*
+ * Who drafted it: the team over the coach, and wider than the numbers
+ * because it holds words. Three classes deep so it beats the nth-child
+ * rule above, which pins the third column narrow for the stat that used
+ * to be there.
+ */
+.stats-table th.sortable.col-owner-head { width: 11rem; }
+.stats-table td.col-owner {
+  font-size: 0.78rem; line-height: 1.25; white-space: normal;
+}
+.owner-team, .owner-captain { display: block; overflow-wrap: anywhere; }
+/* The team is the louder of the two where there is one. Half the teams
+   this season have no name, and those rows are just the coach — which is
+   why the coach is the line that is always drawn. */
+.owner-team { color: var(--fg); }
+.owner-captain { color: var(--muted); font-size: 0.72rem; }
+
 .stats-type { display: flex; }
 .stats-name .row-types { flex: none; }
 .rank-col {

@@ -1,8 +1,9 @@
 import { Fragment, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { loadPokemon } from '../../data/load'
+import { loadPokemon, toId } from '../../data/load'
 import type { PokemonDex } from '../../data/types'
 import {
-  byId, byTier, currentSeason, isMega, loadLeague, megaParts, mergeDex, reloadSeason, subscribeLeague,
+  byId, byTier, currentSeason, isMega, loadLeague, megaBaseId, megaParts, mergeDex,
+  reloadSeason, subscribeLeague,
   tierClass,
   finishingOrder, medalCount, rankByRecord, totalsFromMatches,
   type GameLine, type League, type LeaguePokemon, type Match, type MatchStat,
@@ -364,6 +365,9 @@ const ALL_TIME_MINIMUM = 4
 
 type StatColumn = Exclude<StatSort, 'name'>
 
+/** The team and the coach that drafted one Pokémon. */
+interface Owner { team: string | null; captain: string }
+
 /**
  * Everything the stats table shows about a Pokemon besides its name, each
  * column owning the cell it draws.
@@ -375,8 +379,29 @@ type StatColumn = Exclude<StatSort, 'name'>
  */
 const STAT_CELLS: Record<StatColumn, {
   label: string
-  cell: (t: PokemonTotals, mon: LeaguePokemon | undefined) => ReactNode
+  cell: (t: PokemonTotals, mon: LeaguePokemon | undefined, by: Owner | undefined) => ReactNode
 }> = {
+  /*
+   * Who drafted it, which the board could not say before.
+   *
+   * Both the team and the coach, because a season has fourteen of each
+   * and only one of them is memorable: half the teams have no name at
+   * all, and the ones that do are not always obviously anybody's. The
+   * coach is always there, so it is the line that never goes missing.
+   */
+  owner: {
+    label: 'Drafted by',
+    cell: (_t, _mon, by) => (
+      <td className="col-owner">
+        {by ? (
+          <>
+            {by.team && <span className="owner-team">{by.team}</span>}
+            <span className="owner-captain">{by.captain}</span>
+          </>
+        ) : <em className="none">{'\u2014'}</em>}
+      </td>
+    ),
+  },
   /*
    * What it cost, not what tier it was in.
    *
@@ -421,7 +446,7 @@ const STAT_CELLS: Record<StatColumn, {
 
 /** Diff, then K/D, then the rest of the power ranking. */
 const SEASON_COLUMNS: StatColumn[] =
-  ['points', 'diff', 'kd', 'killsPerGame', 'kills', 'gamesPlayed', 'deaths']
+  ['owner', 'points', 'diff', 'kd', 'killsPerGame', 'kills', 'gamesPlayed', 'deaths']
 
 /**
  * The all-time chain, which leads with the rate.
@@ -430,11 +455,17 @@ const SEASON_COLUMNS: StatColumn[] =
  * that season's board; across all of them there is no such opinion — Season
  * 3 priced Omanyte for Little Cup and Season 4 never listed it — so the
  * column would be a rule of dashes and a sort by nothing.
+ *
+ * And no owner, for the same reason twice over: a Pokemon drafted in four
+ * seasons was drafted by four people, and "drafted by" has no single
+ * answer to give.
  */
 const ALL_TIME_COLUMNS: StatColumn[] =
   ['killsPerGame', 'kd', 'gamesPlayed', 'diff', 'kills', 'deaths']
 
-type StatSort = 'kills' | 'deaths' | 'diff' | 'gamesPlayed' | 'killsPerGame' | 'kd' | 'name' | 'points'
+type StatSort =
+  | 'kills' | 'deaths' | 'diff' | 'gamesPlayed' | 'killsPerGame' | 'kd' | 'name'
+  | 'points' | 'owner'
 
 function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
   // dir 0 is the power ranking above; a column cycles through both directions
@@ -494,6 +525,39 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
   /** The whole season, always: a ranking of the season is the point. */
   const totals = useMemo(() => Object.values(totalsFromMatches(matches)), [matches])
 
+  /*
+   * Who drafted what, by Pokémon id.
+   *
+   * Two formes get in the way of a plain roster lookup, and both did on
+   * this season's board. A Mega plays the turn before it Mega Evolves
+   * under its base name — Charizard on the field, Charizard-Mega-X on the
+   * roster — so a Mega also claims the forme it comes from. And a
+   * patterned forme plays as itself where the roster names the species —
+   * Vivillon-Sun against a drafted Vivillon — so a miss falls back to the
+   * base species. A Pokémon drafted outright always wins over either.
+   */
+  const owners = useMemo(() => {
+    const by = new Map<string, Owner>()
+    const inferred = new Map<string, Owner>()
+    for (const player of league.players) {
+      const who: Owner = { team: player.team ?? null, captain: player.name }
+      for (const pick of league.rosters[player.id] ?? []) {
+        by.set(pick.pokemon, who)
+        const base = dex[pick.pokemon] && isMega(dex[pick.pokemon])
+          ? megaBaseId(dex[pick.pokemon])
+          : null
+        if (base) inferred.set(base, who)
+      }
+    }
+    const of = (id: string): Owner | undefined => {
+      const direct = by.get(id) ?? inferred.get(id)
+      if (direct) return direct
+      const base = dex[id]?.baseSpecies
+      return base ? by.get(toId(base)) ?? inferred.get(toId(base)) : undefined
+    }
+    return of
+  }, [league.players, league.rosters, dex])
+
   /**
    * An award is a ranking with a different first step, so it replaces the power
    * ranking rather than sitting beside it: on an award tab, "no column sorted"
@@ -522,6 +586,18 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           return (allTime ? byAllTimeRanking : byPowerRanking)(a, b) || nameA.localeCompare(nameB)
         }
         if (sort.key === 'name') return nameA.localeCompare(nameB) * sort.dir
+        /*
+         * By team, then by coach, and a Pokémon nobody owns last either
+         * way round — the point of sorting on this column is to read one
+         * roster together, and an unowned row belongs to no roster.
+         */
+        if (sort.key === 'owner') {
+          const oa = owners(a.pokemon)
+          const ob = owners(b.pokemon)
+          if (!oa || !ob) return (oa ? -1 : ob ? 1 : 0) || nameA.localeCompare(nameB)
+          const key = (o: Owner) => `${o.team ?? '\uffff'}\u0000${o.captain}`
+          return key(oa).localeCompare(key(ob)) * sort.dir || nameA.localeCompare(nameB)
+        }
         // Dearest first, and a Pokemon with no price on this season's
         // board sorts below every one that has a price rather than
         // counting as free.
@@ -535,7 +611,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           || b.killsPerGame - a.killsPerGame
           || nameA.localeCompare(nameB)
       })
-  }, [totals, sort, query, dex, showing, rule, allTime, minGames])
+  }, [totals, sort, query, dex, showing, rule, allTime, minGames, owners])
 
   if (!matches.length) {
     // Two different situations wearing the same words. An archived season with
@@ -611,6 +687,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                   <th
                     key={key}
                     className={`sortable${key === 'name' ? ' col-name' : ''}${
+                      key === 'owner' ? ' col-owner-head' : ''}${
                       sort.dir ? (sort.key === key ? ' is-sorted' : '')
                         // With no column picked, the award's own stat is what
                         // the order is by, so it is the one marked.
@@ -658,7 +735,9 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                       </span>
                     </th>
                     {columns.map((key) => (
-                      <Fragment key={key}>{STAT_CELLS[key].cell(t, mon)}</Fragment>
+                      <Fragment key={key}>
+                        {STAT_CELLS[key].cell(t, mon, owners(t.pokemon))}
+                      </Fragment>
                     ))}
                   </tr>
                 )
