@@ -192,7 +192,13 @@ export function DraftSummaryBody({ team, neutral, sort, onSort, abreast = true }
   // row was immediately cancelled by a smaller scale — the rows kept their
   // rendered size and everything else shrank instead. Rows are the size they
   // are now, and a roster too tall for the card scrolls.
-  const fitRef = useFitToBox<HTMLDivElement>('width')
+  /*
+   * Side by side it grows into its half, which is what the half is for.
+   * Stacked it does not: the table is already the size it should be and
+   * the rest of the card is margin — left to grow it zoomed to 1.91 and
+   * filled a whole card with six rows.
+   */
+  const fitRef = useFitToBox<HTMLDivElement>('width', 1, abreast)
 
   if (!rows.length) return null
 

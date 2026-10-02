@@ -46,6 +46,17 @@ export function useFitToBox<T extends HTMLElement>(
    * point of being able to zoom in.
    */
   multiplier = 1,
+  /**
+   * Whether a panel with room to spare grows into it.
+   *
+   * On, which is the old behaviour and right for a panel that is meant to
+   * fill what it is given. Off where the panel is already the size it
+   * should be and the spare room is margin rather than somewhere to grow
+   * — a table sized by its own contents in a card twice its width would
+   * otherwise be blown up to twice the size to fill it. It still shrinks
+   * when it has to: not fitting is the thing this exists to prevent.
+   */
+  grow = true,
 ): (el: T | null) => void {
   const [node, setNode] = useState<T | null>(null)
 
@@ -62,17 +73,19 @@ export function useFitToBox<T extends HTMLElement>(
     const naturalH = Math.max(rect.height, node.scrollHeight)
     const naturalW = Math.max(rect.width, node.scrollWidth)
 
-    // A panel with room to spare grows into it rather than stopping at 100%.
-    // Scaling rounds sizes up, so aim a few pixels under the space available.
+    // A panel with room to spare grows into it rather than stopping at 100%,
+    // unless `grow` says the spare room is margin. Scaling rounds sizes up,
+    // so aim a few pixels under the space available.
     const byWidth = (box.clientWidth - CUSHION) / naturalW
     const byHeight = (box.clientHeight - CUSHION) / naturalH
+    const ceiling = grow ? MAX_SCALE : 1
     const fitted = naturalH > 0 && naturalW > 0
-      ? Math.min(MAX_SCALE, Math.max(MIN_SCALE, axis === 'width' ? byWidth : Math.min(byWidth, byHeight)))
+      ? Math.min(ceiling, Math.max(MIN_SCALE, axis === 'width' ? byWidth : Math.min(byWidth, byHeight)))
       : 1
 
     const applied = fitted * multiplier
     node.style.zoom = applied === 1 ? '' : String(applied)
-  }, [node, axis, multiplier])
+  }, [node, axis, multiplier, grow])
 
   useEffect(() => {
     const box = node?.parentElement
