@@ -262,7 +262,7 @@ export function AnalysisCard({
         <TeamPair one={teamOne} two={teamTwo} abreast={abreast}>
           {(team) => (
             <DraftSummaryBody
-              team={team} neutral={neutral}
+              team={team} neutral={neutral} abreast={abreast}
               sort={summarySort} onSort={sortSummary}
             />
           )}

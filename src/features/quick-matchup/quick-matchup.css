@@ -269,9 +269,12 @@
 /* Scaled by useFitToBox when the roster is taller than the window allows, so
    `zoom` has something to sit on that is exactly the table's size. */
 .fit-box { width: fit-content; max-width: 100%; margin: 0 auto; }
-/* The summary fills the card's width instead of being sized by its content.
-   Stacking the types under the name leaves it narrow and tall, and since zoom
-   scales uniformly there is otherwise nowhere for the spare width to go. */
+/* Fills its panel rather than being sized by its content, which is what a
+   narrow half of the card wants: the types stack under the name, leaving the
+   table tall, and since zoom scales uniformly there is otherwise nowhere for
+   the spare width to go. Only worn side by side — given a whole card the
+   spare width is far more than any column needs, and the plain fit-box
+   above centres the table at the size it actually is. */
 .fit-box.fit-wide { width: 100%; }
 
 .mx-immune { background: rgb(60 60 70 / 85%); color: var(--muted); }

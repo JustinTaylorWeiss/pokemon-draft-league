@@ -155,11 +155,13 @@ function Head({ k, sort, onSort, className, children }: {
   )
 }
 
-export function DraftSummaryBody({ team, neutral, sort, onSort }: {
+export function DraftSummaryBody({ team, neutral, sort, onSort, abreast = true }: {
   team: Team
   neutral: number
   sort: SummarySort
   onSort: (key: SummaryKey) => void
+  /** Two panels to a row, or one. It decides what the spare width is for. */
+  abreast?: boolean
 }) {
   const rows = useMemo(() => [...team.members].sort(bySummary(sort)), [team.members, sort])
 
@@ -194,8 +196,18 @@ export function DraftSummaryBody({ team, neutral, sort, onSort }: {
 
   if (!rows.length) return null
 
+  /*
+   * Side by side, the table fills its half: the panel is narrow, the
+   * slack is small, and Abilities is glad of it.
+   *
+   * Stacked, it is sized by its contents and centred. A roster is about
+   * sixty ems of table and the card is well over a hundred, and all of
+   * that slack landed on Name — the one column with nothing to pin it —
+   * which measured 799px of a 1352px table, more than half the width for
+   * a word and a sprite.
+   */
   return (
-    <div className="fit-box fit-wide" ref={fitRef}>
+    <div className={`fit-box${abreast ? ' fit-wide' : ''}`} ref={fitRef}>
     <table className="stat-table summary-table">
           <thead>
             <tr>
