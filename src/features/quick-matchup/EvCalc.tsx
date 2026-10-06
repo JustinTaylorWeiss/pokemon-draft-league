@@ -441,7 +441,9 @@ function FieldBar({ field, onChange, doubles, onDoubles, rules, onRules }: {
               title={`What ${label.toLowerCase()} is suffering from`}
               onChange={(e) => set('status', (e.target.value || undefined) as Status | undefined)}
             >
-              <option value="">Healthy</option>
+              {/* Named for the menu rather than for the state, like the
+                  item one beside it: resting, it says what it is for. */}
+              <option value="">Status</option>
               {STATUSES.map((st) => <option key={st} value={st}>{st}</option>)}
             </select>
             {/* One stage menu per stat that changes a number here. Speed
