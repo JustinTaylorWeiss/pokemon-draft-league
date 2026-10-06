@@ -248,22 +248,43 @@ export type Assumptions = Spread
  * Pokémon fall back to the bare floor like the ones with no set at all.
  */
 export function usualSpread(
-  set: { spreads?: { evs?: Partial<Record<StatKey, number>>; nature?: string }[] } | undefined,
-): { evs: Partial<Record<StatKey, number>>; nature?: string } | undefined {
+  set: {
+    spreads?: {
+      evs?: Partial<Record<StatKey, number>>
+      sps?: Partial<Record<StatKey, number>>
+      nature?: string
+    }[]
+  } | undefined,
+): {
+  evs: Partial<Record<StatKey, number>>
+  /** True where those numbers are SP rather than EVs. */
+  sp?: boolean
+  nature?: string
+} | undefined {
   const spread = set?.spreads?.[0]
-  if (!spread?.evs) return undefined
-  const total = Object.values(spread.evs).reduce((n, v) => n + (v ?? 0), 0)
-  if (total > EV_BUDGET) return undefined
-  return { evs: spread.evs, nature: spread.nature }
+  if (!spread) return undefined
+  /*
+   * A Champions set is written in SP and carries no EVs at all, so the
+   * two are told apart by which one has anything in it rather than by
+   * which field exists — the builder writes an empty `evs` beside the
+   * SP so the shape stays the same for everything that reads it.
+   */
+  const sp = spread.sps && Object.keys(spread.sps).length ? spread.sps : null
+  const raw = sp ?? spread.evs
+  if (!raw) return undefined
+  const total = Object.values(raw).reduce((n, v) => n + (v ?? 0), 0)
+  if (total > (sp ? RULES.champions.budget : EV_BUDGET)) return undefined
+  return { evs: raw, sp: Boolean(sp), nature: spread.nature }
 }
 
 /**
- * How usage says it is built, or nothing where usage has nothing.
+ * How the set says it is built, in whichever numbers are being spent here.
  *
- * Usage is recorded in EVs, because it comes from Showdown. Under
- * Champions the same spread is the same shares of the same maxima in
- * smaller numbers, so each stat is scaled by the ratio of the two: 252
- * EVs and 32 SP are both everything, and 96 EVs is 12 SP.
+ * A Champions set is already in SP, so under Champions it is taken as it
+ * stands and under Gen 9 it is scaled up. A Showdown set is in EVs and
+ * goes the other way. Either direction is the same arithmetic — the same
+ * share of the same maximum in the other system's numbers, 252 EVs and 32
+ * SP both being everything, and 96 EVs being 12 SP.
  */
 export function assumeFrom(
   set: Parameters<typeof usualSpread>[0], rules: Rules = 'gen9',
@@ -271,7 +292,8 @@ export function assumeFrom(
   const built = usualSpread(set)
   const out = emptySpread()
   if (!built) return out
-  const scale = RULES[rules].max / EV_MAX
+  const from = built.sp ? RULES.champions.max : EV_MAX
+  const scale = RULES[rules].max / from
   for (const k of EV_STATS) {
     out.evs[k] = Math.round((built.evs[k] ?? 0) * scale)
     out.nature[k] = k === 'hp' ? 1 : natureMultiplier(built.nature, k)

@@ -133,6 +133,13 @@ export interface SetSpread {
   teraType?: string
   level?: number
   evs: Partial<Record<StatKey, number>>
+  /**
+   * Champions' own numbers, where the set came from Champions: SP, 32 to a
+   * stat and 66 to a spread. Present instead of `evs` rather than beside
+   * it — the two systems do not convert into each other cleanly, so
+   * whichever is filled in says which game the set is from.
+   */
+  sps?: Partial<Record<StatKey, number>>
   ivs?: Partial<Record<StatKey, number>>
 }
 

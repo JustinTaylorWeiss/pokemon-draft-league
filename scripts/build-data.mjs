@@ -36,6 +36,29 @@ const SRC = 'https://play.pokemonshowdown.com/data'
  * it can learn, and the gen 9 entry is dropped rather than merged. Merging
  * would keep every move Champions took away.
  */
+/**
+ * And Champions' own sets, which are the other half of the same problem.
+ *
+ * The movepools come from Champions now, so the "most used set" has to as
+ * well — Showdown's gen 9 usage still had Incineroar clicking Knock Off,
+ * a move Champions does not give it, which is a default nobody could
+ * play. These are written in Champions' own numbers: SP, 32 to a stat.
+ *
+ * On the calculator's host rather than the client's, as a `var` assignment
+ * with a JSON object after it.
+ */
+const CHAMPIONS_SETS = 'https://calc.pokemonshowdown.com/js/data/sets/champions.js'
+
+/** The calculator's stat abbreviations, which are not Showdown's. */
+const CALC_STAT = { hp: 'hp', at: 'atk', df: 'def', sa: 'spa', sd: 'spd', sp: 'spe' }
+
+/**
+ * Doubles first, because the league plays doubles, then the singles
+ * ladders as a stand-in — the same order the gen 9 formats are read in
+ * below, and for the same reason.
+ */
+const CHAMPIONS_FORMAT_ORDER = ['VGC', 'BSS', 'OU']
+
 const CHAMPIONS_LEARNSETS =
   'https://raw.githubusercontent.com/smogon/pokemon-showdown/master'
   + '/data/mods/champions/learnsets.ts'
@@ -211,7 +234,7 @@ async function main() {
   console.log('fetching Showdown data...')
   const [
     dex, moves, learnsets, typechart, abilities, formats, championsRaw,
-    moveText, abilityText, itemText,
+    moveText, abilityText, itemText, championsSetsRaw,
   ] = await Promise.all([
     fetchJson('pokedex'),
     fetchJson('moves'),
@@ -227,6 +250,10 @@ async function main() {
       if (!r.ok) throw new Error(`${name} text -> HTTP ${r.status}`)
       return r.text()
     })),
+    fetch(CHAMPIONS_SETS).then((r) => {
+      if (!r.ok) throw new Error(`champions sets -> HTTP ${r.status}`)
+      return r.text()
+    }),
   ])
   const text = {
     moves: parseText(moveText),
@@ -582,6 +609,66 @@ async function main() {
   ]
 
   const sets = {}
+
+  /*
+   * Champions first, so the gen 9 pass below fills only what is left.
+   *
+   * Its spreads are kept in SP rather than converted: 32 SP is not 252
+   * EVs and the two systems add up differently — a full Champions spread
+   * comes to 66 points where a full EV spread comes to 508, and scaling
+   * one into the other would land outside what the other allows. The
+   * consumer knows which it is looking at and reads it in its own units.
+   */
+  const champSets = (() => {
+    const body = championsSetsRaw.slice(
+      championsSetsRaw.indexOf('{'), championsSetsRaw.lastIndexOf('}') + 1,
+    )
+    return JSON.parse(body)
+  })()
+  let champSetCount = 0
+  for (const [name, entries] of Object.entries(champSets)) {
+    const id = toId(name)
+    if (!pokemon[id]) continue
+    const ordered = Object.entries(entries ?? {}).sort(
+      (a, b) => CHAMPIONS_FORMAT_ORDER.findIndex((f) => a[0].startsWith(f))
+        - CHAMPIONS_FORMAT_ORDER.findIndex((f) => b[0].startsWith(f)),
+    )
+    const moveIds = new Set()
+    for (const [, set] of ordered) {
+      for (const move of set.moves ?? []) {
+        for (const option of String(move).split('/')) {
+          const mid = toId(option)
+          if (movesOut[mid]) moveIds.add(mid)
+        }
+      }
+    }
+    if (!moveIds.size) continue
+    champSetCount += ordered.length
+    sets[id] = {
+      moves: [...moveIds],
+      source: 'champions',
+      format: 'champions',
+      spreads: ordered.map(([setName, set]) => ({
+        name: setName,
+        moves: (set.moves ?? []).map(String),
+        ...(set.item && { item: set.item }),
+        ...(set.ability && { ability: set.ability }),
+        ...(set.nature && { nature: set.nature }),
+        ...(set.level && set.level !== 100 && { level: set.level }),
+        // Champions' own numbers, under their own name, so nothing
+        // downstream can mistake a 32 for 32 EVs.
+        sps: Object.fromEntries(
+          Object.entries(set.sps ?? {})
+            .map(([k, v]) => [CALC_STAT[k] ?? k, v])
+            .filter(([k]) => CALC_STAT[k] || Object.values(CALC_STAT).includes(k)),
+        ),
+        evs: {},
+        ...(set.ivs && { ivs: set.ivs }),
+      })),
+    }
+  }
+  console.log(`champions sets: ${Object.keys(sets).length} Pokemon, ${champSetCount} sets`)
+
   for (const format of FORMAT_ORDER) {
     const block = setsRaw[format]
     if (!block) continue

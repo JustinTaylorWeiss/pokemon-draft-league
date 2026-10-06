@@ -6,6 +6,7 @@ import { itemIconStyle } from '../../data/load'
 
 /** Doubles formats read as "Gen 9 Doubles OU" rather than "gen9doublesou". */
 function formatLabel(format: string): string {
+  if (format === 'champions') return 'Champions'
   return format
     .replace(/^gen(\d+)/, 'Gen $1 ')
     .replace(/doublesou/, 'Doubles OU')
@@ -50,7 +51,15 @@ export function CommonSetCard({ mon, set, moves, items }: Props) {
 
   const level = spread.level ?? 100
   const nature = NATURES[spread.nature ?? '']
-  const evLine = spreadLine(spread.evs, () => false)
+  /*
+   * A Champions set is written in SP and a Showdown one in EVs. Shown in
+   * whichever it was written in, and the stats below worked out under
+   * those rules — read as EVs, 32 SP would be a rounding error instead of
+   * a maxed stat.
+   */
+  const sp = spread.sps && Object.keys(spread.sps).length ? spread.sps : null
+  const spent = sp ?? spread.evs
+  const evLine = spreadLine(spent, () => false)
   // Only worth showing when something has been deliberately dropped from 31.
   const ivLine = spread.ivs ? spreadLine(spread.ivs, (v) => v === 31) : ''
 
@@ -131,7 +140,7 @@ export function CommonSetCard({ mon, set, moves, items }: Props) {
       </dl>
 
       <div className="set-spread">
-        <span className="set-spread-label">EVs</span>
+        <span className="set-spread-label">{sp ? 'SP' : 'EVs'}</span>
         <span>{evLine || <em className="none">none</em>}</span>
       </div>
       {ivLine && (
@@ -158,11 +167,12 @@ export function CommonSetCard({ mon, set, moves, items }: Props) {
               >
                 {statAtLevel(
                   mon.baseStats[k],
-                  spread.evs[k] ?? 0,
+                  spent[k] ?? 0,
                   natureMultiplier(spread.nature, k),
                   k === 'hp',
                   spread.ivs?.[k] ?? 31,
                   level,
+                  sp ? 'champions' : 'gen9',
                 )}
               </td>
             ))}
