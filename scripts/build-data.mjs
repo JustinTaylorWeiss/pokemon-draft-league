@@ -20,6 +20,86 @@ import { join } from 'node:path'
 
 const CURRENT_GEN = 9
 const SRC = 'https://play.pokemonshowdown.com/data'
+
+/**
+ * Pokémon Champions' own movepools, which are not Scarlet and Violet's.
+ *
+ * The league plays Champions, and Champions is its own game with its own TM
+ * list — Raichu learns Zap Cannon there and has not learned it in a main-line
+ * game since Gen 7, where Showdown files it as transfer-only and this build
+ * rightly drops it. Taking Showdown's gen 9 learnsets alone answered a
+ * question nobody here is asking.
+ *
+ * Shipped as a server mod rather than with the client data, so it comes from
+ * the repository and is parsed out of the TypeScript. It is a replacement and
+ * not a patch: where Champions lists a species, that list is the whole of what
+ * it can learn, and the gen 9 entry is dropped rather than merged. Merging
+ * would keep every move Champions took away.
+ */
+const CHAMPIONS_LEARNSETS =
+  'https://raw.githubusercontent.com/smogon/pokemon-showdown/master'
+  + '/data/mods/champions/learnsets.ts'
+
+/**
+ * Where the descriptions live now.
+ *
+ * Showdown's client data carried `shortDesc` on every move, ability and item
+ * until it did not: the tables there are mechanics only now, and the prose
+ * moved to `data/text/` in the repository. A build run against the current
+ * files without this put an empty string on all 685 moves, all 317 abilities
+ * and all 70 items, which is the sort of regression that ships quietly
+ * because nothing errors — every page still renders, with nothing in it.
+ */
+const TEXT = (name) =>
+  `https://raw.githubusercontent.com/smogon/pokemon-showdown/master/data/text/${name}.ts`
+
+/**
+ * The top-level descriptions out of one of those files.
+ *
+ * Depth matters and is the whole trick: an entry's own prose sits at two
+ * tabs, and the same keys appear again at three inside the `gen1`–`gen8`
+ * blocks that say what the move used to do. Matching on the key alone
+ * would take whichever generation happened to come last.
+ */
+function parseText(source) {
+  const out = {}
+  let id = null
+  for (const line of source.split('\n')) {
+    const head = line.match(/^\t([A-Za-z0-9]+): \{/)
+    if (head) { id = head[1]; out[id] = {}; continue }
+    const field = line.match(/^\t\t(shortDesc|desc): "((?:[^"\\]|\\.)*)",?$/)
+    if (field && id && out[id][field[1]] === undefined) {
+      out[id][field[1]] = field[2].replace(/\\"/g, '"').replace(/\\\\/g, '\\')
+    }
+  }
+  return out
+}
+
+/**
+ * Pulls that file into the same shape as the client's learnsets.json.
+ *
+ * By hand, because it is TypeScript and the alternative is a toolchain to
+ * read one table of string arrays. Two shapes only — the species line and
+ * the move line — and anything it fails to recognise is counted, so a
+ * change in formatting shows up as a number dropping rather than as a
+ * movepool quietly going missing.
+ */
+function parseChampionsLearnsets(source) {
+  const out = {}
+  let species = null
+  let moves = 0
+  for (const line of source.split('\n')) {
+    const head = line.match(/^\t([a-z0-9]+): \{/)
+    if (head) { species = head[1]; out[species] = { learnset: {} }; continue }
+    const move = line.match(/^\t\t\t([a-z0-9]+): \[([^\]]*)\]/)
+    if (move && species) {
+      out[species].learnset[move[1]] =
+        move[2].split(',').map((x) => x.trim().replace(/['"]/g, '')).filter(Boolean)
+      moves++
+    }
+  }
+  return { learnsets: out, species: Object.keys(out).length, moves }
+}
 const OUT = new URL('../public/data/', import.meta.url).pathname
 
 /** National dex ranges, used to tag which generation a species debuted in. */
@@ -129,14 +209,48 @@ const isCurrentGen = (entry) => !entry.isNonstandard
 
 async function main() {
   console.log('fetching Showdown data...')
-  const [dex, moves, learnsets, typechart, abilities, formats] = await Promise.all([
+  const [
+    dex, moves, learnsets, typechart, abilities, formats, championsRaw,
+    moveText, abilityText, itemText,
+  ] = await Promise.all([
     fetchJson('pokedex'),
     fetchJson('moves'),
     fetchJson('learnsets'),
     fetchScript('typechart'),
     fetchScript('abilities'),
     fetchScript('formats-data'),
+    fetch(CHAMPIONS_LEARNSETS).then((r) => {
+      if (!r.ok) throw new Error(`champions learnsets -> HTTP ${r.status}`)
+      return r.text()
+    }),
+    ...['moves', 'abilities', 'items'].map((name) => fetch(TEXT(name)).then((r) => {
+      if (!r.ok) throw new Error(`${name} text -> HTTP ${r.status}`)
+      return r.text()
+    })),
   ])
+  const text = {
+    moves: parseText(moveText),
+    abilities: parseText(abilityText),
+    items: parseText(itemText),
+  }
+  for (const [kind, table] of Object.entries(text)) {
+    const described = Object.values(table).filter((e) => e.shortDesc || e.desc).length
+    if (!described) throw new Error(`${kind} text parsed to nothing — the file's shape has moved`)
+    console.log(`text: ${described} ${kind} descriptions`)
+  }
+
+  /*
+   * Champions wins wherever it has an opinion, species by species. A
+   * species it does not list is one Champions does not have, and keeps
+   * the gen 9 movepool — the board carries several hundred of those and
+   * a movepool from the wrong game beats no movepool at all.
+   */
+  const champions = parseChampionsLearnsets(championsRaw)
+  for (const [id, entry] of Object.entries(champions.learnsets)) learnsets[id] = entry
+  console.log(
+    `champions: ${champions.species} species, ${champions.moves} moves, `
+    + 'over the top of gen 9',
+  )
 
   const stats = {}
 
@@ -225,7 +339,7 @@ async function main() {
       pp: m.pp,
       priority: m.priority,
       target: m.target,
-      shortDesc: m.shortDesc ?? m.desc ?? '',
+      shortDesc: text.moves[id]?.shortDesc ?? text.moves[id]?.desc ?? '',
       ...(boosts && { boosts }),
       ...(m.status && { status: m.status }),
       ...(m.volatileStatus && { volatileStatus: m.volatileStatus }),
@@ -447,7 +561,10 @@ async function main() {
   const abilitiesOut = {}
   for (const [id, a] of Object.entries(abilities)) {
     if (!isCurrentGen(a) && !held.has(id)) continue
-    abilitiesOut[id] = { name: a.name, shortDesc: a.shortDesc ?? a.desc ?? '' }
+    abilitiesOut[id] = {
+      name: a.name,
+      shortDesc: text.abilities[id]?.shortDesc ?? text.abilities[id]?.desc ?? '',
+    }
   }
   stats.abilities = { kept: Object.keys(abilitiesOut).length }
 
@@ -526,7 +643,7 @@ async function main() {
     items[id] = {
       name: it.name,
       spritenum: it.spritenum,
-      desc: it.shortDesc ?? it.desc ?? '',
+      desc: text.items[id]?.shortDesc ?? text.items[id]?.desc ?? '',
     }
   }
   stats.items = { kept: Object.keys(items).length, referenced: usedItems.size }
