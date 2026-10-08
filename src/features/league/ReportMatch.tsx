@@ -440,8 +440,23 @@ const weekOptions = (league: League) =>
   Array.from({ length: league.meta.weeks ?? 9 }, (_, i) => i + 1)
 
 /** Defaults to the week after the last one with a result in it. */
+/**
+ * The week to open on: the earliest one still missing a result.
+ *
+ * It used to be the week after the furthest-along match, which gives the
+ * same answer only while a season is played strictly in order. It is not —
+ * one week 2 game reported early moved the default to week 3 while four
+ * week 2 fixtures were still open, and the people reporting those then had
+ * to notice the dropdown was wrong before they filed a result under it.
+ *
+ * Where every scheduled fixture is in, the next week along, capped at the
+ * season's length: there is nothing open to point at, and the next week is
+ * where the following result belongs.
+ */
 function nextWeek(league: League) {
-  const played = league.schedule.filter((m) => m.scoreA !== null).map((m) => m.week)
-  const last = played.length ? Math.max(...played) : 0
+  const weeks = [...new Set(league.schedule.map((m) => m.week))].sort((a, b) => a - b)
+  const open = weeks.find((w) => league.schedule.some((m) => m.week === w && m.scoreA === null))
+  if (open !== undefined) return open
+  const last = weeks.length ? weeks[weeks.length - 1] : 0
   return Math.min(last + 1, league.meta.weeks ?? 9) || 1
 }
