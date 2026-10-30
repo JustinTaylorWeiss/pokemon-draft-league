@@ -328,6 +328,30 @@ export async function reportMatch(input: {
   return data as number
 }
 
+/**
+ * A match won by disqualification: `winner` took it, `loser` was DQ'd, and
+ * nobody played. Its own call rather than a flag on `reportMatch`, because
+ * that one is built out of replays and has nothing to parse here.
+ */
+export async function reportForfeit(input: {
+  week: number
+  label: string
+  winner: string[]
+  loser: string[]
+}): Promise<number> {
+  const { data, error } = await db.rpc('report_forfeit', {
+    season: currentSeasonId(),
+    week: input.week,
+    side_a: input.winner,
+    side_b: input.loser,
+    label: input.label,
+    who: currentActor(),
+  })
+  if (error) throw error
+  changed()
+  return data as number
+}
+
 /** Adds an unplayed fixture. */
 export async function scheduleMatch(
   passphrase: string, week: number, sideA: string[], sideB: string[],

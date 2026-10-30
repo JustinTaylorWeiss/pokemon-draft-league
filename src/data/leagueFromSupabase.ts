@@ -28,6 +28,7 @@ interface MatchRow {
   side_b: string[]
   score_a: number | null
   score_b: number | null
+  forfeit?: boolean
 }
 
 interface LineRow {
@@ -237,6 +238,7 @@ export async function loadLeagueFromSupabase(seasonId?: string): Promise<League>
     b: m.side_b,
     scoreA: m.score_a,
     scoreB: m.score_b,
+    ...(m.forfeit ? { forfeit: true } : {}),
     ...(gamesByMatch.has(m.id) ? { games: gamesByMatch.get(m.id) } : {}),
   }))
 

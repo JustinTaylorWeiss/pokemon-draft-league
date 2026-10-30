@@ -120,6 +120,11 @@ export interface Match {
   b: string[]
   scoreA: number | null
   scoreB: number | null
+  /**
+   * Won by disqualification, with no games played. The score still says who
+   * won, because the standings read it; nothing else should print it.
+   */
+  forfeit?: boolean
   games?: Game[]
 }
 
@@ -672,6 +677,21 @@ export function rankByRecord(league: League): Standing[] {
   }
   const rate = (won: number, total: number) => (total ? won / total : 0)
   const medal = (s: Standing, key: keyof Medals) => s.medals?.[key] ?? 0
+  /*
+   * The share of games won, which is a rate rather than a pile.
+   *
+   * It used to be the count of game wins, then the count of game losses.
+   * Counts only compare two coaches fairly when they have played the same
+   * number of games, and a disqualification guarantees they have not: a
+   * forfeit is a win with no games under it, so the coach who received one
+   * has a match more and no games more.
+   *
+   * Games played breaks a tie between equal rates, so somebody who has won
+   * two of two does not sit above somebody who has won four of four. That
+   * is the one thing the old count did well and it is kept.
+   */
+  const gameRate = (s: Standing) => rate(s.gamesWon, s.gamesWon + s.gamesLost)
+  const played = (s: Standing) => s.gamesWon + s.gamesLost
 
   return [...league.standings]
     .sort((a, b) =>
@@ -679,8 +699,8 @@ export function rankByRecord(league: League): Standing[] {
       || medal(b, 'silver') - medal(a, 'silver')
       || medal(b, 'bronze') - medal(a, 'bronze')
       || rate(b.wins, b.wins + b.losses) - rate(a.wins, a.wins + a.losses)
-      || b.gamesWon - a.gamesWon
-      || a.gamesLost - b.gamesLost
+      || gameRate(b) - gameRate(a)
+      || played(b) - played(a)
       || b.monDiff - a.monDiff
       || headToHead(b, a)
       || a.name.localeCompare(b.name))

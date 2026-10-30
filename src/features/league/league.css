@@ -279,6 +279,13 @@
   font-variant-numeric: tabular-nums; color: var(--muted);
   font-size: 0.8rem; background: var(--chip); padding: 0.1rem 0.2rem; border-radius: 999px;
 }
+/* A disqualification, where the score would be a number nobody played.
+   Quieter than a score and in the colour the site uses for a warning, so
+   it reads as "this did not happen" rather than as a result. */
+.match-list .score.is-dq {
+  font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em;
+  color: var(--nav-red);
+}
 
 /* ---- pickers in the matchup wizard ---- */
 .roster-picker select, .schedule-picker select {
@@ -682,6 +689,38 @@
   border-radius: 8px; padding: 0.4rem 0.55rem;
 }
 .players-pass input { flex: 1 1 14rem; }
+
+/* Which kind of result is being filed. Two buttons rather than a menu:
+   there are two, and a menu would hide one of them behind a click. */
+.report-modes { display: flex; gap: 0.4rem; }
+.report-modes button {
+  font: inherit; font-size: 0.8rem; font-weight: 600; cursor: pointer;
+  padding: 0.3rem 0.8rem; border-radius: 999px;
+  background: none; border: 1px solid var(--line); color: var(--muted);
+}
+.report-modes button:hover { color: var(--fg); border-color: var(--muted); }
+.report-modes button.is-active {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+}
+
+/* The two coaches, side by side so which is which is read in one look —
+   this is the one form where picking the wrong way round hands somebody
+   else's win away. */
+.report-dq { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.report-dq label { flex: 1 1 12rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.report-dq label > span {
+  font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.report-dq label > span > em {
+  display: block; font-style: normal; font-weight: 400; text-transform: none;
+  letter-spacing: 0; font-size: 0.72rem; opacity: 0.75;
+}
+.report-dq select {
+  font: inherit; font-size: 0.85rem; color: var(--fg);
+  background: var(--chip); border: 1px solid var(--line);
+  border-radius: 8px; padding: 0.4rem 0.55rem;
+}
 
 .report-links { display: flex; flex-direction: column; gap: 0.6rem; }
 .report-links label { display: flex; flex-direction: column; gap: 0.25rem; }

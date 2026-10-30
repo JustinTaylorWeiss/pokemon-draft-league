@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { fetchReplay, replayId, type ReplayGame } from '../../lib/parseReplay'
-import { currentSeasonId, db, errorText, reportMatch, updateRow } from '../../data/supabase'
+import {
+  currentSeasonId, db, errorText, reportForfeit, reportMatch, updateRow,
+} from '../../data/supabase'
 import { ConfirmModal } from '../../components/ConfirmModal'
 import { toId } from '../../data/load'
 import type { League } from '../../data/league'
@@ -59,6 +61,17 @@ const isFullerName = (held: string, seen: string) =>
 
 export function ReportMatch({ league, onClose, onSaved }: Props) {
   const [week, setWeek] = useState(() => nextWeek(league))
+  /*
+   * Which kind of result is being filed.
+   *
+   * A disqualification has nothing to read: no replays, no knockouts, no
+   * score worth printing. It is two names and the fact that one of them
+   * did not play, so it gets its own form rather than a set of fields the
+   * replay path would have to learn to ignore.
+   */
+  const [mode, setMode] = useState<'replays' | 'forfeit'>('replays')
+  const [dqWinner, setDqWinner] = useState('')
+  const [dqLoser, setDqLoser] = useState('')
   const [links, setLinks] = useState(['', '', ''])
   const [games, setGames] = useState<AlignedGame[] | null>(null)
   const [accounts, setAccounts] = useState<[string, string] | null>(null)
@@ -205,6 +218,39 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
   }
   const [replacing, setReplacing] = useState<{ a: string; b: string; was: string } | null>(null)
 
+  async function saveForfeit() {
+    if (!dqWinner || !dqLoser) {
+      setError('Say who won and who was disqualified.')
+      return
+    }
+    if (dqWinner === dqLoser) {
+      setError('Those are the same coach.')
+      return
+    }
+    const standing = reportedAlready(dqWinner, dqLoser)
+    if (standing && !replacing) {
+      setReplacing({ a: dqWinner, b: dqLoser, was: `${standing.scoreA}\u2013${standing.scoreB}` })
+      return
+    }
+    setReplacing(null)
+    setBusy(true)
+    setError(null)
+    try {
+      await reportForfeit({
+        week,
+        label: `${nameOf(dqWinner)} vs ${nameOf(dqLoser)}`,
+        winner: [dqWinner],
+        loser: [dqLoser],
+      })
+      onSaved()
+      onClose()
+    } catch (e) {
+      setError(errorText(e))
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function save() {
     if (!games || !accounts) return
     const playerA = mapping[normalise(accounts[0])]
@@ -301,9 +347,24 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
         <button type="button" className="modal-close" onClick={onClose} aria-label="Close">✕</button>
         <h2 className="report-title">Record a match</h2>
         <p className="report-lead">
-          Paste the Showdown replays. Everything else — who won, and every
-          knockout — is read out of the battle.
+          {mode === 'replays'
+            ? 'Paste the Showdown replays. Everything else — who won, and every knockout — is read out of the battle.'
+            : 'A match nobody played. The win counts in the table; no games or knockouts are recorded against either coach.'}
         </p>
+
+        <div className="report-modes">
+          {([['replays', 'From replays'], ['forfeit', 'Disqualification']] as const)
+            .map(([key, label]) => (
+              <button
+                key={key} type="button"
+                className={mode === key ? 'is-active' : ''}
+                aria-pressed={mode === key}
+                onClick={() => { setMode(key); setError(null) }}
+              >
+                {label}
+              </button>
+            ))}
+        </div>
 
         <label className="report-week">
           Week
@@ -312,6 +373,7 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
           </select>
         </label>
 
+        {mode === 'replays' && (
         <div className="report-links">
           {links.map((link, i) => (
             <label
@@ -333,10 +395,41 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
             </label>
           ))}
         </div>
+        )}
+
+        {mode === 'forfeit' && (
+          <div className="report-dq">
+            {([
+              ['Winner', dqWinner, setDqWinner, 'Who takes the win'],
+              ['Disqualified', dqLoser, setDqLoser, 'Who did not play'],
+            ] as const).map(([label, value, set, hint]) => (
+              <label key={label}>
+                <span>{label}<em>{hint}</em></span>
+                <select value={value} onChange={(e) => { set(e.target.value); setError(null) }}>
+                  <option value="">Choose a coach…</option>
+                  {league.players.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </label>
+            ))}
+          </div>
+        )}
 
         {error && <p className="report-error">{error}</p>}
 
-        {!games && (
+        {mode === 'forfeit' && (
+          <div className="report-actions">
+            <button
+              type="button" className="report-go" onClick={() => void saveForfeit()}
+              disabled={busy || !dqWinner || !dqLoser}
+            >
+              {busy ? 'Saving…' : 'Record the DQ'}
+            </button>
+          </div>
+        )}
+
+        {mode === 'replays' && !games && (
           <div className="report-actions">
             <button type="button" className="report-go" onClick={read} disabled={busy}>
               {busy ? 'Reading replays…' : 'Read replays'}
@@ -389,18 +482,21 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
               </button>
             </div>
 
-            {replacing && (
-              <ConfirmModal
-                title={`Week ${week} is already reported`}
-                note={`${nameOf(replacing.a)} vs ${nameOf(replacing.b)} is already in as ${replacing.was}. Saving replaces that result and its games with this one rather than adding a second row.`}
-                action="Replace it"
-                danger
-                busy={busy}
-                onClose={() => setReplacing(null)}
-                onConfirm={() => void save()}
-              />
-            )}
           </>
+        )}
+
+        {/* Outside both forms, because either can land on a week that is
+            already reported and the warning is the same warning. */}
+        {replacing && (
+          <ConfirmModal
+            title={`Week ${week} is already reported`}
+            note={`${nameOf(replacing.a)} vs ${nameOf(replacing.b)} is already in as ${replacing.was}. Saving replaces that result and its games with this one rather than adding a second row.`}
+            action="Replace it"
+            danger
+            busy={busy}
+            onClose={() => setReplacing(null)}
+            onConfirm={() => void (mode === 'forfeit' ? saveForfeit() : save())}
+          />
         )}
       </div>
     </div>

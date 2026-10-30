@@ -913,7 +913,7 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
         <p className="sort-note">
           <span>
             {allTime && 'Gold → Silver → Bronze → '}
-            Match Win % → Game Wins → Fewest Game Losses → Diff → Head-to-head
+            Match Win % → Game Win % → Games Played → Diff → Head-to-head
           </span>
         </p>
       </div>
@@ -944,6 +944,7 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
               <th title="Matches won">W</th><th title="Matches lost">L</th>
               <th title="Series won as a share of series played">Match Win %</th>
               <th title="Games won">GW</th><th title="Games lost">GL</th>
+              <th title="Games won as a share of games played">Game Win %</th>
               <th title="Pokémon remaining differential">Diff</th>
             </tr>
           </thead>
@@ -1001,13 +1002,18 @@ function Standings({ league, dex }: { league: League; dex: Record<string, League
                   </td>
                   <td>{s.gamesWon}</td>
                   <td>{s.gamesLost}</td>
+                  <td>
+                    {s.gamesWon + s.gamesLost
+                      ? `${((s.gamesWon / (s.gamesWon + s.gamesLost)) * 100).toFixed(1)}%`
+                      : '—'}
+                  </td>
                   <td className={s.monDiff > 0 ? 'pos' : s.monDiff < 0 ? 'neg' : ''}>
                     {s.monDiff > 0 ? `+${s.monDiff}` : s.monDiff}
                   </td>
                 </tr>
                 {showing && (
                   <tr className="team-row">
-                    <td colSpan={allTime ? 10 : 9}>
+                    <td colSpan={allTime ? 11 : 10}>
                       {picks.length === 0
                         ? <p className="panel-note">No team drafted yet.</p>
                         : (
@@ -1377,7 +1383,12 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
                   </h4>
                   <div className="match-row">
                     <span className={cls(true)}>{label(m.a)}</span>
-                    <span className="score">{done ? `${m.scoreA} – ${m.scoreB}` : 'vs'}</span>
+                    {/* A forfeit's score is only there so the standings know
+                        who won; printing 1 – 0 would read as a game somebody
+                        played. */}
+                    <span className={`score${m.forfeit ? ' is-dq' : ''}`}>
+                      {m.forfeit ? 'DQ' : done ? `${m.scoreA} – ${m.scoreB}` : 'vs'}
+                    </span>
                     <span className={cls(false)}>{label(m.b)}</span>
                   </div>
 
