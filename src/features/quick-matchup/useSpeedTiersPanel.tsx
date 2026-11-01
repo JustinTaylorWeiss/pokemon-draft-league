@@ -16,19 +16,29 @@ import type { Team, TeamEntry } from './TeamEditor'
  * base forme's Speed — Aerodactyl at 130 before it is Aerodactyl-Mega at 150.
  * Reading the tiers without that row answers the wrong half of the turn.
  *
- * Skipped when the side already holds the base as a pick of its own: this
- * league drafts the two apart, so a roster can legitimately carry both.
+ * Skipped where the base is somebody's actual pick — either side's. This
+ * league drafts the two apart, so a roster can carry both, and the two can
+ * also be split across the table: Mieles drafted Clefable and Justin
+ * drafted Clefable-Mega.
+ *
+ * `drafted` is why that second case matters. It used to check only this
+ * team, so Justin's Mega added a Clefable of its own, and since the id is
+ * the same as Mieles' real one it landed in the set of formes that are on
+ * the chart only because a Mega implies them. Everything downstream reads
+ * that set to mean "has no pick of its own and so gets no controls" — and
+ * applied it to both columns by id, which took Mieles' Clefable off the
+ * table along with the phantom.
  *
  * `owner` maps each added forme back to the Mega that brought it, because
  * the two are one pick and share one build — the controls are on the Mega
  * and the base reads them.
  */
-function withMegaBases(team: Team, dex: LeagueDex): {
+function withMegaBases(team: Team, dex: LeagueDex, drafted: Set<string>): {
   team: Team
   added: string[]
   owner: [string, string][]
 } {
-  const held = new Set(team.members.map((m) => m.id))
+  const held = new Set(drafted)
   const extra: TeamEntry[] = []
   const owner: [string, string][] = []
   for (const m of team.members) {
@@ -72,8 +82,18 @@ export function useSpeedTiersPanel(teamOne: Team, teamTwo: Team, dex: LeagueDex,
    * would this cost in EVs" is a question someone might have there.
    */
   const rules: Rules = 'champions'
-  const one = useMemo(() => withMegaBases(teamOne, dex), [teamOne, dex])
-  const two = useMemo(() => withMegaBases(teamTwo, dex), [teamTwo, dex])
+  /*
+   * Everything genuinely on a roster, both sides, before any forme is
+   * inferred from a Mega. A base somebody drafted is that coach's pick and
+   * belongs in their column with its own controls, whoever else happens to
+   * hold the Mega of it.
+   */
+  const drafted = useMemo(
+    () => new Set([...teamOne.members, ...teamTwo.members].map((m) => m.id)),
+    [teamOne.members, teamTwo.members],
+  )
+  const one = useMemo(() => withMegaBases(teamOne, dex, drafted), [teamOne, dex, drafted])
+  const two = useMemo(() => withMegaBases(teamTwo, dex, drafted), [teamTwo, dex, drafted])
   const preMega = useMemo(() => new Set([...one.added, ...two.added]), [one.added, two.added])
   const megaOwner = useMemo(
     () => new Map([...one.owner, ...two.owner]),
