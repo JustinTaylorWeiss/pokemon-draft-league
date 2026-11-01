@@ -1,5 +1,5 @@
 import type { Move, Pokemon, StatKey, TypeChart, TypeName } from '../data/types'
-import { DEFENSIVE_ABILITIES, defensiveMultiplier } from './matchup'
+import { DEFENSIVE_ABILITIES, VARIABLE_POWER, defensiveMultiplier } from './matchup'
 import { natureMultiplier, statAtLevel, type Rules } from './stats'
 
 /**
@@ -349,6 +349,95 @@ export function stageOf(stage: number): { num: number; den: number } {
  */
 export type Status = 'Burn' | 'Poison' | 'Paralysis' | 'Sleep' | 'Freeze'
 
+/**
+ * Moves whose power the data cannot state, because it is a question about
+ * the two Pokémon rather than a number.
+ *
+ * Showdown ships these as base power 0 and computes them in the battle, so
+ * everything here that reads `basePower` saw a 0 and treated them as not
+ * damaging: the move pickers would not offer Grass Knot, and the engine
+ * would have given it no rolls if they had.
+ *
+ * Only the ones this page can actually work out are listed. A weight or a
+ * Speed it knows; a held item, a party, a stockpile or a damage roll that
+ * has not happened yet it does not, so Fling, Beat Up, Spit Up and the
+ * counter-attacks stay out and stay unofferable rather than reading zero.
+ *
+ * The HP-dependent ones are here because this page has an answer for them:
+ * every reading is a first hit with both sides whole, which is the same
+ * assumption Multiscale is applied under a few lines below. At full HP
+ * Reversal is 20 and Hard Press is 100, and they do not drift because
+ * nothing here advances a turn.
+ */
+function weightPower(kg: number): number {
+  if (kg >= 200) return 120
+  if (kg >= 100) return 100
+  if (kg >= 50) return 80
+  if (kg >= 25) return 60
+  if (kg >= 10) return 40
+  return 20
+}
+
+function ratioPower(heavy: number, light: number): number {
+  if (heavy >= light * 5) return 120
+  if (heavy >= light * 4) return 100
+  if (heavy >= light * 3) return 80
+  if (heavy >= light * 2) return 60
+  return 40
+}
+
+/**
+ * What the move is worth against this defender, where the data says 0.
+ *
+ * Returns the move's own base power for everything else, so it can stand
+ * in for `move.basePower` everywhere without a condition at the call site.
+ */
+export function basePowerOf(move: Move, attacker: Side, defender: Side): number {
+  switch (move.name) {
+    case 'Grass Knot':
+    case 'Low Kick':
+      return weightPower(defender.pokemon.weightkg)
+    case 'Heavy Slam':
+    case 'Heat Crash':
+      return ratioPower(attacker.pokemon.weightkg, defender.pokemon.weightkg)
+    /*
+     * Both read the two Speeds, and both have to cope with a zero: a
+     * Pokémon cannot have 0 Speed in a real battle, but a caller handing
+     * over a flat stat can say anything, and the games' own answer to
+     * the division is the floor either way.
+     */
+    case 'Gyro Ball': {
+      const mine = statOf(attacker, 'spe')
+      if (mine <= 0) return 1
+      return Math.min(150, Math.floor((25 * statOf(defender, 'spe')) / mine) + 1)
+    }
+    case 'Electro Ball': {
+      const theirs = statOf(defender, 'spe')
+      if (theirs <= 0) return 150
+      const ratio = statOf(attacker, 'spe') / theirs
+      if (ratio >= 4) return 150
+      if (ratio >= 3) return 120
+      if (ratio >= 2) return 80
+      if (ratio >= 1) return 60
+      return 40
+    }
+    // Both sides whole, which is what every reading here assumes.
+    case 'Flail':
+    case 'Reversal':
+      return 20
+    case 'Hard Press':
+      return 100
+    case 'Crush Grip':
+      return 120
+    default:
+      return move.basePower
+  }
+}
+
+/** Whether a move does damage this page can put a number on. */
+export const canReadPower = (move: Move) =>
+  move.category !== 'Status' && (move.basePower > 0 || VARIABLE_POWER.has(move.name))
+
 /** Doubles against a target that is suffering, by which kinds count. */
 const STATUS_POWER: Record<string, 'any' | 'poison'> = {
   Hex: 'any',
@@ -412,7 +501,10 @@ function core(
   const defender = field.magicRoom ? { ...defenderIn, item: undefined } : defenderIn
 
   const hp = statOf(defender, 'hp')
-  if (move.category === 'Status' || move.basePower <= 0) return { rolls: [], hp }
+  // Worked out rather than read, for the ten whose power is a question
+  // about the pairing. It gives back `move.basePower` for everything else.
+  const stated = basePowerOf(move, attacker, defender)
+  if (move.category === 'Status' || stated <= 0) return { rolls: [], hp }
 
   const mine = attacker.ability ?? ''
 
@@ -538,7 +630,7 @@ function core(
   const doubled = (reads === 'any' && shielded.status)
     || (reads === 'poison' && shielded.status === 'Poison')
     || (move.name === 'Facade' && sick && FACADE_STATUS.has(sick))
-  const power = doubled ? move.basePower * 2 : move.basePower
+  const power = doubled ? stated * 2 : stated
 
   // The games' own order: three integer divisions, then the modifiers.
   let base = Math.floor(

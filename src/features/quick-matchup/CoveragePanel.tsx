@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { LearnsetDex, MoveDex, SetDex, TypeChart, TypeName } from '../../data/types'
 import { attackingTypes, coverage } from '../../lib/matchup'
+import { canReadPower } from '../../lib/damage'
 import { TypeChip } from '../../components/TypeChip'
 import { MoveCategory } from '../../components/MoveCategory'
 import type { Team } from './TeamEditor'
@@ -98,7 +99,7 @@ export function CoverageBody({
       const byKey: Record<string, TipMove[]> = {}
       for (const moveId of Object.keys(learnsets[m.id] ?? {})) {
         const move = moves[moveId]
-        if (!move || move.category === 'Status' || move.basePower <= 0) continue
+        if (!move || !canReadPower(move)) continue
         const inSet = setMoves.has(moveId)
         if (!inSet && move.basePower < minPower) continue
         const key = `${move.category}:${move.type}`

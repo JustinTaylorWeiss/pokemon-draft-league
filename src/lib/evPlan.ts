@@ -1,7 +1,9 @@
 import type {
   LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart, TypeName,
 } from '../data/types'
-import { damage, koCurve, statOf, type Field, type Side, type Status } from './damage'
+import {
+  canReadPower, damage, koCurve, statOf, type Field, type Side, type Status,
+} from './damage'
 import { natureMultiplier, statAtLevel, RULES, type Rules } from './stats'
 
 /**
@@ -458,7 +460,7 @@ export function usualMoves(
   const seen = new Set<string>()
   const take = (m: Move | undefined) => {
     if (!m || seen.has(m.name) || out.length >= limit) return
-    if (m.category === 'Status' || m.basePower <= 0) return
+    if (!canReadPower(m)) return
     seen.add(m.name)
     out.push(m)
   }
@@ -543,7 +545,7 @@ export function opponentsFrom(
 
     const known = (set?.moves ?? [])
       .map((m) => moveDex[m])
-      .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0)
+      .filter((m): m is Move => Boolean(m) && canReadPower(m))
 
     /*
      * Its set, and the rest of what the format plays that it can learn.
@@ -565,7 +567,7 @@ export function opponentsFrom(
     const named = (extra[id] ?? [])
       .filter((mv) => own?.[mv])
       .map((mv) => moveDex[mv])
-      .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0)
+      .filter((m): m is Move => Boolean(m) && canReadPower(m))
     const byName = new Map(usual.map((m) => [m.name, m]))
     for (const m of named) byName.set(m.name, m)
 

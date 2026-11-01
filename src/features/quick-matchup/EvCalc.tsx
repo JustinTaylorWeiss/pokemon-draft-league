@@ -2,9 +2,10 @@ import { Fragment, useEffect, useMemo, useState } from 'react'
 import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../../data/types'
 import { STAT_LABELS, RULES, type Rules } from '../../lib/stats'
 import {
-  GIVEABLE_ITEMS, MODELLED_ABILITIES, itemEffect, itemMatters, typeBoosted,
+  GIVEABLE_ITEMS, MODELLED_ABILITIES, canReadPower, itemEffect, itemMatters, typeBoosted,
   type Status,
 } from '../../lib/damage'
+import { VARIABLE_POWER } from '../../lib/matchup'
 import {
   EV_STATS, IV_MAX, SET_SIZE, assumeFrom,
   emptySpread, lowered,
@@ -379,6 +380,18 @@ const STAGES = [6, 5, 4, 3, 2, 1, 0, -1, -2, -3, -4, -5, -6]
  * everything that separates them happens between turns.
  */
 const STATUSES: Status[] = ['Burn', 'Poison', 'Paralysis', 'Sleep', 'Freeze']
+
+/**
+ * The base power to print beside a move's name.
+ *
+ * A dash for the ten whose power is a question about the pairing: the data
+ * holds a 0 for them, and printing that says the move does nothing when
+ * Grass Knot into something heavy is a 120. The columns work the real
+ * number out against each defender, which is where it belongs — a single
+ * figure here would be right against one of them and wrong against five.
+ */
+const powerLabel = (move: Move) =>
+  (VARIABLE_POWER.has(move.name) ? '\u2014' : String(move.basePower))
 
 /**
  * The turn around the two of them, above the columns.
@@ -1130,8 +1143,7 @@ function GearPicker({
     return Object.keys(learnset)
       .filter((id) => !has.has(id))
       .map((id) => moves[id])
-      .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0
-        && matches(m, q))
+      .filter((m): m is Move => Boolean(m) && canReadPower(m) && matches(m, q))
       .sort((a, b) => (rank.get(toId(a.name)) ?? Infinity) - (rank.get(toId(b.name)) ?? Infinity)
         || b.basePower - a.basePower
         || a.name.localeCompare(b.name))
@@ -1425,7 +1437,7 @@ function GearPicker({
                               room at all; the category needs its badge. */}
                           <span className={`ev-set-name${typeInk(move.type)}`}>{move.name}</span>
                           <MoveCategory category={move.category} />
-                          <em>{move.basePower}</em>
+                          <em>{powerLabel(move)}</em>
                           <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
                         </button>
                       </li>
@@ -1450,7 +1462,7 @@ function GearPicker({
                         <button type="button" onClick={() => addMove(m)}>
                           <span className={`ev-set-name${typeInk(m.type)}`}>{m.name}</span>
                           <MoveCategory category={m.category} />
-                          <em>{m.basePower}</em>
+                          <em>{powerLabel(m)}</em>
                         </button>
                       </li>
                     ))}
@@ -1685,8 +1697,7 @@ export function EvCalcBody({
     return Object.keys(learnsets?.[picked.entry.id] ?? {})
       .filter((id) => !has.has(id))
       .map((id) => moves[id])
-      .filter((m): m is Move => Boolean(m) && m.category !== 'Status' && m.basePower > 0
-        && matches(m, q))
+      .filter((m): m is Move => Boolean(m) && canReadPower(m) && matches(m, q))
       .sort((a, b) => (rank.get(toId(a.name)) ?? played.length)
         - (rank.get(toId(b.name)) ?? played.length)
         || b.basePower - a.basePower
@@ -1963,7 +1974,7 @@ export function EvCalcBody({
                                     {move.name}
                                   </span>
                                   <MoveCategory category={move.category} />
-                                  <em>{move.basePower}</em>
+                                  <em>{powerLabel(move)}</em>
                                   <span className="ev-extra-drop" aria-hidden="true">{'×'}</span>
                                 </button>
                               ) : (
@@ -1994,7 +2005,7 @@ export function EvCalcBody({
                             >
                               <span className={`ev-set-name${typeInk(m.type)}`}>{m.name}</span>
                               <MoveCategory category={m.category} />
-                              <em>{m.basePower}</em>
+                              <em>{powerLabel(m)}</em>
                             </button>
                           </li>
                         ))}

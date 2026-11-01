@@ -133,6 +133,21 @@ export function defensiveChart(
 }
 
 /**
+ * Moves the data gives a base power of 0 because the real number is a
+ * question about the two Pokémon — the target's weight, the two Speeds, how
+ * much health is left.
+ *
+ * Only the ones `basePowerOf` in damage.ts can actually work out. It lives
+ * here rather than beside that function because this module is underneath
+ * it: damage.ts already reads the type chart from here, and the other way
+ * round would be a circle.
+ */
+export const VARIABLE_POWER = new Set([
+  'Grass Knot', 'Low Kick', 'Heavy Slam', 'Heat Crash', 'Gyro Ball', 'Electro Ball',
+  'Flail', 'Reversal', 'Hard Press', 'Crush Grip',
+])
+
+/**
  * Attacking types a Pokémon actually has moves for, split by damage category.
  * A Pokémon with only Status moves of a type does not get coverage credit.
  *
@@ -156,9 +171,17 @@ export function attackingTypes(
   for (const moveId of source) {
     const move = moves[moveId]
     if (!move) continue
-    // A chosen set is taken as-is; only the open pool needs a power floor.
-    if (!only && move.basePower < minPower) continue
-    if (only && move.basePower <= 0) continue
+    /*
+     * A chosen set is taken as-is; only the open pool needs a power floor.
+     *
+     * The ten whose power is a question about the pairing clear the floor
+     * rather than failing it: the data gives them a 0, which is not a weak
+     * move but no number at all, and Grass Knot off a drafted Pokémon is
+     * 60 to 120 against almost anything on this board.
+     */
+    const variable = VARIABLE_POWER.has(move.name)
+    if (!only && !variable && move.basePower < minPower) continue
+    if (only && !variable && move.basePower <= 0) continue
     if (move.category === 'Physical') physical.add(move.type)
     else if (move.category === 'Special') special.add(move.type)
   }
