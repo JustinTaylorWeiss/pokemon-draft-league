@@ -15,6 +15,8 @@ import { TypeChip } from '../../components/TypeChip'
 import type { LeagueTab } from './tabs'
 import { useAdvanced } from '../dex/advanced'
 import { MatchDetails } from './MatchDetails'
+import { VERDICT_LABEL, luckNote } from '../../lib/luck'
+import { accuracyOf, addTallies, byUse, luckFor, perUse, useMoveDex } from './moveStats'
 import { useElementHeight } from '../../lib/useElementHeight'
 import './league.css'
 import { PokemonLink } from '../../components/PokemonLink'
@@ -534,21 +536,16 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
         for (const line of [...g.a, ...g.b]) {
           if (!line.moves.length) continue
           const held = by.get(line.pokemon) ?? []
-          for (const mv of line.moves) {
-            const row = held.find((x) => x.name === mv.name)
-            if (row) { row.used += mv.used; row.kos += mv.kos; row.damage += mv.damage }
-            else held.push({ ...mv })
-          }
+          addTallies(held, line.moves)
           by.set(line.pokemon, held)
         }
       }
     }
-    for (const list of by.values()) {
-      list.sort((a2, b2) => b2.used - a2.used || b2.kos - a2.kos || a2.name.localeCompare(b2.name))
-    }
+    for (const list of by.values()) list.sort(byUse)
     return by
   }, [league.schedule])
   const [openMon, setOpenMon] = useState<string | null>(null)
+  const moveDex = useMoveDex(openMon != null)
 
   const allTime = currentSeason().source === 'all-time'
   /** One everywhere else: every Pokemon that played at all is on the board. */
@@ -816,18 +813,74 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                                 <th title="Percentage points of the other side's health, added across targets">
                                   Damage
                                 </th>
+                                <th title="That damage spread over the times it was clicked">
+                                  %/use
+                                </th>
+                                <th title="The move's listed accuracy">Acc</th>
+                                <th title="Misses against what the listed accuracy says to expect">
+                                  Luck
+                                </th>
                               </tr>
                             </thead>
                             <tbody>
-                              {moves.map((mv) => (
+                              {moves.map((mv) => {
+                                const acc = accuracyOf(moveDex, mv.name)
+                                const luck = luckFor([mv], moveDex)
+                                return (
                                 <tr key={mv.name}>
                                   <th scope="row" className="detail-moves">{mv.name}</th>
                                   <td>{mv.used}</td>
                                   <td className={mv.kos ? 'pos' : ''}>{mv.kos || '\u2014'}</td>
                                   <td>{mv.damage ? `${mv.damage}%` : '\u2014'}</td>
+                                  <td>{mv.damage ? `${perUse(mv)}%` : '\u2014'}</td>
+                                  <td
+                                    title={acc == null && moveDex
+                                      ? 'Not in this generation\u2019s move data'
+                                      : acc === true ? 'This one cannot miss' : undefined}
+                                  >
+                                    {acc === true ? '\u2014' : acc == null ? '?' : `${acc}%`}
+                                  </td>
+                                  <td className={`detail-luck is-${luck.verdict}`} title={luckNote(luck)}>
+                                    {VERDICT_LABEL[luck.verdict]}
+                                    {luck.verdict !== 'none' && (
+                                      <small>{luck.misses} of {luck.expected.toFixed(1)}</small>
+                                    )}
+                                  </td>
                                 </tr>
-                              ))}
+                                )
+                              })}
                             </tbody>
+                            {/* The season in one line. A move's own luck is
+                                thin evidence — four Rock Slides decide
+                                nothing — and the Pokemon's whole record is
+                                where the odds start to mean something. */}
+                            <tfoot>
+                              {(() => {
+                                const all = moves.reduce((sum, mv) => ({
+                                  ...sum,
+                                  used: sum.used + mv.used,
+                                  kos: sum.kos + mv.kos,
+                                  damage: sum.damage + mv.damage,
+                                }), { name: 'all', used: 0, kos: 0, damage: 0, rolls: 0, misses: 0 })
+                                const luck = luckFor(moves, moveDex)
+                                return (
+                                  <tr>
+                                    <th scope="row" className="detail-moves">Everything</th>
+                                    <td>{all.used}</td>
+                                    <td className={all.kos ? 'pos' : ''}>{all.kos || '\u2014'}</td>
+                                    <td>{all.damage ? `${all.damage}%` : '\u2014'}</td>
+                                    <td>{all.damage ? `${perUse(all)}%` : '\u2014'}</td>
+                                    <td>{'\u2014'}</td>
+                                    <td className={`detail-luck is-${luck.verdict}`} title={luckNote(luck)}>
+                                      {VERDICT_LABEL[luck.verdict]}
+                                      {luck.verdict !== 'none' && (
+                                        <small>{luck.misses} of {luck.expected.toFixed(1)}</small>
+                                      )}
+                                    </td>
+                                  </tr>
+                                )
+                              })()}
+                            </tfoot>
                           </table>
                         ) : (
                           <p className="panel-note">

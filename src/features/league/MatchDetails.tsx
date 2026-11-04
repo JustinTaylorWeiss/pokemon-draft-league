@@ -1,7 +1,10 @@
 import { Fragment, useMemo, useState } from 'react'
 import type { Game, GameLine, LeaguePokemon, MoveTally } from '../../data/league'
+import type { MoveDex } from '../../data/types'
 import { Sprite } from '../../components/Sprite'
 import { PokemonLink } from '../../components/PokemonLink'
+import { VERDICT_LABEL, luckNote } from '../../lib/luck'
+import { addTallies, byUse, luckFor, perUse, useMoveDex } from './moveStats'
 
 /** The same Pokémon's line across several games, added up. */
 interface Rolled {
@@ -22,16 +25,7 @@ function roll(lines: GameLine[][]): Rolled[] {
       row.kills += l.kills
       row.deaths += l.deaths
       if (l.brought) row.games += 1
-      for (const m of l.moves) {
-        const held = row.moves.find((x) => x.name === m.name)
-        if (held) {
-          held.used += m.used
-          held.kos += m.kos
-          held.damage += m.damage
-        } else {
-          row.moves.push({ ...m })
-        }
-      }
+      addTallies(row.moves, l.moves)
       by.set(l.pokemon, row)
     }
   }
@@ -43,11 +37,11 @@ function roll(lines: GameLine[][]): Rolled[] {
       || y.moves.length - x.moves.length || x.pokemon.localeCompare(y.pokemon))
 }
 
-/** Most used first, which is the order a set reads in. */
-const byUse = (a: MoveTally, b: MoveTally) =>
-  b.used - a.used || b.kos - a.kos || a.name.localeCompare(b.name)
-
-function Rows({ rows, dex }: { rows: Rolled[]; dex: Record<string, LeaguePokemon> }) {
+function Rows({ rows, dex, moves }: {
+  rows: Rolled[]
+  dex: Record<string, LeaguePokemon>
+  moves: MoveDex | null
+}) {
   return (
     <table className="detail-table">
       <thead>
@@ -55,12 +49,14 @@ function Rows({ rows, dex }: { rows: Rolled[]; dex: Record<string, LeaguePokemon
           <th className="detail-mon">Pokémon</th>
           <th title="Knockouts scored">KOs</th>
           <th title="Times it fainted">Fainted</th>
+          <th title="Misses against what its moves' listed accuracy says to expect">Luck</th>
           <th className="detail-moves">Moves</th>
         </tr>
       </thead>
       <tbody>
         {rows.map((r) => {
           const mon = dex[r.pokemon]
+          const luck = luckFor(r.moves, moves)
           return (
             <tr key={r.pokemon}>
               {/* An inner span does the laying out, not the cell: a `th`
@@ -76,15 +72,30 @@ function Rows({ rows, dex }: { rows: Rolled[]; dex: Record<string, LeaguePokemon
               </th>
               <td className={r.kills ? 'pos' : ''}>{r.kills}</td>
               <td className={r.deaths ? 'neg' : ''}>{r.deaths}</td>
+              <td className={`detail-luck is-${luck.verdict}`} title={luckNote(luck)}>
+                {VERDICT_LABEL[luck.verdict]}
+                {luck.verdict !== 'none' && (
+                  <small>{luck.misses} of {luck.expected.toFixed(1)}</small>
+                )}
+              </td>
               <td className="detail-moves">
                 {r.moves.length ? (
+                  /* Every line fills all six tracks, blanks included, so the
+                     numbers line up down the list instead of each row
+                     ending wherever its own facts run out. */
                   <ul className="move-tally">
                     {[...r.moves].sort(byUse).map((m) => (
                       <li key={m.name}>
                         <span className="tally-name">{m.name}</span>
                         <span className="tally-used">×{m.used}</span>
-                        {m.kos > 0 && <span className="tally-kos">{m.kos} KO</span>}
-                        {m.damage > 0 && <span className="tally-dmg">{m.damage}%</span>}
+                        <span className="tally-kos">{m.kos > 0 ? `${m.kos} KO` : ''}</span>
+                        <span className="tally-dmg">{m.damage > 0 ? `${m.damage}%` : ''}</span>
+                        <span className="tally-rate" title="Damage per use">
+                          {m.damage > 0 ? `${perUse(m)}%/use` : ''}
+                        </span>
+                        <span className="tally-miss" title={luckNote(luckFor([m], moves))}>
+                          {m.misses > 0 ? `${m.misses} miss` : ''}
+                        </span>
                       </li>
                     ))}
                   </ul>
@@ -119,6 +130,7 @@ export function MatchDetails({
   dex: Record<string, LeaguePokemon>
 }) {
   const [open, setOpen] = useState(false)
+  const moves = useMoveDex(open)
   const totals = useMemo(() => ({
     a: roll(games.map((g) => g.a)),
     b: roll(games.map((g) => g.b)),
@@ -170,7 +182,7 @@ export function MatchDetails({
               {([[aLabel, g.a], [bLabel, g.b]] as const).map(([name, lines]) => (
                 <div className="detail-side" key={name}>
                   <h6>{name}</h6>
-                  <Rows rows={roll([lines])} dex={dex} />
+                  <Rows rows={roll([lines])} dex={dex} moves={moves} />
                 </div>
               ))}
             </Fragment>
@@ -180,7 +192,7 @@ export function MatchDetails({
           {([[aLabel, totals.a], [bLabel, totals.b]] as const).map(([name, rows]) => (
             <div className="detail-side" key={name}>
               <h6>{name}</h6>
-              <Rows rows={rows} dex={dex} />
+              <Rows rows={rows} dex={dex} moves={moves} />
             </div>
           ))}
         </div>
