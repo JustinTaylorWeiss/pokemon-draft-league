@@ -6,8 +6,9 @@ import {
   currentSeasonId, db, errorText, reportForfeit, reportMatch, updateRow,
 } from '../../data/supabase'
 import { ConfirmModal } from '../../components/ConfirmModal'
-import { toId } from '../../data/load'
+import { loadPokemon, speciesId } from '../../data/load'
 import type { League } from '../../data/league'
+import type { PokemonDex } from '../../data/types'
 
 /**
  * Recording a match by pasting its replays.
@@ -80,6 +81,18 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
   const [mapping, setMapping] = useState<Record<string, string>>({})
   const [known, setKnown] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
+  /*
+   * Only to tell a forme the dex knows from a pattern it does not, when the
+   * time comes to give each Pokémon an id. Cached and already fetched by the
+   * view this form opens over, so it costs nothing; if it somehow is not
+   * here, ids come out as they always did.
+   */
+  const [dex, setDex] = useState<PokemonDex | null>(null)
+  useEffect(() => {
+    let live = true
+    loadPokemon().then((all) => { if (live) setDex(all) }, () => {})
+    return () => { live = false }
+  }, [])
   const [error, setError] = useState<string | null>(null)
   const [needThird, setNeedThird] = useState(false)
   /** Field indices holding a link that also appears in another field. */
@@ -283,9 +296,11 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
       // `Urshifu-Rapid-Strike` in another; the series totals have already
       // settled on the concrete name, and the games follow it rather than
       // filing the same Pokemon under two ids.
-      const canonical = new Map(summed.map((l) => [`${l.side}-${baseName(l.pokemon)}`, toId(l.pokemon)]))
+      const canonical = new Map(
+        summed.map((l) => [`${l.side}-${baseName(l.pokemon)}`, speciesId(l.pokemon, dex)]),
+      )
       const idOf = (side: 'a' | 'b', mon: string) =>
-        canonical.get(`${side}-${baseName(mon)}`) ?? toId(mon)
+        canonical.get(`${side}-${baseName(mon)}`) ?? speciesId(mon, dex)
 
       const lineOf = (side: 'a' | 'b') =>
         (l: ReplaySide['lines'][number]) => ({
@@ -317,7 +332,7 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
           }
         }),
         lines: summed.map((l) => ({
-          side: l.side, pokemon_id: toId(l.pokemon), kills: l.kills, deaths: l.deaths,
+          side: l.side, pokemon_id: speciesId(l.pokemon, dex), kills: l.kills, deaths: l.deaths,
         })),
       })
 

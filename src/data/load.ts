@@ -97,3 +97,30 @@ export const spriteUrl = (pokemon: Pokemon, animated = false) =>
 /** A forme's own drawing where PokeAPI files one; the species' otherwise. */
 export const artworkUrl = (pokemon: { num: number; artId?: number }) =>
   `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon.artId ?? pokemon.num}.png`
+
+/**
+ * The id a Pokémon is filed under, which for a cosmetic forme is the id of
+ * the Pokémon it is a pattern of.
+ *
+ * Showdown names a Vivillon by its wing pattern and an Alcremie by its
+ * flavour — `Vivillon-Sun`, `Alcremie-Mint-Cream`. Those are the same draft
+ * pick as the plain species, with the same stats, the same types and the
+ * same price, and no dex entry of their own. Taken at face value they split
+ * one Pokémon's season across four rows, three of them under a name nothing
+ * answers to: a name on the board with no picture and no page behind it.
+ *
+ * A forme that is a real one — a Mega, a regional, an Urshifu style — is in
+ * the dex and keeps its own id, because the full name is tried first. Only a
+ * name the dex has never heard of gives a piece back, one hyphen at a time,
+ * until something answers.
+ */
+export function speciesId(name: string, dex: PokemonDex | null): string {
+  const whole = toId(name)
+  if (!dex) return whole
+  const parts = String(name ?? '').split('-')
+  for (let take = parts.length; take > 0; take -= 1) {
+    const id = toId(parts.slice(0, take).join('-'))
+    if (dex[id]) return id
+  }
+  return whole
+}
