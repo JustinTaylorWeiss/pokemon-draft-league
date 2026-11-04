@@ -15,7 +15,7 @@ import { TypeChip } from '../../components/TypeChip'
 import type { LeagueTab } from './tabs'
 import { useAdvanced } from '../dex/advanced'
 import { MatchDetails } from './MatchDetails'
-import { luckLabel, oddsLabel, turnsLabel } from '../../lib/luck'
+import { luckLabel, oddsLabel, pointsLabel } from '../../lib/luck'
 import {
   accuracyOf, addTallies, byUse, perUse, scoreFor, scoreNote, useMoveDex,
 } from './moveStats'
@@ -666,8 +666,8 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
         if (sort.key === 'luck') {
           const al = luckByMon.get(a.pokemon)
           const bl = luckByMon.get(b.pokemon)
-          const at = al && al.verdict !== 'none' ? al.turns : null
-          const bt = bl && bl.verdict !== 'none' ? bl.turns : null
+          const at = al && al.verdict !== 'none' ? al.points : null
+          const bt = bl && bl.verdict !== 'none' ? bl.points : null
           if (at == null || bt == null) {
             return (at == null ? 1 : 0) - (bt == null ? 1 : 0) || nameA.localeCompare(nameB)
           }
@@ -885,8 +885,8 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                                   Damage/use
                                 </th>
                                 <th title="The move's listed accuracy">Acc</th>
-                                <th title={'Turns this move\u2019s dice handed it, against what '
-                                  + 'the odds called for'}
+                                <th title={'How far above or below an ordinary run this '
+                                  + 'move\u2019s own dice landed'}
                                 >
                                   Luck
                                 </th>
@@ -968,12 +968,17 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                                   <th title="How often this was going to go its way, on average">
                                     Odds
                                   </th>
+                                  <th
+                                    title={'What one of these is worth when it comes off: the '
+                                      + 'inverse of its odds, since the rest was owed. One '
+                                      + 'that does not come off costs the odds themselves.'}
+                                  >
+                                    Worth
+                                  </th>
                                   <th title="Times it rolled">Chances</th>
                                   <th title="Times it went its way">Landed</th>
                                   <th title="Times the odds say it should have">Expected</th>
-                                  <th title="What the difference is worth, a turn to a roll">
-                                    Turns
-                                  </th>
+                                  <th title="Those two differences, added up">Luck</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -981,11 +986,15 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                                   <tr key={part.label}>
                                     <th scope="row" className="detail-move">{part.label}</th>
                                     <td>{oddsLabel(part.expected / part.rolls)}</td>
+                                    {/* Two decimals, because one rounds a crit's 0.96
+                                        and an accuracy roll's 0.04 to the same place
+                                        and loses the very thing the column is for. */}
+                                    <td>{`+${(1 - part.expected / part.rolls).toFixed(2)}`}</td>
                                     <td>{part.rolls}</td>
                                     <td>{part.good}</td>
                                     <td>{part.expected.toFixed(1)}</td>
-                                    <td className={part.turns > 0.05 ? 'pos' : part.turns < -0.05 ? 'neg' : ''}>
-                                      {turnsLabel(part.turns)}
+                                    <td className={part.points > 0.05 ? 'pos' : part.points < -0.05 ? 'neg' : ''}>
+                                      {pointsLabel(part.points)}
                                     </td>
                                   </tr>
                                 ))}
@@ -993,6 +1002,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                               <tfoot>
                                 <tr>
                                   <th scope="row" className="detail-move">All told</th>
+                                  <td>{'\u2014'}</td>
                                   <td>{'\u2014'}</td>
                                   <td>{luck.rolls}</td>
                                   <td>{luck.good}</td>
@@ -1007,14 +1017,16 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                               </tfoot>
                             </table>
                             <p className="panel-note mon-luck-note">
-                              Every roll here is worth a turn: a move that misses is a turn
-                              thrown away, and a critical hit, a flinch or a burn is a turn
-                              got for nothing. What each one is <em>worth</em> is whatever
-                              the odds did not already owe — landing a one-in-twenty-four
-                              critical hit is very nearly a whole turn, landing a
-                              nine-in-ten is a tenth of one, and missing reads the same way
-                              round. So the turns are what the dice gave or took against
-                              the run they should have given.
+                              A roll that comes off is worth the inverse of its odds,
+                              because that is the part of it nobody was owed: land a
+                              one-in-ten and it is <strong>+0.9</strong>, land a nine-in-ten
+                              and it is <strong>+0.1</strong>, since nine times in ten it
+                              was going to happen anyway. A roll that does not come off
+                              costs the odds themselves, so missing a nine-in-ten is
+                              <strong> −0.9</strong> and failing a one-in-ten is only
+                              <strong> −0.1</strong>. Every kind of luck is the same
+                              currency that way, and nought is an ordinary run of the same
+                              dice.
                             </p>
                           </>
                         )}

@@ -61,8 +61,9 @@ function Rows({ rows, dex, moves }: {
             <th rowSpan={2} title="Times it fainted">Fainted</th>
             <th
               rowSpan={2}
-              title={'Turns the dice handed it, against what the odds called for: '
-                + 'a miss thrown away, a critical hit or a flinch got for nothing.'}
+              title={'How far above or below an ordinary run of the same dice it landed. '
+                + 'A roll that comes off is worth the inverse of its odds, and one that '
+                + 'does not costs the odds themselves.'}
             >
               Luck
             </th>

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { MoveTally } from '../../data/league'
 import type { MoveDex } from '../../data/types'
 import { loadMoves, toId } from '../../data/load'
-import { oddsLabel, scoreOf, turnsLabel, type Chance, type Score } from '../../lib/luck'
+import { oddsLabel, pointsLabel, scoreOf, type Chance, type Score } from '../../lib/luck'
 
 /**
  * What the two move breakdowns — a match's and a Pokémon's season — both need
@@ -157,10 +157,10 @@ export function scoreNote(score: Score): string {
     return `${score.rolls} rolls, none of them really in doubt.`
   }
   const named = { good: 'Good luck', bad: 'Bad luck', even: 'Average luck', none: '' }[score.verdict]
-  const head = `${named}: ${turnsLabel(score.turns)} turns against what the odds called `
-    + `for, which comes up ${oddsLabel(score.odds)} of the time.`
+  const head = `${named}: ${pointsLabel(score.points)} against an average run of the same `
+    + `dice, which comes up ${oddsLabel(score.odds)} of the time.`
   const lines = score.parts.map((part) =>
     `${part.label}: ${part.good} of ${part.rolls} at ${oddsLabel(part.expected / part.rolls)}, `
-    + `${part.expected.toFixed(1)} expected — ${turnsLabel(part.turns)}`)
+    + `${part.expected.toFixed(1)} expected — ${pointsLabel(part.points)}`)
   return [head, ...lines].join('\n')
 }

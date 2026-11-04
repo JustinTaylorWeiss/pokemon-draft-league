@@ -37,8 +37,8 @@ export interface Part {
   rolls: number
   good: number
   expected: number
-  /** How far ahead or behind par that is, in turns. See `Score.turns`. */
-  turns: number
+  /** What that is worth in luck points. See `Score.points`. */
+  points: number
 }
 
 export interface Score {
@@ -49,21 +49,24 @@ export interface Score {
   /** How many the odds say should have. */
   expected: number
   /**
-   * What that is worth, in turns, against the run the odds called for.
+   * Luck points: how far above or below an average run of the same dice
+   * this one landed.
    *
-   * Every roll here is worth a turn either way, which is what makes them
-   * addable. A move that misses is a turn thrown away outright. A critical
-   * hit is a turn's worth of damage got for nothing. A flinch is a turn
-   * taken off the other side, and a burn or a paralysis is at least that.
-   * So one roll more than par is +1 and one fewer is −1, and the total is
-   * how many turns of the match the dice handed over.
+   * A roll that comes off is worth the inverse of its odds, because that is
+   * the part of it nobody was owed. Land a one-in-ten and that is +0.9;
+   * land a nine-in-ten and it is +0.1, since nine times in ten it was going
+   * to happen anyway. A roll that does not come off costs the odds
+   * themselves, so missing a nine-in-ten is −0.9 and failing a one-in-ten
+   * is only −0.1.
    *
-   * Plainly an approximation — a crit is not quite a free attack and a burn
-   * is usually worth more than one — but it is the same approximation for
-   * everybody, and it turns three different kinds of luck into one number
-   * that means something.
+   * Which makes every kind of luck the same currency — a missed Focus
+   * Blast, a critical hit, a flinch — and makes them addable. Nought is an
+   * ordinary run of the same dice; the sign says which way it went.
+   *
+   * It falls straight out of counting what happened against what was
+   * expected, so the whole thing is one subtraction.
    */
-  turns: number
+  points: number
   /**
    * Where this run sits among every run it could have been, as a share:
    * 1 is the luckiest there is, 0 the unluckiest, and half is dead average.
@@ -185,11 +188,11 @@ export function scoreOf(chances: Chance[]): Score {
       held.expected += c.rolls * c.chance
     } else {
       parts.push({
-        label: c.label, rolls: c.rolls, good: c.good, expected: c.rolls * c.chance, turns: 0,
+        label: c.label, rolls: c.rolls, good: c.good, expected: c.rolls * c.chance, points: 0,
       })
     }
   }
-  for (const part of parts) part.turns = part.good - part.expected
+  for (const part of parts) part.points = part.good - part.expected
 
   // How unusual a run this far from par is, read from the tail it fell in.
   let odds = 0
@@ -200,7 +203,7 @@ export function scoreOf(chances: Chance[]): Score {
   }
 
   return {
-    rolls, good, expected, turns: good - expected, percentile,
+    rolls, good, expected, points: good - expected, percentile,
     odds: Math.min(1, Math.max(0, odds)), verdict, parts,
   }
 }
@@ -213,18 +216,18 @@ export function oddsLabel(odds: number): string {
 }
 
 /**
- * Turns against par, signed, which is what a Luck column shows.
+ * Luck points, signed, which is what a Luck column shows.
  *
  * Always signed and always to a decimal, because a bare `2` next to a bare
  * `-3` in the same column reads as a count of something rather than as a
- * distance from where it should have been.
+ * distance from where an average run would have been.
  */
-export function turnsLabel(turns: number): string {
-  const rounded = Math.round(turns * 10) / 10
+export function pointsLabel(points: number): string {
+  const rounded = Math.round(points * 10) / 10
   if (Object.is(rounded, -0) || rounded === 0) return '0.0'
   return `${rounded > 0 ? '+' : '\u2212'}${Math.abs(rounded).toFixed(1)}`
 }
 
 /** What a Luck column shows, or nothing where nothing was in doubt. */
-export const luckLabel = (luck: { turns: number; verdict: Verdict }): string =>
-  luck.verdict === 'none' ? VERDICT_LABEL.none : turnsLabel(luck.turns)
+export const luckLabel = (luck: { points: number; verdict: Verdict }): string =>
+  luck.verdict === 'none' ? VERDICT_LABEL.none : pointsLabel(luck.points)
