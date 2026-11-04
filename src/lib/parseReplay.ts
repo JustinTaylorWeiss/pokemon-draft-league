@@ -583,7 +583,14 @@ export function parseReplayLog(
        * ability it brought, so where it is there, it is taken.
        */
       const side = (parts[2] ?? '').trim()
-      ;(parts[3] ?? '').split(']').forEach((entry) => {
+      /*
+       * The sheet is a packed team, and a packed team is itself full of
+       * pipes — so it has to be put back together before it can be taken
+       * apart. Split on the outer separator alone and every Pokémon here
+       * is a bare species with no item and no ability after it, which is
+       * exactly as useful as not reading the line.
+       */
+      parts.slice(3).join('|').split(']').forEach((entry) => {
         const bits = entry.split('|')
         const species = (bits[1] || bits[0] || '').trim()
         if (!species || !teams[side]) return
