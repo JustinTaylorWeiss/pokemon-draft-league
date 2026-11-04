@@ -551,14 +551,21 @@
   align-items: center; gap: 0.5rem; min-width: 0;
   font-size: 1rem; font-weight: 600;
 }
-/* Body cells only: making the header a grid stops it being a table-cell, and
-   the column width rule above then has nothing to apply to.
-   Fixed tracks give the type chips their own columns, so they align down the
-   table rather than starting wherever each name happens to end. */
-.stats-table tbody .col-name {
+/*
+ * An inner span does the laying out, not the cell.
+ *
+ * A `th` told to be a grid stops being a table cell. It then keeps its own
+ * height instead of growing with the row, so any row a wrapped team name
+ * made three lines tall had a short bordered box drawn under the Pokémon's
+ * name and a strip of nothing below it.
+ *
+ * Fixed tracks give the type chips their own columns, so they align down the
+ * table rather than starting wherever each name happens to end.
+ */
+.stats-table tbody .col-name > .col-name-inner {
   display: grid; grid-template-columns: 40px minmax(0, 1fr) 76px 76px;
   align-items: center; gap: 0.5rem;
-  height: 100%; min-height: 2.6rem;
+  min-height: 2.6rem;
 }
 /*
  * Who drafted it: the team over the coach, and wider than the numbers

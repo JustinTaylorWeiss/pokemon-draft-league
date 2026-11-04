@@ -832,22 +832,28 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                     <td className="rank-col">
                       {medal ? <span className="medal" title={medal.label}>{medal.icon}</span> : i + 1}
                     </td>
+                    {/* An inner span does the laying out, not the cell: a `th`
+                        told to be a grid stops being a table cell, and so stops
+                        growing with the row — which left a short box drawn
+                        under the name on every row a long team name made tall. */}
                     <th scope="row" className="col-name">
-                      {mon && (
-                        <PokemonLink id={t.pokemon} title={mon.name}>
-                          <Sprite pokemon={mon} width={40} height={32} />
-                        </PokemonLink>
-                      )}
-                      <span className="stats-name">
-                        <PokemonLink id={t.pokemon}>{mon?.name ?? t.pokemon}</PokemonLink>
-                      </span>
-                      {/* Each type gets its own track so the chips line up down
-                          the table instead of trailing each name. */}
-                      <span className="stats-type">
-                        {mon?.types[0] && <TypeChip type={mon.types[0]} />}
-                      </span>
-                      <span className="stats-type">
-                        {mon?.types[1] && <TypeChip type={mon.types[1]} />}
+                      <span className="col-name-inner">
+                        {mon && (
+                          <PokemonLink id={t.pokemon} title={mon.name}>
+                            <Sprite pokemon={mon} width={40} height={32} />
+                          </PokemonLink>
+                        )}
+                        <span className="stats-name">
+                          <PokemonLink id={t.pokemon}>{mon?.name ?? t.pokemon}</PokemonLink>
+                        </span>
+                        {/* Each type gets its own track so the chips line up down
+                            the table instead of trailing each name. */}
+                        <span className="stats-type">
+                          {mon?.types[0] && <TypeChip type={mon.types[0]} />}
+                        </span>
+                        <span className="stats-type">
+                          {mon?.types[1] && <TypeChip type={mon.types[1]} />}
+                        </span>
                       </span>
                     </th>
                     {columns.map((key) => (
