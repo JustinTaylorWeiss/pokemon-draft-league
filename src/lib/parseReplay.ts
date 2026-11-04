@@ -11,11 +11,22 @@
  * has no attacker, so those deaths are recorded with nobody credited rather
  * than blamed on whoever moved last.
  *
- * Perish Song is the exception, because it kills with no damage line at all:
- * the counter reaches zero and the Pokémon faints. Credit used to fall to
- * whoever had hit it last, which could be several turns earlier, the wrong
- * coach, or nobody. The singer is remembered instead and spent when the
- * count runs out.
+ * Four kinds of knockout have no damage line to work backwards from, and all
+ * four used to fall to whoever had hit last — several turns earlier, the
+ * wrong coach, or nobody:
+ *
+ *  - Perish Song, where the counter reaches zero and the Pokémon faints. The
+ *    singer is remembered and spent when the count runs out.
+ *  - Explosion and the rest that take their own user down. Nobody scores
+ *    those, where an opponent used to.
+ *  - Destiny Bond, which drags the killer down after it. The bond's holder
+ *    takes the next faint at the other end.
+ *  - Future Sight, which lands a turn and a half after it is thrown, by
+ *    which time its thrower may be on the bench.
+ *
+ * A knockout is never credited across to the same side. A Pokémon that goes
+ * down to its partner's Earthquake, its partner's Perish Song or its own
+ * Explosion is a death for it and a knockout for nobody.
  *
  * A faint that gets undone is taken back off both records. Revival Blessing
  * puts a fainted Pokémon back in the party, and a knockout that did not stick
@@ -89,6 +100,22 @@ export async function fetchReplay(input: string): Promise<ReplayGame> {
   return parseReplayLog(data.log ?? '', data.format ?? '', data.players ?? [])
 }
 
+/**
+ * Moves that knock their own user out as part of using them.
+ *
+ * The user's faint has no damage line of its own, so it was credited to
+ * whoever had hit them last — an opponent collecting a knockout for a
+ * Pokémon that blew itself up, or walked off for a Healing Wish. Nobody
+ * scores these.
+ */
+const SELF_KO = new Set([
+  'Explosion', 'Self-Destruct', 'Misty Explosion',
+  'Final Gambit', 'Healing Wish', 'Lunar Dance', 'Memento',
+])
+
+/** The two that land a turn and a half after they are used. */
+const FUTURE = new Set(['Future Sight', 'Doom Desire'])
+
 /** `Urshifu-Rapid-Strike` and `Urshifu-*` are the same Pokémon; so are `Landorus-Therian` and `Landorus`. */
 const baseOf = (name: string) => name.split('-')[0].trim().toLowerCase()
 
@@ -158,6 +185,15 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
   const perishedBy: Record<string, { side: string; index: number } | null> = {}
   /** Slots whose counter has just hit zero, so the next faint is the song's. */
   const perishing = new Set<string>()
+  /** Slots about to go down by their own hand, which is nobody's knockout. */
+  const selfKO = new Set<string>()
+  /**
+   * Who is holding a Destiny Bond that has just gone off, and so takes the
+   * next Pokémon down the other end with them.
+   */
+  let bonded: { side: string; index: number } | null = null
+  /** Who threw the Future Sight that is still in the air. */
+  let future: { side: string; index: number } | null = null
 
   let winner: string | null = null
 
@@ -207,6 +243,7 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
         // be somebody else's.
         delete perishedBy[slot]
         perishing.delete(slot)
+        selfKO.delete(slot)
       }
 
     } else if (kind === 'move') {
@@ -216,8 +253,17 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       if (attacker && target) {
         lastHitBy[(parts[4] ?? '').split(':')[0].trim()] = attacker
       }
+      const named = (parts[3] ?? '').trim()
       // Who to credit when the counters run out, a few turns from now.
-      if (attacker && (parts[3] ?? '').trim() === 'Perish Song') singer = attacker
+      if (attacker && named === 'Perish Song') singer = attacker
+      // And who threw the one that lands the turn after next.
+      if (attacker && FUTURE.has(named)) future = attacker
+      /*
+       * A Pokémon that is about to finish itself off. Marked on the slot
+       * rather than acted on here, because the faint comes later in the
+       * turn and whatever else happens in between must not clear it.
+       */
+      if (SELF_KO.has(named)) selfKO.add((parts[2] ?? '').split(':')[0].trim())
       // A spread move names one target but hits several; the tag lists the rest.
       const spread = parts.find((p) => p.startsWith('[spread]'))
       if (attacker && spread) {
@@ -252,6 +298,29 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       const species = becoming[slot]
       const index = active[slot]
       if (who && species && index != null) teams[who.side][index] = species
+
+    } else if (kind === '-activate' && /move:\s*Destiny Bond/i.test(parts[3] ?? '')) {
+      /*
+       * The bond going off. The Pokémon holding it is already on its way
+       * down and takes its killer with it, so the next faint on the other
+       * side is theirs — their own, which comes either side of this line,
+       * is not.
+       */
+      const slot = (parts[2] ?? '').split(':')[0].trim()
+      const who = parseIdent(parts[2] ?? '')
+      const index = active[slot]
+      if (who && index != null) bonded = { side: who.side, index }
+
+    } else if (kind === '-end' && FUTURE.has((parts[3] ?? '').replace(/^move:\s*/i, '').trim())) {
+      /*
+       * A Future Sight landing. The damage line after this one carries no
+       * `[from]`, so without this the hit reads as whoever last moved
+       * against the target — which may be nobody, and is rarely the
+       * Pokémon that actually threw it two turns ago.
+       */
+      const slot = (parts[2] ?? '').split(':')[0].trim()
+      if (future) lastHitBy[slot] = future
+      future = null
 
     } else if (kind === '-start' && /^perish\d$/.test((parts[3] ?? '').trim())) {
       const slot = (parts[2] ?? '').split(':')[0].trim()
@@ -292,7 +361,16 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
        * else while perished still goes to whoever hit it, since only a
        * counter at zero sets this.
        */
-      const killer = perishing.has(slot) ? perishedBy[slot] ?? null : lastHitBy[slot]
+      /*
+       * In order: its own doing beats everything, then the song, then a
+       * bond going off at the other end, then the last hit.
+       */
+      const bond = bonded && bonded.side !== who.side ? bonded : null
+      const killer = selfKO.has(slot) ? null
+        : perishing.has(slot) ? perishedBy[slot] ?? null
+          : bond ?? lastHitBy[slot]
+      if (bond) bonded = null
+      selfKO.delete(slot)
       perishing.delete(slot)
       delete perishedBy[slot]
       // Its own side's Perish Song is not a knockout for its own side, which
