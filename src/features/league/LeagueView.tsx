@@ -7,13 +7,14 @@ import {
   tierClass,
   finishingOrder, medalCount, rankByRecord, totalsFromMatches,
   type GameLine, type League, type LeaguePokemon, type Match, type MatchStat,
-  type Medals, type PokemonTotals, type Postseason,
+  type Medals, type MoveTally, type PokemonTotals, type Postseason,
 } from '../../data/league'
 import { isSpectator, myPlayerId, subscribeIdentity } from '../../data/identity'
 import { BST_ORDER, STAT_LABELS } from '../../lib/stats'
 import { TypeChip } from '../../components/TypeChip'
 import type { LeagueTab } from './tabs'
 import { useAdvanced } from '../dex/advanced'
+import { MatchDetails } from './MatchDetails'
 import { useElementHeight } from '../../lib/useElementHeight'
 import './league.css'
 import { PokemonLink } from '../../components/PokemonLink'
@@ -517,6 +518,38 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
     () => (extra?.length ? [...(league.matchStats ?? []), ...extra] : league.matchStats ?? []),
     [league.matchStats, extra],
   )
+  /**
+   * Every move each Pokémon has thrown this season, added across games.
+   *
+   * Off the schedule rather than off `matchStats`, which is a series total
+   * and has never known what a move was — the per-game lines are where
+   * they live. A Pokémon with nothing here played only in matches reported
+   * before the reader kept moves, and its row says so rather than opening
+   * onto nothing.
+   */
+  const movesByMon = useMemo(() => {
+    const by = new Map<string, MoveTally[]>()
+    for (const m of league.schedule) {
+      for (const g of m.games ?? []) {
+        for (const line of [...g.a, ...g.b]) {
+          if (!line.moves.length) continue
+          const held = by.get(line.pokemon) ?? []
+          for (const mv of line.moves) {
+            const row = held.find((x) => x.name === mv.name)
+            if (row) { row.used += mv.used; row.kos += mv.kos; row.damage += mv.damage }
+            else held.push({ ...mv })
+          }
+          by.set(line.pokemon, held)
+        }
+      }
+    }
+    for (const list of by.values()) {
+      list.sort((a2, b2) => b2.used - a2.used || b2.kos - a2.kos || a2.name.localeCompare(b2.name))
+    }
+    return by
+  }, [league.schedule])
+  const [openMon, setOpenMon] = useState<string | null>(null)
+
   const allTime = currentSeason().source === 'all-time'
   /** One everywhere else: every Pokemon that played at all is on the board. */
   const minGames = allTime ? ALL_TIME_MINIMUM : 1
@@ -723,8 +756,25 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                 const mon = dex[t.pokemon]
                 // Same podium treatment as the standings table.
                 const medal = MEDALS[i + 1]
+                const moves = movesByMon.get(t.pokemon) ?? []
+                const showing = openMon === t.pokemon
                 return (
-                  <tr key={t.pokemon} className={medal ? `medal-row medal-${i + 1}` : ''}>
+                  <Fragment key={t.pokemon}>
+                  <tr
+                    className={`${medal ? `medal-row medal-${i + 1} ` : ''}clickable${
+                      showing ? ' is-open' : ''}`}
+                    onClick={() => setOpenMon(showing ? null : t.pokemon)}
+                    // A whole row is the target, which a <tr> cannot be on its
+                    // own — so it takes focus and answers the keys a button would.
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        setOpenMon(showing ? null : t.pokemon)
+                      }
+                    }}
+                    aria-expanded={showing}
+                  >
                     {/* Position under the current sort — the power ranking. */}
                     <td className="rank-col">
                       {medal ? <span className="medal" title={medal.label}>{medal.icon}</span> : i + 1}
@@ -753,6 +803,42 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                       </Fragment>
                     ))}
                   </tr>
+                  {showing && (
+                    <tr className="moves-row">
+                      <td colSpan={2 + columns.length}>
+                        {moves.length ? (
+                          <table className="detail-table mon-moves">
+                            <thead>
+                              <tr>
+                                <th className="detail-moves">Move</th>
+                                <th title="Times clicked">Used</th>
+                                <th title="Knockouts this move finished">KOs</th>
+                                <th title="Percentage points of the other side's health, added across targets">
+                                  Damage
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {moves.map((mv) => (
+                                <tr key={mv.name}>
+                                  <th scope="row" className="detail-moves">{mv.name}</th>
+                                  <td>{mv.used}</td>
+                                  <td className={mv.kos ? 'pos' : ''}>{mv.kos || '\u2014'}</td>
+                                  <td>{mv.damage ? `${mv.damage}%` : '\u2014'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        ) : (
+                          <p className="panel-note">
+                            No move record yet. Moves are kept from a match's replays, and
+                            this one has only played in matches reported before that started.
+                          </p>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 )
               })}
             </tbody>
@@ -1418,6 +1504,16 @@ function Matches({ league, dex }: { league: League; dex: Record<string, LeaguePo
                       known — and for an archived season, so are the links to
                       the games themselves. Without either, the row is just the
                       replays, or the word that there are none. */}
+                  {/* Everything the replays said, behind a toggle: the card
+                      above answers who won, which is what most people came
+                      for. */}
+                  {perGame && (
+                    <MatchDetails
+                      games={games} dex={dex}
+                      aLabel={label(m.a)} bLabel={label(m.b)}
+                    />
+                  )}
+
                   {!perGame && (series || archived) && (
                     <div className={`game-row${series ? '' : ' is-bare'}`}>
                       {series && (
