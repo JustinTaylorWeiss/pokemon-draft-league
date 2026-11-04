@@ -37,11 +37,13 @@ export function addTallies(into: MoveTally[], from: MoveTally[]): void {
     held.damage += move.damage
     held.rolls += move.rolls
     held.misses += move.misses
+    held.expHits += move.expHits
+    held.critRolls += move.critRolls
     held.crits += move.crits
+    held.expCrits += move.expCrits
+    held.procRolls += move.procRolls
     held.procs += move.procs
-    held.live += move.live
-    held.liveEarly += move.liveEarly
-    held.liveClean += move.liveClean
+    held.expProcs += move.expProcs
   }
 }
 
@@ -68,32 +70,18 @@ export function useMoveDex(wanted: boolean): MoveDex | null {
   return moves
 }
 
-/** Base critical-hit odds, and what a high-crit move raises them to. */
-const CRIT_ODDS: Record<number, number> = { 1: 1 / 24, 2: 1 / 8, 3: 1 / 2, 4: 1 }
-
-/** Hits that landed, which is what a crit and a secondary each roll off. */
-const landed = (tally: MoveTally) => Math.max(0, tally.rolls - tally.misses)
-
 /**
- * Every roll a Pokémon made, for the overall luck score.
+ * Every roll a Pokémon made, for the luck score.
  *
- * Two kinds, because two are all the log can be honest about:
+ * Three kinds — accuracy, critical hits, extra effects — and the reader has
+ * already done the hard part. Each roll's odds depend on the battle it was
+ * made in, which is not something a tally can be asked about afterwards, so
+ * the reader works them out as it goes and stores what it expected. All
+ * that is left here is to put what happened next to it.
  *
- *  - Accuracy, which is written down every time it fails.
- *  - Critical hits, which are written down every time they land, and whose
- *    odds are one in twenty-four unless the move says otherwise. Status
- *    moves are left out: they never crit, and counting their hits as crit
- *    rolls had the league running a third under expectation.
- *
- *  - Secondary effects: a flinch, a burn, a stat knocked down.
- *
- * What each is out of matters as much as the chance. A hit that knocked the
- * target out had nowhere to put a burn; a flinch only ever shows on a target
- * that was still to move, and only if it lived long enough to try. The
- * reader counts those three narrowing denominators, and the move's own kind
- * says which one to read — without them the league came out at two thirds of
- * what the listed chances called for, which is a measure of the reading
- * rather than of the season.
+ * A roll the reader found no odds for is simply not here: a move that
+ * cannot miss, a target that cannot be crit, an effect a Sheer Force
+ * attacker traded away.
  */
 export function chancesOf(tallies: MoveTally[], moves: MoveDex | null): Chance[] {
   const out: Chance[] = []
@@ -105,34 +93,24 @@ export function chancesOf(tallies: MoveTally[], moves: MoveDex | null): Chance[]
         label: 'Accuracy',
         rolls: tally.rolls,
         good: tally.rolls - tally.misses,
-        chance: move.accuracy === true ? 1 : move.accuracy / 100,
+        expected: tally.expHits,
       })
     }
-    const hits = landed(tally)
-    if (hits > 0 && move.category !== 'Status' && !move.willCrit) {
+    if (tally.critRolls > 0) {
       out.push({
-        label: 'Critical hits',
-        rolls: hits,
-        good: tally.crits,
-        chance: CRIT_ODDS[move.critRatio ?? 1] ?? CRIT_ODDS[1],
+        label: 'Critical hits', rolls: tally.critRolls, good: tally.crits, expected: tally.expCrits,
       })
     }
-    const could = move.secondaryKind === 'flinch' ? tally.liveEarly
-      : move.secondaryKind === 'status' ? tally.liveClean
-        : tally.live
     /*
      * Only where the effect is a chance. A Fake Out flinches every time and
      * a Salt Cure always sticks, so neither is luck — and the handful the
-     * reader fails to spot (a Covert Cloak, a confusion that needed the
-     * target to have a stat raised) would read as an impossibility and put
-     * an otherwise ordinary Pokémon at the bottom of the league.
+     * reader fails to spot (a confusion that needed the target to have a
+     * stat raised) would read as an impossibility and put an otherwise
+     * ordinary Pokémon at the bottom of the league.
      */
-    if (move.secondaryChance && move.secondaryChance < 100 && could > 0) {
+    if (tally.procRolls > 0 && tally.expProcs < tally.procRolls) {
       out.push({
-        label: 'Extra effects',
-        rolls: could,
-        good: tally.procs,
-        chance: move.secondaryChance / 100,
+        label: 'Extra effects', rolls: tally.procRolls, good: tally.procs, expected: tally.expProcs,
       })
     }
   }

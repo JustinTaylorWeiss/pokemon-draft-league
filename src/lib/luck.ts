@@ -25,8 +25,16 @@ export interface Chance {
   rolls: number
   /** How many of them went the Pokémon's way. */
   good: number
-  /** The chance of that happening, per roll, from 0 to 1. */
-  chance: number
+  /**
+   * How many the odds said would, added up roll by roll.
+   *
+   * Given outright rather than as one chance, because the odds are not the
+   * same twice: a Hurricane in rain cannot miss and the same Hurricane in
+   * sun is a coin flip. The spread below still needs a single figure and
+   * uses the average of them, which moves the verdict a shade at the edges
+   * and leaves the score itself exact.
+   */
+  expected: number
 }
 
 export type Verdict = 'good' | 'bad' | 'even' | 'none'
@@ -143,10 +151,10 @@ export function scoreOf(chances: Chance[]): Score {
   // hand a kind more successes than it had rolls, and the spread below has
   // nowhere to put the extra.
   const live = chances.filter((c) => c.rolls > 0)
-    .map((c) => ({ ...c, good: Math.min(Math.max(0, c.good), c.rolls) }))
+    .map((c) => ({ ...c, good: Math.min(Math.max(0, c.good), c.rolls), chance: c.expected / c.rolls }))
   const rolls = live.reduce((n, c) => n + c.rolls, 0)
   const good = live.reduce((n, c) => n + c.good, 0)
-  const expected = live.reduce((n, c) => n + c.rolls * c.chance, 0)
+  const expected = live.reduce((n, c) => n + c.expected, 0)
 
   /*
    * The spread covers the rolls that could go either way, so it counts
@@ -185,10 +193,10 @@ export function scoreOf(chances: Chance[]): Score {
     if (held) {
       held.rolls += c.rolls
       held.good += c.good
-      held.expected += c.rolls * c.chance
+      held.expected += c.expected
     } else {
       parts.push({
-        label: c.label, rolls: c.rolls, good: c.good, expected: c.rolls * c.chance, points: 0,
+        label: c.label, rolls: c.rolls, good: c.good, expected: c.expected, points: 0,
       })
     }
   }

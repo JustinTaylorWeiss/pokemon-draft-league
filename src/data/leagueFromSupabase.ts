@@ -52,10 +52,9 @@ interface GameRow {
  * A move tally as the database holds it. Rolls and misses were added to the
  * reader after the first games were stored, so a row can be without them.
  */
-type StoredTally = Omit<MoveTally, 'rolls' | 'misses' | 'crits' | 'procs'
-  | 'live' | 'liveEarly' | 'liveClean'>
-  & Partial<Pick<MoveTally, 'rolls' | 'misses' | 'crits' | 'procs'
-    | 'live' | 'liveEarly' | 'liveClean'>>
+type Counted = 'rolls' | 'misses' | 'expHits' | 'critRolls' | 'crits' | 'expCrits'
+  | 'procRolls' | 'procs' | 'expProcs'
+type StoredTally = Omit<MoveTally, Counted> & Partial<Pick<MoveTally, Counted>>
 
 interface GameLineRow {
   game_id: number
@@ -230,10 +229,14 @@ export async function loadLeagueFromSupabase(seasonId?: string): Promise<League>
         // Rolls and misses came later than the rest of a move's record, so
         // a line stored before them reads as nothing to judge rather than
         // as a move that never missed.
+        // Each count arrived at a different point in the reader's life, so
+        // a line stored before one of them reads as nothing to judge
+        // rather than as a roll that never came off.
         moves: (l.moves ?? []).map((m) => ({
           ...m,
-          rolls: m.rolls ?? 0, misses: m.misses ?? 0, crits: m.crits ?? 0, procs: m.procs ?? 0,
-          live: m.live ?? 0, liveEarly: m.liveEarly ?? 0, liveClean: m.liveClean ?? 0,
+          rolls: m.rolls ?? 0, misses: m.misses ?? 0, expHits: m.expHits ?? 0,
+          critRolls: m.critRolls ?? 0, crits: m.crits ?? 0, expCrits: m.expCrits ?? 0,
+          procRolls: m.procRolls ?? 0, procs: m.procs ?? 0, expProcs: m.expProcs ?? 0,
         })),
       }))
     const list = gamesByMatch.get(g.match_id) ?? []

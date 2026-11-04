@@ -275,6 +275,26 @@ function secondaryKind(move) {
   return 'other'
 }
 
+/**
+ * Which status a chance-based secondary inflicts, so the reader can tell a
+ * roll that had somewhere to land from one that never did. A burn rolled at
+ * a Fire type was not a roll.
+ */
+function secondaryStatus(move) {
+  const all = (move.secondaries ?? (move.secondary ? [move.secondary] : []))
+    .filter(atTheTarget)
+    .filter((s) => typeof s.chance === 'number' && s.chance > 0 && s.status)
+  return all.length ? all.sort((a, b) => b.chance - a.chance)[0].status : null
+}
+
+/** Whether its extra effect knocks one of the target's stats down. */
+function secondaryDrops(move) {
+  return (move.secondaries ?? (move.secondary ? [move.secondary] : []))
+    .filter(atTheTarget)
+    .some((s) => typeof s.chance === 'number' && s.chance > 0 && s.boosts
+      && Object.values(s.boosts).some((n) => n < 0))
+}
+
 async function main() {
   console.log('fetching Showdown data...')
   const [
@@ -432,6 +452,8 @@ async function main() {
       ...(secondaryChance(m) > 0 && {
         secondaryChance: secondaryChance(m),
         secondaryKind: secondaryKind(m),
+        ...(secondaryStatus(m) && { secondaryStatus: secondaryStatus(m) }),
+        ...(secondaryDrops(m) && { secondaryDrops: true }),
       }),
       pp: m.pp,
       priority: m.priority,

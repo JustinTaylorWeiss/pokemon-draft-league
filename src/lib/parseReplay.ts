@@ -1,3 +1,6 @@
+import type { MoveDex, PokemonDex } from '../data/types'
+import { critChance, hitChance, procChance, type Field, type Fighter } from './odds'
+
 /**
  * Turns a Pokémon Showdown replay into a match report.
  *
@@ -86,10 +89,18 @@ export interface MoveTally {
   /** Of those rolls, the ones the log says missed. */
   misses: number
   /**
-   * Critical hits it landed. Rolled once per hit, so the hits — rolls less
-   * misses — are what these are out of.
+   * The hits the odds say it should have landed, added up one roll at a
+   * time — because the odds are not the same twice. A Hurricane in rain
+   * cannot miss and the same Hurricane in sun is a coin flip, and only the
+   * battle knows which it was.
    */
+  expHits: number
+  /** Hits where a critical hit was possible at all. */
+  critRolls: number
+  /** Critical hits it landed. */
   crits: number
+  /** The critical hits those rolls were worth. */
+  expCrits: number
   /**
    * Times its extra effect fired on the other side: a burn, a flinch, a
    * stat drop, confusion.
@@ -102,24 +113,17 @@ export interface MoveTally {
    */
   procs: number
   /**
-   * Hits that left the target standing.
+   * Hits where that effect had somewhere to land.
    *
-   * The denominator those extras are out of, and not the same as hits: a
-   * Pokémon knocked out by the damage cannot then be burned by it, so the
-   * roll never had anywhere to land. Counted per target.
+   * Narrower than hits, and in several ways at once. A Pokémon knocked out
+   * by the damage cannot then be burned by it. A flinch only ever shows on
+   * a target still to move, and only if it lives long enough to try. A burn
+   * cannot find a Fire type, a Sheer Force attacker has traded the effect
+   * away, and a Covert Cloak refuses it. Counted per target.
    */
-  live: number
-  /**
-   * Of those, the ones on a target that had not moved yet this turn.
-   *
-   * What a flinch is out of. A flinch roll against something that has
-   * already acted succeeds in silence — it stops a move that was never
-   * going to be made, and the log says nothing — so counting it would
-   * have every Rock Slide in the league look like it never flinched.
-   */
-  liveEarly: number
-  /** Of those, the ones on a target that was not already statused. */
-  liveClean: number
+  procRolls: number
+  /** The effects those rolls were worth. */
+  expProcs: number
 }
 
 export interface ReplayGame {
@@ -170,7 +174,16 @@ export function replayId(input: string): string | null {
   return match ? match[1] : null
 }
 
-export async function fetchReplay(input: string): Promise<ReplayGame> {
+/** The two datasets the odds need, where the caller has them to hand. */
+export interface BattleData {
+  moves: MoveDex
+  dex: PokemonDex
+}
+
+export async function fetchReplay(
+  input: string,
+  data: BattleData | null = null,
+): Promise<ReplayGame> {
   const id = replayId(input)
   if (!id) throw new Error('That does not look like a Showdown replay link.')
   const res = await fetch(`https://replay.pokemonshowdown.com/${id}.json`)
@@ -181,8 +194,8 @@ export async function fetchReplay(input: string): Promise<ReplayGame> {
         : `Showdown returned ${res.status}.`,
     )
   }
-  const data = await res.json()
-  return parseReplayLog(data.log ?? '', data.format ?? '', data.players ?? [])
+  const body = await res.json()
+  return parseReplayLog(body.log ?? '', body.format ?? '', body.players ?? [], data)
 }
 
 /**
@@ -242,7 +255,12 @@ function teamIndex(team: string[], species: string): number {
   return team.length - 1
 }
 
-export function parseReplayLog(log: string, format = '', players: string[] = []): ReplayGame {
+export function parseReplayLog(
+  log: string,
+  format = '',
+  players: string[] = [],
+  data: BattleData | null = null,
+): ReplayGame {
   const teams: Record<string, string[]> = { p1: [], p2: [] }
   const accounts: Record<string, string> = { p1: players[0] ?? 'p1', p2: players[1] ?? 'p2' }
   // Counted per team slot rather than per name, so a forme change cannot
@@ -312,10 +330,63 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
   const tally = (c: Credit, name: string): MoveTally => {
     const forSlot = (clicked[c.side][c.index] ??= {})
     return (forSlot[name] ??= {
-      name, used: 0, kos: 0, damage: 0, rolls: 0, misses: 0,
-      crits: 0, procs: 0, live: 0, liveEarly: 0, liveClean: 0,
+      name, used: 0, kos: 0, damage: 0, rolls: 0, misses: 0, expHits: 0,
+      critRolls: 0, crits: 0, expCrits: 0, procRolls: 0, procs: 0, expProcs: 0,
     })
   }
+  /**
+   * One side of a roll, as much of it as the log gave away.
+   *
+   * Everything optional here is genuinely optional: an unknown ability or
+   * item simply does not apply, which leaves the listed odds standing.
+   */
+  function fighterAt(slot: string): Fighter {
+    const who = active[slot]
+    const side = slot.slice(0, 2)
+    const name = who != null ? teams[side]?.[who] : null
+    const species = (name && data?.dex[toId(name)]) || null
+    const key = `${side}-${who}`
+    return {
+      species,
+      ability: abilityOf[key] ?? onlyAbility(species) ?? null,
+      item: itemOf[key] ?? null,
+      types: typesOf[slot] ?? species?.types ?? [],
+      status: statusOf[slot] ?? null,
+      accuracy: stages[slot]?.accuracy ?? 0,
+      evasion: stages[slot]?.evasion ?? 0,
+    }
+  }
+
+  /**
+   * What one roll was worth, all three kinds at once.
+   *
+   * Without the datasets there is nothing to read the odds off, so the move
+   * is taken as a certainty and the other two sit out. That is also what a
+   * line reported before any of this existed looks like.
+   */
+  /*
+   * Whether a move's effect is an extra at all.
+   *
+   * Will-O-Wisp's burn, Thunder Wave's paralysis, Parting Shot's two drops:
+   * those are the move, not a roll on top of it, and the accuracy roll is
+   * what they were riding on. Counted as extras they are a numerator with
+   * no denominator under it.
+   */
+  const isExtra = (move: string) =>
+    !data || !!data.moves[toId(move)]?.secondaryChance
+
+  function oddsOf(from: string | null, at: string, move: string) {
+    const entry = data?.moves[toId(move)]
+    if (!entry || !from) return { hit: 1, crit: null, proc: null }
+    const shot = {
+      move: entry,
+      attacker: fighterAt(from),
+      target: fighterAt(at),
+      field: { ...field, safeguard: guarded.has(at.slice(0, 2)) },
+    }
+    return { hit: hitChance(shot), crit: critChance(shot), proc: procChance(shot) }
+  }
+
   /** Health each position is on, out of a hundred, for reading damage off. */
   const health: Record<string, number> = {}
   /** The move being resolved, so the damage lines under it belong to it. */
@@ -330,15 +401,38 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
    * rather than per click. A Rock Slide that catches one and misses the
    * other had two chances and took one of them.
    */
-  let rolledAt = new Set<string>()
+  let rolledAt = new Map<string, number>()
   /** Targets the move being resolved has already been credited a proc on. */
   let proccedAt = new Set<string>()
+  /*
+   * The battle around the roll, which is half of what decides the odds.
+   *
+   * A Hurricane in rain cannot miss, a Blizzard in snow cannot miss, a burn
+   * cannot find a Fire type and a Safeguard turns one away. All of it is
+   * read off the log; none of it is assumed.
+   */
+  const field: Field = { weather: '', terrain: '', gravity: false, safeguard: false }
+  const guarded = new Set<string>()
+  /** Accuracy and evasion stages, by position, cleared when somebody leaves. */
+  const stages: Record<string, { accuracy: number; evasion: number }> = {}
+  /*
+   * What the log gave away about each Pokémon, kept by team slot so it
+   * survives a switch. Abilities come from an open team sheet where there
+   * is one, from the ones the battle announces, and from the dex where a
+   * species has only one to choose from. Where none of those says, it
+   * stays null and no modifier is applied — a wrong correction is worse
+   * than a missing one.
+   */
+  const abilityOf: Record<string, string> = {}
+  const itemOf: Record<string, string> = {}
+  /** Types as they stand, which a Terastal or a forme change moves. */
+  const typesOf: Record<string, string[]> = {}
   /**
    * Targets the move being resolved has landed on, kept so a knockout can
    * take the hit back off the count of places its extra effect could have
    * gone. Cleared once the turn moves past the move that filled it.
    */
-  let struck = new Map<string, { early: boolean; clean: boolean }>()
+  let struck = new Map<string, { proc: number | null; flinch: boolean }>()
   /** Who has already acted this turn, which is what a flinch turns on. */
   const movedThisTurn = new Set<string>()
   /**
@@ -349,7 +443,7 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
    * the roll goes unreported however it went — so it comes back off at
    * the end of the turn rather than counting as a chance that failed.
    */
-  let pendingEarly: { credit: Credit; slot: string }[] = []
+  let pendingEarly: { credit: Credit; slot: string; chance: number }[] = []
   /** What each position is suffering, so a second status is not a new roll. */
   const statusOf: Record<string, string> = {}
 
@@ -392,6 +486,24 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       continue
     }
 
+    /*
+     * Where the accuracy ladder stands, noted in passing rather than in the
+     * chain below. A stat knocked down is also how a move's extra effect
+     * announces itself, and a branch of its own here would swallow the line
+     * before the effect could be counted — which is what it did, and took
+     * every Snarl, Icy Wind and Electroweb in the league with it.
+     */
+    if (kind === '-boost' || kind === '-unboost' || kind === '-setboost') {
+      const slot = (parts[2] ?? '').split(':')[0].trim()
+      const stat = (parts[3] ?? '').trim()
+      if (stat === 'accuracy' || stat === 'evasion') {
+        const at = (stages[slot] ??= { accuracy: 0, evasion: 0 })
+        const by = Number(parts[4] ?? 0) || 0
+        const now = kind === '-setboost' ? by : at[stat] + (kind === '-boost' ? by : -by)
+        at[stat] = Math.max(-6, Math.min(6, now))
+      }
+    }
+
     if (kind === 'player' && parts[2] && parts[3]) {
       accounts[parts[2]] = parts[3]
 
@@ -413,12 +525,73 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
         if (carried) statusOf[slot] = carried[1]
         else delete statusOf[slot]
         struck.delete(slot)
+        delete stages[slot]
+        delete typesOf[slot]
         // The volatile goes when the Pokemon does, and the slot is about to
         // be somebody else's.
         delete perishedBy[slot]
         perishing.delete(slot)
         selfKO.delete(slot)
       }
+
+    } else if (kind === '-weather') {
+      const what = (parts[2] ?? '').trim()
+      field.weather = what === 'none' ? '' : what
+
+    } else if (kind === '-fieldstart' || kind === '-fieldend') {
+      const what = (parts[2] ?? '').replace(/^move:\s*/i, '').trim()
+      const on = kind === '-fieldstart'
+      if (/gravity/i.test(what)) field.gravity = on
+      else if (/terrain/i.test(what)) field.terrain = on ? what : ''
+
+    } else if (kind === '-sidestart' || kind === '-sideend') {
+      if (/safeguard/i.test(parts[3] ?? '')) {
+        const side = (parts[2] ?? '').split(':')[0].trim().slice(0, 2)
+        if (kind === '-sidestart') guarded.add(side)
+        else guarded.delete(side)
+      }
+
+    } else if (kind === '-clearboost' || kind === '-clearallboost'
+      || kind === '-clearnegativeboost' || kind === '-invertboost') {
+      // Rare enough that getting the detail right is not worth guessing at:
+      // whatever happened, the ladder is no longer where this reader left it.
+      const slot = (parts[2] ?? '').split(':')[0].trim()
+      if (kind === '-clearallboost') for (const key of Object.keys(stages)) delete stages[key]
+      else delete stages[slot]
+
+    } else if (kind === '-ability') {
+      const who = parseIdent(parts[2] ?? '')
+      const index = active[(parts[2] ?? '').split(':')[0].trim()]
+      const named = (parts[3] ?? '').trim()
+      if (who && index != null && named) abilityOf[`${who.side}-${index}`] = named
+
+    } else if (kind === '-item' || kind === '-enditem') {
+      const who = parseIdent(parts[2] ?? '')
+      const index = active[(parts[2] ?? '').split(':')[0].trim()]
+      const named = (parts[3] ?? '').trim()
+      if (who && index != null && named) itemOf[`${who.side}-${index}`] = named
+
+    } else if (kind === '-terastallize') {
+      const slot = (parts[2] ?? '').split(':')[0].trim()
+      const type = (parts[3] ?? '').trim()
+      if (type) typesOf[slot] = [type]
+
+    } else if (kind === 'showteam') {
+      /*
+       * An open team sheet, which a handful of these games carry. It is the
+       * one place the log says outright what a Pokémon is holding and which
+       * ability it brought, so where it is there, it is taken.
+       */
+      const side = (parts[2] ?? '').trim()
+      ;(parts[3] ?? '').split(']').forEach((entry) => {
+        const bits = entry.split('|')
+        const species = (bits[1] || bits[0] || '').trim()
+        if (!species || !teams[side]) return
+        const index = teams[side].findIndex((t) => baseOf(t) === baseOf(species))
+        if (index < 0) return
+        if (bits[2]) itemOf[`${side}-${index}`] = bits[2].trim()
+        if (bits[3]) abilityOf[`${side}-${index}`] = bits[3].trim()
+      })
 
     } else if (kind === 'turn' || kind === 'upkeep') {
       // Everything after this belongs to the next move, not the last one.
@@ -427,7 +600,8 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
         for (const waiting of pendingEarly) {
           if (movedThisTurn.has(waiting.slot)) continue
           const row = tally(waiting.credit, waiting.credit.move)
-          row.liveEarly = Math.max(0, row.liveEarly - 1)
+          row.procRolls = Math.max(0, row.procRolls - 1)
+          row.expProcs = Math.max(0, row.expProcs - waiting.chance)
         }
         pendingEarly = []
         movedThisTurn.clear()
@@ -476,17 +650,27 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
        * names it, and one a Protect ate comes back off below.
        */
       thrownFrom = (parts[2] ?? '').split(':')[0].trim() || null
-      rolledAt = new Set<string>()
+      rolledAt = new Map<string, number>()
       proccedAt = new Set<string>()
+      const aimed: string[] = []
       const aimedAt = (parts[4] ?? '').split(':')[0].trim()
-      if (aimedAt) rolledAt.add(aimedAt)
+      if (aimedAt) aimed.push(aimedAt)
       if (spread) {
         for (const slot of spread.replace('[spread]', '').trim().split(',')) {
-          if (slot.trim()) rolledAt.add(slot.trim())
+          if (slot.trim()) aimed.push(slot.trim())
         }
       }
-      if (attacker) tally(attacker, named).rolls += rolledAt.size
-      else rolledAt.clear()
+      // Each target is its own roll, and each roll its own odds — the same
+      // Hurricane is a certainty in rain and a coin flip in sun.
+      if (attacker) {
+        const row = tally(attacker, named)
+        for (const at of new Set(aimed)) {
+          const chance = oddsOf(thrownFrom, at, named).hit
+          rolledAt.set(at, chance)
+          row.rolls += 1
+          row.expHits += chance
+        }
+      }
 
     } else if (kind === 'detailschange') {
       // Says what a Pokémon turned into but not why, and most of the reasons
@@ -556,7 +740,8 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       const at = (parts[2] ?? '').split(':')[0].trim()
       const who = parseIdent(parts[2] ?? '')
       const credited = parts.some((part) => part.startsWith('[from]'))
-      if (resolving && who && who.side !== resolving.side && !credited && !proccedAt.has(at)) {
+      if (resolving && who && who.side !== resolving.side && !credited && !proccedAt.has(at)
+        && isExtra(resolving.move)) {
         proccedAt.add(at)
         tally(resolving, resolving.move).procs += 1
       }
@@ -578,7 +763,7 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
        * the volatile is gone by the next turn.
        */
       const by = lastHitBy[slot]
-      if (by) tally(by, by.move).procs += 1
+      if (by && isExtra(by.move)) tally(by, by.move).procs += 1
 
     } else if (kind === '-miss') {
       /*
@@ -593,7 +778,12 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       const at = second || first
       if (resolving && source === thrownFrom) {
         const row = tally(resolving, resolving.move)
-        if (at && !rolledAt.has(at)) { rolledAt.add(at); row.rolls += 1 }
+        if (at && !rolledAt.has(at)) {
+          const chance = oddsOf(thrownFrom, at, resolving.move).hit
+          rolledAt.set(at, chance)
+          row.rolls += 1
+          row.expHits += chance
+        }
         row.misses += 1
       }
 
@@ -605,9 +795,12 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
        * message about something else cannot discount a roll.
        */
       const at = (parts[2] ?? '').split(':')[0].trim()
-      if (resolving && rolledAt.has(at)) {
+      const swallowed = rolledAt.get(at)
+      if (resolving && swallowed != null) {
         rolledAt.delete(at)
-        tally(resolving, resolving.move).rolls -= 1
+        const row = tally(resolving, resolving.move)
+        row.rolls -= 1
+        row.expHits -= swallowed
       }
 
     } else if (kind === '-end' && FUTURE.has((parts[3] ?? '').replace(/^move:\s*/i, '').trim())) {
@@ -664,14 +857,31 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
          * back below if the hit turns out to have knocked it out.
          */
         if (!struck.has(slot)) {
-          const how = { early: !movedThisTurn.has(slot), clean: !statusOf[slot] }
-          struck.set(slot, how)
-          row.live += 1
-          if (how.early) {
-            row.liveEarly += 1
-            pendingEarly.push({ credit: resolving, slot })
+          const odds = oddsOf(thrownFrom, slot, resolving.move)
+          /*
+           * A critical hit is rolled on the way in, so it counts whatever
+           * becomes of the target: a crit that knocks something out is
+           * still a crit, and the log still says so.
+           */
+          if (odds.crit != null) {
+            row.critRolls += 1
+            row.expCrits += odds.crit
           }
-          if (how.clean) row.liveClean += 1
+          /*
+           * The extra effect is another matter. It needs a target left
+           * standing, and a flinch needs one still to move — neither of
+           * which is known yet, so the roll goes on the books now and
+           * comes off again if it turns out it never had anywhere to land.
+           */
+          const early = !movedThisTurn.has(slot)
+          const flinch = data?.moves[toId(resolving.move)]?.secondaryKind === 'flinch'
+          const proc = odds.proc != null && (!flinch || early) ? odds.proc : null
+          struck.set(slot, { proc, flinch })
+          if (proc != null) {
+            row.procRolls += 1
+            row.expProcs += proc
+            if (flinch) pendingEarly.push({ credit: resolving, slot, chance: proc })
+          }
         }
       }
 
@@ -687,16 +897,13 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
        * that count.
        */
       const how = resolving ? struck.get(slot) : undefined
-      if (resolving && how) {
+      if (resolving && how && how.proc != null) {
         struck.delete(slot)
         const row = tally(resolving, resolving.move)
-        row.live = Math.max(0, row.live - 1)
-        if (how.early) {
-          row.liveEarly = Math.max(0, row.liveEarly - 1)
-          const waiting = pendingEarly.findIndex((e) => e.slot === slot && e.credit === resolving)
-          if (waiting >= 0) pendingEarly.splice(waiting, 1)
-        }
-        if (how.clean) row.liveClean = Math.max(0, row.liveClean - 1)
+        row.procRolls = Math.max(0, row.procRolls - 1)
+        row.expProcs = Math.max(0, row.expProcs - how.proc)
+        const waiting = pendingEarly.findIndex((e) => e.slot === slot && e.credit === resolving)
+        if (waiting >= 0) pendingEarly.splice(waiting, 1)
       }
       // Recorded here rather than inferred from the death afterwards: a revive
       // takes the death back, and a Pokemon that fainted was on the field
@@ -760,8 +967,15 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       revived: revived[key][i] ?? 0,
       // Most-used first, which is the order a set is read in.
       moves: Object.values(clicked[key][i] ?? {})
-        // A miss is a roll, whatever else happened in the same resolution.
-        .map((m) => ({ ...m, damage: Math.round(m.damage), rolls: Math.max(0, m.rolls, m.misses) }))
+        .map((m) => ({
+          ...m,
+          damage: Math.round(m.damage),
+          // A miss is a roll, whatever else happened in the same resolution.
+          rolls: Math.max(0, m.rolls, m.misses),
+          expHits: round2(m.expHits),
+          expCrits: round2(m.expCrits),
+          expProcs: round2(m.expProcs),
+        }))
         .sort((x, y) => y.used - x.used || y.kos - x.kos || x.name.localeCompare(y.name)),
     })),
   })
@@ -776,4 +990,24 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
   const lost = winSide ? winSide.lines.reduce((n, l) => n + l.deaths, 0) : 0
 
   return { format, winner: won, a, b, survivors: Math.max(0, played - lost) }
+}
+
+/** Two places is far finer than anything read off these, and keeps rows small. */
+const round2 = (n: number) => Math.round(n * 100) / 100
+
+/** Same normalisation the dex is keyed by. */
+const toId = (s: string) =>
+  String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]/g, '')
+
+/**
+ * The ability a Pokémon must have, where it has no choice.
+ *
+ * Which of two or three a coach brought is not in the log, and guessing it
+ * would put a correction on the board that nobody can check. Where there is
+ * only one — every Mega, and a third of the rest — there is nothing to guess.
+ */
+function onlyAbility(species: { abilities?: Record<string, string> } | null): string | null {
+  const all = Object.values(species?.abilities ?? {})
+  return all.length === 1 ? all[0] : null
 }

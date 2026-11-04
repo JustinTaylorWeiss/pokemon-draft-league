@@ -114,16 +114,27 @@ export interface MoveTally {
   rolls: number
   /** How many of those rolls missed. */
   misses: number
-  /** Critical hits it landed, rolled once per hit. */
+  /**
+   * The hits the odds said to expect over those rolls.
+   *
+   * Added up one roll at a time, because the odds are not the same twice:
+   * a Hurricane in rain cannot miss and the same Hurricane in sun is a
+   * coin flip. Only the battle knows which it was, so only the reader can
+   * work it out.
+   */
+  expHits: number
+  /** Hits where a critical hit was possible at all. */
+  critRolls: number
+  /** Critical hits it landed. */
   crits: number
-  /** Times its extra effect fired on the other side — a burn, a flinch, a stat drop. */
+  /** The critical hits those rolls were worth. */
+  expCrits: number
+  /** Hits where its extra effect had somewhere to land. */
+  procRolls: number
+  /** Times that effect fired — a burn, a flinch, a stat drop. */
   procs: number
-  /** Hits that left the target standing, which is what that is out of. */
-  live: number
-  /** Of those, hits on a target yet to move — all a flinch can ever show on. */
-  liveEarly: number
-  /** Of those, hits on a target not already statused. */
-  liveClean: number
+  /** The effects those rolls were worth. */
+  expProcs: number
 }
 
 /**

@@ -929,8 +929,9 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                                   kos: sum.kos + mv.kos,
                                   damage: sum.damage + mv.damage,
                                 }), {
-                                  name: 'all', used: 0, kos: 0, damage: 0, rolls: 0,
-                                  misses: 0, crits: 0, procs: 0, live: 0, liveEarly: 0, liveClean: 0,
+                                  name: 'all', used: 0, kos: 0, damage: 0, rolls: 0, misses: 0,
+                                  expHits: 0, critRolls: 0, crits: 0, expCrits: 0,
+                                  procRolls: 0, procs: 0, expProcs: 0,
                                 })
                                 return (
                                   <tr>
@@ -1027,6 +1028,14 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                               <strong> −0.1</strong>. Every kind of luck is the same
                               currency that way, and nought is an ordinary run of the same
                               dice.
+                            </p>
+                            <p className="panel-note mon-luck-note">
+                              The odds are the ones the battle gave, not the ones on the
+                              move: a Hurricane in rain cannot miss, a Blizzard in snow
+                              cannot miss, a burn cannot find a Fire type and a Protect was
+                              never a roll at all. Where the log never says which of two
+                              abilities a Pokémon brought, or what it was holding, no guess
+                              is made and the listed number stands.
                             </p>
                           </>
                         )}

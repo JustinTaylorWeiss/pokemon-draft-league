@@ -88,6 +88,10 @@ export interface Move {
    * statused, and the rest only a target left standing.
    */
   secondaryKind?: 'flinch' | 'status' | 'other'
+  /** The status that effect inflicts, for working out who it could touch. */
+  secondaryStatus?: string
+  /** Whether it knocks one of the target's stats down. */
+  secondaryDrops?: boolean
   pp: number
   priority: number
   target: string
