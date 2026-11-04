@@ -351,9 +351,21 @@ async function main() {
   stats.pokemon = { kept: Object.keys(pokemon).length, dropped: Object.keys(dex).length - Object.keys(pokemon).length }
 
   // ---- Moves ---------------------------------------------------------------
+  /*
+   * Champions brought back moves this generation dropped, and Showdown's
+   * Gen 9 data still marks them "Past" — King's Shield, Storm Throw, Light
+   * of Ruin. A move the format teaches stays whatever that flag says, the
+   * same way a kept Pokemon's abilities do: these are being clicked in
+   * league games, and a move with no entry has no type, no power and no
+   * accuracy to read anywhere it turns up.
+   */
+  const taught = new Set()
+  for (const entry of Object.values(champions.learnsets)) {
+    for (const id of Object.keys(entry.learnset)) taught.add(id)
+  }
   const movesOut = {}
   for (const [id, m] of Object.entries(moves)) {
-    if (!isCurrentGen(m)) continue
+    if (!isCurrentGen(m) && !taught.has(id)) continue
     // Anything that shifts a stat, on either side of the field. Showdown splits
     // these across three places depending on whether the move targets self.
     const boosts = m.boosts ?? m.self?.boosts ?? m.selfBoost?.boosts ?? null
