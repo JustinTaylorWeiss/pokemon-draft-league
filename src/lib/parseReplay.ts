@@ -11,6 +11,12 @@
  * has no attacker, so those deaths are recorded with nobody credited rather
  * than blamed on whoever moved last.
  *
+ * Perish Song is the exception, because it kills with no damage line at all:
+ * the counter reaches zero and the Pokémon faints. Credit used to fall to
+ * whoever had hit it last, which could be several turns earlier, the wrong
+ * coach, or nobody. The singer is remembered instead and spent when the
+ * count runs out.
+ *
  * A faint that gets undone is taken back off both records. Revival Blessing
  * puts a fainted Pokémon back in the party, and a knockout that did not stick
  * is not a knockout: the death comes off the Pokémon and the KO comes off
@@ -134,6 +140,24 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
   const revived: Record<string, Record<number, number>> = { p1: {}, p2: {} }
   /** What a slot's `detailschange` said it became, until something says why. */
   const becoming: Record<string, string> = {}
+  /*
+   * Perish Song, which kills without a damage line.
+   *
+   * Everything else here works backwards from the hit: a Pokémon drops to
+   * `0 fnt` on a damage line and whoever moved against it last is credited.
+   * Perish Song has no damage line at all — the counter reaches zero and the
+   * Pokémon faints — so the credit fell to whoever happened to have hit it
+   * last, which could be three turns earlier, the wrong coach, or nobody.
+   *
+   * So the singer is remembered when the song lands and spent when the
+   * counter runs out. Per slot, because the four on the field are counting
+   * down separately and a second Perish Song does not re-apply to anything
+   * already singing — the first one still owns those.
+   */
+  let singer: { side: string; index: number } | null = null
+  const perishedBy: Record<string, { side: string; index: number } | null> = {}
+  /** Slots whose counter has just hit zero, so the next faint is the song's. */
+  const perishing = new Set<string>()
 
   let winner: string | null = null
 
@@ -179,6 +203,10 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
         const index = teamIndex(teams[who.side], speciesOf(parts[3] ?? who.name))
         active[slot] = index
         brought[who.side]?.add(index)
+        // The volatile goes when the Pokemon does, and the slot is about to
+        // be somebody else's.
+        delete perishedBy[slot]
+        perishing.delete(slot)
       }
 
     } else if (kind === 'move') {
@@ -188,6 +216,8 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       if (attacker && target) {
         lastHitBy[(parts[4] ?? '').split(':')[0].trim()] = attacker
       }
+      // Who to credit when the counters run out, a few turns from now.
+      if (attacker && (parts[3] ?? '').trim() === 'Perish Song') singer = attacker
       // A spread move names one target but hits several; the tag lists the rest.
       const spread = parts.find((p) => p.startsWith('[spread]'))
       if (attacker && spread) {
@@ -223,6 +253,22 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       const index = active[slot]
       if (who && species && index != null) teams[who.side][index] = species
 
+    } else if (kind === '-start' && /^perish\d$/.test((parts[3] ?? '').trim())) {
+      const slot = (parts[2] ?? '').split(':')[0].trim()
+      /*
+       * The first of these lines for a slot is the song landing on it, and
+       * the rest are the count ticking down. Only the first names the
+       * singer: where two are sung, the second does not re-apply to
+       * anything already counting, and overwriting here would hand those
+       * kills to whoever sang last.
+       *
+       * Taken from the first line rather than from the `[silent]` tag the
+       * application carries, so this still works if that line is not in
+       * the log.
+       */
+      if (!(slot in perishedBy)) perishedBy[slot] = singer
+      if ((parts[3] ?? '').trim() === 'perish0') perishing.add(slot)
+
     } else if (kind === '-damage') {
       // Damage from weather, status or an item has no attacker to credit.
       const slot = (parts[2] ?? '').split(':')[0].trim()
@@ -239,7 +285,18 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       // whether or not the faint ends up counting.
       brought[who.side]?.add(index)
 
-      const killer = lastHitBy[slot]
+      /*
+       * The song beats the last hit, where the count is what killed it: a
+       * perished Pokémon can have been hit by anybody in the meantime and
+       * the hit is not what finished it. A Pokémon downed by something
+       * else while perished still goes to whoever hit it, since only a
+       * counter at zero sets this.
+       */
+      const killer = perishing.has(slot) ? perishedBy[slot] ?? null : lastHitBy[slot]
+      perishing.delete(slot)
+      delete perishedBy[slot]
+      // Its own side's Perish Song is not a knockout for its own side, which
+      // the check below already says — a song hits everyone, singer included.
       if (killer && killer.side !== who.side) {
         kills[killer.side][killer.index] = (kills[killer.side][killer.index] ?? 0) + 1
       }
