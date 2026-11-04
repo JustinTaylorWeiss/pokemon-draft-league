@@ -10,15 +10,16 @@
  * are tiny and an approximation over nine Rock Slides is worth nothing.
  *
  * It is figured from each move's *listed* accuracy, which is the number anyone
- * reading a set has in mind, and only moves that can miss by that number are
- * counted at all. A Fake Out does miss occasionally — a sandstorm over a Sand
- * Veil, a Bright Powder, something halfway through a Fly — but the listed
- * number says it cannot, so against the listed number there is no comparison
- * to draw. Rating those the unluckiest Pokémon in the league, which is where
- * counting them lands, says more about the model than about the season.
+ * reading a set has in mind. Every move counts, a Fake Out as much as a Focus
+ * Blast: one that cannot miss expects no misses and lands exactly on that, so
+ * it moves nothing. The odds of a run come out the same whether those rolls
+ * are in or out.
  *
- * Where the field makes a 90% move worse than 90% it does land here as bad
- * luck, because from the listed number that is exactly what it looks like.
+ * Where the battle is harsher than the list — a sandstorm over a Sand Veil, a
+ * Bright Powder, something halfway through a Fly — that lands here as bad
+ * luck, because from the listed number that is exactly what it looks like. A
+ * Fake Out that missed missed something the list says cannot be missed, and
+ * saying so is the right answer even though the reason is elsewhere.
  */
 
 /** One move's accuracy record. */
@@ -38,7 +39,7 @@ export interface Rolled {
 export type Verdict = 'good' | 'bad' | 'even' | 'none'
 
 export interface Luck {
-  /** Rolls counted — only those on a move that can miss by its listed accuracy. */
+  /** Accuracy rolls counted, which is all of them bar moves of unknown accuracy. */
   rolls: number
   misses: number
   /** Misses the listed accuracies say to expect over those rolls. */
@@ -85,12 +86,12 @@ export function luckOf(shots: Rolled[]): Luck {
   for (const shot of shots) {
     if (shot.accuracy == null || shot.rolls <= 0) continue
     const miss = shot.accuracy === true ? 0 : Math.min(1, Math.max(0, 1 - shot.accuracy / 100))
-    // A move the list says cannot miss is left out whole — rolls, misses and
-    // all. See the note at the top: it has no odds to be measured against.
-    if (miss <= 0) continue
     rolls += shot.rolls
     misses += shot.misses
     expected += shot.rolls * miss
+    // A move that cannot miss leaves the spread where it is, and folding it
+    // in anyway would be a run of multiplications by one.
+    if (miss <= 0) continue
     for (let n = 0; n < shot.rolls; n += 1) {
       const next = new Array<number>(spread.length + 1).fill(0)
       for (let k = 0; k < spread.length; k += 1) {
@@ -137,9 +138,9 @@ export function oddsLabel(odds: number): string {
 
 /** The whole story in a sentence, for the tooltip behind the one-word verdict. */
 export function luckNote(luck: Luck): string {
-  if (!luck.rolls) return 'Nothing here could miss by its listed accuracy.'
+  if (!luck.rolls) return 'Nothing here rolled for accuracy.'
   const ahead = luck.misses <= luck.expected
-  return `${luck.rolls} ${luck.rolls === 1 ? 'roll' : 'rolls'} on moves that can miss, `
+  return `${luck.rolls} accuracy ${luck.rolls === 1 ? 'roll' : 'rolls'}, `
     + `${luck.misses} missed, ${luck.expected.toFixed(1)} expected. `
     + `Missing ${luck.misses} or ${ahead ? 'fewer' : 'more'} comes up `
     + `${oddsLabel(luck.odds)} of the time.`
