@@ -15,7 +15,7 @@ import { TypeChip } from '../../components/TypeChip'
 import type { LeagueTab } from './tabs'
 import { useAdvanced } from '../dex/advanced'
 import { MatchDetails } from './MatchDetails'
-import { VERDICT_LABEL, luckNote } from '../../lib/luck'
+import { luckLabel, luckNote } from '../../lib/luck'
 import { accuracyOf, addTallies, byUse, luckFor, perUse, useMoveDex } from './moveStats'
 import { useElementHeight } from '../../lib/useElementHeight'
 import './league.css'
@@ -807,7 +807,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                           <table className="detail-table mon-moves">
                             <thead>
                               <tr>
-                                <th className="detail-moves">Move</th>
+                                <th className="detail-move">Move</th>
                                 <th title="Times clicked">Used</th>
                                 <th title="Knockouts this move finished">KOs</th>
                                 <th title="Percentage points of the other side's health, added across targets">
@@ -817,7 +817,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                                   %/use
                                 </th>
                                 <th title="The move's listed accuracy">Acc</th>
-                                <th title="Misses against what the listed accuracy says to expect">
+                                <th title="Where its accuracy rolls landed in the range they could have: higher is luckier">
                                   Luck
                                 </th>
                               </tr>
@@ -828,7 +828,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                                 const luck = luckFor([mv], moveDex)
                                 return (
                                 <tr key={mv.name}>
-                                  <th scope="row" className="detail-moves">{mv.name}</th>
+                                  <th scope="row" className="detail-move">{mv.name}</th>
                                   <td>{mv.used}</td>
                                   <td className={mv.kos ? 'pos' : ''}>{mv.kos || '\u2014'}</td>
                                   <td>{mv.damage ? `${mv.damage}%` : '\u2014'}</td>
@@ -841,10 +841,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                                     {acc === true ? '\u2014' : acc == null ? '?' : `${acc}%`}
                                   </td>
                                   <td className={`detail-luck is-${luck.verdict}`} title={luckNote(luck)}>
-                                    {VERDICT_LABEL[luck.verdict]}
-                                    {luck.verdict !== 'none' && (
-                                      <small>{luck.misses} of {luck.expected.toFixed(1)}</small>
-                                    )}
+                                    {luckLabel(luck)}
                                   </td>
                                 </tr>
                                 )
@@ -865,17 +862,14 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                                 const luck = luckFor(moves, moveDex)
                                 return (
                                   <tr>
-                                    <th scope="row" className="detail-moves">Everything</th>
+                                    <th scope="row" className="detail-move">Everything</th>
                                     <td>{all.used}</td>
                                     <td className={all.kos ? 'pos' : ''}>{all.kos || '\u2014'}</td>
                                     <td>{all.damage ? `${all.damage}%` : '\u2014'}</td>
                                     <td>{all.damage ? `${perUse(all)}%` : '\u2014'}</td>
                                     <td>{'\u2014'}</td>
                                     <td className={`detail-luck is-${luck.verdict}`} title={luckNote(luck)}>
-                                      {VERDICT_LABEL[luck.verdict]}
-                                      {luck.verdict !== 'none' && (
-                                        <small>{luck.misses} of {luck.expected.toFixed(1)}</small>
-                                      )}
+                                      {luckLabel(luck)}
                                     </td>
                                   </tr>
                                 )

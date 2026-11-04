@@ -3,7 +3,7 @@ import type { Game, GameLine, LeaguePokemon, MoveTally } from '../../data/league
 import type { MoveDex } from '../../data/types'
 import { Sprite } from '../../components/Sprite'
 import { PokemonLink } from '../../components/PokemonLink'
-import { VERDICT_LABEL, luckNote } from '../../lib/luck'
+import { luckLabel, luckNote } from '../../lib/luck'
 import { addTallies, byUse, luckFor, perUse, useMoveDex } from './moveStats'
 
 /** The same Pokémon's line across several games, added up. */
@@ -37,75 +37,108 @@ function roll(lines: GameLine[][]): Rolled[] {
       || y.moves.length - x.moves.length || x.pokemon.localeCompare(y.pokemon))
 }
 
+/**
+ * One row per move, with the Pokémon's own figures spanning its moves.
+ *
+ * The move numbers were a list inside a single cell, which left four facts
+ * floating with no heading over any of them. They are columns now, which is
+ * what they always were — and the two-row heading is what lets a Pokémon's
+ * knockouts and a move's knockouts both be called KOs without the reader
+ * having to guess which is which.
+ */
 function Rows({ rows, dex, moves }: {
   rows: Rolled[]
   dex: Record<string, LeaguePokemon>
   moves: MoveDex | null
 }) {
   return (
-    <table className="detail-table">
-      <thead>
-        <tr>
-          <th className="detail-mon">Pokémon</th>
-          <th title="Knockouts scored">KOs</th>
-          <th title="Times it fainted">Fainted</th>
-          <th title="Misses against what its moves' listed accuracy says to expect">Luck</th>
-          <th className="detail-moves">Moves</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map((r) => {
-          const mon = dex[r.pokemon]
-          const luck = luckFor(r.moves, moves)
-          return (
-            <tr key={r.pokemon}>
-              {/* An inner span does the laying out, not the cell: a `th`
-                  told to be a flex container stops being a table cell and
-                  its border stops short of the row. */}
-              <th scope="row" className="detail-mon">
-                <span className="detail-mon-inner">
-                  <PokemonLink id={r.pokemon} title={mon?.name ?? r.pokemon}>
-                    {mon && <Sprite pokemon={mon} width={32} height={26} />}
-                  </PokemonLink>
-                  <PokemonLink id={r.pokemon}>{mon?.name ?? r.pokemon}</PokemonLink>
-                </span>
-              </th>
-              <td className={r.kills ? 'pos' : ''}>{r.kills}</td>
-              <td className={r.deaths ? 'neg' : ''}>{r.deaths}</td>
-              <td className={`detail-luck is-${luck.verdict}`} title={luckNote(luck)}>
-                {VERDICT_LABEL[luck.verdict]}
-                {luck.verdict !== 'none' && (
-                  <small>{luck.misses} of {luck.expected.toFixed(1)}</small>
-                )}
-              </td>
-              <td className="detail-moves">
-                {r.moves.length ? (
-                  /* Every line fills all six tracks, blanks included, so the
-                     numbers line up down the list instead of each row
-                     ending wherever its own facts run out. */
-                  <ul className="move-tally">
-                    {[...r.moves].sort(byUse).map((m) => (
-                      <li key={m.name}>
-                        <span className="tally-name">{m.name}</span>
-                        <span className="tally-used">×{m.used}</span>
-                        <span className="tally-kos">{m.kos > 0 ? `${m.kos} KO` : ''}</span>
-                        <span className="tally-dmg">{m.damage > 0 ? `${m.damage}%` : ''}</span>
-                        <span className="tally-rate" title="Damage per use">
-                          {m.damage > 0 ? `${perUse(m)}%/use` : ''}
-                        </span>
-                        <span className="tally-miss" title={luckNote(luckFor([m], moves))}>
-                          {m.misses > 0 ? `${m.misses} miss` : ''}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : <em className="none">{'—'}</em>}
-              </td>
-            </tr>
-          )
-        })}
-      </tbody>
-    </table>
+    <div className="detail-scroll">
+      <table className="detail-table">
+        <thead>
+          <tr>
+            <th className="detail-mon" rowSpan={2}>Pokémon</th>
+            <th rowSpan={2} title="Knockouts scored">KOs</th>
+            <th rowSpan={2} title="Times it fainted">Fainted</th>
+            <th
+              rowSpan={2}
+              title="Where its accuracy rolls landed in the range they could have: higher is luckier"
+            >
+              Luck
+            </th>
+            <th colSpan={6} className="detail-group">Each move</th>
+          </tr>
+          <tr>
+            <th className="detail-move">Move</th>
+            <th title="Times clicked">Used</th>
+            <th title="Knockouts this move finished">KOs</th>
+            <th title="Percentage points of the other side's health, added across targets">%</th>
+            <th title="That damage spread over the times it was clicked">%/use</th>
+            <th title="Accuracy rolls it lost">Miss</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => {
+            const mon = dex[r.pokemon]
+            const luck = luckFor(r.moves, moves)
+            const clicked = [...r.moves].sort(byUse)
+            // A Pokemon that was brought and never moved still gets a row, so
+            // its knockouts and faints are not dropped for want of a move.
+            const lines = clicked.length ? clicked : [null]
+            return (
+              <Fragment key={r.pokemon}>
+                {lines.map((m, i) => (
+                  <tr key={m?.name ?? '—'} className={i === 0 ? 'detail-first' : undefined}>
+                    {i === 0 && (
+                      <>
+                        {/* An inner span does the laying out, not the cell: a
+                            `th` told to be a flex container stops being a
+                            table cell and its border stops short of the row. */}
+                        <th scope="rowgroup" className="detail-mon" rowSpan={lines.length}>
+                          <span className="detail-mon-inner">
+                            <PokemonLink id={r.pokemon} title={mon?.name ?? r.pokemon}>
+                              {mon && <Sprite pokemon={mon} width={32} height={26} />}
+                            </PokemonLink>
+                            <PokemonLink id={r.pokemon}>{mon?.name ?? r.pokemon}</PokemonLink>
+                          </span>
+                        </th>
+                        <td className={r.kills ? 'pos' : ''} rowSpan={lines.length}>{r.kills}</td>
+                        <td className={r.deaths ? 'neg' : ''} rowSpan={lines.length}>{r.deaths}</td>
+                        <td
+                          className={`detail-luck is-${luck.verdict}`}
+                          rowSpan={lines.length} title={luckNote(luck)}
+                        >
+                          {luckLabel(luck)}
+                        </td>
+                      </>
+                    )}
+                    {m ? (
+                      <>
+                        <td className="detail-move">{m.name}</td>
+                        <td>{m.used}</td>
+                        <td className={m.kos ? 'pos' : ''}>{m.kos || '—'}</td>
+                        <td>{m.damage ? `${m.damage}%` : '—'}</td>
+                        <td>{m.damage ? `${perUse(m)}%` : '—'}</td>
+                        {/* A column of noughts is most of this column, so
+                            only a miss is drawn in a colour that asks to be
+                            looked at. */}
+                        <td
+                          className={m.misses ? 'neg' : 'quiet'}
+                          title={m.rolls ? luckNote(luckFor([m], moves)) : undefined}
+                        >
+                          {m.rolls ? m.misses : '—'}
+                        </td>
+                      </>
+                    ) : (
+                      <td className="detail-move none" colSpan={6}>Did not move</td>
+                    )}
+                  </tr>
+                ))}
+              </Fragment>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
   )
 }
 

@@ -45,26 +45,43 @@ export interface Luck {
   /** Misses the listed accuracies say to expect over those rolls. */
   expected: number
   /**
+   * Where this run sits among every run it could have been, as a share:
+   * 1 is the luckiest there is, 0 the unluckiest, and half is dead average.
+   *
+   * The headline number, because it reads the way people expect a
+   * percentage to — bigger is better, all the way up. The tail probability
+   * below cannot do that: a 1% run and a 99th-percentile run are both
+   * "1% likely", one of them because it was wonderful and the other
+   * because it was dreadful.
+   *
+   * Counted as the chance of missing more than this, plus half the chance
+   * of missing exactly this. The half is what keeps it honest with whole
+   * numbers of misses: without it a flawless run would score 100% against
+   * odds that were never certain.
+   */
+  percentile: number
+  /**
    * The chance of a run this good or this bad: the probability of missing at
    * most this many when ahead of expectation, and at least this many when
    * behind. Never the probability of exactly this many, which is small for
-   * everything and so says nothing.
+   * everything and so says nothing. Said in words behind the percentage.
    */
   odds: number
   verdict: Verdict
 }
 
 /**
- * How unlikely a run has to be before it gets called lucky or unlucky:
- * less than one time in five.
+ * How far up or down the range a run has to land before it gets called
+ * lucky or unlucky: the top or bottom sixth of everything it could have been.
  *
- * Judged on the odds rather than on how far off expectation it landed,
+ * Judged on where it sits rather than on how far off expectation it landed,
  * because a whole miss means different things at different volumes. Two
- * misses where one was expected sounds damning and happens a quarter of the
- * time; five fewer than expected over two hundred rolls sounds like nothing
+ * misses where one was expected sounds damning and is a sixth of the way
+ * down; five fewer than expected over two hundred rolls sounds like nothing
  * and is a genuinely charmed season.
  */
-const UNUSUAL = 0.2
+const LUCKY = 0.85
+const UNLUCKY = 0.15
 
 /** Below half a miss expected, a clean run is not luck, it is arithmetic. */
 const QUIET = 0.5
@@ -102,6 +119,11 @@ export function luckOf(shots: Rolled[]): Luck {
     }
   }
 
+  const chance = (k: number) => (k >= 0 && k < spread.length ? spread[k] : 0)
+  let worse = 0
+  for (let k = misses + 1; k < spread.length; k += 1) worse += spread[k]
+  const percentile = Math.min(1, Math.max(0, worse + chance(misses) / 2))
+
   // Which tail to read is decided by which side of expectation the result
   // landed, so the number always answers "how unusual is this, in the
   // direction it went".
@@ -121,27 +143,36 @@ export function luckOf(shots: Rolled[]): Luck {
    */
   const idle = rolls === 0 || (misses === 0 && expected < QUIET)
   const verdict: Verdict = idle ? 'none'
-    : odds > UNUSUAL ? 'even'
-      : misses < expected ? 'good'
-        : misses > expected ? 'bad'
-          : 'even'
+    : percentile >= LUCKY ? 'good'
+      : percentile <= UNLUCKY ? 'bad'
+        : 'even'
 
-  return { rolls, misses, expected, odds, verdict }
+  return { rolls, misses, expected, percentile, odds, verdict }
 }
 
-/** `56%`, and `<1%` rather than `0%` for something the listed odds call impossible. */
+/** `56%`, and the two edges said as edges rather than rounded to a certainty. */
 export function oddsLabel(odds: number): string {
   if (odds >= 0.995) return '>99%'
   if (odds < 0.005) return '<1%'
   return `${Math.round(odds * 100)}%`
 }
 
-/** The whole story in a sentence, for the tooltip behind the one-word verdict. */
+/** What the Luck column shows: the percentile, or nothing worth saying. */
+export const luckLabel = (luck: Luck): string =>
+  luck.verdict === 'none' ? VERDICT_LABEL.none : oddsLabel(luck.percentile)
+
+/** The whole story in a sentence, behind the percentage. */
 export function luckNote(luck: Luck): string {
   if (!luck.rolls) return 'Nothing here rolled for accuracy.'
+  if (luck.verdict === 'none') {
+    return `${luck.rolls} accuracy ${luck.rolls === 1 ? 'roll' : 'rolls'}, `
+      + 'none of which could realistically have missed.'
+  }
   const ahead = luck.misses <= luck.expected
-  return `${luck.rolls} accuracy ${luck.rolls === 1 ? 'roll' : 'rolls'}, `
-    + `${luck.misses} missed, ${luck.expected.toFixed(1)} expected. `
-    + `Missing ${luck.misses} or ${ahead ? 'fewer' : 'more'} comes up `
+  const named = { good: 'Good luck', bad: 'Bad luck', even: 'Average luck', none: '' }[luck.verdict]
+  return `${named}, ${oddsLabel(luck.percentile)} of the way up the range. `
+    + `${luck.rolls} accuracy ${luck.rolls === 1 ? 'roll' : 'rolls'}, `
+    + `${luck.misses} missed, ${luck.expected.toFixed(1)} expected — missing `
+    + `${luck.misses} or ${ahead ? 'fewer' : 'more'} comes up `
     + `${oddsLabel(luck.odds)} of the time.`
 }

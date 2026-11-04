@@ -1639,55 +1639,36 @@
 .detail-table .detail-mon { text-align: left; white-space: nowrap; font-weight: 600; }
 .detail-mon-inner { display: flex; align-items: center; gap: 0.35rem; }
 .detail-mon img { image-rendering: pixelated; object-fit: contain; }
-.detail-table .detail-moves { text-align: left; width: 52%; }
-
-/* How its luck ran, which is a word first and the figures behind it. */
-.detail-luck { white-space: nowrap; }
-.detail-luck small {
-  display: block; color: var(--muted); font-size: 0.82em; font-weight: 400;
-  font-variant-numeric: tabular-nums;
+/* The move's own name, read down the column like the Pokemon's. */
+.detail-table .detail-move { text-align: left; }
+.detail-table td.detail-move { color: var(--fg); }
+.detail-table .none { color: var(--muted); font-style: italic; }
+.detail-table .quiet { color: var(--muted); opacity: 0.55; }
+/* What the second heading row sits under. */
+.detail-table .detail-group {
+  font-size: 0.6rem; color: var(--muted); font-weight: 600;
+  letter-spacing: 0.06em; border-bottom-color: transparent;
 }
+/* A Pokemon's own figures span its moves, so they centre against the block
+   rather than hugging the first move's line. */
+.detail-table [rowspan] { vertical-align: middle; }
+
+/* How its luck ran: where it landed in the range, higher being luckier. */
+.detail-luck { white-space: nowrap; font-weight: 600; }
 .detail-luck.is-good { color: #4fb573; }
 .detail-luck.is-bad { color: var(--nav-red); }
-.detail-luck.is-even, .detail-luck.is-none { color: var(--muted); }
+.detail-luck.is-even, .detail-luck.is-none { color: var(--muted); font-weight: 400; }
 
 /*
- * One move per line, and the list itself is the grid rather than each line:
- * every row drops into the same six tracks, so the numbers line up down the
- * cell instead of each line ending wherever its own facts run out. The empty
- * spans are load-bearing — a missing one would shunt everything after it a
- * column to the left.
+ * Ten columns do not fit a phone, and this one is a table of numbers where
+ * every column is the point — there is no honest way to drop one. So it
+ * scrolls sideways, which is what the rest of the site's wide tables do.
  */
-.move-tally {
-  list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: minmax(0, 1fr) repeat(5, auto);
-  column-gap: 0.5rem; align-items: baseline; line-height: 1.5;
-}
-.move-tally li { display: contents; }
-.tally-name { color: var(--fg); }
-.tally-used, .tally-kos, .tally-dmg, .tally-rate, .tally-miss {
-  text-align: right; font-variant-numeric: tabular-nums;
-}
-.tally-used, .tally-dmg, .tally-rate { color: var(--muted); }
-.tally-kos { color: var(--accent); font-weight: 600; font-size: 0.92em; }
-.tally-miss { color: var(--nav-red); font-size: 0.92em; }
+.detail-scroll { overflow-x: auto; }
 
 @media (max-width: 620px) {
-  .detail-table .detail-moves { width: auto; }
-  /*
-   * No room for six tracks. Each move becomes a little block of its own —
-   * the name on one line and its figures under it — because wrapped into
-   * one run there is nothing to say where one move ends and the next
-   * begins. The blanks come out rather than sitting there as gaps.
-   */
-  .move-tally { display: block; }
-  .move-tally li {
-    display: flex; flex-wrap: wrap; gap: 0 0.5rem; align-items: baseline;
-  }
-  .move-tally li + li { margin-top: 0.3rem; }
-  .move-tally li span:empty { display: none; }
-  .tally-name { flex: 1 0 100%; }
-  .tally-used, .tally-kos, .tally-dmg, .tally-rate, .tally-miss { text-align: left; }
+  .detail-table { font-size: 0.72rem; }
+  .detail-table th, .detail-table td { padding: 0.18rem 0.25rem; }
 }
 
 
@@ -1700,7 +1681,7 @@
 /* The name column takes the slack, which in an auto-layout table means
    asking for all of it; the numbers either side then sit at their own
    width instead of one of them ballooning. */
-.mon-moves .detail-moves { width: 100%; min-width: 11rem; }
+.mon-moves .detail-move { width: 100%; min-width: 11rem; }
 .mon-moves thead th { white-space: nowrap; }
 /*
  * Nested in the awards table, this one picks up `.stat-table`'s full cell
