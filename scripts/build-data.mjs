@@ -239,9 +239,40 @@ const isCurrentGen = (entry) => !entry.isNonstandard
  * Wind's speed drop. Those are what the accuracy roll was for and are not
  * counted again here.
  */
+/**
+ * Secondaries that happen to the other side, which are the only ones worth
+ * calling a roll. A move that boosts its own user — Aqua Step, Trailblaze —
+ * writes that as a secondary at a hundred percent, and a thing that always
+ * happens is not a thing to be lucky about.
+ */
+const atTheTarget = (s) => !(s.self && !s.status && !s.volatileStatus && !s.boosts)
+
 function secondaryChance(move) {
-  const all = move.secondaries ?? (move.secondary ? [move.secondary] : [])
+  const all = (move.secondaries ?? (move.secondary ? [move.secondary] : [])).filter(atTheTarget)
   return all.reduce((sum, s) => sum + (typeof s.chance === 'number' ? s.chance : 0), 0)
+}
+
+/**
+ * What kind of extra effect it is, which decides what the chance is out of.
+ *
+ * A flinch can only show on a target that has not moved yet; a status can
+ * only show on one that is not already statused; everything else — a stat
+ * knocked down, confusion — needs only a target still standing. The reader
+ * counts all three, and this says which to read.
+ *
+ * The likeliest of several wins, and a flinch wins a tie, because the
+ * narrower count is the one that cannot overstate what should have happened.
+ */
+function secondaryKind(move) {
+  const all = (move.secondaries ?? (move.secondary ? [move.secondary] : []))
+    .filter(atTheTarget)
+    .filter((s) => typeof s.chance === 'number' && s.chance > 0)
+  if (!all.length) return null
+  const rank = (s) => (s.volatileStatus === 'flinch' ? 1 : 0)
+  const best = [...all].sort((a, b) => b.chance - a.chance || rank(b) - rank(a))[0]
+  if (best.volatileStatus === 'flinch') return 'flinch'
+  if (best.status) return 'status'
+  return 'other'
 }
 
 async function main() {
@@ -398,7 +429,10 @@ async function main() {
        */
       ...(m.critRatio && m.critRatio !== 1 && { critRatio: m.critRatio }),
       ...(m.willCrit && { willCrit: true }),
-      ...(secondaryChance(m) > 0 && { secondaryChance: secondaryChance(m) }),
+      ...(secondaryChance(m) > 0 && {
+        secondaryChance: secondaryChance(m),
+        secondaryKind: secondaryKind(m),
+      }),
       pp: m.pp,
       priority: m.priority,
       target: m.target,

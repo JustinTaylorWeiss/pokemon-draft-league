@@ -101,6 +101,25 @@ export interface MoveTally {
    * data, which this reader does not have.
    */
   procs: number
+  /**
+   * Hits that left the target standing.
+   *
+   * The denominator those extras are out of, and not the same as hits: a
+   * Pokémon knocked out by the damage cannot then be burned by it, so the
+   * roll never had anywhere to land. Counted per target.
+   */
+  live: number
+  /**
+   * Of those, the ones on a target that had not moved yet this turn.
+   *
+   * What a flinch is out of. A flinch roll against something that has
+   * already acted succeeds in silence — it stops a move that was never
+   * going to be made, and the log says nothing — so counting it would
+   * have every Rock Slide in the league look like it never flinched.
+   */
+  liveEarly: number
+  /** Of those, the ones on a target that was not already statused. */
+  liveClean: number
 }
 
 export interface ReplayGame {
@@ -292,7 +311,10 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
   const clicked: Record<string, Record<number, Record<string, MoveTally>>> = { p1: {}, p2: {} }
   const tally = (c: Credit, name: string): MoveTally => {
     const forSlot = (clicked[c.side][c.index] ??= {})
-    return (forSlot[name] ??= { name, used: 0, kos: 0, damage: 0, rolls: 0, misses: 0, crits: 0, procs: 0 })
+    return (forSlot[name] ??= {
+      name, used: 0, kos: 0, damage: 0, rolls: 0, misses: 0,
+      crits: 0, procs: 0, live: 0, liveEarly: 0, liveClean: 0,
+    })
   }
   /** Health each position is on, out of a hundred, for reading damage off. */
   const health: Record<string, number> = {}
@@ -311,6 +333,25 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
   let rolledAt = new Set<string>()
   /** Targets the move being resolved has already been credited a proc on. */
   let proccedAt = new Set<string>()
+  /**
+   * Targets the move being resolved has landed on, kept so a knockout can
+   * take the hit back off the count of places its extra effect could have
+   * gone. Cleared once the turn moves past the move that filled it.
+   */
+  let struck = new Map<string, { early: boolean; clean: boolean }>()
+  /** Who has already acted this turn, which is what a flinch turns on. */
+  const movedThisTurn = new Set<string>()
+  /**
+   * Flinch chances still waiting on their target to take a turn.
+   *
+   * A flinch only ever shows when the Pokémon it landed on comes to move.
+   * One knocked out by the other attack that turn never gets there, and
+   * the roll goes unreported however it went — so it comes back off at
+   * the end of the turn rather than counting as a chance that failed.
+   */
+  let pendingEarly: { credit: Credit; slot: string }[] = []
+  /** What each position is suffering, so a second status is not a new roll. */
+  const statusOf: Record<string, string> = {}
 
   let winner: string | null = null
 
@@ -367,6 +408,11 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
         brought[who.side]?.add(index)
         // Whatever it comes in on, which a dragged-in Pokemon may not be full.
         health[slot] = hpOf(parts[4] ?? '') ?? 100
+        // And whatever it is already suffering, which the health field carries.
+        const carried = /^\d+\s*\/\s*\d+\s+(\w+)/.exec((parts[4] ?? '').trim())
+        if (carried) statusOf[slot] = carried[1]
+        else delete statusOf[slot]
+        struck.delete(slot)
         // The volatile goes when the Pokemon does, and the slot is about to
         // be somebody else's.
         delete perishedBy[slot]
@@ -374,7 +420,22 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
         selfKO.delete(slot)
       }
 
+    } else if (kind === 'turn' || kind === 'upkeep') {
+      // Everything after this belongs to the next move, not the last one.
+      struck.clear()
+      if (kind === 'turn') {
+        for (const waiting of pendingEarly) {
+          if (movedThisTurn.has(waiting.slot)) continue
+          const row = tally(waiting.credit, waiting.credit.move)
+          row.liveEarly = Math.max(0, row.liveEarly - 1)
+        }
+        pendingEarly = []
+        movedThisTurn.clear()
+      }
+
     } else if (kind === 'move') {
+      struck = new Map()
+      movedThisTurn.add((parts[2] ?? '').split(':')[0].trim())
       const user = parseIdent(parts[2] ?? '')
       const target = parseIdent(parts[4] ?? '')
       const at = user ? attackerAt(parts[2] ?? '', user) : null
@@ -477,8 +538,11 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
         tally(resolving, resolving.move).crits += 1
       }
 
+    } else if (kind === '-curestatus') {
+      delete statusOf[(parts[2] ?? '').split(':')[0].trim()]
+
     } else if (kind === '-status' || kind === '-unboost'
-      || (kind === '-start' && /^(confusion|flinch)$/i.test((parts[3] ?? '').trim()))) {
+      || (kind === '-start' && !/^perish\d$/i.test((parts[3] ?? '').trim()))) {
       /*
        * A move's extra effect landing: a status, a stat knocked down,
        * confusion. Taken as the move's own only where the log does not
@@ -496,8 +560,16 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
         proccedAt.add(at)
         tally(resolving, resolving.move).procs += 1
       }
+      // Read after the proc, so a move inflicting a status does not count
+      // the target as having had one when it landed.
+      if (kind === '-status') statusOf[at] = (parts[3] ?? '').trim()
 
-    } else if (kind === 'cant' && (parts[3] ?? '').trim() === 'flinch') {
+    } else if (kind === 'cant') {
+      // Its turn is spent either way, so nothing landing after this can
+      // flinch it, and a flinch waiting on it has had its answer.
+      const slot = (parts[2] ?? '').split(':')[0].trim()
+      movedThisTurn.add(slot)
+      if ((parts[3] ?? '').trim() !== 'flinch') continue
       /*
        * A flinch, which the log only mentions when the flinched Pokemon
        * comes to move — by which time the move that caused it is several
@@ -505,7 +577,6 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
        * flinching only works from a hit that landed before it moved, and
        * the volatile is gone by the next turn.
        */
-      const slot = (parts[2] ?? '').split(':')[0].trim()
       const by = lastHitBy[slot]
       if (by) tally(by, by.move).procs += 1
 
@@ -574,7 +645,9 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       health[slot] = now
       if (kind !== '-damage') continue
       // Damage from weather, status or an item has no attacker to credit.
-      if (indirect) { lastHitBy[slot] = null; continue }
+      // It also marks the end of the move's own lines, after which a faint
+      // is nothing to do with what the move landed.
+      if (indirect) { lastHitBy[slot] = null; struck.clear(); continue }
       /*
        * Everything else under a move belongs to it. Counted only against
        * the other side: a spread move catching its own partner has done
@@ -582,7 +655,24 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
        */
       const hurt = parseIdent(parts[2] ?? '')
       if (resolving && hurt && hurt.side !== resolving.side && now < was) {
-        tally(resolving, resolving.move).damage += was - now
+        const row = tally(resolving, resolving.move)
+        row.damage += was - now
+        /*
+         * Somewhere its extra effect could have gone, counted the moment
+         * the hit lands rather than at the end of the move — this is when
+         * the target's state is the one the effect would have met. Taken
+         * back below if the hit turns out to have knocked it out.
+         */
+        if (!struck.has(slot)) {
+          const how = { early: !movedThisTurn.has(slot), clean: !statusOf[slot] }
+          struck.set(slot, how)
+          row.live += 1
+          if (how.early) {
+            row.liveEarly += 1
+            pendingEarly.push({ credit: resolving, slot })
+          }
+          if (how.clean) row.liveClean += 1
+        }
       }
 
     } else if (kind === 'faint') {
@@ -591,6 +681,23 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       const slot = (parts[2] ?? '').split(':')[0].trim()
       const index = active[slot] ?? teamIndex(teams[who.side], who.name)
       deaths[who.side][index] = (deaths[who.side][index] ?? 0) + 1
+      /*
+       * A Pokémon the move being resolved has just knocked out was never
+       * somewhere its extra effect could land, so the hit comes back off
+       * that count.
+       */
+      const how = resolving ? struck.get(slot) : undefined
+      if (resolving && how) {
+        struck.delete(slot)
+        const row = tally(resolving, resolving.move)
+        row.live = Math.max(0, row.live - 1)
+        if (how.early) {
+          row.liveEarly = Math.max(0, row.liveEarly - 1)
+          const waiting = pendingEarly.findIndex((e) => e.slot === slot && e.credit === resolving)
+          if (waiting >= 0) pendingEarly.splice(waiting, 1)
+        }
+        if (how.clean) row.liveClean = Math.max(0, row.liveClean - 1)
+      }
       // Recorded here rather than inferred from the death afterwards: a revive
       // takes the death back, and a Pokemon that fainted was on the field
       // whether or not the faint ends up counting.

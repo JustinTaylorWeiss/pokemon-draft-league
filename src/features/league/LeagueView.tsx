@@ -17,8 +17,7 @@ import { useAdvanced } from '../dex/advanced'
 import { MatchDetails } from './MatchDetails'
 import { luckLabel, luckNote } from '../../lib/luck'
 import {
-  accuracyOf, addTallies, byUse, luckFor, perUse, scoreFor, scoreNote,
-  secondariesOf, useMoveDex,
+  accuracyOf, addTallies, byUse, luckFor, perUse, scoreFor, scoreNote, useMoveDex,
 } from './moveStats'
 import { useElementHeight } from '../../lib/useElementHeight'
 import './league.css'
@@ -755,10 +754,10 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                     ranking it by something nobody did. */}
                 <th
                   className="col-luck"
-                  title={'How the dice went for it: where its accuracy and critical-hit '
-                    + 'rolls landed among every run they could have been.\nHigher is '
-                    + 'luckier and an ordinary run sits around the middle. Hover a '
-                    + 'row for the breakdown.'}
+                  title={'How the dice went for it: where its accuracy, critical-hit '
+                    + 'and secondary-effect rolls landed among every run they could '
+                    + 'have been.\nHigher is luckier and an ordinary run sits around '
+                    + 'the middle. Hover a row for the breakdown.'}
                 >
                   Luck
                 </th>
@@ -771,7 +770,6 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                 const medal = MEDALS[i + 1]
                 const moves = movesByMon.get(t.pokemon) ?? []
                 const luck = scoreFor(moves, moveDex)
-                const extras = secondariesOf(moves, moveDex)
                 const showing = openMon === t.pokemon
                 return (
                   <Fragment key={t.pokemon}>
@@ -819,7 +817,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                     ))}
                     <td
                       className={`col-luck detail-luck is-${luck.verdict}`}
-                      title={moveDex ? scoreNote(luck, extras) : undefined}
+                      title={moveDex ? scoreNote(luck) : undefined}
                     >
                       {moveDex ? luckLabel(luck) : ''}
                     </td>
@@ -882,7 +880,10 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                                   used: sum.used + mv.used,
                                   kos: sum.kos + mv.kos,
                                   damage: sum.damage + mv.damage,
-                                }), { name: 'all', used: 0, kos: 0, damage: 0, rolls: 0, misses: 0, crits: 0, procs: 0 })
+                                }), {
+                                  name: 'all', used: 0, kos: 0, damage: 0, rolls: 0,
+                                  misses: 0, crits: 0, procs: 0, live: 0, liveEarly: 0, liveClean: 0,
+                                })
                                 const luck = luckFor(moves, moveDex)
                                 return (
                                   <tr>

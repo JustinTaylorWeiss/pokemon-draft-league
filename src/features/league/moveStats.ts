@@ -54,6 +54,9 @@ export function addTallies(into: MoveTally[], from: MoveTally[]): void {
     held.misses += move.misses
     held.crits += move.crits
     held.procs += move.procs
+    held.live += move.live
+    held.liveEarly += move.liveEarly
+    held.liveClean += move.liveClean
   }
 }
 
@@ -97,8 +100,15 @@ const landed = (tally: MoveTally) => Math.max(0, tally.rolls - tally.misses)
  *    moves are left out: they never crit, and counting their hits as crit
  *    rolls had the league running a third under expectation.
  *
- * Secondary effects — a flinch, a burn, a stat knocked down — are counted
- * and shown, but deliberately not scored. See `secondariesOf`.
+ *  - Secondary effects: a flinch, a burn, a stat knocked down.
+ *
+ * What each is out of matters as much as the chance. A hit that knocked the
+ * target out had nowhere to put a burn; a flinch only ever shows on a target
+ * that was still to move, and only if it lived long enough to try. The
+ * reader counts those three narrowing denominators, and the move's own kind
+ * says which one to read — without them the league came out at two thirds of
+ * what the listed chances called for, which is a measure of the reading
+ * rather than of the season.
  */
 export function chancesOf(tallies: MoveTally[], moves: MoveDex | null): Chance[] {
   const out: Chance[] = []
@@ -122,6 +132,24 @@ export function chancesOf(tallies: MoveTally[], moves: MoveDex | null): Chance[]
         chance: CRIT_ODDS[move.critRatio ?? 1] ?? CRIT_ODDS[1],
       })
     }
+    const could = move.secondaryKind === 'flinch' ? tally.liveEarly
+      : move.secondaryKind === 'status' ? tally.liveClean
+        : tally.live
+    /*
+     * Only where the effect is a chance. A Fake Out flinches every time and
+     * a Salt Cure always sticks, so neither is luck — and the handful the
+     * reader fails to spot (a Covert Cloak, a confusion that needed the
+     * target to have a stat raised) would read as an impossibility and put
+     * an otherwise ordinary Pokémon at the bottom of the league.
+     */
+    if (move.secondaryChance && move.secondaryChance < 100 && could > 0) {
+      out.push({
+        label: 'Extra effects',
+        rolls: could,
+        good: tally.procs,
+        chance: move.secondaryChance / 100,
+      })
+    }
   }
   return out
 }
@@ -129,27 +157,7 @@ export function chancesOf(tallies: MoveTally[], moves: MoveDex | null): Chance[]
 export const scoreFor = (tallies: MoveTally[], moves: MoveDex | null): Score =>
   scoreOf(chancesOf(tallies, moves))
 
-/**
- * Secondary effects seen, and how many the listed chances called for.
- *
- * Shown but not scored, because the log cannot be read straight here. A
- * flinch that lands on a Pokémon which has already moved changes nothing and
- * is never written down, so three in ten Rock Slides flinching comes out as
- * one in ten. A burn rolled against a Fire type was never a roll. Both pull
- * the same way, and scoring them would have every Pokémon in the league
- * looking hard done by.
- */
-export function secondariesOf(tallies: MoveTally[], moves: MoveDex | null) {
-  let seen = 0
-  let listed = 0
-  for (const tally of tallies) {
-    const move = moves?.[toId(tally.name)]
-    if (!move?.secondaryChance) continue
-    seen += tally.procs
-    listed += landed(tally) * (move.secondaryChance / 100)
-  }
-  return { seen, listed }
-}
+
 
 /**
  * The overall luck score written out, for the tooltip behind the number.
@@ -158,7 +166,7 @@ export function secondariesOf(tallies: MoveTally[], moves: MoveDex | null) {
  * tooltip that works the same on a phone's long-press, a keyboard focus and
  * a mouse without a line of script behind it.
  */
-export function scoreNote(score: Score, extras: { seen: number; listed: number }): string {
+export function scoreNote(score: Score): string {
   if (!score.rolls) return 'Nothing this Pokémon did was a roll of the dice.'
   const named = {
     good: 'Good luck', bad: 'Bad luck', even: 'Average luck',
@@ -170,12 +178,5 @@ export function scoreNote(score: Score, extras: { seen: number; listed: number }
       + ' this Pokémon could have had.'
   const lines = score.parts.map((part) =>
     `${part.label}: ${part.good} of ${part.rolls}, ${part.expected.toFixed(1)} expected`)
-  // Said plainly rather than left out, because "my Rock Slides never flinch"
-  // is exactly the complaint somebody opens this expecting to settle.
-  if (extras.seen || extras.listed >= 0.5) {
-    lines.push(`Flinches, burns and other extras: ${extras.seen} landed of `
-      + `${extras.listed.toFixed(1)} the odds called for — shown, not scored, `
-      + 'since the log never mentions a flinch that changed nothing.')
-  }
   return [head, ...lines].join('\n')
 }

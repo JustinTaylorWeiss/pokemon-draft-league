@@ -116,11 +116,14 @@ export interface MoveTally {
   misses: number
   /** Critical hits it landed, rolled once per hit. */
   crits: number
-  /**
-   * Times its extra effect fired on the other side — a burn, a flinch, a
-   * stat drop. Shown rather than scored: see `secondariesOf`.
-   */
+  /** Times its extra effect fired on the other side — a burn, a flinch, a stat drop. */
   procs: number
+  /** Hits that left the target standing, which is what that is out of. */
+  live: number
+  /** Of those, hits on a target yet to move — all a flinch can ever show on. */
+  liveEarly: number
+  /** Of those, hits on a target not already statused. */
+  liveClean: number
 }
 
 /**

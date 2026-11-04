@@ -82,6 +82,12 @@ export interface Move {
   willCrit?: boolean
   /** How often its extra effect fires, as a percentage; absent when it has none. */
   secondaryChance?: number
+  /**
+   * What that effect is, which decides what its chance is out of: a flinch
+   * needs a target that has not moved, a status one that is not already
+   * statused, and the rest only a target left standing.
+   */
+  secondaryKind?: 'flinch' | 'status' | 'other'
   pp: number
   priority: number
   target: string

@@ -112,7 +112,11 @@ function spreadOf(trials: { rolls: number; chance: number }[]): number[] {
 }
 
 export function scoreOf(chances: Chance[]): Score {
+  // Clamped, because a reader that credits an effect to the wrong move can
+  // hand a kind more successes than it had rolls, and the spread below has
+  // nowhere to put the extra.
   const live = chances.filter((c) => c.rolls > 0)
+    .map((c) => ({ ...c, good: Math.min(Math.max(0, c.good), c.rolls) }))
   const rolls = live.reduce((n, c) => n + c.rolls, 0)
   const good = live.reduce((n, c) => n + c.good, 0)
   const expected = live.reduce((n, c) => n + c.rolls * c.chance, 0)
