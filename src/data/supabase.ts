@@ -289,8 +289,18 @@ export interface ReportedGame {
   winner: 'a' | 'b' | null
   replay_url: string
   survivors: number
-  a: { pokemon_id: string; kills: number; deaths: number; brought: boolean; revived: number }[]
-  b: { pokemon_id: string; kills: number; deaths: number; brought: boolean; revived: number }[]
+  a: ReportedLine[]
+  b: ReportedLine[]
+}
+
+interface ReportedLine {
+  pokemon_id: string
+  kills: number
+  deaths: number
+  brought: boolean
+  revived: number
+  /** What it clicked: [{ name, used, kos, damage }]. */
+  moves: { name: string; used: number; kos: number; damage: number }[]
 }
 
 /**

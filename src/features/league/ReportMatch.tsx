@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { fetchReplay, replayId, type ReplayGame } from '../../lib/parseReplay'
+import {
+  fetchReplay, replayId, type ReplayGame, type ReplaySide,
+} from '../../lib/parseReplay'
 import {
   currentSeasonId, db, errorText, reportForfeit, reportMatch, updateRow,
 } from '../../data/supabase'
@@ -286,12 +288,13 @@ export function ReportMatch({ league, onClose, onSaved }: Props) {
         canonical.get(`${side}-${baseName(mon)}`) ?? toId(mon)
 
       const lineOf = (side: 'a' | 'b') =>
-        (l: { pokemon: string; kills: number; deaths: number; brought: boolean; revived: number }) => ({
+        (l: ReplaySide['lines'][number]) => ({
           pokemon_id: idOf(side, l.pokemon),
           kills: l.kills,
           deaths: l.deaths,
           brought: l.brought,
           revived: l.revived,
+          moves: l.moves,
         })
 
       // Numbered in the order they were played, which is the order they were

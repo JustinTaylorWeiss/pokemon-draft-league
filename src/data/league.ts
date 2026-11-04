@@ -88,6 +88,24 @@ export interface GameLine {
    * because a game with no revive is overwhelmingly the likely one.
    */
   revived: number
+  /**
+   * What it clicked in this game, and what came of it.
+   *
+   * Empty for anything reported before the reader started keeping moves,
+   * which is indistinguishable from a Pokémon that never moved — so the
+   * match view says "no move record" for a game where nothing has any,
+   * rather than drawing a table of blanks.
+   */
+  moves: MoveTally[]
+}
+
+/** One move a Pokémon used in one game. */
+export interface MoveTally {
+  name: string
+  used: number
+  kos: number
+  /** Percentage points of the other side's health, added across targets. */
+  damage: number
 }
 
 /**

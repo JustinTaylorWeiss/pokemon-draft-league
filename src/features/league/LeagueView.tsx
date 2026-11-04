@@ -1487,8 +1487,10 @@ function seriesLines(stat: MatchStat | undefined) {
     lines.map((l) => ({
       pokemon: l.pokemon, kills: l.kills, deaths: l.deaths,
       brought: Boolean(l.kills || l.deaths),
-      // A series total has no record of a revive; only a game does.
+      // A series total has no record of a revive, or of a move; only a
+      // game does. These rows stand in for a season imported without them.
       revived: 0,
+      moves: [],
     }))
   return { a: side(stat.a.lines), b: side(stat.b.lines) }
 }

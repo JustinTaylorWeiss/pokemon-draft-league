@@ -53,7 +53,27 @@ export interface ReplaySide {
     brought: boolean
     /** How many times it was brought back after fainting. Nearly always 0. */
     revived: number
+    /** What it clicked, and what came of it. Empty for a Pokémon that sat out. */
+    moves: MoveTally[]
   }[]
+}
+
+/** One move a Pokémon used, and what it did with it. */
+export interface MoveTally {
+  name: string
+  /** Times clicked, including the ones that missed or hit a Protect. */
+  used: number
+  /** Knockouts where this was the move that did it. */
+  kos: number
+  /**
+   * Damage dealt to the other side, as a share of the target's health.
+   *
+   * The log reports health out of a hundred, so this is a count of
+   * percentage points and 100 is one full Pokémon — it adds across targets,
+   * so a spread move that takes half off each of two is 100. Only the other
+   * side counts, the same rule knockouts follow.
+   */
+  damage: number
 }
 
 export interface ReplayGame {
@@ -66,10 +86,29 @@ export interface ReplayGame {
   survivors: number
 }
 
+/** A Pokémon, and the move it is being credited for. */
+interface Credit { side: string; index: number; move: string }
+
 /** `p1a: Iron Hands` -> { side: 'p1', name: 'Iron Hands' } */
 function parseIdent(token: string): { side: string; name: string } | null {
   const match = /^(p[12])[a-z]?:\s*(.+)$/.exec(token.trim())
   return match ? { side: match[1], name: match[2].trim() } : null
+}
+
+/**
+ * `92/100` -> 92, `0 fnt` -> 0, and nothing for a line that says neither.
+ *
+ * Health is reported out of a hundred in every one of this league's logs —
+ * Showdown hides exact numbers from the other side — so these are
+ * percentage points and need no stat to interpret.
+ */
+function hpOf(token: string): number | null {
+  const t = token.trim()
+  if (/^0 fnt/.test(t)) return 0
+  const m = /^(\d+)\s*\/\s*(\d+)/.exec(t)
+  if (!m) return null
+  const max = Number(m[2])
+  return max > 0 ? (Number(m[1]) / max) * 100 : null
 }
 
 /** `Calyrex-Shadow, L50, F` -> `Calyrex-Shadow` */
@@ -160,9 +199,9 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
   /** Team slots that were sent out at any point, by side. */
   const brought: Record<string, Set<number>> = { p1: new Set(), p2: new Set() }
   /** Last attacker to damage each Pokémon, which is who gets the KO. */
-  const lastHitBy: Record<string, { side: string; index: number } | null> = {}
+  const lastHitBy: Record<string, Credit | null> = {}
   /** Who was credited for each slot's most recent faint, so a revive can take it back. */
-  const creditedTo: Record<string, Record<number, { side: string; index: number } | null>> = { p1: {}, p2: {} }
+  const creditedTo: Record<string, Record<number, Credit | null>> = { p1: {}, p2: {} }
   /** Slots brought back after fainting, and how often. */
   const revived: Record<string, Record<number, number>> = { p1: {}, p2: {} }
   /** What a slot's `detailschange` said it became, until something says why. */
@@ -181,8 +220,8 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
    * down separately and a second Perish Song does not re-apply to anything
    * already singing — the first one still owns those.
    */
-  let singer: { side: string; index: number } | null = null
-  const perishedBy: Record<string, { side: string; index: number } | null> = {}
+  let singer: Credit | null = null
+  const perishedBy: Record<string, Credit | null> = {}
   /** Slots whose counter has just hit zero, so the next faint is the song's. */
   const perishing = new Set<string>()
   /** Slots about to go down by their own hand, which is nobody's knockout. */
@@ -191,9 +230,26 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
    * Who is holding a Destiny Bond that has just gone off, and so takes the
    * next Pokémon down the other end with them.
    */
-  let bonded: { side: string; index: number } | null = null
+  let bonded: Credit | null = null
   /** Who threw the Future Sight that is still in the air. */
-  let future: { side: string; index: number } | null = null
+  let future: Credit | null = null
+  /*
+   * What each Pokémon clicked, and what came of it.
+   *
+   * Keyed by side, slot and move name. Damage is read off the health the
+   * log prints after each hit, against the health it printed before — the
+   * lines are percentages, so this is percentage points and needs no stats
+   * to work out.
+   */
+  const clicked: Record<string, Record<number, Record<string, MoveTally>>> = { p1: {}, p2: {} }
+  const tally = (c: Credit, name: string): MoveTally => {
+    const forSlot = (clicked[c.side][c.index] ??= {})
+    return (forSlot[name] ??= { name, used: 0, kos: 0, damage: 0 })
+  }
+  /** Health each position is on, out of a hundred, for reading damage off. */
+  const health: Record<string, number> = {}
+  /** The move being resolved, so the damage lines under it belong to it. */
+  let resolving: Credit | null = null
 
   let winner: string | null = null
 
@@ -239,6 +295,8 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
         const index = teamIndex(teams[who.side], speciesOf(parts[3] ?? who.name))
         active[slot] = index
         brought[who.side]?.add(index)
+        // Whatever it comes in on, which a dragged-in Pokemon may not be full.
+        health[slot] = hpOf(parts[4] ?? '') ?? 100
         // The volatile goes when the Pokemon does, and the slot is about to
         // be somebody else's.
         delete perishedBy[slot]
@@ -249,11 +307,20 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
     } else if (kind === 'move') {
       const user = parseIdent(parts[2] ?? '')
       const target = parseIdent(parts[4] ?? '')
-      const attacker = user ? attackerAt(parts[2] ?? '', user) : null
+      const at = user ? attackerAt(parts[2] ?? '', user) : null
+      const named = (parts[3] ?? '').trim()
+      const attacker: Credit | null = at && named ? { ...at, move: named } : null
+      /*
+       * The move being resolved, so the damage under it is its own. It is
+       * cleared by the next move rather than at the end of the turn: a
+       * move and the damage it causes are not interleaved with anything,
+       * and damage from any other source carries `[from]` and is skipped.
+       */
+      resolving = attacker
+      if (attacker) tally(attacker, named).used += 1
       if (attacker && target) {
         lastHitBy[(parts[4] ?? '').split(':')[0].trim()] = attacker
       }
-      const named = (parts[3] ?? '').trim()
       // Who to credit when the counters run out, a few turns from now.
       if (attacker && named === 'Perish Song') singer = attacker
       // And who threw the one that lands the turn after next.
@@ -309,7 +376,7 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       const slot = (parts[2] ?? '').split(':')[0].trim()
       const who = parseIdent(parts[2] ?? '')
       const index = active[slot]
-      if (who && index != null) bonded = { side: who.side, index }
+      if (who && index != null) bonded = { side: who.side, index, move: 'Destiny Bond' }
 
     } else if (kind === '-end' && FUTURE.has((parts[3] ?? '').replace(/^move:\s*/i, '').trim())) {
       /*
@@ -338,10 +405,24 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       if (!(slot in perishedBy)) perishedBy[slot] = singer
       if ((parts[3] ?? '').trim() === 'perish0') perishing.add(slot)
 
-    } else if (kind === '-damage') {
-      // Damage from weather, status or an item has no attacker to credit.
+    } else if (kind === '-damage' || kind === '-heal' || kind === '-sethp') {
       const slot = (parts[2] ?? '').split(':')[0].trim()
-      if (parts.some((p) => p.startsWith('[from]'))) lastHitBy[slot] = null
+      const was = health[slot] ?? 100
+      const now = hpOf(parts[3] ?? '') ?? was
+      const indirect = parts.some((p) => p.startsWith('[from]'))
+      health[slot] = now
+      if (kind !== '-damage') continue
+      // Damage from weather, status or an item has no attacker to credit.
+      if (indirect) { lastHitBy[slot] = null; continue }
+      /*
+       * Everything else under a move belongs to it. Counted only against
+       * the other side: a spread move catching its own partner has done
+       * damage, but not the kind anybody wants totalled against its name.
+       */
+      const hurt = parseIdent(parts[2] ?? '')
+      if (resolving && hurt && hurt.side !== resolving.side && now < was) {
+        tally(resolving, resolving.move).damage += was - now
+      }
 
     } else if (kind === 'faint') {
       const who = parseIdent(parts[2] ?? '')
@@ -377,7 +458,11 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       // the check below already says — a song hits everyone, singer included.
       if (killer && killer.side !== who.side) {
         kills[killer.side][killer.index] = (kills[killer.side][killer.index] ?? 0) + 1
+        // And against the move that did it, which is the other half of a
+        // move's record: how often it was clicked, and what it finished.
+        tally(killer, killer.move).kos += 1
       }
+      health[slot] = 0
       creditedTo[who.side][index] = killer && killer.side !== who.side ? killer : null
       lastHitBy[slot] = null
 
@@ -405,6 +490,10 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       // where its switch-in is missing.
       brought: brought[key].has(i) || (deaths[key][i] ?? 0) > 0,
       revived: revived[key][i] ?? 0,
+      // Most-used first, which is the order a set is read in.
+      moves: Object.values(clicked[key][i] ?? {})
+        .map((m) => ({ ...m, damage: Math.round(m.damage) }))
+        .sort((x, y) => y.used - x.used || y.kos - x.kos || x.name.localeCompare(y.name)),
     })),
   })
 

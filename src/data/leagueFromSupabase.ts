@@ -1,5 +1,5 @@
 import { currentSeasonId, db } from './supabase'
-import type { Game, League, Match, MatchStat, Player, Standing } from './league'
+import type { Game, League, Match, MatchStat, MoveTally, Player, Standing } from './league'
 
 /**
  * Assembles a League from the database.
@@ -56,6 +56,7 @@ interface GameLineRow {
   deaths: number
   brought: boolean
   revived: number | null
+  moves: MoveTally[] | null
 }
 
 interface StandingRow {
@@ -217,6 +218,7 @@ export async function loadLeagueFromSupabase(seasonId?: string): Promise<League>
       .map((l) => ({
         pokemon: l.pokemon_id, kills: l.kills, deaths: l.deaths,
         brought: l.brought ?? false, revived: l.revived ?? 0,
+        moves: l.moves ?? [],
       }))
     const list = gamesByMatch.get(g.match_id) ?? []
     list.push({
