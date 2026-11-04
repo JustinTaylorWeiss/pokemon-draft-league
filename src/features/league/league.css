@@ -1703,3 +1703,12 @@
 .mon-moves tbody tr:last-child th, .mon-moves tbody tr:last-child td {
   border-bottom: 1px solid var(--line);
 }
+/* The second table under a Pokemon: where its luck score comes from. */
+/* The expansion sits in a table cell, which centres everything in it. */
+.moves-row > td > h6, .moves-row > td > p { text-align: left; }
+.mon-luck-head {
+  margin: 0.7rem 0 0.25rem; font-size: 0.7rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+}
+.mon-luck-note { max-width: 44rem; margin-top: 0.4rem; }
+.mon-moves tfoot th, .mon-moves tfoot td { font-weight: 600; }

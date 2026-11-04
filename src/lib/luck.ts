@@ -37,6 +37,8 @@ export interface Part {
   rolls: number
   good: number
   expected: number
+  /** How far ahead or behind par that is, in turns. See `Score.turns`. */
+  turns: number
 }
 
 export interface Score {
@@ -46,6 +48,22 @@ export interface Score {
   good: number
   /** How many the odds say should have. */
   expected: number
+  /**
+   * What that is worth, in turns, against the run the odds called for.
+   *
+   * Every roll here is worth a turn either way, which is what makes them
+   * addable. A move that misses is a turn thrown away outright. A critical
+   * hit is a turn's worth of damage got for nothing. A flinch is a turn
+   * taken off the other side, and a burn or a paralysis is at least that.
+   * So one roll more than par is +1 and one fewer is −1, and the total is
+   * how many turns of the match the dice handed over.
+   *
+   * Plainly an approximation — a crit is not quite a free attack and a burn
+   * is usually worth more than one — but it is the same approximation for
+   * everybody, and it turns three different kinds of luck into one number
+   * that means something.
+   */
+  turns: number
   /**
    * Where this run sits among every run it could have been, as a share:
    * 1 is the luckiest there is, 0 the unluckiest, and half is dead average.
@@ -59,6 +77,12 @@ export interface Score {
    * were never certain.
    */
   percentile: number
+  /**
+   * The chance of a run at least this far from par, in the direction it
+   * went. Said in words behind the number, because "two turns up" means
+   * different things over ten rolls and over two hundred.
+   */
+  odds: number
   verdict: Verdict
   /** Each kind that actually rolled, in the order it was given. */
   parts: Part[]
@@ -160,76 +184,24 @@ export function scoreOf(chances: Chance[]): Score {
       held.good += c.good
       held.expected += c.rolls * c.chance
     } else {
-      parts.push({ label: c.label, rolls: c.rolls, good: c.good, expected: c.rolls * c.chance })
+      parts.push({
+        label: c.label, rolls: c.rolls, good: c.good, expected: c.rolls * c.chance, turns: 0,
+      })
     }
   }
-  return { rolls, good, expected, percentile, verdict, parts }
-}
+  for (const part of parts) part.turns = part.good - part.expected
 
-/** One move's accuracy record. */
-export interface Rolled {
-  /** Accuracy checks it made, counted per target. */
-  rolls: number
-  /** How many of them it lost. */
-  misses: number
-  /**
-   * Listed accuracy out of a hundred, `true` for a move that cannot miss, and
-   * null for one the dataset does not carry — which is left out of the sums
-   * rather than guessed at.
-   */
-  accuracy: number | true | null
-}
-
-export interface Luck {
-  /** Accuracy rolls counted, which is all of them bar moves of unknown accuracy. */
-  rolls: number
-  misses: number
-  /** Misses the listed accuracies say to expect over those rolls. */
-  expected: number
-  /** Where the run sits in the range it could have been; higher is luckier. */
-  percentile: number
-  /**
-   * The chance of a run this good or this bad: the probability of missing at
-   * most this many when ahead of expectation, and at least this many when
-   * behind. Never the probability of exactly this many, which is small for
-   * everything and so says nothing. Said in words behind the percentage.
-   */
-  odds: number
-  verdict: Verdict
-}
-
-/** The accuracy half on its own, which is what the move columns show. */
-export function luckOf(shots: Rolled[]): Luck {
-  const live = shots.filter((s) => s.accuracy != null && s.rolls > 0)
-  const score = scoreOf(live.map((s) => ({
-    label: 'Accuracy',
-    rolls: s.rolls,
-    good: s.rolls - s.misses,
-    chance: s.accuracy === true ? 1 : (s.accuracy as number) / 100,
-  })))
-  const misses = score.rolls - score.good
-  const expected = score.rolls - score.expected
-
-  // Which tail to read is decided by which side of expectation the result
-  // landed, so the number always answers "how unusual is this, in the
-  // direction it went".
-  const spread = spreadOf(live.map((s) => ({
-    rolls: s.rolls, chance: s.accuracy === true ? 0 : 1 - (s.accuracy as number) / 100,
-  })))
+  // How unusual a run this far from par is, read from the tail it fell in.
   let odds = 0
-  if (misses <= expected) {
-    for (let k = 0; k <= misses && k < spread.length; k += 1) odds += spread[k]
+  if (good >= expected) {
+    for (let k = Math.max(0, at); k < spread.length; k += 1) odds += spread[k]
   } else {
-    for (let k = misses; k < spread.length; k += 1) odds += spread[k]
+    for (let k = 0; k <= at && k < spread.length; k += 1) odds += spread[k]
   }
 
   return {
-    rolls: score.rolls,
-    misses,
-    expected,
-    percentile: score.percentile,
-    odds: Math.min(1, Math.max(0, odds)),
-    verdict: score.verdict,
+    rolls, good, expected, turns: good - expected, percentile,
+    odds: Math.min(1, Math.max(0, odds)), verdict, parts,
   }
 }
 
@@ -240,22 +212,19 @@ export function oddsLabel(odds: number): string {
   return `${Math.round(odds * 100)}%`
 }
 
-/** What a Luck column shows: the percentile, or nothing worth saying. */
-export const luckLabel = (luck: { percentile: number; verdict: Verdict }): string =>
-  luck.verdict === 'none' ? VERDICT_LABEL.none : oddsLabel(luck.percentile)
-
-/** The whole story in a sentence, behind the percentage. */
-export function luckNote(luck: Luck): string {
-  if (!luck.rolls) return 'Nothing here rolled for accuracy.'
-  if (luck.verdict === 'none') {
-    return `${luck.rolls} accuracy ${luck.rolls === 1 ? 'roll' : 'rolls'}, `
-      + 'none of which could realistically have missed.'
-  }
-  const ahead = luck.misses <= luck.expected
-  const named = { good: 'Good luck', bad: 'Bad luck', even: 'Average luck', none: '' }[luck.verdict]
-  return `${named}, ${oddsLabel(luck.percentile)} of the way up the range. `
-    + `${luck.rolls} accuracy ${luck.rolls === 1 ? 'roll' : 'rolls'}, `
-    + `${luck.misses} missed, ${luck.expected.toFixed(1)} expected — missing `
-    + `${luck.misses} or ${ahead ? 'fewer' : 'more'} comes up `
-    + `${oddsLabel(luck.odds)} of the time.`
+/**
+ * Turns against par, signed, which is what a Luck column shows.
+ *
+ * Always signed and always to a decimal, because a bare `2` next to a bare
+ * `-3` in the same column reads as a count of something rather than as a
+ * distance from where it should have been.
+ */
+export function turnsLabel(turns: number): string {
+  const rounded = Math.round(turns * 10) / 10
+  if (Object.is(rounded, -0) || rounded === 0) return '0.0'
+  return `${rounded > 0 ? '+' : '\u2212'}${Math.abs(rounded).toFixed(1)}`
 }
+
+/** What a Luck column shows, or nothing where nothing was in doubt. */
+export const luckLabel = (luck: { turns: number; verdict: Verdict }): string =>
+  luck.verdict === 'none' ? VERDICT_LABEL.none : turnsLabel(luck.turns)

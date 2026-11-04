@@ -2,10 +2,7 @@ import { useEffect, useState } from 'react'
 import type { MoveTally } from '../../data/league'
 import type { MoveDex } from '../../data/types'
 import { loadMoves, toId } from '../../data/load'
-import {
-  luckOf, oddsLabel, scoreOf,
-  type Chance, type Luck, type Rolled, type Score,
-} from '../../lib/luck'
+import { oddsLabel, scoreOf, turnsLabel, type Chance, type Score } from '../../lib/luck'
 
 /**
  * What the two move breakdowns — a match's and a Pokémon's season — both need
@@ -29,18 +26,6 @@ export function perUse(tally: MoveTally): number {
 export function accuracyOf(moves: MoveDex | null, name: string): number | true | null {
   return moves?.[toId(name)]?.accuracy ?? null
 }
-
-/** Every move's accuracy record, ready for the luck sums. */
-export function shotsOf(tallies: MoveTally[], moves: MoveDex | null): Rolled[] {
-  return tallies.map((t) => ({
-    rolls: t.rolls,
-    misses: t.misses,
-    accuracy: accuracyOf(moves, t.name),
-  }))
-}
-
-export const luckFor = (tallies: MoveTally[], moves: MoveDex | null): Luck =>
-  luckOf(shotsOf(tallies, moves))
 
 /** Adds one game's tallies into a running list, by move name. */
 export function addTallies(into: MoveTally[], from: MoveTally[]): void {
@@ -167,16 +152,15 @@ export const scoreFor = (tallies: MoveTally[], moves: MoveDex | null): Score =>
  * a mouse without a line of script behind it.
  */
 export function scoreNote(score: Score): string {
-  if (!score.rolls) return 'Nothing this Pokémon did was a roll of the dice.'
-  const named = {
-    good: 'Good luck', bad: 'Bad luck', even: 'Average luck',
-    none: 'Nothing here could really have gone either way',
-  }[score.verdict]
-  const head = score.verdict === 'none'
-    ? `${named}: ${score.rolls} rolls, none of them in doubt.`
-    : `${named} — ${oddsLabel(score.percentile)} of the way up the range of runs`
-      + ' this Pokémon could have had.'
+  if (!score.rolls) return 'Nothing here was a roll of the dice.'
+  if (score.verdict === 'none') {
+    return `${score.rolls} rolls, none of them really in doubt.`
+  }
+  const named = { good: 'Good luck', bad: 'Bad luck', even: 'Average luck', none: '' }[score.verdict]
+  const head = `${named}: ${turnsLabel(score.turns)} turns against what the odds called `
+    + `for, which comes up ${oddsLabel(score.odds)} of the time.`
   const lines = score.parts.map((part) =>
-    `${part.label}: ${part.good} of ${part.rolls}, ${part.expected.toFixed(1)} expected`)
+    `${part.label}: ${part.good} of ${part.rolls} at ${oddsLabel(part.expected / part.rolls)}, `
+    + `${part.expected.toFixed(1)} expected — ${turnsLabel(part.turns)}`)
   return [head, ...lines].join('\n')
 }

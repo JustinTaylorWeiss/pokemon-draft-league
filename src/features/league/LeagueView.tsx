@@ -15,9 +15,9 @@ import { TypeChip } from '../../components/TypeChip'
 import type { LeagueTab } from './tabs'
 import { useAdvanced } from '../dex/advanced'
 import { MatchDetails } from './MatchDetails'
-import { luckLabel, luckNote } from '../../lib/luck'
+import { luckLabel, oddsLabel, turnsLabel } from '../../lib/luck'
 import {
-  accuracyOf, addTallies, byUse, luckFor, perUse, scoreFor, scoreNote, useMoveDex,
+  accuracyOf, addTallies, byUse, perUse, scoreFor, scoreNote, useMoveDex,
 } from './moveStats'
 import { useElementHeight } from '../../lib/useElementHeight'
 import './league.css'
@@ -754,10 +754,9 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                     ranking it by something nobody did. */}
                 <th
                   className="col-luck"
-                  title={'How the dice went for it: where its accuracy, critical-hit '
-                    + 'and secondary-effect rolls landed among every run they could '
-                    + 'have been.\nHigher is luckier and an ordinary run sits around '
-                    + 'the middle. Hover a row for the breakdown.'}
+                  title={'Turns the dice handed it, against what the odds called for: '
+                    + 'a miss is a turn thrown away, a critical hit or a flinch is one '
+                    + 'got for nothing.\nOpen a Pokémon for the whole reckoning.'}
                 >
                   Luck
                 </th>
@@ -836,10 +835,12 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                                   Damage
                                 </th>
                                 <th title="That damage spread over the times it was clicked">
-                                  %/use
+                                  Damage/use
                                 </th>
                                 <th title="The move's listed accuracy">Acc</th>
-                                <th title="Where its accuracy rolls landed in the range they could have: higher is luckier">
+                                <th title={'Turns this move\u2019s dice handed it, against what '
+                                  + 'the odds called for'}
+                                >
                                   Luck
                                 </th>
                               </tr>
@@ -847,7 +848,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                             <tbody>
                               {moves.map((mv) => {
                                 const acc = accuracyOf(moveDex, mv.name)
-                                const luck = luckFor([mv], moveDex)
+                                const luck = scoreFor([mv], moveDex)
                                 return (
                                 <tr key={mv.name}>
                                   <th scope="row" className="detail-move">{mv.name}</th>
@@ -862,7 +863,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                                   >
                                     {acc === true ? '\u2014' : acc == null ? '?' : `${acc}%`}
                                   </td>
-                                  <td className={`detail-luck is-${luck.verdict}`} title={luckNote(luck)}>
+                                  <td className={`detail-luck is-${luck.verdict}`} title={scoreNote(luck)}>
                                     {luckLabel(luck)}
                                   </td>
                                 </tr>
@@ -884,7 +885,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                                   name: 'all', used: 0, kos: 0, damage: 0, rolls: 0,
                                   misses: 0, crits: 0, procs: 0, live: 0, liveEarly: 0, liveClean: 0,
                                 })
-                                const luck = luckFor(moves, moveDex)
+                                const luck = scoreFor(moves, moveDex)
                                 return (
                                   <tr>
                                     <th scope="row" className="detail-move">Everything</th>
@@ -893,7 +894,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                                     <td>{all.damage ? `${all.damage}%` : '\u2014'}</td>
                                     <td>{all.damage ? `${perUse(all)}%` : '\u2014'}</td>
                                     <td>{'\u2014'}</td>
-                                    <td className={`detail-luck is-${luck.verdict}`} title={luckNote(luck)}>
+                                    <td className={`detail-luck is-${luck.verdict}`} title={scoreNote(luck)}>
                                       {luckLabel(luck)}
                                     </td>
                                   </tr>
@@ -906,6 +907,67 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                             No move record yet. Moves are kept from a match's replays, and
                             this one has only played in matches reported before that started.
                           </p>
+                        )}
+
+                        {luck.parts.length > 0 && (
+                          <>
+                            <h6 className="mon-luck-head">How the dice went</h6>
+                            <table className="detail-table mon-moves">
+                              <thead>
+                                <tr>
+                                  <th className="detail-move">Roll</th>
+                                  <th title="How often this was going to go its way, on average">
+                                    Odds
+                                  </th>
+                                  <th title="Times it rolled">Chances</th>
+                                  <th title="Times it went its way">Landed</th>
+                                  <th title="Times the odds say it should have">Expected</th>
+                                  <th title="What the difference is worth, a turn to a roll">
+                                    Turns
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {luck.parts.map((part) => (
+                                  <tr key={part.label}>
+                                    <th scope="row" className="detail-move">{part.label}</th>
+                                    <td>{oddsLabel(part.expected / part.rolls)}</td>
+                                    <td>{part.rolls}</td>
+                                    <td>{part.good}</td>
+                                    <td>{part.expected.toFixed(1)}</td>
+                                    <td className={part.turns > 0.05 ? 'pos' : part.turns < -0.05 ? 'neg' : ''}>
+                                      {turnsLabel(part.turns)}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                              <tfoot>
+                                <tr>
+                                  <th scope="row" className="detail-move">All told</th>
+                                  <td>{'\u2014'}</td>
+                                  <td>{luck.rolls}</td>
+                                  <td>{luck.good}</td>
+                                  <td>{luck.expected.toFixed(1)}</td>
+                                  <td
+                                    className={`detail-luck is-${luck.verdict}`}
+                                    title={scoreNote(luck)}
+                                  >
+                                    {luckLabel(luck)}
+                                  </td>
+                                </tr>
+                              </tfoot>
+                            </table>
+                            <p className="panel-note mon-luck-note">
+                              Every roll here is worth a turn: a move that misses is a turn
+                              thrown away, and a critical hit, a flinch or a burn is a turn
+                              got for nothing. What each one is <em>worth</em> is whatever
+                              the odds did not already owe — landing a one-in-twenty-four
+                              critical hit is very nearly a whole turn, landing a
+                              nine-in-ten is a tenth of one, and missing reads the same way
+                              round. So the turns are what the dice gave or took against
+                              the run they should have given.
+                            </p>
+                          </>
                         )}
                       </td>
                     </tr>

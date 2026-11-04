@@ -3,8 +3,8 @@ import type { Game, GameLine, LeaguePokemon, MoveTally } from '../../data/league
 import type { MoveDex } from '../../data/types'
 import { Sprite } from '../../components/Sprite'
 import { PokemonLink } from '../../components/PokemonLink'
-import { luckLabel, luckNote } from '../../lib/luck'
-import { addTallies, byUse, luckFor, perUse, useMoveDex } from './moveStats'
+import { luckLabel } from '../../lib/luck'
+import { addTallies, byUse, perUse, scoreFor, scoreNote, useMoveDex } from './moveStats'
 
 /** The same Pokémon's line across several games, added up. */
 interface Rolled {
@@ -61,7 +61,8 @@ function Rows({ rows, dex, moves }: {
             <th rowSpan={2} title="Times it fainted">Fainted</th>
             <th
               rowSpan={2}
-              title="Where its accuracy rolls landed in the range they could have: higher is luckier"
+              title={'Turns the dice handed it, against what the odds called for: '
+                + 'a miss thrown away, a critical hit or a flinch got for nothing.'}
             >
               Luck
             </th>
@@ -71,15 +72,17 @@ function Rows({ rows, dex, moves }: {
             <th className="detail-move">Move</th>
             <th title="Times clicked">Used</th>
             <th title="Knockouts this move finished">KOs</th>
-            <th title="Percentage points of the other side's health, added across targets">%</th>
-            <th title="That damage spread over the times it was clicked">%/use</th>
+            <th title="Percentage points of the other side's health, added across targets">
+              Damage
+            </th>
+            <th title="That damage spread over the times it was clicked">Damage/use</th>
             <th title="Accuracy rolls it lost">Miss</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r) => {
             const mon = dex[r.pokemon]
-            const luck = luckFor(r.moves, moves)
+            const luck = scoreFor(r.moves, moves)
             const clicked = [...r.moves].sort(byUse)
             // A Pokemon that was brought and never moved still gets a row, so
             // its knockouts and faints are not dropped for want of a move.
@@ -105,7 +108,7 @@ function Rows({ rows, dex, moves }: {
                         <td className={r.deaths ? 'neg' : ''} rowSpan={lines.length}>{r.deaths}</td>
                         <td
                           className={`detail-luck is-${luck.verdict}`}
-                          rowSpan={lines.length} title={luckNote(luck)}
+                          rowSpan={lines.length} title={scoreNote(luck)}
                         >
                           {luckLabel(luck)}
                         </td>
@@ -123,7 +126,7 @@ function Rows({ rows, dex, moves }: {
                             looked at. */}
                         <td
                           className={m.misses ? 'neg' : 'quiet'}
-                          title={m.rolls ? luckNote(luckFor([m], moves)) : undefined}
+                          title={m.rolls ? scoreNote(scoreFor([m], moves)) : undefined}
                         >
                           {m.rolls ? m.misses : '—'}
                         </td>
