@@ -582,9 +582,8 @@
 .stats-table .col-luck {
   width: 4.5rem; font-variant-numeric: tabular-nums; font-size: 0.8rem;
 }
-.stats-table th.col-luck {
-  font-size: 0.72rem; font-weight: 600; color: var(--muted); cursor: help;
-}
+.stats-table th.col-luck button { color: var(--muted); }
+.stats-table th.col-luck.is-sorted button { color: var(--accent); }
 .stats-table td.col-luck { cursor: help; }
 
 .stats-type { display: flex; }

@@ -368,7 +368,7 @@ const ALL_TIME_NOTE = 'KOs/game → K/D → games → Diff → KOs → fewest de
  */
 const ALL_TIME_MINIMUM = 4
 
-type StatColumn = Exclude<StatSort, 'name'>
+type StatColumn = Exclude<StatSort, 'name' | 'luck'>
 
 /** The team and the coach that drafted one Pokémon. */
 interface Owner { team: string | null; captain: string }
@@ -470,7 +470,7 @@ const ALL_TIME_COLUMNS: StatColumn[] =
 
 type StatSort =
   | 'kills' | 'deaths' | 'diff' | 'gamesPlayed' | 'killsPerGame' | 'kd' | 'name'
-  | 'points' | 'owner'
+  | 'points' | 'owner' | 'luck'
 
 function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePokemon> }) {
   // dir 0 is the power ranking above; a column cycles through both directions
@@ -549,6 +549,19 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
   const [openMon, setOpenMon] = useState<string | null>(null)
   // Wanted by the Luck column on every row now, not only by an opened one.
   const moveDex = useMoveDex(true)
+  /**
+   * What the dice did for each Pokémon, worked out once for the board.
+   *
+   * Three readers want it — the column, the sort behind the column, and an
+   * opened row's breakdown — and it is a Poisson binomial over every roll
+   * the Pokémon made, which is not a thing to do three times a render.
+   */
+  const luckByMon = useMemo(() => {
+    const by = new Map<string, ReturnType<typeof scoreFor>>()
+    if (!moveDex) return by
+    for (const [mon, tallies] of movesByMon) by.set(mon, scoreFor(tallies, moveDex))
+    return by
+  }, [movesByMon, moveDex])
 
   const allTime = currentSeason().source === 'all-time'
   /** One everywhere else: every Pokemon that played at all is on the board. */
@@ -644,6 +657,22 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
          * a −1 standing in for "no price" could not do, being the
          * smallest number rather than no number.
          */
+        /*
+         * By what the dice gave, with a Pokémon that never rolled for
+         * anything last either way round — the same rule the points
+         * column follows, and for the same reason: no score is not a
+         * low score.
+         */
+        if (sort.key === 'luck') {
+          const al = luckByMon.get(a.pokemon)
+          const bl = luckByMon.get(b.pokemon)
+          const at = al && al.verdict !== 'none' ? al.turns : null
+          const bt = bl && bl.verdict !== 'none' ? bl.turns : null
+          if (at == null || bt == null) {
+            return (at == null ? 1 : 0) - (bt == null ? 1 : 0) || nameA.localeCompare(nameB)
+          }
+          return (at - bt) * sort.dir || nameA.localeCompare(nameB)
+        }
         if (sort.key === 'points') {
           const at = dex[a.pokemon]?.points
           const bt = dex[b.pokemon]?.points
@@ -657,7 +686,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
           || b.killsPerGame - a.killsPerGame
           || nameA.localeCompare(nameB)
       })
-  }, [totals, sort, query, dex, showing, rule, allTime, minGames, owners])
+  }, [totals, sort, query, dex, showing, rule, allTime, minGames, owners, luckByMon])
 
   if (!matches.length) {
     // Two different situations wearing the same words. An archived season with
@@ -749,16 +778,28 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                     </button>
                   </th>
                 ))}
-                {/* Not sortable and not part of any award: it is a curiosity
-                    about the dice, and ranking a season by it would be
-                    ranking it by something nobody did. */}
+                {/* Sortable like the rest, but no award ranks by it and the
+                    board's own order never does: it is a fact about the
+                    dice, not about anything a Pokémon did. */}
                 <th
-                  className="col-luck"
-                  title={'Turns the dice handed it, against what the odds called for: '
-                    + 'a miss is a turn thrown away, a critical hit or a flinch is one '
-                    + 'got for nothing.\nOpen a Pokémon for the whole reckoning.'}
+                  className={`sortable col-luck${
+                    sort.dir && sort.key === 'luck' ? ' is-sorted' : ''}`}
+                  aria-sort={sort.key === 'luck' && sort.dir
+                    ? (sort.dir === 1 ? 'ascending' : 'descending') : 'none'}
                 >
-                  Luck
+                  <button
+                    type="button"
+                    onClick={() => toggleSort('luck')}
+                    title={'Turns the dice handed it, against what the odds called for: '
+                      + 'a miss is a turn thrown away, a critical hit or a flinch is one '
+                      + 'got for nothing.\nOpen a Pokémon for the whole reckoning.'
+                      + '\nClick to cycle ascending, descending, off.'}
+                  >
+                    Luck
+                    <span className="sort-arrow">
+                      {sort.key === 'luck' ? (sort.dir === 1 ? '▲' : sort.dir === -1 ? '▼' : '') : ''}
+                    </span>
+                  </button>
                 </th>
               </tr>
             </thead>
@@ -768,7 +809,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                 // Same podium treatment as the standings table.
                 const medal = MEDALS[i + 1]
                 const moves = movesByMon.get(t.pokemon) ?? []
-                const luck = scoreFor(moves, moveDex)
+                const luck = luckByMon.get(t.pokemon)
                 const showing = openMon === t.pokemon
                 return (
                   <Fragment key={t.pokemon}>
@@ -815,10 +856,10 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                       </Fragment>
                     ))}
                     <td
-                      className={`col-luck detail-luck is-${luck.verdict}`}
-                      title={moveDex ? scoreNote(luck) : undefined}
+                      className={`col-luck detail-luck is-${luck?.verdict ?? 'none'}`}
+                      title={luck ? scoreNote(luck) : undefined}
                     >
-                      {moveDex ? luckLabel(luck) : ''}
+                      {luck ? luckLabel(luck) : ''}
                     </td>
                   </tr>
                   {showing && (
@@ -885,7 +926,6 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                                   name: 'all', used: 0, kos: 0, damage: 0, rolls: 0,
                                   misses: 0, crits: 0, procs: 0, live: 0, liveEarly: 0, liveClean: 0,
                                 })
-                                const luck = scoreFor(moves, moveDex)
                                 return (
                                   <tr>
                                     <th scope="row" className="detail-move">Everything</th>
@@ -894,8 +934,11 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                                     <td>{all.damage ? `${all.damage}%` : '\u2014'}</td>
                                     <td>{all.damage ? `${perUse(all)}%` : '\u2014'}</td>
                                     <td>{'\u2014'}</td>
-                                    <td className={`detail-luck is-${luck.verdict}`} title={scoreNote(luck)}>
-                                      {luckLabel(luck)}
+                                    <td
+                                      className={`detail-luck is-${luck?.verdict ?? 'none'}`}
+                                      title={luck ? scoreNote(luck) : undefined}
+                                    >
+                                      {luck ? luckLabel(luck) : '\u2014'}
                                     </td>
                                   </tr>
                                 )
@@ -909,7 +952,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                           </p>
                         )}
 
-                        {luck.parts.length > 0 && (
+                        {luck && luck.parts.length > 0 && (
                           <>
                             <h6 className="mon-luck-head">How the dice went</h6>
                             <table className="detail-table mon-moves">
