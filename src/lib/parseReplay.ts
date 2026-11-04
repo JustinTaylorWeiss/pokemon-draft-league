@@ -196,6 +196,17 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
 
   /** Which team slot is in each battle position, which the log does not say directly. */
   const active: Record<string, number> = {}
+  /*
+   * What each nickname belongs to, learned from the switch that brought it in.
+   *
+   * Most lines name a Pokémon by its battle position and are resolved
+   * through `active`, but a Revival Blessing names one on the bench, which
+   * has no position — so that one is looked up by name, and a nickname is
+   * not a species. It matched nothing, so the reader filed the nickname as
+   * a seventh team member and the revive was applied to that instead of to
+   * the Pokémon it belonged to.
+   */
+  const named: Record<string, Record<string, number>> = { p1: {}, p2: {} }
   /** Team slots that were sent out at any point, by side. */
   const brought: Record<string, Set<number>> = { p1: new Set(), p2: new Set() }
   /** Last attacker to damage each Pokémon, which is who gets the KO. */
@@ -265,16 +276,24 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
      * on has changed before and the tag has not.
      *
      * The Pokemon is on the bench, so its slot is not in `active` and has to
-     * be found by name.
+     * be found by name — through the nicknames seen on the way in, since
+     * the name a log uses is whatever its coach called it.
      */
     if (parts.some((part) => /\[from\]\s*move:\s*Revival Blessing/i.test(part))) {
       const who = parseIdent(parts[2] ?? '')
-      const index = who ? teamIndex(teams[who.side], who.name) : null
+      // Through the nickname it was switched in under, where there is one.
+      const index = who
+        ? named[who.side]?.[who.name] ?? teamIndex(teams[who.side], who.name)
+        : null
       if (who && index != null && (deaths[who.side][index] ?? 0) > 0) {
         deaths[who.side][index] -= 1
         const credited = creditedTo[who.side][index]
         if (credited) {
           kills[credited.side][credited.index] = Math.max(0, (kills[credited.side][credited.index] ?? 0) - 1)
+          // And off the move that was credited with it, or a Pokemon's
+          // knockouts and its moves' would stop adding up to each other.
+          const was = tally(credited, credited.move)
+          was.kos = Math.max(0, was.kos - 1)
         }
         creditedTo[who.side][index] = null
         revived[who.side][index] = (revived[who.side][index] ?? 0) + 1
@@ -294,6 +313,7 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
         const slot = (parts[2] ?? '').split(':')[0].trim()
         const index = teamIndex(teams[who.side], speciesOf(parts[3] ?? who.name))
         active[slot] = index
+        named[who.side][who.name] = index
         brought[who.side]?.add(index)
         // Whatever it comes in on, which a dragged-in Pokemon may not be full.
         health[slot] = hpOf(parts[4] ?? '') ?? 100
