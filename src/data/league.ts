@@ -114,6 +114,13 @@ export interface MoveTally {
   rolls: number
   /** How many of those rolls missed. */
   misses: number
+  /** Critical hits it landed, rolled once per hit. */
+  crits: number
+  /**
+   * Times its extra effect fired on the other side — a burn, a flinch, a
+   * stat drop. Shown rather than scored: see `secondariesOf`.
+   */
+  procs: number
 }
 
 /**

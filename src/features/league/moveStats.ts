@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react'
 import type { MoveTally } from '../../data/league'
 import type { MoveDex } from '../../data/types'
 import { loadMoves, toId } from '../../data/load'
-import { luckOf, type Luck, type Rolled } from '../../lib/luck'
+import {
+  luckOf, oddsLabel, scoreOf,
+  type Chance, type Luck, type Rolled, type Score,
+} from '../../lib/luck'
 
 /**
  * What the two move breakdowns — a match's and a Pokémon's season — both need
@@ -49,6 +52,8 @@ export function addTallies(into: MoveTally[], from: MoveTally[]): void {
     held.damage += move.damage
     held.rolls += move.rolls
     held.misses += move.misses
+    held.crits += move.crits
+    held.procs += move.procs
   }
 }
 
@@ -73,4 +78,104 @@ export function useMoveDex(wanted: boolean): MoveDex | null {
     return () => { live = false }
   }, [wanted, moves])
   return moves
+}
+
+/** Base critical-hit odds, and what a high-crit move raises them to. */
+const CRIT_ODDS: Record<number, number> = { 1: 1 / 24, 2: 1 / 8, 3: 1 / 2, 4: 1 }
+
+/** Hits that landed, which is what a crit and a secondary each roll off. */
+const landed = (tally: MoveTally) => Math.max(0, tally.rolls - tally.misses)
+
+/**
+ * Every roll a Pokémon made, for the overall luck score.
+ *
+ * Two kinds, because two are all the log can be honest about:
+ *
+ *  - Accuracy, which is written down every time it fails.
+ *  - Critical hits, which are written down every time they land, and whose
+ *    odds are one in twenty-four unless the move says otherwise. Status
+ *    moves are left out: they never crit, and counting their hits as crit
+ *    rolls had the league running a third under expectation.
+ *
+ * Secondary effects — a flinch, a burn, a stat knocked down — are counted
+ * and shown, but deliberately not scored. See `secondariesOf`.
+ */
+export function chancesOf(tallies: MoveTally[], moves: MoveDex | null): Chance[] {
+  const out: Chance[] = []
+  for (const tally of tallies) {
+    const move = moves?.[toId(tally.name)]
+    if (!move) continue
+    if (tally.rolls > 0) {
+      out.push({
+        label: 'Accuracy',
+        rolls: tally.rolls,
+        good: tally.rolls - tally.misses,
+        chance: move.accuracy === true ? 1 : move.accuracy / 100,
+      })
+    }
+    const hits = landed(tally)
+    if (hits > 0 && move.category !== 'Status' && !move.willCrit) {
+      out.push({
+        label: 'Critical hits',
+        rolls: hits,
+        good: tally.crits,
+        chance: CRIT_ODDS[move.critRatio ?? 1] ?? CRIT_ODDS[1],
+      })
+    }
+  }
+  return out
+}
+
+export const scoreFor = (tallies: MoveTally[], moves: MoveDex | null): Score =>
+  scoreOf(chancesOf(tallies, moves))
+
+/**
+ * Secondary effects seen, and how many the listed chances called for.
+ *
+ * Shown but not scored, because the log cannot be read straight here. A
+ * flinch that lands on a Pokémon which has already moved changes nothing and
+ * is never written down, so three in ten Rock Slides flinching comes out as
+ * one in ten. A burn rolled against a Fire type was never a roll. Both pull
+ * the same way, and scoring them would have every Pokémon in the league
+ * looking hard done by.
+ */
+export function secondariesOf(tallies: MoveTally[], moves: MoveDex | null) {
+  let seen = 0
+  let listed = 0
+  for (const tally of tallies) {
+    const move = moves?.[toId(tally.name)]
+    if (!move?.secondaryChance) continue
+    seen += tally.procs
+    listed += landed(tally) * (move.secondaryChance / 100)
+  }
+  return { seen, listed }
+}
+
+/**
+ * The overall luck score written out, for the tooltip behind the number.
+ *
+ * Newlines rather than markup: this goes in a `title`, which is the only
+ * tooltip that works the same on a phone's long-press, a keyboard focus and
+ * a mouse without a line of script behind it.
+ */
+export function scoreNote(score: Score, extras: { seen: number; listed: number }): string {
+  if (!score.rolls) return 'Nothing this Pokémon did was a roll of the dice.'
+  const named = {
+    good: 'Good luck', bad: 'Bad luck', even: 'Average luck',
+    none: 'Nothing here could really have gone either way',
+  }[score.verdict]
+  const head = score.verdict === 'none'
+    ? `${named}: ${score.rolls} rolls, none of them in doubt.`
+    : `${named} — ${oddsLabel(score.percentile)} of the way up the range of runs`
+      + ' this Pokémon could have had.'
+  const lines = score.parts.map((part) =>
+    `${part.label}: ${part.good} of ${part.rolls}, ${part.expected.toFixed(1)} expected`)
+  // Said plainly rather than left out, because "my Rock Slides never flinch"
+  // is exactly the complaint somebody opens this expecting to settle.
+  if (extras.seen || extras.listed >= 0.5) {
+    lines.push(`Flinches, burns and other extras: ${extras.seen} landed of `
+      + `${extras.listed.toFixed(1)} the odds called for — shown, not scored, `
+      + 'since the log never mentions a flinch that changed nothing.')
+  }
+  return [head, ...lines].join('\n')
 }

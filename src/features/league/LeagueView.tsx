@@ -16,7 +16,10 @@ import type { LeagueTab } from './tabs'
 import { useAdvanced } from '../dex/advanced'
 import { MatchDetails } from './MatchDetails'
 import { luckLabel, luckNote } from '../../lib/luck'
-import { accuracyOf, addTallies, byUse, luckFor, perUse, useMoveDex } from './moveStats'
+import {
+  accuracyOf, addTallies, byUse, luckFor, perUse, scoreFor, scoreNote,
+  secondariesOf, useMoveDex,
+} from './moveStats'
 import { useElementHeight } from '../../lib/useElementHeight'
 import './league.css'
 import { PokemonLink } from '../../components/PokemonLink'
@@ -545,7 +548,8 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
     return by
   }, [league.schedule])
   const [openMon, setOpenMon] = useState<string | null>(null)
-  const moveDex = useMoveDex(openMon != null)
+  // Wanted by the Luck column on every row now, not only by an opened one.
+  const moveDex = useMoveDex(true)
 
   const allTime = currentSeason().source === 'all-time'
   /** One everywhere else: every Pokemon that played at all is on the board. */
@@ -746,6 +750,18 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                     </button>
                   </th>
                 ))}
+                {/* Not sortable and not part of any award: it is a curiosity
+                    about the dice, and ranking a season by it would be
+                    ranking it by something nobody did. */}
+                <th
+                  className="col-luck"
+                  title={'How the dice went for it: where its accuracy and critical-hit '
+                    + 'rolls landed among every run they could have been.\nHigher is '
+                    + 'luckier and an ordinary run sits around the middle. Hover a '
+                    + 'row for the breakdown.'}
+                >
+                  Luck
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -754,6 +770,8 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                 // Same podium treatment as the standings table.
                 const medal = MEDALS[i + 1]
                 const moves = movesByMon.get(t.pokemon) ?? []
+                const luck = scoreFor(moves, moveDex)
+                const extras = secondariesOf(moves, moveDex)
                 const showing = openMon === t.pokemon
                 return (
                   <Fragment key={t.pokemon}>
@@ -799,10 +817,16 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                         {STAT_CELLS[key].cell(t, mon, owners(t.pokemon))}
                       </Fragment>
                     ))}
+                    <td
+                      className={`col-luck detail-luck is-${luck.verdict}`}
+                      title={moveDex ? scoreNote(luck, extras) : undefined}
+                    >
+                      {moveDex ? luckLabel(luck) : ''}
+                    </td>
                   </tr>
                   {showing && (
                     <tr className="moves-row">
-                      <td colSpan={2 + columns.length}>
+                      <td colSpan={3 + columns.length}>
                         {moves.length ? (
                           <table className="detail-table mon-moves">
                             <thead>
@@ -858,7 +882,7 @@ function Stats({ league, dex }: { league: League; dex: Record<string, LeaguePoke
                                   used: sum.used + mv.used,
                                   kos: sum.kos + mv.kos,
                                   damage: sum.damage + mv.damage,
-                                }), { name: 'all', used: 0, kos: 0, damage: 0, rolls: 0, misses: 0 })
+                                }), { name: 'all', used: 0, kos: 0, damage: 0, rolls: 0, misses: 0, crits: 0, procs: 0 })
                                 const luck = luckFor(moves, moveDex)
                                 return (
                                   <tr>

@@ -76,6 +76,12 @@ export interface Move {
   basePower: number
   /** `true` means the move bypasses accuracy checks entirely. */
   accuracy: number | true
+  /** 2 is one crit in eight rather than the usual one in twenty-four. */
+  critRatio?: number
+  /** Storm Throw and the rest that crit every time, and so roll for nothing. */
+  willCrit?: boolean
+  /** How often its extra effect fires, as a percentage; absent when it has none. */
+  secondaryChance?: number
   pp: number
   priority: number
   target: string

@@ -85,6 +85,22 @@ export interface MoveTally {
   rolls: number
   /** Of those rolls, the ones the log says missed. */
   misses: number
+  /**
+   * Critical hits it landed. Rolled once per hit, so the hits — rolls less
+   * misses — are what these are out of.
+   */
+  crits: number
+  /**
+   * Times its extra effect fired on the other side: a burn, a flinch, a
+   * stat drop, confusion.
+   *
+   * Counted once per target per use, whatever the effect was, because a
+   * move rolls once for its secondary and not once per line the log
+   * prints about it. Recorded for any move at all — whether the effect
+   * was a roll or simply what the move does is a question for the move
+   * data, which this reader does not have.
+   */
+  procs: number
 }
 
 export interface ReplayGame {
@@ -276,7 +292,7 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
   const clicked: Record<string, Record<number, Record<string, MoveTally>>> = { p1: {}, p2: {} }
   const tally = (c: Credit, name: string): MoveTally => {
     const forSlot = (clicked[c.side][c.index] ??= {})
-    return (forSlot[name] ??= { name, used: 0, kos: 0, damage: 0, rolls: 0, misses: 0 })
+    return (forSlot[name] ??= { name, used: 0, kos: 0, damage: 0, rolls: 0, misses: 0, crits: 0, procs: 0 })
   }
   /** Health each position is on, out of a hundred, for reading damage off. */
   const health: Record<string, number> = {}
@@ -293,6 +309,8 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
    * other had two chances and took one of them.
    */
   let rolledAt = new Set<string>()
+  /** Targets the move being resolved has already been credited a proc on. */
+  let proccedAt = new Set<string>()
 
   let winner: string | null = null
 
@@ -398,6 +416,7 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
        */
       thrownFrom = (parts[2] ?? '').split(':')[0].trim() || null
       rolledAt = new Set<string>()
+      proccedAt = new Set<string>()
       const aimedAt = (parts[4] ?? '').split(':')[0].trim()
       if (aimedAt) rolledAt.add(aimedAt)
       if (spread) {
@@ -446,6 +465,49 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       const who = parseIdent(parts[2] ?? '')
       const index = active[slot]
       if (who && index != null) bonded = { side: who.side, index, move: 'Destiny Bond' }
+
+    } else if (kind === '-crit') {
+      /*
+       * A critical hit, which is the other roll a move makes on the way in.
+       * Credited to the move being resolved, and only against the other
+       * side — a spread move critting its own partner is not a windfall.
+       */
+      const hurt = parseIdent(parts[2] ?? '')
+      if (resolving && hurt && hurt.side !== resolving.side) {
+        tally(resolving, resolving.move).crits += 1
+      }
+
+    } else if (kind === '-status' || kind === '-unboost'
+      || (kind === '-start' && /^(confusion|flinch)$/i.test((parts[3] ?? '').trim()))) {
+      /*
+       * A move's extra effect landing: a status, a stat knocked down,
+       * confusion. Taken as the move's own only where the log does not
+       * credit it to something else — `[from] ability: Static` is the
+       * Pokemon being hit getting its own back, and `[from] move: Sleep
+       * Powder` is a move whose whole purpose this was.
+       *
+       * Once per target per use. A move that drops two stats prints two
+       * lines and rolled once.
+       */
+      const at = (parts[2] ?? '').split(':')[0].trim()
+      const who = parseIdent(parts[2] ?? '')
+      const credited = parts.some((part) => part.startsWith('[from]'))
+      if (resolving && who && who.side !== resolving.side && !credited && !proccedAt.has(at)) {
+        proccedAt.add(at)
+        tally(resolving, resolving.move).procs += 1
+      }
+
+    } else if (kind === 'cant' && (parts[3] ?? '').trim() === 'flinch') {
+      /*
+       * A flinch, which the log only mentions when the flinched Pokemon
+       * comes to move — by which time the move that caused it is several
+       * lines back. Whoever hit it last this turn is who flinched it:
+       * flinching only works from a hit that landed before it moved, and
+       * the volatile is gone by the next turn.
+       */
+      const slot = (parts[2] ?? '').split(':')[0].trim()
+      const by = lastHitBy[slot]
+      if (by) tally(by, by.move).procs += 1
 
     } else if (kind === '-miss') {
       /*

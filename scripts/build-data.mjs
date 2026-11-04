@@ -230,6 +230,20 @@ const isLearnable = (method) => 'LMETS'.includes(method)
  */
 const isCurrentGen = (entry) => !entry.isNonstandard
 
+/**
+ * How likely a move is to do its extra thing, as a percentage.
+ *
+ * Showdown writes one secondary as `secondary` and several as
+ * `secondaries`, and a chance of nothing at all means the effect is part
+ * of the move rather than a roll on top of it — Will-O-Wisp's burn, Icy
+ * Wind's speed drop. Those are what the accuracy roll was for and are not
+ * counted again here.
+ */
+function secondaryChance(move) {
+  const all = move.secondaries ?? (move.secondary ? [move.secondary] : [])
+  return all.reduce((sum, s) => sum + (typeof s.chance === 'number' ? s.chance : 0), 0)
+}
+
 async function main() {
   console.log('fetching Showdown data...')
   const [
@@ -375,6 +389,16 @@ async function main() {
       category: m.category,
       basePower: m.basePower,
       accuracy: m.accuracy, // `true` means "never misses"
+      /*
+       * The other two things a move rolls for, which the luck columns read
+       * against what actually happened. `critRatio` 2 is one in eight
+       * rather than one in twenty-four, and a move that always crits is
+       * not rolling at all. Secondary chances are added together: a Fire
+       * Fang rolls for a burn and a flinch, and either is a result.
+       */
+      ...(m.critRatio && m.critRatio !== 1 && { critRatio: m.critRatio }),
+      ...(m.willCrit && { willCrit: true }),
+      ...(secondaryChance(m) > 0 && { secondaryChance: secondaryChance(m) }),
       pp: m.pp,
       priority: m.priority,
       target: m.target,

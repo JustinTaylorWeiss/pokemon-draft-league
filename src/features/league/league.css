@@ -577,6 +577,16 @@
 .owner-team { color: var(--fg); }
 .owner-captain { color: var(--muted); font-size: 0.72rem; }
 
+/* The dice column: narrow, and it sits apart from the ranked ones because
+   it has nothing to do with the ranking. */
+.stats-table .col-luck {
+  width: 4.5rem; font-variant-numeric: tabular-nums; font-size: 0.8rem;
+}
+.stats-table th.col-luck {
+  font-size: 0.72rem; font-weight: 600; color: var(--muted); cursor: help;
+}
+.stats-table td.col-luck { cursor: help; }
+
 .stats-type { display: flex; }
 .stats-name .row-types { flex: none; }
 .rank-col {
