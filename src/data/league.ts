@@ -106,6 +106,14 @@ export interface MoveTally {
   kos: number
   /** Percentage points of the other side's health, added across targets. */
   damage: number
+  /**
+   * Accuracy checks it made, per target — not the same as `used`, since a
+   * Protect or an immunity stops a move before it ever rolls. Zero on
+   * anything recorded before the reader started counting them.
+   */
+  rolls: number
+  /** How many of those rolls missed. */
+  misses: number
 }
 
 /**

@@ -74,6 +74,17 @@ export interface MoveTally {
    * side counts, the same rule knockouts follow.
    */
   damage: number
+  /**
+   * Accuracy checks this move actually made, counted per target — a spread
+   * move that caught two is two.
+   *
+   * Not the same as `used`. A move a Protect, an immunity or a flat failure
+   * swallowed never rolled at all, and counting those as chances to miss
+   * would have everyone who clicks into a Protect looking lucky.
+   */
+  rolls: number
+  /** Of those rolls, the ones the log says missed. */
+  misses: number
 }
 
 export interface ReplayGame {
@@ -154,6 +165,16 @@ const SELF_KO = new Set([
 
 /** The two that land a turn and a half after they are used. */
 const FUTURE = new Set(['Future Sight', 'Doom Desire'])
+
+/**
+ * What stops a move before it ever rolls for accuracy.
+ *
+ * Protect and its relatives, a type or ability immunity, and a move that
+ * simply fails. None of these is a chance to miss, so a use swallowed by one
+ * is taken back off the roll count rather than left in to flatter whoever
+ * clicked into it — in doubles that is a quarter of everything thrown.
+ */
+const GUARDS = /move:\s*(Protect|Detect|Spiky Shield|Baneful Bunker|Silk Trap|Burning Bulwark|King's Shield|Obstruct|Quick Guard|Wide Guard|Crafty Shield|Mat Block|Max Guard)/i
 
 /** `Urshifu-Rapid-Strike` and `Urshifu-*` are the same Pokémon; so are `Landorus-Therian` and `Landorus`. */
 const baseOf = (name: string) => name.split('-')[0].trim().toLowerCase()
@@ -255,12 +276,23 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
   const clicked: Record<string, Record<number, Record<string, MoveTally>>> = { p1: {}, p2: {} }
   const tally = (c: Credit, name: string): MoveTally => {
     const forSlot = (clicked[c.side][c.index] ??= {})
-    return (forSlot[name] ??= { name, used: 0, kos: 0, damage: 0 })
+    return (forSlot[name] ??= { name, used: 0, kos: 0, damage: 0, rolls: 0, misses: 0 })
   }
   /** Health each position is on, out of a hundred, for reading damage off. */
   const health: Record<string, number> = {}
   /** The move being resolved, so the damage lines under it belong to it. */
   let resolving: Credit | null = null
+  /** Where the move being resolved was thrown from, to match a miss to it. */
+  let thrownFrom: string | null = null
+  /*
+   * The positions the move being resolved has rolled accuracy against.
+   *
+   * The log says which targets a move reached — `[spread]` lists them, and
+   * a miss names its own — so a chance to miss is counted per target
+   * rather than per click. A Rock Slide that catches one and misses the
+   * other had two chances and took one of them.
+   */
+  let rolledAt = new Set<string>()
 
   let winner: string | null = null
 
@@ -359,6 +391,23 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
         }
       }
 
+      /*
+       * Where it landed is where it rolled: the named target, plus whatever
+       * the spread tag lists. A target it missed joins when the miss line
+       * names it, and one a Protect ate comes back off below.
+       */
+      thrownFrom = (parts[2] ?? '').split(':')[0].trim() || null
+      rolledAt = new Set<string>()
+      const aimedAt = (parts[4] ?? '').split(':')[0].trim()
+      if (aimedAt) rolledAt.add(aimedAt)
+      if (spread) {
+        for (const slot of spread.replace('[spread]', '').trim().split(',')) {
+          if (slot.trim()) rolledAt.add(slot.trim())
+        }
+      }
+      if (attacker) tally(attacker, named).rolls += rolledAt.size
+      else rolledAt.clear()
+
     } else if (kind === 'detailschange') {
       // Says what a Pokémon turned into but not why, and most of the reasons
       // are not a different Pokémon: Aegislash drawing its blade, Mimikyu's
@@ -397,6 +446,36 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       const who = parseIdent(parts[2] ?? '')
       const index = active[slot]
       if (who && index != null) bonded = { side: who.side, index, move: 'Destiny Bond' }
+
+    } else if (kind === '-miss') {
+      /*
+       * An accuracy roll that failed. The move line carries a `[miss]` tag
+       * saying the same thing, but only this line says which target, and a
+       * spread move can miss one and catch the other.
+       */
+      const first = (parts[2] ?? '').split(':')[0].trim()
+      const second = (parts[3] ?? '').split(':')[0].trim()
+      // `|-miss|SOURCE|TARGET`, or just the target on the older shape.
+      const source: string | null = second ? first : thrownFrom
+      const at = second || first
+      if (resolving && source === thrownFrom) {
+        const row = tally(resolving, resolving.move)
+        if (at && !rolledAt.has(at)) { rolledAt.add(at); row.rolls += 1 }
+        row.misses += 1
+      }
+
+    } else if (kind === '-immune' || kind === '-fail' || kind === '-block'
+      || (kind === '-activate' && GUARDS.test(parts[3] ?? ''))) {
+      /*
+       * Stopped before it could roll. Taken off only where the slot was
+       * counted as a target of the move being resolved, so an ability
+       * message about something else cannot discount a roll.
+       */
+      const at = (parts[2] ?? '').split(':')[0].trim()
+      if (resolving && rolledAt.has(at)) {
+        rolledAt.delete(at)
+        tally(resolving, resolving.move).rolls -= 1
+      }
 
     } else if (kind === '-end' && FUTURE.has((parts[3] ?? '').replace(/^move:\s*/i, '').trim())) {
       /*
@@ -512,7 +591,8 @@ export function parseReplayLog(log: string, format = '', players: string[] = [])
       revived: revived[key][i] ?? 0,
       // Most-used first, which is the order a set is read in.
       moves: Object.values(clicked[key][i] ?? {})
-        .map((m) => ({ ...m, damage: Math.round(m.damage) }))
+        // A miss is a roll, whatever else happened in the same resolution.
+        .map((m) => ({ ...m, damage: Math.round(m.damage), rolls: Math.max(0, m.rolls, m.misses) }))
         .sort((x, y) => y.used - x.used || y.kos - x.kos || x.name.localeCompare(y.name)),
     })),
   })

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import type { MoveTally } from './league'
 
 /**
  * The league database.
@@ -299,8 +300,8 @@ interface ReportedLine {
   deaths: number
   brought: boolean
   revived: number
-  /** What it clicked: [{ name, used, kos, damage }]. */
-  moves: { name: string; used: number; kos: number; damage: number }[]
+  /** What it clicked, and what came of it; stored as jsonb on the line. */
+  moves: MoveTally[]
 }
 
 /**

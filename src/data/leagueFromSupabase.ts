@@ -48,6 +48,12 @@ interface GameRow {
   survivors: number | null
 }
 
+/**
+ * A move tally as the database holds it. Rolls and misses were added to the
+ * reader after the first games were stored, so a row can be without them.
+ */
+type StoredTally = Omit<MoveTally, 'rolls' | 'misses'> & { rolls?: number; misses?: number }
+
 interface GameLineRow {
   game_id: number
   side: 'a' | 'b'
@@ -56,7 +62,7 @@ interface GameLineRow {
   deaths: number
   brought: boolean
   revived: number | null
-  moves: MoveTally[] | null
+  moves: StoredTally[] | null
 }
 
 interface StandingRow {
@@ -218,7 +224,10 @@ export async function loadLeagueFromSupabase(seasonId?: string): Promise<League>
       .map((l) => ({
         pokemon: l.pokemon_id, kills: l.kills, deaths: l.deaths,
         brought: l.brought ?? false, revived: l.revived ?? 0,
-        moves: l.moves ?? [],
+        // Rolls and misses came later than the rest of a move's record, so
+        // a line stored before them reads as nothing to judge rather than
+        // as a move that never missed.
+        moves: (l.moves ?? []).map((m) => ({ ...m, rolls: m.rolls ?? 0, misses: m.misses ?? 0 })),
       }))
     const list = gamesByMatch.get(g.match_id) ?? []
     list.push({
