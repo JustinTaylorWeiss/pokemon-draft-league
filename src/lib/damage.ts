@@ -392,7 +392,39 @@ function ratioPower(heavy: number, light: number): number {
  * Returns the move's own base power for everything else, so it can stand
  * in for `move.basePower` everywhere without a condition at the call site.
  */
-export function basePowerOf(move: Move, attacker: Side, defender: Side): number {
+/**
+ * Whether the ground reaches it, which is what every terrain asks first.
+ *
+ * Flying types and Levitate float, and so does an Air Balloon. An Iron
+ * Ball drags any of them back down, which is most of the reason anybody
+ * holds one.
+ */
+const grounded = (side: Side) => {
+  if (side.item === 'Iron Ball') return true
+  if (side.item === 'Air Balloon') return false
+  return !side.pokemon.types.includes('Flying') && side.ability !== 'Levitate'
+}
+
+/** The type each terrain lends Terrain Pulse, which takes the ground's own. */
+const PULSE: Record<string, TypeName> = {
+  Electric: 'Electric',
+  Grassy: 'Grass',
+  Psychic: 'Psychic',
+  Misty: 'Fairy',
+}
+
+/** What Terrain Pulse is, standing where it is standing. */
+export function pulseType(move: Move, attacker: Side, field: Field): TypeName {
+  if (move.name !== 'Terrain Pulse') return move.type
+  return (grounded(attacker) && PULSE[field.terrain ?? '']) || move.type
+}
+
+export function basePowerOf(
+  move: Move,
+  attacker: Side,
+  defender: Side,
+  field: Field = {},
+): number {
   switch (move.name) {
     case 'Grass Knot':
     case 'Low Kick':
@@ -429,6 +461,29 @@ export function basePowerOf(move: Move, attacker: Side, defender: Side): number 
       return 100
     case 'Crush Grip':
       return 120
+
+    /*
+     * The five a terrain is worth more to than the third it lends every
+     * move of its own type, and the one that needs a terrain at all.
+     *
+     * Rising Voltage asks about the target rather than the user: the
+     * question is whether the thing being hit is standing in the current.
+     * The rest ask about the user, and Steel Roller has nothing to roll
+     * over on bare ground.
+     */
+    case 'Rising Voltage':
+      return field.terrain === 'Electric' && grounded(defender) ? 140 : 70
+    case 'Expanding Force':
+      return field.terrain === 'Psychic' && grounded(attacker) ? 120 : 80
+    case 'Psyblade':
+      return field.terrain === 'Electric' && grounded(attacker) ? 120 : 80
+    case 'Misty Explosion':
+      return field.terrain === 'Misty' && grounded(attacker) ? 150 : 100
+    case 'Terrain Pulse':
+      return field.terrain && grounded(attacker) ? 100 : 50
+    case 'Steel Roller':
+      return field.terrain ? 130 : 0
+
     default:
       return move.basePower
   }
@@ -462,15 +517,6 @@ const TERRAIN: Record<string, TypeName> = {
   Psychic: 'Psychic',
 }
 
-/**
- * Whether the ground reaches it, which is what every terrain asks first.
- *
- * Flying types and Levitate float; so does an Air Balloon, which is not
- * modelled anywhere else here and is not modelled here either.
- */
-const grounded = (side: Side) =>
-  !side.pokemon.types.includes('Flying') && side.ability !== 'Levitate'
-
 /** The three Ground moves Grassy Terrain smothers. */
 const SMOTHERED = new Set(['Earthquake', 'Bulldoze', 'Magnitude'])
 
@@ -503,7 +549,7 @@ function core(
   const hp = statOf(defender, 'hp')
   // Worked out rather than read, for the ten whose power is a question
   // about the pairing. It gives back `move.basePower` for everything else.
-  const stated = basePowerOf(move, attacker, defender)
+  const stated = basePowerOf(move, attacker, defender, field)
   if (move.category === 'Status' || stated <= 0) return { rolls: [], hp }
 
   const mine = attacker.ability ?? ''
@@ -524,10 +570,13 @@ function core(
    * three change what the type chart says as well as what it hits for,
    * and the chart is read below.
    */
+  // Terrain Pulse takes the ground's type before anything else reads it,
+  // which is the other half of what a terrain is worth to it.
+  const thrown = pulseType(move, attacker, field)
   const kind: TypeName = mine === 'Normalize' ? 'Normal'
     : mine === 'Liquid Voice' && move.sound ? 'Water'
-      : move.type === 'Normal' && ATE[mine] ? ATE[mine]
-        : move.type
+      : thrown === 'Normal' && ATE[mine] ? ATE[mine]
+        : thrown
   const ated = mine === 'Normalize' || (move.type === 'Normal' && ATE[mine]) ? 1.2 : 1
 
   /*
@@ -637,8 +686,14 @@ function core(
     Math.floor(Math.floor((2 * attacker.level) / 5 + 2) * power * atk / def) / 50,
   ) + 2
 
-  // A move that hits everything adjacent is hitting two of them in doubles.
+  /*
+   * A move that hits everything adjacent is hitting two of them in doubles.
+   * Expanding Force only becomes one of those on Psychic Terrain, which is
+   * also the only time it is worth the extra half — so the quarter off for
+   * spreading arrives with the extra half and never without it.
+   */
   const spreads = move.target === 'allAdjacentFoes' || move.target === 'allAdjacent'
+    || (move.name === 'Expanding Force' && field.terrain === 'Psychic' && grounded(attacker))
   if (doubles && spreads) base = pokeRound(base * 0.75)
 
   // Protean makes the move's type the user's, so everything is same-type.
