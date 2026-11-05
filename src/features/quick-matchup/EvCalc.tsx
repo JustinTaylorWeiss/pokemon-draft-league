@@ -9,11 +9,12 @@ import { VARIABLE_POWER } from '../../lib/matchup'
 import {
   EV_STATS, IV_MAX, SET_SIZE, assumeFrom,
   emptySpread, lowered,
-  opponentsFrom, planFor, spent, statOfSpread, usualMoves,
-  type PlanField, type SideField,
+  opponentsFrom, planFor, spent, statOfSpread, tradeFor, usualMoves,
+  type Exchange, type PlanField, type SideField,
   type Assumptions, type Shot, type Spread, type Threshold,
 } from '../../lib/evPlan'
 import { Sprite } from '../../components/Sprite'
+import { TypeChip } from '../../components/TypeChip'
 import { MoveCategory } from '../../components/MoveCategory'
 import { PokemonLink } from '../../components/PokemonLink'
 import { toId } from '../../data/load'
@@ -122,12 +123,22 @@ const SPRITE_H = 53
  * Defense had no way of being said and came out as either nothing or
  * everything, neither of which is what it does.
  */
-function AssumeStat({ stat, spread, limits, onEvs, onNature }: {
+function AssumeStat({ stat, spread, limits, onEvs, onNature, value }: {
   stat: StatKey
   spread: Spread
   limits: Limits
   onEvs: (n: number) => void
   onNature: (mult: number) => void
+  /**
+   * What the stat actually reads, where the caller can work it out.
+   *
+   * In the loadout panel there is no room for both, and the EV count is
+   * the thing being set. Down the damage calculator's column there is,
+   * and the other side of the page shows the number the stat comes to —
+   * so this one does too, with the EVs beside the bar that sets them.
+   * Two columns that read differently are two things to learn.
+   */
+  value?: number
 }) {
   const evs = spread.evs[stat]
   const nature = spread.nature[stat]
@@ -146,7 +157,7 @@ function AssumeStat({ stat, spread, limits, onEvs, onNature }: {
           a third, under the thing they label. */}
       <span className="ev-assume-head">
         <em>{STAT_LABELS[stat]}</em>
-        <b>{evs}{nature > 1 ? '+' : nature < 1 ? '\u2212' : ''}</b>
+        <b>{value ?? evs}{nature > 1 ? '+' : nature < 1 ? '\u2212' : ''}</b>
         {takesNature(stat) && (
           <button
             type="button"
@@ -171,11 +182,16 @@ function AssumeStat({ stat, spread, limits, onEvs, onNature }: {
           the nature, which put two decisions on one control and a step
           that looked like 256 EVs at the end of a bar that stops at
           252 — the pill above says the nature. */}
-      <input
-        type="range" min={0} max={limits.max} step={limits.step} value={evs}
-        aria-label={`${STAT_LABELS[stat]} ${limits.unit}`}
-        onChange={(e) => onEvs(Number(e.target.value))}
-      />
+      <span className="ev-spend">
+        {value != null && (
+          <span className="ev-evs" title={`${evs} ${limits.unit}`}>{evs}</span>
+        )}
+        <input
+          type="range" min={0} max={limits.max} step={limits.step} value={evs}
+          aria-label={`${STAT_LABELS[stat]} ${limits.unit}`}
+          onChange={(e) => onEvs(Number(e.target.value))}
+        />
+      </span>
     </label>
   )
 }
@@ -894,8 +910,30 @@ export interface Gear {
  */
 function GearPicker({
   pokemon, ability: usualAbilityName, gear, onChange, assume, onAssume, base,
-  id, limits, out, learnset, moves, played, named, onNamed, carrying,
+  id, limits, out, learnset, moves, played, named, onNamed, carrying, inline, only, onMoves,
 }: {
+  /*
+   * Laid open on the page rather than folded behind a button.
+   *
+   * The planner keeps it folded because it sits under a sprite in a row of
+   * six and there is nowhere to put it. A damage calculator has a column
+   * to itself, so the item and the ability are simply there — and the two
+   * pills that summarise what is inside, and the spread panel the sliders
+   * beside it already show, have nothing left to do.
+   */
+  inline?: boolean
+  /** Laid open, which half of it. Both when neither is asked for. */
+  only?: 'moves' | 'kit'
+  /*
+   * Set the four outright rather than add and subtract from a guess.
+   *
+   * The other side's moves are a guess with exceptions pinned to it — what
+   * usage says, less what somebody has struck off, plus what they have
+   * named. The Pokémon being built has no guess to amend: its four are
+   * whatever they have been set to, so dropping one is a shorter list and
+   * not an exception.
+   */
+  onMoves?: (ids: string[]) => void
   pokemon: Pokemon
   /** The ability it is reckoned to have when nobody has said otherwise. */
   ability: string
@@ -1162,11 +1200,17 @@ function GearPicker({
    * twice.
    */
   const dropMove = (id: string) => {
+    if (onMoves) { onMoves((named ?? []).filter((x) => x !== id)); return }
     if (named?.includes(id)) onNamed?.(named.filter((x) => x !== id))
     else onChange({ ...gear, without: [...(gear?.without ?? []), id] })
   }
   const addMove = (move: Move) => {
     const id = toId(move.name)
+    if (onMoves) {
+      if (!(named ?? []).includes(id)) onMoves([...(named ?? []), id])
+      setFind('')
+      return
+    }
     if (gear?.without?.includes(id)) {
       onChange({ ...gear, without: gear.without.filter((x) => x !== id) })
     } else {
@@ -1211,11 +1255,12 @@ function GearPicker({
   if (nothing && !assume && !onNamed) return null
 
   return (
-    <span className="ev-gear">
+    <span className={`ev-gear${inline ? ' is-inline' : ''}`}>
       {/* What has been said, and the way to say more — two buttons rather
           than one, so the plus can keep its own shape instead of stretching
-          to whatever is written above it. Either opens the same panel. */}
-      {shown.map((what) => {
+          to whatever is written above it. Either opens the same panel.
+          Laid open there is nothing to summarise: it is all on the page. */}
+      {!inline && shown.map((what) => {
         const spreadPill = what === raised[0]
         return (
           <button
@@ -1230,7 +1275,7 @@ function GearPicker({
           </button>
         )
       })}
-      {hidden.length > 0 && (
+      {!inline && hidden.length > 0 && (
         <button
           type="button"
           className="ev-gear-chip is-more"
@@ -1241,25 +1286,30 @@ function GearPicker({
           {hidden.length} more
         </button>
       )}
-      <button
-        type="button"
-        className={`ev-gear-open${chosen.length ? ' has-gear' : ''}`}
-        aria-expanded={open === 'kit'}
-        title={`What ${pokemon.name} is bringing`}
-        onClick={() => toggle('kit')}
-      >
-        Edit loadout
-      </button>
+      {!inline && (
+        <button
+          type="button"
+          className={`ev-gear-open${chosen.length ? ' has-gear' : ''}`}
+          aria-expanded={open === 'kit'}
+          title={`What ${pokemon.name} is bringing`}
+          onClick={() => toggle('kit')}
+        >
+          Edit loadout
+        </button>
+      )}
 
-      {open && (
+      {(inline || open) && (
         <>
           {/* Click anywhere else and it closes, which is what a reader
-              expects of something that opened over the page. */}
-          <button
-            type="button" className="ev-gear-away" aria-label="Close"
-            onClick={() => setOpen(null)}
-          />
-          <div className="ev-gear-pop">
+              expects of something that opened over the page. Nothing to
+              close when it was never opened. */}
+          {!inline && (
+            <button
+              type="button" className="ev-gear-away" aria-label="Close"
+              onClick={() => setOpen(null)}
+            />
+          )}
+          <div className={`ev-gear-pop${inline ? ' is-inline' : ''}`}>
             {/* The Pokémon itself, at the top of both panels. The sprite
                 is a switch now — clicking it takes the Pokémon in and out
                 of the columns — so the thing a picture of a Pokémon does
@@ -1271,7 +1321,7 @@ function GearPicker({
                 the whole side: they are not all built the same way, and a
                 spread chosen against "everything at 252" is chosen against a
                 team nobody brought. */}
-            {open === 'spread' && assume && onAssume && (
+            {!inline && open === 'spread' && assume && onAssume && (
               <div className="ev-gear-assumes">
                 {EV_STATS.map((stat) => (
                   <AssumeStat
@@ -1302,7 +1352,7 @@ function GearPicker({
                 and confusion, zero Speed is how anything gets under a
                 Trick Room. The other four are here because leaving them
                 out would mean explaining why. */}
-            {open === 'spread' && (
+            {!inline && open === 'spread' && (
             <div className="ev-gear-ivs">
               <div className="ev-gear-line">
               {limits.ivs && (
@@ -1353,7 +1403,7 @@ function GearPicker({
               )}
             </div>
             )}
-            {open === 'kit' && setAbility && (
+            {only !== 'moves' && (inline || open === 'kit') && setAbility && (
               <div className="ev-gear-fixed">
                 <span>Ability</span>
                 <b>{MODELLED_ABILITIES.has(setAbility) ? setAbility : 'No effect here'}</b>
@@ -1365,13 +1415,13 @@ function GearPicker({
                 are not worth the line either — this row exists to say
                 whether the ability is in the numbers, and the answer is
                 no, which is what it says. */}
-            {open === 'kit' && !setAbility && !abilities.length && own.length > 1 && (
+            {only !== 'moves' && (inline || open === 'kit') && !setAbility && !abilities.length && own.length > 1 && (
               <div className="ev-gear-fixed">
                 <span>Ability</span>
                 <b>No effect here</b>
               </div>
             )}
-            {open === 'kit' && !setAbility && abilities.length > 0 && (
+            {only !== 'moves' && (inline || open === 'kit') && !setAbility && abilities.length > 0 && (
               <label>
                 <span>Ability</span>
                 {/* No blank option: it already has an ability, and "its
@@ -1388,13 +1438,13 @@ function GearPicker({
                 </select>
               </label>
             )}
-            {open === 'kit' && mega && (
+            {only !== 'moves' && (inline || open === 'kit') && mega && (
               <div className="ev-gear-fixed">
                 <span>Item</span>
                 <b>Mega Stone</b>
               </div>
             )}
-            {open === 'kit' && !mega && (
+            {only !== 'moves' && (inline || open === 'kit') && !mega && (
             <label>
               <span>Item</span>
               <select
@@ -1418,7 +1468,7 @@ function GearPicker({
             {/* Anything it might be carrying that its set does not say.
                 Its own movepool and nothing else: a move it cannot learn
                 is not a thing it might bring. */}
-            {open === 'kit' && onNamed && moves && (
+            {only !== 'kit' && (inline || open === 'kit') && (onNamed || onMoves) && moves && (
               <div className="ev-gear-moves">
                 <span>Moves in the columns</span>
                 {carrying && carrying.length > 0 ? (
@@ -1476,7 +1526,7 @@ function GearPicker({
             {/* Each panel undoes its own. Shown only where there is
                 something to undo: a reset with nothing to reset is a
                 button that does nothing and looks like it does. */}
-            {open === 'spread' && (
+            {!inline && open === 'spread' && (
               <div className="ev-gear-resets">
                 {/* Back to how usage says it is built, and the IVs it was
                     born with. Not its item or its moves — those are the
@@ -1507,7 +1557,7 @@ function GearPicker({
                 )}
               </div>
             )}
-            {open === 'kit' && kitSaid && (
+            {only !== 'moves' && (inline || open === 'kit') && kitSaid && (
               <button
                 type="button"
                 className="ev-gear-reset"
@@ -1539,10 +1589,178 @@ interface Props {
   dex: LeagueDex
   /** Owned by the card, so one picker in the bar serves this and the tiers. */
   level: number
+  /** Which shape to read it in. The switch for it is in the bar above. */
+  mode: CalcMode
+}
+
+export type CalcMode = 'evs' | 'damage'
+
+/**
+ * Which shape the panel was last read in, kept between visits.
+ *
+ * Somebody who thinks in damage rolls thinks in them every time, and
+ * having to say so again on every visit is the kind of thing that stops
+ * a switch being used at all. Read by the bar that owns the switch.
+ */
+const MODE_KEY = 'ev-calc:mode'
+export const readCalcMode = (): CalcMode => {
+  try {
+    return localStorage.getItem(MODE_KEY) === 'damage' ? 'damage' : 'evs'
+  } catch {
+    return 'evs'
+  }
+}
+
+/** `2HKO`, or `possible OHKO` where the best roll gets there and the worst does not. */
+function koOf(hits: number, soonest: number, chance: number): string {
+  if (!Number.isFinite(hits)) return 'never knocks it out'
+  const named = (n: number) => (n === 1 ? 'OHKO' : `${n}HKO`)
+  if (soonest < hits && chance > 0) {
+    return `${Math.round(chance * 100)}% to ${named(soonest)}, else ${named(hits)}`
+  }
+  return `guaranteed ${named(hits)}`
+}
+
+/** The four slots a Pokémon has, however few of them are filled. */
+const SLOTS = 4
+
+/**
+ * Its movepool, minus what it is already carrying, nearest match first.
+ *
+ * The same search both sides over — which is the point, since the two
+ * columns are meant to be the same control twice.
+ */
+function searchMoves(
+  learnset: Record<string, unknown> | undefined,
+  moves: MoveDex | undefined,
+  played: string[] | undefined,
+  have: Set<string>,
+  query: string,
+): Move[] {
+  const q = query.trim().toLowerCase()
+  if (!learnset || !moves || !q) return []
+  const rank = new Map((played ?? []).map((id, i) => [id, i]))
+  return Object.keys(learnset)
+    .filter((id) => !have.has(id))
+    .map((id) => moves[id])
+    .filter((m): m is Move => Boolean(m) && canReadPower(m) && matches(m, q))
+    .sort((a, b) => (rank.get(toId(a.name)) ?? Infinity) - (rank.get(toId(b.name)) ?? Infinity)
+      || b.basePower - a.basePower
+      || a.name.localeCompare(b.name))
+    .slice(0, 12)
+}
+
+/** One of the four: the move, and what it does where it does anything. */
+export interface Slot { move: Move; roll?: Exchange }
+
+/**
+ * One side's four moves and what they do.
+ *
+ * The same block both sides over, and the only place moves are changed:
+ * the cross is on the row it takes off and the search is under the four
+ * it adds to, rather than a separate list above a separate list saying
+ * the same names twice.
+ *
+ * Four rows' worth of height whether or not there are four, so the two
+ * columns stay level with each other and nothing below them moves when a
+ * move is taken off.
+ */
+function MoveSide({
+  slots, title, mine, learnset, moves, played, onDrop, onAdd, note,
+}: {
+  slots: Slot[]
+  title: string
+  mine: boolean
+  learnset?: Record<string, unknown>
+  moves?: MoveDex
+  played?: string[]
+  onDrop: (id: string) => void
+  onAdd: (move: Move) => void
+  note?: string
+}) {
+  const [find, setFind] = useState('')
+  const have = new Set(slots.map((s) => toId(s.move.name)))
+  const hits = searchMoves(learnset, moves, played, have, find)
+  const full = slots.length >= SLOTS
+  const blanks = Math.max(0, SLOTS - slots.length)
+
+  return (
+    <section className={`dc-half ${mine ? 'dc-out' : 'dc-in'}`}>
+      <h4>{title}</h4>
+      <ul className="dc-list">
+        {slots.map((slot) => (
+          <li key={slot.move.name} className={`dc-row${mine ? ' is-mine' : ' is-theirs'}`}>
+            <span className="dc-what">
+              <span className="dc-line">
+                <TypeChip type={slot.move.type} />
+                <span className="dc-move">{slot.move.name}</span>
+              </span>
+              <span className="dc-line">
+                {slot.roll ? (
+                  <>
+                    <span className="dc-span">
+                      {slot.roll.low.toFixed(1)} – {slot.roll.high.toFixed(1)}%
+                    </span>
+                    <span className="dc-ko">
+                      {koOf(slot.roll.hits, slot.roll.soonest, slot.roll.chance)}
+                    </span>
+                    {slot.roll.via.length > 0 && (
+                      <span className="dc-via" title={`Because of ${slot.roll.via.join(' and ')}`}>
+                        {slot.roll.via.join(' · ')}
+                      </span>
+                    )}
+                  </>
+                ) : <span className="dc-ko">no damage to read</span>}
+              </span>
+            </span>
+            <button
+              type="button"
+              className="dc-drop"
+              title={`Take ${slot.move.name} off`}
+              aria-label={`Take ${slot.move.name} off`}
+              onClick={() => onDrop(toId(slot.move.name))}
+            >
+              {'\u00d7'}
+            </button>
+          </li>
+        ))}
+        {Array.from({ length: blanks }, (_, i) => (
+          <li key={`blank-${i}`} className="dc-row is-empty" aria-hidden="true" />
+        ))}
+      </ul>
+      <input
+        type="search"
+        className="dc-find"
+        value={find}
+        disabled={full}
+        placeholder={full ? 'Four is all it can carry' : '\uff0b Add a move by name or type\u2026'}
+        aria-label="Add a move"
+        onChange={(e) => setFind(e.target.value)}
+      />
+      {hits.length > 0 && (
+        <ul className="ev-set-list dc-finds">
+          {hits.map((m) => (
+            <li key={m.name}>
+              <button
+                type="button"
+                onClick={() => { onAdd(m); setFind('') }}
+              >
+                <span className={`ev-set-name${typeInk(m.type)}`}>{m.name}</span>
+                <MoveCategory category={m.category} />
+                <em>{powerLabel(m)}</em>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {find.trim() && hits.length === 0 && <p className="ev-set-none">Nothing matches.</p>}
+      {note && <p className="ev-note dc-note">{note}</p>}
+    </section>
+  )
 }
 
 export function EvCalcBody({
-  teamOne, teamTwo, chart, moves, learnsets, sets, played, dex, level,
+  teamOne, teamTwo, chart, moves, learnsets, sets, played, dex, level, mode,
 }: Props) {
   const [chosen, setChosen] = useState<string | null>(null)
   /*
@@ -1837,6 +2055,54 @@ export function EvCalcBody({
    * heading lands over the first column's list, so each heading goes
    * into the cell with the list it belongs to.
    */
+  /*
+   * Which question the panel is answering.
+   *
+   * The planner is the one this page was built for — where does an EV go
+   * — and a damage calculator is the one everybody already knows how to
+   * read. They are the same two sides and the same field, so the toggle
+   * moves nothing but the shape of the answer.
+   */
+  useEffect(() => {
+    try { localStorage.setItem(MODE_KEY, mode) } catch { /* private browsing */ }
+  }, [mode])
+  /**
+   * The one it is being read against, which damage mode shows one of.
+   *
+   * The planner answers against the whole of the other side at once,
+   * because a spread is chosen against all of them. A damage calculator
+   * answers one pairing, because that is the question it is for — so the
+   * right-hand column is a Pokémon rather than a team, with the other
+   * five a click away under it.
+   */
+  const [facing, setFacing] = useState<string | null>(null)
+
+  const trade = useMemo(() => {
+    if (!picked || mode !== 'damage') return null
+    const worn = gear[picked.entry.id]
+    return tradeFor({
+      pokemon: picked.entry.pokemon,
+      moves: myMoves,
+      ivs: worn?.ivs,
+      item: worn?.item || undefined,
+      ability: worn?.ability
+        || sets?.[picked.entry.id]?.spreads?.[0]?.ability
+        || Object.values(picked.entry.pokemon.abilities)[0],
+      spread,
+      opponents,
+      chart,
+      level,
+      doubles,
+      field,
+      rules,
+    })
+  }, [picked, mode, myMoves, opponents, spread, chart, level, sets, gear, field, doubles, rules])
+
+  const against = useMemo(() => {
+    const live = opponents.filter((o) => !off.has(o.id))
+    return live.find((o) => o.id === facing) ?? live[0] ?? null
+  }, [opponents, off, facing])
+
   const wide = useWide('(min-width: 1101px)')
   const head = (stat: StatKey) => ({
     stat,
@@ -1869,51 +2135,54 @@ export function EvCalcBody({
 
   if (!teamOne.members.length) return null
 
-  return (
-    <div className="ev-calc">
-      {/* Everything you can change, above everything you read, and stuck
-          there: the reason to read a column is to decide where an EV goes,
-          and the slider was a scroll away from the list that argued for it. */}
-      <div className="ev-top">
-      {/* The controls down the left, and the Pokemon they are about beside
-          them. Two columns rather than one row: a pill added under a sprite
-          used to push the picker's row taller while the space next to the
-          budget and the search sat empty. Now the sprites run down into it. */}
-      <div className="ev-bar">
-        <div className="ev-ours">
-          <div className="ev-side">
-            <DropPicker
-              className="ev-picker"
-              items={choices}
-              value={chosen ?? ''}
-              onPick={(item) => choose(item.id)}
-              ariaLabel="Pokémon to build a spread for"
-              placeholder="Pick a Pokémon"
-            />
+  /** What a side has spent, drawn above the sliders that spend it. */
+  const spBar = (used: number) => (
+    <span className={`ev-budget dc-budget${limits.budget - used === 0 ? ' is-full' : ''}`}>
+      <span className="ev-budget-bar">
+        <span style={{ width: `${(used / limits.budget) * 100}%` }} />
+      </span>
+      <span className="ev-budget-read">
+        {used}<i>/{limits.budget}</i>
+      </span>
+    </span>
+  )
 
-            {/* And which of its shapes to read it in, where it has more than one.
-                Aegislash is 60 Defense in one stance and 150 in the other. */}
-            {formes.length > 1 && (
-              <span className="ev-assume-seg ev-formes">
-                {formes.map((f) => (
-                  <button
-                    key={f.id}
-                    type="button"
-                    className="ev-seg"
-                    aria-pressed={(shape ?? picked?.own) === f.id}
-                    title={f.pokemon.name}
-                    onClick={() => setShape(f.id)}
-                  >
-                    {f.pokemon.forme ?? 'Base'}
-                  </button>
-                ))}
-              </span>
-            )}
-
-            {/* Its four, which the Attack and Special Attack columns are the
-                case for. Behind a button rather than always open: it is
-                answered once per Pokemon and right most of the time, and the
-                columns are what the tab is for. */}
+  /*
+   * The page in pieces, so the two shapes can arrange the same ones.
+   *
+   * There is one of every control, not one per mode: the picker that
+   * chooses a Pokémon in the planner is the picker that chooses it in the
+   * calculator, and a Choice Band given in one is held in the other.
+   *
+   * Damage mode wraps each side in a column of its own so the two stack
+   * independently. Laid out as a single grid they shared their row
+   * heights, and whichever side had more moves left a hole down the other.
+   */
+  /*
+   * The four it is throwing, and the way to change them.
+   *
+   * In damage mode it goes at the head of its own move list rather than
+   * under the picker: changing which moves these are is a thing you do
+   * to the list you are reading, not somewhere else on the page.
+   */
+  const myMoveEditor = mode === 'damage' ? (picked && (
+    <GearPicker
+      pokemon={picked.entry.pokemon}
+      id={picked.entry.id}
+      inline
+      only="moves"
+      limits={limits}
+      ability={usualAbility(picked.entry.id, picked.entry.pokemon)}
+      gear={gear[picked.entry.id]} onChange={(g) => give(picked.entry.id, g)}
+      learnset={learnsets?.[picked.entry.id]}
+      moves={moves}
+      played={played}
+      named={setIds}
+      onMoves={(ids) => setMysets((prev) => ({ ...prev, [picked.entry.id]: ids }))}
+      carrying={myMoves}
+    />
+  )) : (
+    <>
             {picked && (
               <div className="ev-set">
                 <button
@@ -2020,11 +2289,49 @@ export function EvCalcBody({
                 )}
               </div>
             )}
+    </>
+  )
+
+  const mySide = (
+          <div className="ev-side">
+            <DropPicker
+              className="ev-picker"
+              items={choices}
+              value={chosen ?? ''}
+              onPick={(item) => choose(item.id)}
+              ariaLabel="Pokémon to build a spread for"
+              placeholder="Pick a Pokémon"
+            />
+
+            {/* And which of its shapes to read it in, where it has more than one.
+                Aegislash is 60 Defense in one stance and 150 in the other. */}
+            {formes.length > 1 && (
+              <span className="ev-assume-seg ev-formes">
+                {formes.map((f) => (
+                  <button
+                    key={f.id}
+                    type="button"
+                    className="ev-seg"
+                    aria-pressed={(shape ?? picked?.own) === f.id}
+                    title={f.pokemon.name}
+                    onClick={() => setShape(f.id)}
+                  >
+                    {f.pokemon.forme ?? 'Base'}
+                  </button>
+                ))}
+              </span>
+            )}
+
+            {/* Its four, which the Attack and Special Attack columns are the
+                case for. Behind a button rather than always open: it is
+                answered once per Pokemon and right most of the time, and the
+                columns are what the tab is for. */}
+              {mode !== 'damage' && myMoveEditor}
 
             {/* What is left to spend, drawn rather than counted out. Five
                 hundred and eight is a number you have to subtract from; a
                 bar is a thing you can see the end of. */}
-            {picked && (
+            {picked && mode !== 'damage' && (
               <span className={`ev-budget${left === 0 ? ' is-full' : ''}`}>
                 <span className="ev-budget-bar">
                   <span style={{ width: `${(used / limits.budget) * 100}%` }} />
@@ -2038,17 +2345,15 @@ export function EvCalcBody({
             {/* Under the bar it undoes most of. The panels reset their own
                 Pokémon; this is the one thing that cannot be undone one at
                 a time, because there are thirteen. */}
-            {anything && (
+            {anything && mode !== 'damage' && (
               <button type="button" className="ev-start-over" onClick={startOver}>
                 Reset everything
               </button>
             )}
           </div>
-
-          {/* Its picture where it was, to the right of the controls that
-              are about it — only the box around the two of them is new.
-              The picker opens the list; this opens the Pokémon, the way
-              a sprite does everywhere else on the site. */}
+  )
+  const myCard = (
+    <>
           {picked && (
             <span className="ev-mine">
               {/* Not a link and not a switch. The six opposite are
@@ -2065,18 +2370,50 @@ export function EvCalcBody({
                 pokemon={picked.entry.pokemon}
                 id={picked.entry.id}
                 limits={limits}
+                inline={mode === 'damage'}
                 ability={usualAbility(picked.entry.id, picked.entry.pokemon)}
                 gear={gear[picked.entry.id]} onChange={(g) => give(picked.entry.id, g)}
               />
             </span>
           )}
-        </div>
-
+    </>
+  )
+  const theirColumn = (
+    <>
         {picked && (
           <div className="ev-mons">
+            {/* One at a time in damage mode, the rest a click away: a
+                calculator answers a pairing, and six cards down a column
+                is a team sheet rather than an answer. */}
+            {mode === 'damage' && picked.foes.length > 1 && (
+              <div className="dc-switch" role="group" aria-label="Read against">
+                {picked.foes.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className={`ev-open${against?.id === m.id ? ' is-facing' : ''}${
+                      off.has(m.id) ? ' is-off' : ''}`}
+                    aria-pressed={against?.id === m.id}
+                    title={`Read against ${m.pokemon.name}`}
+                    onClick={() => {
+                      setFacing(m.id)
+                      setOff((prev) => {
+                        const now = new Set(prev)
+                        now.delete(m.id)
+                        return now
+                      })
+                    }}
+                  >
+                    <Sprite pokemon={m.pokemon} width={SPRITE_W} height={SPRITE_H} />
+                  </button>
+                ))}
+              </div>
+            )}
             {picked.foes.length > 0 && (
               <div className="ev-foes">
-                {picked.foes.map((m) => (
+                {(mode === 'damage'
+                  ? picked.foes.filter((m) => m.id === against?.id)
+                  : picked.foes).map((m) => (
                   <span key={m.id} className="ev-foe-slot">
                     {/* The switch for whether the columns read it at all.
                         One click on the Pokémon itself, which is the
@@ -2100,6 +2437,8 @@ export function EvCalcBody({
                     </button>
                     <GearPicker
                       pokemon={m.pokemon}
+                      inline={mode === 'damage'}
+                      only={mode === 'damage' ? 'kit' : undefined}
                       ability={usualAbility(m.id, m.pokemon)}
                       base={assumeFrom(sets?.[m.id], rules)}
                       limits={limits}
@@ -2120,10 +2459,50 @@ export function EvCalcBody({
               </div>
             )}
 
+            {/* Its spread under it, the same six rows the left column has.
+                The two columns are mirrors: a reader who has learnt one
+                has learnt the other. */}
+            {mode === 'damage' && against && (
+              <>
+                {spBar(spent(credit(against.id)))}
+                <div className="dc-stats dc-theirstats">
+                {EV_STATS.map((stat) => {
+                  const now = credit(against.id)
+                  return (
+                    <AssumeStat
+                      key={stat}
+                      stat={stat}
+                      spread={now}
+                      value={statOfSpread(
+                        against.pokemon, level, now, stat, gear[against.id]?.ivs, rules,
+                      )}
+                      limits={limits}
+                      onEvs={(n) => {
+                        const elsewhere = spent(now) - now.evs[stat]
+                        const room = Math.max(0, Math.min(n, limits.budget - elsewhere))
+                        setAssume((prev) => ({
+                          ...prev,
+                          [against.id]: { ...now, evs: { ...now.evs, [stat]: room } },
+                        }))
+                      }}
+                      onNature={(mult) => {
+                        const step = { ...now, nature: { ...now.nature, [stat]: mult } }
+                        if (natureIsLegal(step)) {
+                          setAssume((prev) => ({ ...prev, [against.id]: step }))
+                        }
+                      }}
+                    />
+                  )
+                })}
+                </div>
+              </>
+            )}
           </div>
         )}
-      </div>
-
+    </>
+  )
+  const modifiers = (
+    <>
       {picked && (
         <FieldBar
           field={field} onChange={setField}
@@ -2131,23 +2510,99 @@ export function EvCalcBody({
           rules={rules} onRules={setRules}
         />
       )}
-
-      {/* Six across, the headings and their sliders are a grid of their
-          own above the lists, so the whole top can stick while the lists
-          run under it. Narrower than that they are one grid with the
-          lists — see `useWide`. */}
-      {picked && wide && (
+    </>
+  )
+  const myStats = (
+    <>
+      {picked && (wide || mode === 'damage') && (
         <div className="ev-cols ev-heads">
           {EV_STATS.map((stat) => (
             <StatHead key={stat} {...head(stat)} />
           ))}
         </div>
       )}
-      </div>
+    </>
+  )
+  const nothingPicked = !picked && (
+    <p className="ev-hint">Pick a Pokémon to see what its EVs would buy against the other side.</p>
+  )
 
-      {!picked ? (
-        <p className="ev-hint">Pick a Pokémon to see what its EVs would buy against the other side.</p>
-      ) : (
+  /**
+   * The other side's four, and the way to change them.
+   *
+   * Its credited moves are a guess with exceptions pinned to it — what
+   * usage says, less what has been struck off, plus what has been named.
+   * Setting four outright has to overrule that guess in both directions
+   * at once: the four are named, and everything else it was credited with
+   * is struck off.
+   */
+  const theirSlots: Slot[] = against
+    ? [...against.moves]
+      .map((move) => ({
+        move,
+        roll: (trade?.in ?? []).find(
+          (r) => r.foe.id === against.id && r.move.name === move.name,
+        ),
+      }))
+      .sort((a2, b2) => (b2.roll?.high ?? 0) - (a2.roll?.high ?? 0))
+      .slice(0, SLOTS)
+    : []
+  const theirIds = theirSlots.map((slot) => toId(slot.move.name))
+  const setTheirMoves = (ids: string[]) => {
+    if (!against) return
+    const struck = new Set([
+      ...(gear[against.id]?.without ?? []),
+      ...against.moves.map((m) => toId(m.name)),
+    ])
+    for (const id of ids) struck.delete(id)
+    names(against.id, ids)
+    give(against.id, { ...gear[against.id], without: [...struck] })
+  }
+
+  /** Mine, which are simply whatever they have been set to. */
+  const mySlots: Slot[] = myMoves.slice(0, SLOTS).map((move) => ({
+    move,
+    roll: (trade?.out ?? []).find(
+      (r) => (!against || r.foe.id === against.id) && r.move.name === move.name,
+    ),
+  }))
+
+  const myRolls = picked && (
+    <MoveSide
+      mine
+      title={`${picked.entry.pokemon.name} moves`}
+      slots={mySlots}
+      learnset={learnsets?.[picked.entry.id]}
+      moves={moves}
+      played={played}
+      onDrop={(id) => setMysets((prev) => ({
+        ...prev, [picked.entry.id]: setIds.filter((x) => x !== id),
+      }))}
+      onAdd={(m) => setMysets((prev) => ({
+        ...prev, [picked.entry.id]: [...setIds, toId(m.name)].slice(0, SLOTS),
+      }))}
+    />
+  )
+  const theirRolls = picked && against && (
+    <MoveSide
+      mine={false}
+      title={`${against.pokemon.name} moves`}
+      slots={theirSlots}
+      learnset={learnsets?.[against.id]}
+      moves={moves}
+      played={played}
+      onDrop={(id) => setTheirMoves(theirIds.filter((x) => x !== id))}
+      onAdd={(m) => setTheirMoves([...theirIds, toId(m.name)].slice(0, SLOTS))}
+      note={guessed.some((g) => g.id === against.id)
+        ? 'No set on record for it, so these started as the moves the format plays that it can learn.'
+        : undefined}
+    />
+  )
+
+  const answer = (
+    <>
+      {nothingPicked}
+      {picked && (
         <>
           <div className="ev-cols">
             {EV_STATS.map((stat) => (
@@ -2183,6 +2638,53 @@ export function EvCalcBody({
           </p>
         </>
       )}
+    </>
+  )
+
+  /*
+   * Two mirrored columns with the turn between them, which is the shape a
+   * damage calculator is drawn in: each side's moves above the Pokémon
+   * throwing them, and its spread underneath.
+   */
+  if (mode === 'damage') {
+    return (
+      <div className="ev-calc is-damage">
+        <div className="dc-col is-mine">
+          {nothingPicked}
+          {myRolls}
+          {mySide}
+          {myCard}
+          {picked && spBar(spent(spread))}
+          {myStats}
+        </div>
+        <div className="dc-col is-mods">{modifiers}</div>
+        <div className="dc-col is-theirs">
+          {theirRolls}
+          {theirColumn}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="ev-calc">
+      {/* Everything you can change, above everything you read, and stuck
+          there: the reason to read a column is to decide where an EV goes,
+          and the slider was a scroll away from the list that argued for it. */}
+      <div className="ev-top">
+        {/* The controls down the left, and the Pokemon they are about
+            beside them. */}
+        <div className="ev-bar">
+          <div className="ev-ours">
+            {mySide}
+            {myCard}
+          </div>
+          {theirColumn}
+        </div>
+        {modifiers}
+        {myStats}
+      </div>
+      {answer}
     </div>
   )
 }

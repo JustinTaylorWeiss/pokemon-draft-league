@@ -7,7 +7,7 @@ import {
 import { DefensiveChartBody } from './DefensiveChart'
 import { buildMoveRows, LearnedMovesBody } from './LearnedMoves'
 import { CoverageBody } from './CoveragePanel'
-import { EvCalcBody, EvHelp } from './EvCalc'
+import { EvCalcBody, EvHelp, readCalcMode, type CalcMode } from './EvCalc'
 import { useSpeedTiersPanel } from './useSpeedTiersPanel'
 import { TeamName } from '../../components/TeamName'
 import { STAT_LABELS } from '../../lib/stats'
@@ -79,6 +79,13 @@ export function AnalysisCard({
    */
   const [own, setOwn] = useState('summary')
   const named = TABS.some((t) => t.key === routed) ? routed : undefined
+  /*
+   * Which shape the EV tab is read in, held here because its switch
+   * belongs in the bar with the tabs rather than inside the panel: it
+   * changes the whole panel, which is the sort of thing a page's own nav
+   * says and not something buried among the controls it rearranges.
+   */
+  const [calcMode, setCalcMode] = useState<CalcMode>(readCalcMode)
   const tab = named ?? own
   const setTab = (next: string) => {
     if (onTab) onTab(next)
@@ -196,6 +203,19 @@ export function AnalysisCard({
           ?
         </button>
         {levelPicker}
+        <span className="calc-mode" role="group" aria-label="How to read the calculator">
+          {([['evs', 'EV calc'], ['damage', 'Damage calc']] as const).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              className={`pill-toggle${calcMode === key ? ' is-on' : ''}`}
+              aria-pressed={calcMode === key}
+              onClick={() => setCalcMode(key)}
+            >
+              {label}
+            </button>
+          ))}
+        </span>
       </>
     ),
   }[tab]
@@ -295,6 +315,7 @@ export function AnalysisCard({
             teamOne={teamOne} teamTwo={teamTwo}
             chart={chart} moves={moves} learnsets={learnsets} sets={sets} played={played}
             dex={dex} level={level}
+            mode={calcMode}
           />
         )
         : <LoadingBall label="Loading learnsets…" inline />)}

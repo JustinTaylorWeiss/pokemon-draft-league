@@ -643,6 +643,112 @@ export interface SideField {
 /** The plan: one list of thresholds per stat, in EV order. */
 export type Plan = Record<StatKey, Threshold[]>
 
+/**
+ * Which field each direction is read under.
+ *
+ * A screen and a Friend Guard belong to whoever is behind them, and a
+ * Helping Hand, a Charge and a crit to whoever is throwing — so each
+ * direction takes one set from each side. The two rooms are nobody's.
+ */
+export function fieldsFor(around: PlanField): { taking: Field; landing: Field } {
+  const rooms = { magicRoom: around.magicRoom, wonderRoom: around.wonderRoom }
+  return {
+    taking: {
+      weather: around.weather,
+      terrain: around.terrain,
+      ...rooms,
+      reflect: around.mine?.reflect,
+      lightScreen: around.mine?.lightScreen,
+      auroraVeil: around.mine?.auroraVeil,
+      friendGuard: around.mine?.friendGuard,
+      helpingHand: around.theirs?.helpingHand,
+      charge: around.theirs?.charge,
+      crit: around.theirs?.crit,
+    },
+    landing: {
+      weather: around.weather,
+      terrain: around.terrain,
+      ...rooms,
+      reflect: around.theirs?.reflect,
+      lightScreen: around.theirs?.lightScreen,
+      auroraVeil: around.theirs?.auroraVeil,
+      friendGuard: around.theirs?.friendGuard,
+      helpingHand: around.mine?.helpingHand,
+      charge: around.mine?.charge,
+      crit: around.mine?.crit,
+    },
+  }
+}
+
+/**
+ * A status belongs to the Pokémon rather than to the turn around it, so it
+ * goes on the side rather than in the field — and on both sides, because a
+ * burn reads from the attacker and Marvel Scale from the defender and the
+ * same Pokémon is each in turn.
+ */
+export const ailingSide = (side: Side, of?: SideField): Side =>
+  (of?.status || of?.boosts ? { ...side, status: of.status, boosts: of.boosts } : side)
+
+/** One move read from one side to the other, which is all a damage calc is. */
+export interface Exchange {
+  move: Move
+  /** The Pokémon at the other end. */
+  foe: Opponent
+  low: number
+  high: number
+  /** Knockouts guaranteed, and the soonest with its odds. */
+  hits: number
+  soonest: number
+  chance: number
+  /** What made a difference, for the line underneath. */
+  via: string[]
+}
+
+/**
+ * Every move each way, which is the shape a damage calculator is read in.
+ *
+ * The EV planner asks what a stat is worth and answers per stat; this asks
+ * what each move does and answers per move. Same two sides, same field,
+ * same arithmetic — only the question is turned round.
+ */
+export function tradeFor(input: PlanInput): { out: Exchange[]; in: Exchange[] } {
+  const { pokemon, moves, item, ability, ivs, spread, chart, level, doubles } = input
+  const rules = input.rules ?? 'gen9'
+  const around = input.field ?? {}
+  const { taking, landing } = fieldsFor(around)
+  const me = ailingSide(
+    sideFrom(pokemon, level, spread, item, ability, ivs, rules), around.mine,
+  )
+  const foes = input.opponents.map((o) => ({ ...o, side: ailingSide(o.side, around.theirs) }))
+
+  const read = (from: Side, to: Side, move: Move, foe: Opponent, field: Field): Exchange => {
+    const live = damage(from, to, move, chart, doubles, field)
+    const curve = koCurve(live, MEANINGFUL_HITS)
+    return {
+      move,
+      foe,
+      low: share(live.rolls[0] ?? 0, live.hp),
+      high: share(live.rolls[live.rolls.length - 1] ?? 0, live.hp),
+      hits: live.worstCase,
+      soonest: live.bestCase,
+      chance: curve[live.bestCase - 1] ?? 0,
+      via: live.via,
+    }
+  }
+
+  const out: Exchange[] = []
+  const back: Exchange[] = []
+  for (const foe of foes) {
+    for (const move of moves) {
+      if (canReadPower(move)) out.push(read(me, foe.side, move, foe, landing))
+    }
+    for (const move of foe.moves) {
+      if (canReadPower(move)) back.push(read(foe.side, me, move, foe, taking))
+    }
+  }
+  return { out, in: back }
+}
+
 export function planFor(input: PlanInput): Plan {
   const {
     pokemon, moves, item, ability, ivs, spread, chart, level, doubles,
@@ -651,52 +757,10 @@ export function planFor(input: PlanInput): Plan {
   const most = RULES[rules].max
   const step = RULES[rules].step
   const around = input.field ?? {}
-  /*
-   * Reading a hit landing on me, and reading one landing on them.
-   *
-   * A screen belongs to whoever is behind it and a Helping Hand to
-   * whoever is throwing, so each direction takes one from each side.
-   */
-  /*
-   * A screen and a Friend Guard belong to whoever is behind them, and a
-   * Helping Hand, a Charge and a crit to whoever is throwing — so each
-   * direction takes one set from each side. The two rooms are nobody's.
-   */
-  const rooms = { magicRoom: around.magicRoom, wonderRoom: around.wonderRoom }
-  const taking: Field = {
-    weather: around.weather,
-    terrain: around.terrain,
-    ...rooms,
-    reflect: around.mine?.reflect,
-    lightScreen: around.mine?.lightScreen,
-    auroraVeil: around.mine?.auroraVeil,
-    friendGuard: around.mine?.friendGuard,
-    helpingHand: around.theirs?.helpingHand,
-    charge: around.theirs?.charge,
-    crit: around.theirs?.crit,
-  }
-  const landing: Field = {
-    weather: around.weather,
-    terrain: around.terrain,
-    ...rooms,
-    reflect: around.theirs?.reflect,
-    lightScreen: around.theirs?.lightScreen,
-    auroraVeil: around.theirs?.auroraVeil,
-    friendGuard: around.theirs?.friendGuard,
-    helpingHand: around.mine?.helpingHand,
-    charge: around.mine?.charge,
-    crit: around.mine?.crit,
-  }
-  /*
-   * A status belongs to the Pokémon rather than to the turn around it, so
-   * it is put on the side rather than passed in the field — and it has to
-   * be on both, because a burn reads from the attacker and Marvel Scale
-   * from the defender and the same Pokémon is each in turn.
-   */
-  const ailing = (side: Side, of?: SideField): Side =>
-    (of?.status || of?.boosts
-      ? { ...side, status: of.status, boosts: of.boosts }
-      : side)
+  // Shared with `tradeFor`, which reads the same two sides the other way
+  // round, so the two cannot come apart on which field belongs where.
+  const { taking, landing } = fieldsFor(around)
+  const ailing = ailingSide
   const opponents = around.theirs?.status || around.theirs?.boosts
     ? input.opponents.map((o) => ({ ...o, side: ailing(o.side, around.theirs) }))
     : input.opponents

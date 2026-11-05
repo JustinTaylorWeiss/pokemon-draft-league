@@ -2121,3 +2121,190 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   .ev-mine, .ev-foe-slot { width: 5.2rem; }
   .ev-foes { gap: 0.3rem 0.1rem; }
 }
+
+/* ---- damage calc mode -------------------------------------------------
+ *
+ * The same two sides and the same field as the planner beside it, read a
+ * move at a time instead of a stat at a time. Two halves rather than
+ * Showdown's three columns, because the inputs are already above both of
+ * them and repeating a picker either side of the answer would only make
+ * two places to change the same thing.
+ */
+.ev-mode { display: flex; gap: 0.35rem; margin: 0.5rem 0 0.2rem; }
+
+/* ---- damage calc mode, the whole page ---------------------------------
+ *
+ * Two mirrored columns with the turn between them, which is the shape
+ * every damage calculator is drawn in: each side's moves above the Pokémon
+ * throwing them and its spread underneath.
+ *
+ * Three real columns rather than one grid of areas. As one grid the three
+ * shared their row heights, so whichever side had more moves left a hole
+ * down the other and the two sides did not line up. A column each lets
+ * them stack on their own.
+ */
+.ev-calc.is-damage {
+  display: grid;
+  grid-template-columns: minmax(250px, 1fr) minmax(250px, 0.85fr) minmax(250px, 1fr);
+  gap: 0.7rem;
+  align-items: start;
+}
+.dc-col { display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+
+/* Inside a column the planner's own wrappers have nothing left to do. */
+.ev-calc.is-damage .ev-mons { display: contents; }
+/* The middle is a column too, so the turn's three boxes stack down it. */
+.ev-calc.is-damage .ev-field { flex-direction: column; align-items: stretch; gap: 0.4rem; }
+.ev-calc.is-damage .ev-field-set,
+.ev-calc.is-damage .ev-field-shared { flex-wrap: wrap; }
+
+/* Both spreads run down their own column, which is where a damage
+   calculator keeps one. */
+.ev-calc.is-damage .ev-cols.ev-heads { grid-template-columns: 1fr; gap: 0.25rem; }
+.dc-stats { display: flex; flex-direction: column; gap: 0.25rem; }
+.ev-calc.is-damage .ev-foes { flex-direction: column; align-items: stretch; }
+.ev-calc.is-damage .ev-foe-slot { width: 100%; }
+
+/* The other five, a click away. */
+.dc-switch { display: flex; flex-wrap: wrap; gap: 0.25rem; align-items: center; }
+.dc-switch .ev-open { opacity: 0.45; border-radius: 8px; }
+.dc-switch .ev-open.is-facing { opacity: 1; background: var(--chip); }
+.dc-switch .ev-open.is-off { opacity: 0.2; }
+
+/* ---- the move lines themselves --------------------------------------- */
+.dc-half { min-width: 0; }
+.dc-half h4 {
+  margin: 0 0 0.35rem; font-size: 0.72rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted);
+}
+.dc-half.dc-out h4 { color: var(--team-one, #6ea8fe); }
+.dc-half.dc-in h4 { color: var(--team-two, #e9777c); }
+
+.dc-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+.dc-row {
+  display: flex; align-items: center; gap: 0.45rem;
+  padding: 0.3rem 0.45rem; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--surface);
+}
+.dc-row.is-mine { border-left: 3px solid var(--team-one, #6ea8fe); }
+.dc-row.is-theirs { border-left: 3px solid var(--team-two, #e9777c); }
+.dc-what { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; flex: 1; }
+.dc-line { display: flex; align-items: baseline; gap: 0.4rem; flex-wrap: wrap; }
+.dc-move { font-weight: 600; font-size: 0.82rem; }
+.dc-span { font-variant-numeric: tabular-nums; font-size: 0.8rem; font-weight: 600; }
+.dc-ko { color: var(--muted); font-size: 0.76rem; }
+.dc-via { color: var(--muted); font-size: 0.72rem; margin-left: auto; opacity: 0.8; }
+.dc-note { margin-top: 0.4rem; }
+
+/*
+ * Under a wide screen the three columns have nowhere to go, so it reads
+ * top to bottom in the order the question is asked: what you throw, what
+ * you are, the turn, what they are, what they throw.
+ */
+@media (max-width: 1100px) {
+  .ev-calc.is-damage { grid-template-columns: 1fr; }
+  .ev-calc.is-damage .ev-field { flex-direction: row; flex-wrap: wrap; }
+  .ev-calc.is-damage .ev-foes { flex-direction: row; flex-wrap: wrap; }
+  .dc-via { margin-left: 0; flex-basis: 100%; }
+}
+
+/*
+ * The loadout laid open rather than folded behind a button: no overlay, no
+ * backdrop, no shadow — it is part of the column it sits in. Which means
+ * undoing the positioning that made it an overlay, and the wrapper that
+ * was only ever as wide as a sprite.
+ */
+.ev-gear.is-inline { display: block; width: 100%; position: static; }
+.ev-gear-pop.is-inline {
+  position: static; inset: auto; width: auto; min-width: 0; max-width: none;
+  box-shadow: none; transform: none; margin: 0;
+}
+.ev-calc.is-damage .ev-mine,
+.ev-calc.is-damage .ev-foe-slot {
+  display: flex; flex-direction: column; align-items: center; gap: 0.3rem; width: 100%;
+}
+.dc-col .dc-half .ev-gear.is-inline { margin-bottom: 0.45rem; }
+/* Its own move list is the thing being edited, so the editor reads as part
+   of it rather than as another panel stacked above it. */
+.dc-half .ev-gear-pop.is-inline { background: none; border: 0; padding: 0; }
+
+/*
+ * Four rows whether or not there are four, so the two columns stay level
+ * and nothing below them jumps when a move comes off.
+ */
+.dc-row.is-empty { border-style: dashed; opacity: 0.35; background: none; }
+/* Two lines' worth — the name and what it does — which is what a filled
+   row comes to, so four slots are four slots' height however many of
+   them have a move in. */
+.dc-row { min-height: 3.3rem; }
+.dc-drop {
+  flex: none; border: 0; background: none; color: var(--muted);
+  font-size: 1rem; line-height: 1; padding: 0.2rem 0.3rem; cursor: pointer;
+  border-radius: 6px;
+}
+.dc-drop:hover { color: var(--nav-red); background: var(--chip); }
+.dc-find {
+  width: 100%; height: 2rem; padding: 0 0.6rem; font: inherit; font-size: 0.78rem;
+  border: 1px solid var(--line); border-radius: 8px;
+  background: var(--surface); color: inherit;
+}
+.dc-find:disabled { opacity: 0.45; }
+.dc-finds { margin-top: 0.25rem; }
+
+/*
+ * Each side's half of the turn against the column it belongs to, with the
+ * shared half between them: the turn reads left to right the way the two
+ * Pokémon do.
+ */
+.ev-calc.is-damage .ev-field-set.is-mine { order: 1; align-self: flex-start; }
+.ev-calc.is-damage .ev-field-shared.is-both { order: 2; align-self: stretch; }
+.ev-calc.is-damage .ev-field-set.is-theirs { order: 3; align-self: flex-end; }
+.ev-calc.is-damage .ev-field > .ev-field-set { max-width: 88%; }
+
+/*
+ * The two Pokémon choosers given the same height, which is what makes
+ * everything under them line up: the loadouts, the budget bars and the
+ * six rows all start on the same line down both columns. One is a menu
+ * and the other is the six sprites, so neither would land there on its
+ * own — and the sprites run across rather than wrapping onto a second
+ * row, which would put the whole right column half an inch low.
+ */
+.ev-calc.is-damage .ev-side,
+.ev-calc.is-damage .dc-switch { min-height: 4.6rem; }
+.ev-calc.is-damage .ev-side {
+  justify-content: flex-start; width: 100%;
+}
+.ev-calc.is-damage .dc-switch { flex-wrap: nowrap; overflow-x: auto; }
+/* Six across a column narrower than six sprites, so they give way rather
+   than running off the end of it. */
+.ev-calc.is-damage .dc-switch .ev-open { flex: 0 1 auto; min-width: 0; }
+.ev-calc.is-damage .dc-switch .ev-open img { max-width: 100%; height: auto; }
+
+/* Stacked, the dividing line between two stat columns is a line down the
+   middle of one. */
+.ev-calc.is-damage .ev-heads > .ev-col + .ev-col {
+  border-left: 0; padding-left: 0;
+}
+
+/*
+ * The other side's six given the same metrics as your own: the same rule
+ * under the name, the same size number over the same bar, the same gap
+ * between rows. They are the same six facts, and a reader who has learnt
+ * one column has learnt both — which is only true if the two of them line
+ * up row for row.
+ */
+.ev-calc.is-damage .ev-assume-stat { gap: 0.35rem; }
+.ev-calc.is-damage .ev-assume-head {
+  align-items: baseline; min-height: 0;
+  padding-bottom: 0.3rem; border-bottom: 1px solid var(--line);
+}
+.ev-calc.is-damage .ev-assume-head > em { font-size: 0.7rem; }
+.ev-calc.is-damage .ev-assume-head > b { font-size: 0.95rem; }
+.ev-calc.is-damage .ev-assume-head .ev-nature {
+  height: auto; padding: 0.1rem 0.45rem; font-size: 0.6rem;
+}
+.ev-calc.is-damage .dc-stats { gap: 0.25rem; }
+
+/* A bar over each spread, so both sides read the same way down. */
+.dc-col .dc-budget { display: flex; align-items: center; gap: 0.4rem; width: 100%; }
+.dc-col .dc-budget .ev-budget-bar { flex: 1; }
