@@ -161,6 +161,10 @@ export const MODELLED_ABILITIES: ReadonlySet<string> = new Set([
   'Normalize', 'Liquid Voice', 'Neuroforce', 'Tinted Lens', 'Aura Guard',
   'Punk Rock', 'Soundproof', 'Bulletproof', 'Reckless', 'Parental Bond', 'Gorilla Tactics',
   'Hustle', 'Protean', 'Mold Breaker',
+  // Switched on by the sky or the ground rather than by anything either
+  // Pokemon did, which is why they only read once a field is set.
+  'Protosynthesis', 'Quark Drive', 'Solar Power', 'Sand Force',
+  'Orichalcum Pulse', 'Hadron Engine', 'Flower Gift',
 ])
 
 const ALWAYS_MATTERS = new Set([
@@ -405,6 +409,17 @@ const grounded = (side: Side) => {
   return !side.pokemon.types.includes('Flying') && side.ability !== 'Levitate'
 }
 
+/** The type each weather lends Weather Ball, which takes the sky's own. */
+const SKYBALL: Record<string, TypeName> = {
+  Sun: 'Fire',
+  Rain: 'Water',
+  Sand: 'Rock',
+  Snow: 'Ice',
+}
+
+/** The three weathers the sun is not, which is what Solar Beam minds. */
+const OVERCAST = new Set(['Rain', 'Sand', 'Snow'])
+
 /** The type each terrain lends Terrain Pulse, which takes the ground's own. */
 const PULSE: Record<string, TypeName> = {
   Electric: 'Electric',
@@ -413,10 +428,49 @@ const PULSE: Record<string, TypeName> = {
   Misty: 'Fairy',
 }
 
-/** What Terrain Pulse is, standing where it is standing. */
-export function pulseType(move: Move, attacker: Side, field: Field): TypeName {
-  if (move.name !== 'Terrain Pulse') return move.type
-  return (grounded(attacker) && PULSE[field.terrain ?? '']) || move.type
+/**
+ * What a move that takes its type from its surroundings actually is.
+ *
+ * Terrain Pulse takes the ground's, and needs to be standing on it.
+ * Weather Ball takes the sky's, and the sky reaches everybody.
+ */
+export function thrownType(move: Move, attacker: Side, field: Field): TypeName {
+  if (move.name === 'Terrain Pulse') {
+    return (grounded(attacker) && PULSE[field.terrain ?? '']) || move.type
+  }
+  if (move.name === 'Weather Ball') return SKYBALL[field.weather ?? ''] ?? move.type
+  return move.type
+}
+
+/**
+ * Whether the paradox machinery is running.
+ *
+ * Protosynthesis wants its sun and Quark Drive wants its current, and
+ * neither cares who put it there.
+ */
+const paradoxOn = (side: Side, field: Field) =>
+  (side.ability === 'Protosynthesis' && field.weather === 'Sun')
+  || (side.ability === 'Quark Drive' && field.terrain === 'Electric')
+
+/**
+ * The stat it is proudest of, which is the one those two lift.
+ *
+ * Read off the spread rather than the species, because that is what the
+ * games read: the best stat after its investment and its nature, not the
+ * best base stat. Speed is in the running and takes a half rather than a
+ * third, but Speed is not a number this page multiplies anything by, so
+ * what matters here is only whether Speed won — in which case nothing
+ * else did.
+ */
+function bestStat(side: Side): StatKey | null {
+  const keys: StatKey[] = ['atk', 'def', 'spa', 'spd', 'spe']
+  let best: StatKey | null = null
+  let top = -1
+  for (const key of keys) {
+    const value = statOf(side, key)
+    if (value > top) { top = value; best = key }
+  }
+  return best
 }
 
 export function basePowerOf(
@@ -483,6 +537,22 @@ export function basePowerOf(
       return field.terrain && grounded(attacker) ? 100 : 50
     case 'Steel Roller':
       return field.terrain ? 130 : 0
+
+    /*
+     * And the moves the sky decides.
+     *
+     * Solar Beam is drawing on sunlight it has not got, and is halved by
+     * any weather that is not sun — clear skies are fine. Weather Ball
+     * doubles and takes the sky's own type, which is most of what it is
+     * worth: a Water one in rain is same-type off a Politoed and hits a
+     * Fire type for four times as much.
+     */
+    case 'Solar Beam':
+    case 'Solar Blade':
+      return OVERCAST.has(field.weather ?? '')
+        ? pokeRound(move.basePower / 2) : move.basePower
+    case 'Weather Ball':
+      return field.weather ? 100 : 50
 
     default:
       return move.basePower
@@ -570,9 +640,10 @@ function core(
    * three change what the type chart says as well as what it hits for,
    * and the chart is read below.
    */
-  // Terrain Pulse takes the ground's type before anything else reads it,
-  // which is the other half of what a terrain is worth to it.
-  const thrown = pulseType(move, attacker, field)
+  // The two that take their type from what is around them, read before
+  // anything else looks at the type — which for both is the larger half
+  // of what the weather or the ground is worth to them.
+  const thrown = thrownType(move, attacker, field)
   const kind: TypeName = mine === 'Normalize' ? 'Normal'
     : mine === 'Liquid Voice' && move.sound ? 'Water'
       : thrown === 'Normal' && ATE[mine] ? ATE[mine]
@@ -613,7 +684,25 @@ function core(
    * side; Flare Boost wants a burn and pays the special side.
    */
   const sick = attacker.status
+  /*
+   * The paradox pair, and the two legendaries built the same way: in their
+   * own weather or their own terrain they lend a third to whichever stat
+   * is already their best. Which stat that is has to be worked out rather
+   * than assumed — it is the one the spread was built for, and a sheet
+   * that moved the investment moves this with it.
+   *
+   * A Booster Energy switches them on too, and is not modelled: nothing
+   * here holds one, and an item cannot be seen from the two sides and the
+   * field alone.
+   */
+  const boosted = paradoxOn(attacker, field) ? bestStat(attacker) : null
+  const guardBoost = paradoxOn(shielded, field) ? bestStat(shielded) : null
   const atkMult = (lends && lends.type === kind ? lends.mult : 1)
+    * (boosted === (physical ? 'atk' : 'spa') ? 1.3 : 1)
+    * (mine === 'Solar Power' && field.weather === 'Sun' && !physical ? 1.5 : 1)
+    * (mine === 'Orichalcum Pulse' && field.weather === 'Sun' && physical ? 5461 / 4096 : 1)
+    * (mine === 'Hadron Engine' && field.terrain === 'Electric' && !physical ? 5461 / 4096 : 1)
+    * (mine === 'Flower Gift' && field.weather === 'Sun' && physical ? 1.5 : 1)
     * (mine === 'Gorilla Tactics' || mine === 'Hustle' ? (physical ? 1.5 : 1) : 1)
     * (mine === 'Guts' && sick && physical ? 1.5 : 1)
     * (mine === 'Toxic Boost' && sick === 'Poison' && physical ? 1.5 : 1)
@@ -631,6 +720,7 @@ function core(
   // Marvel Scale wants its owner sick too, and pays the physical side.
   const scale = guard === 'Marvel Scale' && shielded.status && physical ? 1.5 : 1
   const defMult = (RUIN[mine] === (physical ? 'def' : 'spd') ? 0.75 : 1) * weathered * scale
+    * (guardBoost === (physical ? 'def' : 'spd') ? 1.3 : 1)
   /*
    * Stat stages, applied to the stat before anything else multiplies it,
    * which is where the games apply them.
@@ -724,6 +814,10 @@ function core(
   const tech = mine === 'Technician' && power <= 60 ? 1.5 : 1
   const kindOf = MOVE_POWER[mine]
   const lent = kindOf && move[kindOf.flag] ? kindOf.mult : 1
+  // Sand Force lends a third to the three types a sandstorm suits, and
+  // only while one is blowing.
+  const gritty = mine === 'Sand Force' && field.weather === 'Sand'
+    && (kind === 'Rock' || kind === 'Ground' || kind === 'Steel') ? 1.3 : 1
   /*
    * The rest of what reads only this pairing and this move.
    *
@@ -750,7 +844,13 @@ function core(
    * A screen is a third off in doubles rather than half, which is the
    * number the games use with more than one Pokémon out.
    */
-  const sky = WEATHER[field.weather ?? '']?.[kind] ?? 1
+  /*
+   * Hydro Steam is the exception the sun makes: every other Water move is
+   * halved under it and this one is half again, which is a threefold swing
+   * from the rule and the whole reason the move exists.
+   */
+  const sky = move.name === 'Hydro Steam' && field.weather === 'Sun'
+    ? 1.5 : WEATHER[field.weather ?? '']?.[kind] ?? 1
   const lifts = TERRAIN[field.terrain ?? ''] === kind && grounded(attacker) ? 1.3 : 1
   const mist = field.terrain === 'Misty' && kind === 'Dragon' && grounded(shielded) ? 0.5 : 1
   const grass = field.terrain === 'Grassy' && SMOTHERED.has(move.name) && grounded(shielded)
@@ -781,7 +881,7 @@ function core(
    * paid it a third again above.
    */
   const burn = sick === 'Burn' && physical && mine !== 'Guts' ? 0.5 : 1
-  const after = itemMult * shield * belt * claws * tech * lent * ated
+  const after = itemMult * shield * belt * claws * tech * lent * ated * gritty
     * bond * reckless * punk * aura * lens * force
     * sky * lifts * mist * grass * screen * hand * crit * burn
     * friend * charged
