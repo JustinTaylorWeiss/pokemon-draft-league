@@ -200,7 +200,7 @@ export const MODELLED_ABILITIES: ReadonlySet<string> = new Set([
    */
   'Guts', 'Toxic Boost', 'Flare Boost', 'Marvel Scale',
   'Sheer Force', 'Infiltrator', 'Shell Armor', 'Battle Armor',
-  'Light Metal', 'Heavy Metal',
+  'Light Metal', 'Heavy Metal', 'Merciless', 'Quick Feet',
   // Switched on by the sky or the ground rather than by anything either
   // Pokemon did, which is why they only read once a field is set.
   'Protosynthesis', 'Quark Drive', 'Solar Power', 'Sand Force',
@@ -484,6 +484,19 @@ export function thrownType(move: Move, attacker: Side, field: Field): TypeName {
 }
 
 /**
+ * Speed as these two moves see it, which is halved by paralysis.
+ *
+ * Only Gyro Ball and Electro Ball read a Speed at all, and for them it is
+ * the whole of the power: a paralysed target is half as fast, so a Gyro
+ * Ball into one is worth twice as much. Kept to the two rather than put in
+ * `statOf`, which is also what the stat tables are drawn from and has no
+ * business halving a number somebody is reading off the page.
+ */
+const speedOf = (side: Side) =>
+  Math.floor(statOf(side, 'spe') * (side.status === 'Paralysis' && side.ability !== 'Quick Feet'
+    ? 0.5 : 1))
+
+/**
  * What it weighs, which two abilities and one item argue about.
  *
  * Only four moves ask, and for those four it is the whole answer: a Light
@@ -554,14 +567,14 @@ export function basePowerOf(
      * the division is the floor either way.
      */
     case 'Gyro Ball': {
-      const mine = statOf(attacker, 'spe')
+      const mine = speedOf(attacker)
       if (mine <= 0) return 1
-      return Math.min(150, Math.floor((25 * statOf(defender, 'spe')) / mine) + 1)
+      return Math.min(150, Math.floor((25 * speedOf(defender)) / mine) + 1)
     }
     case 'Electro Ball': {
-      const theirs = statOf(defender, 'spe')
+      const theirs = speedOf(defender)
       if (theirs <= 0) return 150
-      const ratio = statOf(attacker, 'spe') / theirs
+      const ratio = speedOf(attacker) / theirs
       if (ratio >= 4) return 150
       if (ratio >= 3) return 120
       if (ratio >= 2) return 80
@@ -729,6 +742,8 @@ function core(
   // An Air Balloon is a Ground immunity until something pops it, and
   // nothing here has popped it.
   if (shielded.item === 'Air Balloon' && kind === 'Ground') return { rolls: [], hp }
+  // Dream Eater needs its target asleep and does nothing at all otherwise.
+  if (move.name === 'Dream Eater' && shielded.status !== 'Sleep') return { rolls: [], hp }
   // Nothing at all gets through a Soundproof to a sound move, or a
   // Bulletproof to anything thrown.
   if (guard === 'Soundproof' && move.sound) return { rolls: [], hp }
@@ -932,7 +947,14 @@ function core(
    */
   // Nothing is crit through a Shell Armor, so asking for one changes
   // nothing rather than half again.
-  const crit = field.crit && guard !== 'Shell Armor' && guard !== 'Battle Armor' ? 1.5 : 1
+  /*
+   * Merciless does not roll against a poisoned target, it simply crits —
+   * so Toxapex into something poisoned is half again whether or not the
+   * box is ticked.
+   */
+  const sureCrit = mine === 'Merciless' && shielded.status === 'Poison'
+  const crit = (field.crit || sureCrit)
+    && guard !== 'Shell Armor' && guard !== 'Battle Armor' ? 1.5 : 1
   // An Aurora Veil is both screens at once, so either one standing is
   // the same question: is this side behind something.
   const behind = (physical ? field.reflect : field.lightScreen) || field.auroraVeil
