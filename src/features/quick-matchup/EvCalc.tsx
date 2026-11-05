@@ -333,9 +333,11 @@ export function EvHelp({ onClose }: { onClose: () => void }) {
           </p>
 
           <p className="ev-help-small">
-            Not counted: stat stages, Intimidate, burn and Tera. Hit counts are the
-            guaranteed ones — the lowest roll every time — with the odds of the faster
-            result beside them.
+            Stat stages and a burn are counted, and so is every ability and item in
+            the menus. Intimidate is not applied for you — drop the Attack a stage
+            and it is. Tera is not counted at all. Hit counts are the guaranteed
+            ones — the lowest roll every time — with the odds of the faster result
+            beside them.
           </p>
         </div>
       </div>
@@ -2174,8 +2176,9 @@ export function EvCalcBody({
               <> — {guessed.map((o) => o.pokemon.name).join(', ')} {guessed.length === 1 ? 'has' : 'have'} no
                 set on record, so that second list is all there is for {guessed.length === 1 ? 'it' : 'them'}</>
             )}
-            . Stat stages, Intimidate, burn and Tera are not counted; the weather,
-            the terrain and what each side has up are the row above the columns.
+            . Tera is not counted, and Intimidate is not applied for you — drop the
+            Attack a stage and it is. Stat stages, a burn, the weather, the terrain
+            and what each side has up are all above the columns.
 
           </p>
         </>

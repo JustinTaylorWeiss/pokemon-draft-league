@@ -13,22 +13,24 @@ import { natureMultiplier, statAtLevel, type Rules } from './stats'
  * rounding rule (`pokeRound`, which breaks ties downward) the cartridge uses.
  *
  * What is modelled: level, base stats, EVs, IVs, natures, STAB, type
- * effectiveness including the defensive abilities the type chart already
- * knows, the spread-move reduction in doubles, the sixteen damage rolls, and
- * the handful of items and abilities that change a number by a lot.
+ * effectiveness including the defensive abilities the type chart knows, the
+ * spread-move reduction in doubles, the sixteen damage rolls, stat stages, a
+ * burn, a critical hit, screens and Helping Hand, the weather and the
+ * terrain — both the stat they lend and the moves that exist because of
+ * them — and every ability and item in the two menus.
  *
- * Items: the ones that change a number outright — the Orbs and Choice items,
- * the type-boosting plates and their cousins, Assault Vest, Eviolite, Light
- * Ball and Choice Scarf. Not the ones that fire on a condition, nor the
- * ones whose effect ends the moment something lands on it (Air Balloon),
- * (Weakness Policy, Booster Energy, the Berries), which are a turn's events
- * rather than a Pokémon's build.
+ * Items: the ones that change a number outright. The Orbs and Choice items,
+ * all eighteen type boosters and the plates beside them, Assault Vest,
+ * Eviolite, Light Ball, Choice Scarf, an Air Balloon's Ground immunity, a
+ * Booster Energy switching the paradox pair on, a Float Stone's halved
+ * weight, and the seventeen berries that take half off one kind of hit.
  *
- * What is not: weather, terrain, screens, stat stages, Intimidate, burn,
- * Tera, and every ability that reads the battle rather than the two Pokémon.
- * Those are turn-by-turn facts and this is a team-building tool; a spread
- * chosen against the neutral case is the spread anyone would choose. The UI
- * says so rather than leaving it to be discovered.
+ * What is not: Tera. Intimidate, which is a stage the reader can set
+ * itself rather than something to apply unasked. And the items whose whole
+ * effect is what happens after the damage — Leftovers, a Focus Sash, a
+ * Rocky Helmet, a Sitrus Berry — which are a turn's events rather than a
+ * Pokémon's build, and would answer a different question than the one this
+ * page asks. The UI says all of that rather than leaving it to be found.
  */
 
 /** Rounds half down, which is what the games do everywhere this appears. */
@@ -48,15 +50,45 @@ const ITEM_ATTACK: Record<string, { mult: number; category?: 'Physical' | 'Speci
  * the masks Ogerpon wears — all the same 1.2, all read the same way.
  */
 const ITEM_TYPE: Record<string, TypeName> = {
-  'Black Glasses': 'Dark', 'Dread Plate': 'Dark',
-  Charcoal: 'Fire', 'Flame Plate': 'Fire', 'Hearthflame Mask': 'Fire',
-  'Silk Scarf': 'Normal',
-  'Draco Plate': 'Dragon', 'Pixie Plate': 'Fairy', 'Earth Plate': 'Ground',
-  'Insect Plate': 'Bug', 'Zap Plate': 'Electric', 'Fist Plate': 'Fighting',
-  'Sky Plate': 'Flying', 'Meadow Plate': 'Grass', 'Spooky Plate': 'Ghost',
-  'Toxic Plate': 'Poison', 'Icicle Plate': 'Ice', 'Stone Plate': 'Rock',
-  'Iron Plate': 'Steel', 'Splash Plate': 'Water', 'Mind Plate': 'Psychic',
-  'Wellspring Mask': 'Water', 'Cornerstone Mask': 'Rock',
+  // The plates, one to a type.
+  'Dread Plate': 'Dark', 'Flame Plate': 'Fire', 'Draco Plate': 'Dragon',
+  'Pixie Plate': 'Fairy', 'Earth Plate': 'Ground', 'Insect Plate': 'Bug',
+  'Zap Plate': 'Electric', 'Fist Plate': 'Fighting', 'Sky Plate': 'Flying',
+  'Meadow Plate': 'Grass', 'Spooky Plate': 'Ghost', 'Toxic Plate': 'Poison',
+  'Icicle Plate': 'Ice', 'Stone Plate': 'Rock', 'Iron Plate': 'Steel',
+  'Splash Plate': 'Water', 'Mind Plate': 'Psychic',
+  /*
+   * And the older items that do the same thing, which are what the sets in
+   * this format actually hold — a Spell Tag on Aegislash, a Mystic Water on
+   * Basculegion. Three of the eighteen were here and the plates beside them
+   * covered the gap for nothing, since nobody in the league holds a plate.
+   */
+  'Black Glasses': 'Dark', Charcoal: 'Fire', 'Silk Scarf': 'Normal',
+  'Dragon Fang': 'Dragon', 'Fairy Feather': 'Fairy', 'Soft Sand': 'Ground',
+  'Silver Powder': 'Bug', Magnet: 'Electric', 'Black Belt': 'Fighting',
+  'Sharp Beak': 'Flying', 'Miracle Seed': 'Grass', 'Spell Tag': 'Ghost',
+  'Poison Barb': 'Poison', 'Never-Melt Ice': 'Ice', 'Hard Stone': 'Rock',
+  'Metal Coat': 'Steel', 'Mystic Water': 'Water', 'Twisted Spoon': 'Psychic',
+  // Ogerpon's, which are the same fifth again.
+  'Hearthflame Mask': 'Fire', 'Wellspring Mask': 'Water', 'Cornerstone Mask': 'Rock',
+}
+
+/**
+ * The berries that take half off one super-effective hit.
+ *
+ * Only ever against a move the holder is weak to, and only the once — which
+ * this cannot know, so it reads as the first hit of a sequence, which is the
+ * one anybody is asking about.
+ */
+const RESIST_BERRY: Record<string, TypeName> = {
+  'Occa Berry': 'Fire', 'Passho Berry': 'Water', 'Wacan Berry': 'Electric',
+  'Rindo Berry': 'Grass', 'Yache Berry': 'Ice', 'Chople Berry': 'Fighting',
+  'Kebia Berry': 'Poison', 'Shuca Berry': 'Ground', 'Coba Berry': 'Flying',
+  'Payapa Berry': 'Psychic', 'Tanga Berry': 'Bug', 'Charti Berry': 'Rock',
+  'Kasib Berry': 'Ghost', 'Haban Berry': 'Dragon', 'Colbur Berry': 'Dark',
+  'Babiri Berry': 'Steel', 'Roseli Berry': 'Fairy',
+  // The one that answers a Normal move, and only from full health.
+  'Chilan Berry': 'Normal',
 }
 
 /** Which type an item lends its fifth to, for anywhere that groups them. */
@@ -84,7 +116,7 @@ const ITEM_EFFECT: Record<string, string> = {
 }
 
 export const itemEffect = (item: string): string =>
-  (ITEM_TYPE[item] ? '×1.2' : ITEM_EFFECT[item] ?? '')
+  (ITEM_TYPE[item] ? '×1.2' : RESIST_BERRY[item] ? '×0.5 once' : ITEM_EFFECT[item] ?? '')
 
 /** Items that change how hard a hit is taken. */
 const ITEM_DEFENSE: Record<string, { stat: StatKey; mult: number }> = {
@@ -161,6 +193,14 @@ export const MODELLED_ABILITIES: ReadonlySet<string> = new Set([
   'Normalize', 'Liquid Voice', 'Neuroforce', 'Tinted Lens', 'Aura Guard',
   'Punk Rock', 'Soundproof', 'Bulletproof', 'Reckless', 'Parental Bond', 'Gorilla Tactics',
   'Hustle', 'Protean', 'Mold Breaker',
+  /*
+   * These four were read by the arithmetic and missing from this list, so
+   * the picker would not hand them out and the panel called them no
+   * effect — a Guts Conkeldurr with a Flame Orb read as an ordinary one.
+   */
+  'Guts', 'Toxic Boost', 'Flare Boost', 'Marvel Scale',
+  'Sheer Force', 'Infiltrator', 'Shell Armor', 'Battle Armor',
+  'Light Metal', 'Heavy Metal',
   // Switched on by the sky or the ground rather than by anything either
   // Pokemon did, which is why they only read once a field is set.
   'Protosynthesis', 'Quark Drive', 'Solar Power', 'Sand Force',
@@ -185,7 +225,8 @@ const ALWAYS_MATTERS = new Set([
  * because the maths has no rule for it.
  */
 export const GIVEABLE_ITEMS: readonly string[] = [
-  ...ALWAYS_MATTERS, 'Eviolite', 'Light Ball',
+  ...ALWAYS_MATTERS, ...Object.keys(RESIST_BERRY),
+  'Eviolite', 'Light Ball', 'Air Balloon', 'Booster Energy', 'Float Stone',
 ].sort((a, b) => a.localeCompare(b))
 /*
  * Two of them are conditional and `itemMatters` decides those per Pokemon,
@@ -443,14 +484,34 @@ export function thrownType(move: Move, attacker: Side, field: Field): TypeName {
 }
 
 /**
+ * What it weighs, which two abilities and one item argue about.
+ *
+ * Only four moves ask, and for those four it is the whole answer: a Light
+ * Metal Metagross is 275kg rather than 550 and a Grass Knot into it drops
+ * a bracket.
+ */
+const weightOf = (side: Side) => {
+  const raw = side.pokemon.weightkg
+  if (side.ability === 'Light Metal') return raw / 2
+  if (side.ability === 'Heavy Metal') return raw * 2
+  if (side.item === 'Float Stone') return raw / 2
+  return raw
+}
+
+/**
  * Whether the paradox machinery is running.
  *
  * Protosynthesis wants its sun and Quark Drive wants its current, and
  * neither cares who put it there.
  */
-const paradoxOn = (side: Side, field: Field) =>
-  (side.ability === 'Protosynthesis' && field.weather === 'Sun')
-  || (side.ability === 'Quark Drive' && field.terrain === 'Electric')
+const paradoxOn = (side: Side, field: Field) => {
+  if (side.ability !== 'Protosynthesis' && side.ability !== 'Quark Drive') return false
+  // A Booster Energy is the point of the item: it does the sun's job, or
+  // the current's, anywhere at all. Eleven of this format's sets hold one.
+  if (side.item === 'Booster Energy') return true
+  return side.ability === 'Protosynthesis'
+    ? field.weather === 'Sun' : field.terrain === 'Electric'
+}
 
 /**
  * The stat it is proudest of, which is the one those two lift.
@@ -482,10 +543,10 @@ export function basePowerOf(
   switch (move.name) {
     case 'Grass Knot':
     case 'Low Kick':
-      return weightPower(defender.pokemon.weightkg)
+      return weightPower(weightOf(defender))
     case 'Heavy Slam':
     case 'Heat Crash':
-      return ratioPower(attacker.pokemon.weightkg, defender.pokemon.weightkg)
+      return ratioPower(weightOf(attacker), weightOf(defender))
     /*
      * Both read the two Speeds, and both have to cope with a zero: a
      * Pokémon cannot have 0 Speed in a real battle, but a caller handing
@@ -665,6 +726,9 @@ function core(
    */
   const effect = defensiveMultiplier(chart, kind, shielded.pokemon, true, guard)
   if (effect === 0) return { rolls: [], hp }
+  // An Air Balloon is a Ground immunity until something pops it, and
+  // nothing here has popped it.
+  if (shielded.item === 'Air Balloon' && kind === 'Ground') return { rolls: [], hp }
   // Nothing at all gets through a Soundproof to a sound move, or a
   // Bulletproof to anything thrown.
   if (guard === 'Soundproof' && move.sound) return { rolls: [], hp }
@@ -819,6 +883,12 @@ function core(
   const gritty = mine === 'Sand Force' && field.weather === 'Sand'
     && (kind === 'Rock' || kind === 'Ground' || kind === 'Steel') ? 1.3 : 1
   /*
+   * Sheer Force trades a move's extra effect for a third more damage. The
+   * trade is the ability, and the reader already knows which moves have
+   * something to trade.
+   */
+  const forced = mine === 'Sheer Force' && move.secondaryChance ? 1.3 : 1
+  /*
    * The rest of what reads only this pairing and this move.
    *
    * Parental Bond is two hits, the second quartered, which over a turn
@@ -860,12 +930,21 @@ function core(
    * is the other half of what makes one worth asking about. It also
    * ignores stat stages, and there are none of those here.
    */
-  const crit = field.crit ? 1.5 : 1
+  // Nothing is crit through a Shell Armor, so asking for one changes
+  // nothing rather than half again.
+  const crit = field.crit && guard !== 'Shell Armor' && guard !== 'Battle Armor' ? 1.5 : 1
   // An Aurora Veil is both screens at once, so either one standing is
   // the same question: is this side behind something.
   const behind = (physical ? field.reflect : field.lightScreen) || field.auroraVeil
-  const screen = !field.crit && behind && effect > 0
+  // Infiltrator walks through a screen, which is the whole of what it does
+  // to a damage roll and why anybody runs it on a Dragapult.
+  const screen = !field.crit && behind && effect > 0 && mine !== 'Infiltrator'
     ? (doubles ? 2732 / 4096 : 0.5) : 1
+  /*
+   * A berry that answers one type, and only when that type is coming in
+   * hard. Half off, once — which is the hit anybody is asking about.
+   */
+  const berry = RESIST_BERRY[shielded.item ?? ''] === kind && effect > 1 ? 0.5 : 1
   // The other Pokemon on your side, pushing. Half again, whatever it is.
   const hand = field.helpingHand ? 1.5 : 1
   /*
@@ -881,9 +960,9 @@ function core(
    * paid it a third again above.
    */
   const burn = sick === 'Burn' && physical && mine !== 'Guts' ? 0.5 : 1
-  const after = itemMult * shield * belt * claws * tech * lent * ated * gritty
+  const after = itemMult * shield * belt * claws * tech * lent * ated * gritty * forced
     * bond * reckless * punk * aura * lens * force
-    * sky * lifts * mist * grass * screen * hand * crit * burn
+    * sky * lifts * mist * grass * screen * berry * hand * crit * burn
     * friend * charged
 
   const rolls: number[] = []
