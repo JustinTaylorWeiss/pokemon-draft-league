@@ -1157,6 +1157,32 @@ button.type-chip { cursor: pointer; }
 }
 /* Only the six that are switches answer the pointer. */
 .ev-foe-slot .ev-open { cursor: pointer; }
+/*
+ * The picture as the way in, which is what it looks like: the same box
+ * the sprites have always sat in, lighting up under the pointer because
+ * this time it does something.
+ */
+.ev-gear-face { padding: 0.1rem; cursor: pointer; }
+.ev-gear-face:hover { border-color: var(--team-accent, var(--accent)); }
+.ev-gear-face[aria-expanded="true"] {
+  border-color: var(--team-accent, var(--accent)); background: var(--chip);
+}
+/*
+ * And the one button under it. Pressed, it is not a button that has been
+ * switched on — it is a Pokémon that has been taken out — so it goes
+ * quiet and dashed rather than filling with colour the way the pills
+ * above it do.
+ */
+.ev-gear-out {
+  width: 100%; margin-top: 0.1rem; padding: 0.1rem 0.3rem;
+  font: inherit; font-size: 0.6rem; letter-spacing: 0.03em; text-transform: uppercase;
+  background: none; border: 1px solid var(--line); border-radius: 999px;
+  color: var(--muted); cursor: pointer;
+}
+.ev-gear-out:hover { border-color: var(--fg); color: var(--fg); }
+.ev-gear-out.is-out {
+  border-style: dashed; border-color: var(--nav-red); color: var(--nav-red);
+}
 .ev-open img { image-rendering: pixelated; object-fit: contain; }
 .ev-foe-slot .ev-open:hover { border-color: var(--team-accent, var(--accent)); }
 

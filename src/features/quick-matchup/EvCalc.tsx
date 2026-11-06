@@ -1,4 +1,6 @@
-import { Fragment, useEffect, useMemo, useState, type CSSProperties } from 'react'
+import {
+  Fragment, useEffect, useMemo, useState, type CSSProperties, type ReactNode,
+} from 'react'
 import { listOf, useStored } from '../../lib/useStored'
 import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../../data/types'
 import { STAT_LABELS, RULES, type Rules } from '../../lib/stats'
@@ -922,7 +924,8 @@ export interface Gear {
  */
 function GearPicker({
   pokemon, ability: usualAbilityName, gear, onChange, assume, onAssume, base,
-  id, limits, out, learnset, moves, played, named, onNamed, carrying, inline, only, onMoves,
+  id, limits, out, onOut, face, learnset, moves, played, named, onNamed, carrying,
+  inline, only, onMoves,
 }: {
   /*
    * Laid open on the page rather than folded behind a button.
@@ -985,19 +988,30 @@ function GearPicker({
   id: string
   /** How much there is to spend and in what steps. */
   limits: Limits
-  /** Out of the columns, which the sprite itself toggles. */
+  /** Out of the columns. */
   out?: boolean
+  /**
+   * The Pokémon's own picture, which is what opens the panel.
+   *
+   * It used to be a switch, and a picture that takes a Pokémon out of
+   * the columns is a strange thing to click when what you wanted was to
+   * see what it is holding. Clicking it opens everything about it
+   * instead, and the one button underneath does the taking out.
+   */
+  face?: ReactNode
+  /** And that button, where there is something to take out of. */
+  onOut?: (next: boolean) => void
 }) {
   /**
-   * Two panels, not one.
+   * One panel, holding everything there is to say about the Pokémon.
    *
-   * The spread is a set of numbers somebody sits and tunes; the item, the
-   * ability, the moves and whether to count the Pokémon at all are single
-   * choices made once. Together they made a panel you had to scroll past
-   * half of to reach the other half. The pill opens the spread, because
-   * that is what the pill says; the button opens the rest.
+   * It was two for a while — the spread in one and the item, the ability
+   * and the moves in the other — on the grounds that a single panel was
+   * one you had to scroll past half of. But which half anything was in
+   * was a thing to learn, and two buttons under a sprite in a row of six
+   * is two buttons too many. The sprite opens all of it.
    */
-  const [open, setOpen] = useState<'spread' | 'kit' | null>(null)
+  const [open, setOpen] = useState(false)
   const [find, setFind] = useState('')
   /*
    * Six number boxes, folded away.
@@ -1008,7 +1022,7 @@ function GearPicker({
    * the reason the panel was opened.
    */
   const [ivsOpen, setIvsOpen] = useState(() => lowered(gear?.ivs).length > 0)
-  const toggle = (which: 'spread' | 'kit') => setOpen((v) => (v === which ? null : which))
+  const toggle = () => setOpen((v) => !v)
   /*
    * What has been said about this Pokemon, on the button itself: the spread
    * it is credited with first, then what it is holding. Closed, the button
@@ -1268,6 +1282,17 @@ function GearPicker({
 
   return (
     <span className={`ev-gear${inline ? ' is-inline' : ''}`}>
+      {!inline && face && (
+        <button
+          type="button"
+          className="ev-open ev-gear-face"
+          aria-expanded={open}
+          title={`What ${pokemon.name} is bringing`}
+          onClick={toggle}
+        >
+          {face}
+        </button>
+      )}
       {/* What has been said, and the way to say more — two buttons rather
           than one, so the plus can keep its own shape instead of stretching
           to whatever is written above it. Either opens the same panel.
@@ -1279,9 +1304,9 @@ function GearPicker({
             key={what}
             type="button"
             className={`ev-gear-chip${spreadPill ? ' is-spread' : ''}`}
-            aria-expanded={open === (spreadPill ? 'spread' : 'kit')}
+            aria-expanded={open}
             title={spreadPill ? `${what} \u2014 click to change` : what}
-            onClick={() => toggle(spreadPill ? 'spread' : 'kit')}
+            onClick={toggle}
           >
             {what}
           </button>
@@ -1291,22 +1316,38 @@ function GearPicker({
         <button
           type="button"
           className="ev-gear-chip is-more"
-          aria-expanded={open === 'kit'}
+          aria-expanded={open}
           title={hidden.join(' \u00b7 ')}
-          onClick={() => toggle('kit')}
+          onClick={toggle}
         >
           {hidden.length} more
         </button>
       )}
-      {!inline && (
+      {/* Everything about it, behind its own picture. Only where there is
+          no picture to click is there a button saying so. */}
+      {!inline && !face && (
         <button
           type="button"
           className={`ev-gear-open${chosen.length ? ' has-gear' : ''}`}
-          aria-expanded={open === 'kit'}
+          aria-expanded={open}
           title={`What ${pokemon.name} is bringing`}
-          onClick={() => toggle('kit')}
+          onClick={toggle}
         >
           Edit loadout
+        </button>
+      )}
+      {/* And the one button under it, which is whether to read it at all. */}
+      {!inline && onOut && (
+        <button
+          type="button"
+          className={`ev-gear-out${out ? ' is-out' : ''}`}
+          aria-pressed={out}
+          title={out
+            ? `${pokemon.name} is not in the columns \u2014 click to put it back`
+            : `Take ${pokemon.name} out of the columns`}
+          onClick={() => onOut(!out)}
+        >
+          {out ? 'Hidden' : 'Hide'}
         </button>
       )}
 
@@ -1318,7 +1359,7 @@ function GearPicker({
           {!inline && (
             <button
               type="button" className="ev-gear-away" aria-label="Close"
-              onClick={() => setOpen(null)}
+              onClick={() => setOpen(false)}
             />
           )}
           <div className={`ev-gear-pop${inline ? ' is-inline' : ''}`}>
@@ -1333,7 +1374,7 @@ function GearPicker({
                 the whole side: they are not all built the same way, and a
                 spread chosen against "everything at 252" is chosen against a
                 team nobody brought. */}
-            {!inline && open === 'spread' && assume && onAssume && (
+            {!inline && open && assume && onAssume && (
               <div className="ev-gear-assumes">
                 {EV_STATS.map((stat) => (
                   <AssumeStat
@@ -1364,7 +1405,7 @@ function GearPicker({
                 and confusion, zero Speed is how anything gets under a
                 Trick Room. The other four are here because leaving them
                 out would mean explaining why. */}
-            {!inline && open === 'spread' && (
+            {!inline && open && (
             <div className="ev-gear-ivs">
               <div className="ev-gear-line">
               {limits.ivs && (
@@ -1415,7 +1456,7 @@ function GearPicker({
               )}
             </div>
             )}
-            {only !== 'moves' && (inline || open === 'kit') && setAbility && (
+            {only !== 'moves' && (inline || open) && setAbility && (
               <div className="ev-gear-fixed">
                 <span>Ability</span>
                 <b>{MODELLED_ABILITIES.has(setAbility) ? setAbility : 'No effect here'}</b>
@@ -1427,13 +1468,13 @@ function GearPicker({
                 are not worth the line either — this row exists to say
                 whether the ability is in the numbers, and the answer is
                 no, which is what it says. */}
-            {only !== 'moves' && (inline || open === 'kit') && !setAbility && !abilities.length && own.length > 1 && (
+            {only !== 'moves' && (inline || open) && !setAbility && !abilities.length && own.length > 1 && (
               <div className="ev-gear-fixed">
                 <span>Ability</span>
                 <b>No effect here</b>
               </div>
             )}
-            {only !== 'moves' && (inline || open === 'kit') && !setAbility && abilities.length > 0 && (
+            {only !== 'moves' && (inline || open) && !setAbility && abilities.length > 0 && (
               <label>
                 <span>Ability</span>
                 {/* No blank option: it already has an ability, and "its
@@ -1450,13 +1491,13 @@ function GearPicker({
                 </select>
               </label>
             )}
-            {only !== 'moves' && (inline || open === 'kit') && mega && (
+            {only !== 'moves' && (inline || open) && mega && (
               <div className="ev-gear-fixed">
                 <span>Item</span>
                 <b>Mega Stone</b>
               </div>
             )}
-            {only !== 'moves' && (inline || open === 'kit') && !mega && (
+            {only !== 'moves' && (inline || open) && !mega && (
             <label>
               <span>Item</span>
               <select
@@ -1480,7 +1521,7 @@ function GearPicker({
             {/* Anything it might be carrying that its set does not say.
                 Its own movepool and nothing else: a move it cannot learn
                 is not a thing it might bring. */}
-            {only !== 'kit' && (inline || open === 'kit') && (onNamed || onMoves) && moves && (
+            {only !== 'kit' && (inline || open) && (onNamed || onMoves) && moves && (
               <div className="ev-gear-moves">
                 <span>Moves in the columns</span>
                 {carrying && carrying.length > 0 ? (
@@ -1538,7 +1579,7 @@ function GearPicker({
             {/* Each panel undoes its own. Shown only where there is
                 something to undo: a reset with nothing to reset is a
                 button that does nothing and looks like it does. */}
-            {!inline && open === 'spread' && (
+            {!inline && open && (
               <div className="ev-gear-resets">
                 {/* Back to how usage says it is built, and the IVs it was
                     born with. Not its item or its moves — those are the
@@ -1569,7 +1610,7 @@ function GearPicker({
                 )}
               </div>
             )}
-            {only !== 'moves' && (inline || open === 'kit') && kitSaid && (
+            {only !== 'moves' && (inline || open) && kitSaid && (
               <button
                 type="button"
                 className="ev-gear-reset"
@@ -2401,41 +2442,23 @@ export function EvCalcBody({
       id={picked.entry.id}
       limits={limits}
       inline={mode === 'damage'}
+      face={mode === 'damage' ? undefined : (
+        <Sprite pokemon={picked.entry.pokemon} width={SPRITE_W} height={SPRITE_H} />
+      )}
       ability={usualAbility(picked.entry.id, picked.entry.pokemon)}
       gear={gear[picked.entry.id]} onChange={(g) => give(picked.entry.id, g)}
     />
   )
   const myCard = picked && (
-    <span className="ev-mine">{myFace}{myGear}</span>
+    <span className="ev-mine">{mode === 'damage' && myFace}{myGear}</span>
   )
-  /**
-   * One of the other side's, and the switch for whether the columns read
-   * it at all.
-   *
-   * One click on the Pokémon itself, which is the question asked most
-   * often about the other side; its page is a line at the top of its
-   * menu. This is the planner's six, where every one of them is in or
-   * out; the calculator reads one pairing and shows that one big, where
-   * the click opens its page instead.
-   */
-  const foeFace = (m: Facing) => (
-    <button
-      type="button"
-      className={`ev-open${off.has(m.id) ? ' is-off' : ''}`}
-      aria-pressed={!off.has(m.id)}
-      title={off.has(m.id)
-        ? `${m.pokemon.name} — not in the columns`
-        : `${m.pokemon.name} — click to take it out of the columns`}
-      onClick={() => setOff((prev) => {
-        const now = new Set(prev)
-        if (now.has(m.id)) now.delete(m.id)
-        else now.add(m.id)
-        return now
-      })}
-    >
-      <Sprite pokemon={m.pokemon} width={SPRITE_W} height={SPRITE_H} />
-    </button>
-  )
+  /** Out of the columns, or back into them. */
+  const hide = (id: string, next: boolean) => setOff((prev) => {
+    const now = new Set(prev)
+    if (next) now.add(id)
+    else now.delete(id)
+    return now
+  })
 
   /** And the one being read against, the same size and the same click. */
   const theirFace = against && (
@@ -2453,6 +2476,14 @@ export function EvCalcBody({
       pokemon={m.pokemon}
       inline={mode === 'damage'}
       only={mode === 'damage' ? 'kit' : undefined}
+      /* In the planner its own picture opens everything there is to say
+         about it, and the one button underneath takes it out of the
+         columns. The picture used to be that switch, which is a strange
+         thing to click when what you wanted was to see what it holds. */
+      face={mode === 'damage' ? undefined : (
+        <Sprite pokemon={m.pokemon} width={SPRITE_W} height={SPRITE_H} />
+      )}
+      onOut={mode === 'damage' ? undefined : (next: boolean) => hide(m.id, next)}
       ability={usualAbility(m.id, m.pokemon)}
       base={assumeFrom(sets?.[m.id], rules)}
       limits={limits}
@@ -2530,10 +2561,7 @@ export function EvCalcBody({
             ) : picked.foes.length > 0 && (
               <div className="ev-foes">
                 {picked.foes.map((m) => (
-                  <span key={m.id} className="ev-foe-slot">
-                    {foeFace(m)}
-                    {foeGear(m)}
-                  </span>
+                  <span key={m.id} className="ev-foe-slot">{foeGear(m)}</span>
                 ))}
               </div>
             )}
