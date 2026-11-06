@@ -1285,7 +1285,11 @@ function GearPicker({
       {!inline && face && (
         <button
           type="button"
-          className="ev-open ev-gear-face"
+          /* `is-off` greys the picture, which is how a Pokémon that is
+             not in the columns has always looked. It no longer says
+             what the click does — the button below says that — but it
+             is still what says the Pokémon is out. */
+          className={`ev-open ev-gear-face${out ? ' is-off' : ''}`}
           aria-expanded={open}
           title={`What ${pokemon.name} is bringing`}
           onClick={toggle}
