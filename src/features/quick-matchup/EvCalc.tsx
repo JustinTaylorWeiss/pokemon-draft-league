@@ -115,6 +115,17 @@ function battleFormes(id: string, dex: LeagueDex) {
 /** How big the Pokemon along the top are drawn. */
 const SPRITE_W = 64
 const SPRITE_H = 53
+/**
+ * The one being read, beside the control that picks it.
+ *
+ * Bigger than the rest because it is the subject rather than a choice:
+ * the dropdown and the six opposite are how you say which Pokémon, and
+ * this is the Pokémon.
+ */
+/* Square, which is what the sprites are: asked for 64 by 53 the drawing
+ * is boxed into the 53 and comes out smaller than the space it is given. */
+const FACE_W = 96
+const FACE_H = 96
 
 /**
  * One stat of a credited spread: a slider, its number, and its nature.
@@ -1651,6 +1662,15 @@ function searchMoves(
     .slice(0, 12)
 }
 
+/**
+ * Enough of one of the other side's to draw it and look up its gear.
+ *
+ * The planner reads all six off the team and the calculator reads the
+ * one it is pointed at off the opponent list, which carry the same
+ * Pokémon under different types.
+ */
+export interface Facing { id: string; pokemon: Pokemon }
+
 /** One of the four: the move, and what it does where it does anything. */
 export interface Slot { move: Move; roll?: Exchange }
 
@@ -2353,108 +2373,144 @@ export function EvCalcBody({
             )}
           </div>
   )
-  const myCard = (
-    <>
-          {picked && (
-            <span className="ev-mine">
-              {/* Not a link and not a switch. The six opposite are
-                  switches — click one and it leaves the columns — and
-                  this one has neither meaning: it cannot be taken out of
-                  a matchup it is the subject of, and its page is a line
-                  in all three of its panels. A picture that lights up
-                  under the pointer and then does nothing is worse than
-                  one that plainly does not. */}
-              <span className="ev-open">
-                <Sprite pokemon={picked.entry.pokemon} width={SPRITE_W} height={SPRITE_H} />
-              </span>
-              <GearPicker
-                pokemon={picked.entry.pokemon}
-                id={picked.entry.id}
-                limits={limits}
-                inline={mode === 'damage'}
-                ability={usualAbility(picked.entry.id, picked.entry.pokemon)}
-                gear={gear[picked.entry.id]} onChange={(g) => give(picked.entry.id, g)}
-              />
-            </span>
-          )}
-    </>
+  /*
+   * Not a link and not a switch. The six opposite are switches — click
+   * one and it leaves the columns — and this one has neither meaning:
+   * it cannot be taken out of a matchup it is the subject of, and its
+   * page is a line in all three of its panels. A picture that lights up
+   * under the pointer and then does nothing is worse than one that
+   * plainly does not.
+   */
+  const myFace = picked && (
+    <span className="ev-open">
+      <Sprite
+        pokemon={picked.entry.pokemon}
+        width={mode === 'damage' ? FACE_W : SPRITE_W}
+        height={mode === 'damage' ? FACE_H : SPRITE_H}
+      />
+    </span>
   )
+  const myGear = picked && (
+    <GearPicker
+      pokemon={picked.entry.pokemon}
+      id={picked.entry.id}
+      limits={limits}
+      inline={mode === 'damage'}
+      ability={usualAbility(picked.entry.id, picked.entry.pokemon)}
+      gear={gear[picked.entry.id]} onChange={(g) => give(picked.entry.id, g)}
+    />
+  )
+  const myCard = picked && (
+    <span className="ev-mine">{myFace}{myGear}</span>
+  )
+  /**
+   * One of the other side's, and the switch for whether the columns read
+   * it at all.
+   *
+   * One click on the Pokémon itself, which is the question asked most
+   * often about the other side; its page is a line at the top of either
+   * menu. Big where it is the one being read against, small where it is
+   * one of six being chosen between.
+   */
+  const foeFace = (m: Facing, big: boolean) => (
+    <button
+      type="button"
+      className={`ev-open${off.has(m.id) ? ' is-off' : ''}`}
+      aria-pressed={!off.has(m.id)}
+      title={off.has(m.id)
+        ? `${m.pokemon.name} — not in the columns`
+        : `${m.pokemon.name} — click to take it out of the columns`}
+      onClick={() => setOff((prev) => {
+        const now = new Set(prev)
+        if (now.has(m.id)) now.delete(m.id)
+        else now.add(m.id)
+        return now
+      })}
+    >
+      <Sprite
+        pokemon={m.pokemon}
+        width={big ? FACE_W : SPRITE_W}
+        height={big ? FACE_H : SPRITE_H}
+      />
+    </button>
+  )
+
+  const foeGear = (m: Facing) => (
+    <GearPicker
+      pokemon={m.pokemon}
+      inline={mode === 'damage'}
+      only={mode === 'damage' ? 'kit' : undefined}
+      ability={usualAbility(m.id, m.pokemon)}
+      base={assumeFrom(sets?.[m.id], rules)}
+      limits={limits}
+      gear={gear[m.id]} onChange={(g) => give(m.id, g)}
+      assume={credit(m.id)}
+      onAssume={(next) => setAssume((prev) => ({ ...prev, [m.id]: next }))}
+      learnset={learnsets?.[m.id]}
+      moves={moves}
+      played={played}
+      named={extra[m.id]}
+      onNamed={(next) => names(m.id, next)}
+      carrying={opponents.find((o) => o.id === m.id)?.moves}
+      id={m.id}
+      out={off.has(m.id)}
+    />
+  )
+
+  /*
+   * The whole team, two rows of three, which is what lets each of them
+   * be big enough to recognise. Six across a column meant six sprites
+   * the width of a thumbnail; the question "which of these am I reading
+   * against" is asked by looking at them, so they have to be lookable at.
+   */
+  const theirSwitch = picked && picked.foes.length > 1 && (
+    <div className="dc-switch" role="group" aria-label="Read against">
+      {picked.foes.map((m) => (
+        <button
+          key={m.id}
+          type="button"
+          className={`ev-open${against?.id === m.id ? ' is-facing' : ''}${
+            off.has(m.id) ? ' is-off' : ''}`}
+          aria-pressed={against?.id === m.id}
+          title={`Read against ${m.pokemon.name}`}
+          onClick={() => {
+            setFacing(m.id)
+            setOff((prev) => {
+              const now = new Set(prev)
+              now.delete(m.id)
+              return now
+            })
+          }}
+        >
+          <Sprite pokemon={m.pokemon} width={SPRITE_W} height={SPRITE_H} />
+        </button>
+      ))}
+    </div>
+  )
+
   const theirColumn = (
     <>
         {picked && (
           <div className="ev-mons">
             {/* One at a time in damage mode, the rest a click away: a
                 calculator answers a pairing, and six cards down a column
-                is a team sheet rather than an answer. */}
-            {mode === 'damage' && picked.foes.length > 1 && (
-              <div className="dc-switch" role="group" aria-label="Read against">
-                {picked.foes.map((m) => (
-                  <button
-                    key={m.id}
-                    type="button"
-                    className={`ev-open${against?.id === m.id ? ' is-facing' : ''}${
-                      off.has(m.id) ? ' is-off' : ''}`}
-                    aria-pressed={against?.id === m.id}
-                    title={`Read against ${m.pokemon.name}`}
-                    onClick={() => {
-                      setFacing(m.id)
-                      setOff((prev) => {
-                        const now = new Set(prev)
-                        now.delete(m.id)
-                        return now
-                      })
-                    }}
-                  >
-                    <Sprite pokemon={m.pokemon} width={SPRITE_W} height={SPRITE_H} />
-                  </button>
-                ))}
-              </div>
-            )}
-            {picked.foes.length > 0 && (
+                is a team sheet rather than an answer. Which one is being
+                read sits beside the six, the way the picker and its
+                Pokémon sit together on the other side. */}
+            {mode === 'damage' ? against && (
+              <>
+                <div className="dc-pick">
+                  {theirSwitch}
+                  {foeFace(against, true)}
+                </div>
+                {foeGear(against)}
+              </>
+            ) : picked.foes.length > 0 && (
               <div className="ev-foes">
-                {(mode === 'damage'
-                  ? picked.foes.filter((m) => m.id === against?.id)
-                  : picked.foes).map((m) => (
+                {picked.foes.map((m) => (
                   <span key={m.id} className="ev-foe-slot">
-                    {/* The switch for whether the columns read it at all.
-                        One click on the Pokémon itself, which is the
-                        question asked most often about the other side;
-                        its page is a line at the top of either menu. */}
-                    <button
-                      type="button"
-                      className={`ev-open${off.has(m.id) ? ' is-off' : ''}`}
-                      aria-pressed={!off.has(m.id)}
-                      title={off.has(m.id)
-                        ? `${m.pokemon.name} — not in the columns`
-                        : `${m.pokemon.name} — click to take it out of the columns`}
-                      onClick={() => setOff((prev) => {
-                        const now = new Set(prev)
-                        if (now.has(m.id)) now.delete(m.id)
-                        else now.add(m.id)
-                        return now
-                      })}
-                    >
-                      <Sprite pokemon={m.pokemon} width={SPRITE_W} height={SPRITE_H} />
-                    </button>
-                    <GearPicker
-                      pokemon={m.pokemon}
-                      inline={mode === 'damage'}
-                      only={mode === 'damage' ? 'kit' : undefined}
-                      ability={usualAbility(m.id, m.pokemon)}
-                      base={assumeFrom(sets?.[m.id], rules)}
-                      limits={limits}
-                      gear={gear[m.id]} onChange={(g) => give(m.id, g)}
-                      assume={credit(m.id)}
-                      onAssume={(next) => setAssume((prev) => ({ ...prev, [m.id]: next }))}
-                      learnset={learnsets?.[m.id]}
-                      moves={moves}
-                      played={played}
-                      named={extra[m.id]}
-                      onNamed={(next) => names(m.id, next)}
-                      carrying={opponents.find((o) => o.id === m.id)?.moves}
-                      id={m.id}
-                      out={off.has(m.id)}
-                    />
+                    {foeFace(m, false)}
+                    {foeGear(m)}
                   </span>
                 ))}
               </div>
@@ -2653,8 +2709,14 @@ export function EvCalcBody({
         <div className="dc-col is-mine">
           {nothingPicked}
           {myRolls}
-          {mySide}
-          {myCard}
+          {/* The picker and the Pokémon it names, on one line: they are
+              one answer, and a picture under a menu reads as a second
+              thing rather than as what the menu just said. */}
+          <div className="dc-pick">
+            {mySide}
+            {myFace}
+          </div>
+          {myGear}
           {picked && spBar(spent(spread))}
           {myStats}
         </div>
