@@ -1152,6 +1152,13 @@ function GearPicker({
   const keeping = new Set(chosen.length > CHIPS ? priority.slice(0, CHIPS - 1) : chosen)
   const shown = chosen.filter((c) => keeping.has(c))
   const hidden = chosen.filter((c) => !keeping.has(c))
+  /*
+   * The spread goes with the picture and the rest goes under the hide
+   * button: it is what the Pokémon is, where an item and an ability are
+   * things it has been given.
+   */
+  const spreadPill = face && shown.includes(raised[0]) ? raised[0] : undefined
+  const tags = shown.filter((c) => c !== spreadPill)
 
   /*
    * A Mega has neither to give. The stone is in its item slot, and its
@@ -1307,6 +1314,11 @@ function GearPicker({
           onClick={toggle}
         >
           {face}
+          {/* The spread inside the same button as the picture, not beside
+              it: they are one thing to click and one thing to point at —
+              what this Pokémon is reckoned to be — so they light up
+              together and open the same panel. */}
+          {spreadPill && <span className="ev-gear-chip is-spread">{spreadPill}</span>}
         </button>
       )}
       {/* Whether to read it at all, directly under the picture it is
@@ -1330,21 +1342,18 @@ function GearPicker({
           than one, so the plus can keep its own shape instead of stretching
           to whatever is written above it. Either opens the same panel.
           Laid open there is nothing to summarise: it is all on the page. */}
-      {!inline && shown.map((what) => {
-        const spreadPill = what === raised[0]
-        return (
-          <button
-            key={what}
-            type="button"
-            className={`ev-gear-chip${spreadPill ? ' is-spread' : ''}`}
-            aria-expanded={open}
-            title={spreadPill ? `${what} \u2014 click to change` : what}
-            onClick={toggle}
-          >
-            {what}
-          </button>
-        )
-      })}
+      {!inline && tags.map((what) => (
+        <button
+          key={what}
+          type="button"
+          className="ev-gear-chip"
+          aria-expanded={open}
+          title={what}
+          onClick={toggle}
+        >
+          {what}
+        </button>
+      ))}
       {!inline && hidden.length > 0 && (
         <button
           type="button"

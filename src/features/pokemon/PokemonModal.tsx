@@ -358,6 +358,26 @@ export function PokemonModal() {
           <p className="loading modal-loading">Loading…</p>
         ) : (
           <>
+            {/* Above everything, including the Pokémon: it is the switch
+                for what the whole dialog is showing, and a switch that
+                sits under a heading reads as belonging to it. */}
+            {tab && (
+              <nav className="modal-tabs" role="tablist" aria-label="What to show">
+                {([['tab', tab.label], ['dex', 'Pokédex']] as const).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    aria-selected={showing === key}
+                    className={showing === key ? 'is-active' : ''}
+                    onClick={() => setShowing(key)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </nav>
+            )}
+
             <header className="modal-head">
               <Artwork pokemon={mon} size={150} className="modal-art" />
               <div className="modal-title">
@@ -418,23 +438,6 @@ export function PokemonModal() {
               </div>
 
             </header>
-
-            {tab && (
-              <nav className="modal-tabs" role="tablist" aria-label="What to show">
-                {([['tab', tab.label], ['dex', 'Pokédex']] as const).map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    role="tab"
-                    aria-selected={showing === key}
-                    className={showing === key ? 'is-active' : ''}
-                    onClick={() => setShowing(key)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </nav>
-            )}
 
             {/* Empty on purpose: whoever asked for the tab renders into
                 it from where it lives. Kept in the page while the dex

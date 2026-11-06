@@ -359,7 +359,9 @@
  * away rather than somewhere else entirely.
  */
 .modal-tabs {
-  display: flex; gap: 0.3rem; margin: 0 0 0.8rem; flex-wrap: wrap;
+  display: flex; gap: 0.3rem; margin: 0 0 1rem; flex-wrap: wrap;
+  /* Clear of the close button, which floats over the same corner. */
+  padding-right: 2.5rem;
 }
 .modal-tabs button {
   padding: 0.3rem 0.8rem; font: inherit; font-size: 0.8rem; font-weight: 600;

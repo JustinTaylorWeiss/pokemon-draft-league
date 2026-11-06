@@ -1162,8 +1162,18 @@ button.type-chip { cursor: pointer; }
  * the sprites have always sat in, lighting up under the pointer because
  * this time it does something.
  */
-.ev-gear-face { padding: 0.1rem; cursor: pointer; }
+/*
+ * The picture and the spread in one button, because they are one thing:
+ * what this Pokémon is reckoned to be. Pointing at either lights both,
+ * and clicking either opens the same panel.
+ */
+.ev-gear > button.ev-gear-face {
+  display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
+  width: 100%; padding: 0.1rem; line-height: normal; cursor: pointer;
+}
+.ev-gear-face > .ev-gear-chip { pointer-events: none; width: 100%; }
 .ev-gear-face:hover { border-color: var(--team-accent, var(--accent)); }
+.ev-gear-face:hover > .ev-gear-chip { border-color: var(--fg); color: var(--fg); }
 .ev-gear-face[aria-expanded="true"] {
   border-color: var(--team-accent, var(--accent)); background: var(--chip);
 }
