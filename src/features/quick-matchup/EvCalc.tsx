@@ -2374,21 +2374,26 @@ export function EvCalcBody({
           </div>
   )
   /*
-   * Not a link and not a switch. The six opposite are switches — click
-   * one and it leaves the columns — and this one has neither meaning:
-   * it cannot be taken out of a matchup it is the subject of, and its
-   * page is a line in all three of its panels. A picture that lights up
-   * under the pointer and then does nothing is worse than one that
-   * plainly does not.
+   * Its page, which is what a picture this size is asked for.
+   *
+   * Not a switch, unlike the six opposite: it cannot be taken out of a
+   * matchup it is the subject of. For a while it did nothing at all,
+   * on the grounds that its page was already a line in every panel —
+   * but a sprite that opens the Pokémon is what a sprite does
+   * everywhere else here, and this is the largest one on the tab.
    */
   const myFace = picked && (
-    <span className="ev-open">
+    <PokemonLink
+      id={picked.entry.id}
+      className="ev-open"
+      title={`Open ${picked.entry.pokemon.name}`}
+    >
       <Sprite
         pokemon={picked.entry.pokemon}
         width={mode === 'damage' ? FACE_W : SPRITE_W}
         height={mode === 'damage' ? FACE_H : SPRITE_H}
       />
-    </span>
+    </PokemonLink>
   )
   const myGear = picked && (
     <GearPicker
@@ -2408,11 +2413,12 @@ export function EvCalcBody({
    * it at all.
    *
    * One click on the Pokémon itself, which is the question asked most
-   * often about the other side; its page is a line at the top of either
-   * menu. Big where it is the one being read against, small where it is
-   * one of six being chosen between.
+   * often about the other side; its page is a line at the top of its
+   * menu. This is the planner's six, where every one of them is in or
+   * out; the calculator reads one pairing and shows that one big, where
+   * the click opens its page instead.
    */
-  const foeFace = (m: Facing, big: boolean) => (
+  const foeFace = (m: Facing) => (
     <button
       type="button"
       className={`ev-open${off.has(m.id) ? ' is-off' : ''}`}
@@ -2427,12 +2433,19 @@ export function EvCalcBody({
         return now
       })}
     >
-      <Sprite
-        pokemon={m.pokemon}
-        width={big ? FACE_W : SPRITE_W}
-        height={big ? FACE_H : SPRITE_H}
-      />
+      <Sprite pokemon={m.pokemon} width={SPRITE_W} height={SPRITE_H} />
     </button>
+  )
+
+  /** And the one being read against, the same size and the same click. */
+  const theirFace = against && (
+    <PokemonLink
+      id={against.id}
+      className="ev-open"
+      title={`Open ${against.pokemon.name}`}
+    >
+      <Sprite pokemon={against.pokemon} width={FACE_W} height={FACE_H} />
+    </PokemonLink>
   )
 
   const foeGear = (m: Facing) => (
@@ -2510,7 +2523,7 @@ export function EvCalcBody({
               <>
                 <div className="dc-pick">
                   {theirSwitch}
-                  {foeFace(against, true)}
+                  {theirFace}
                 </div>
                 {foeGear(against)}
               </>
@@ -2518,7 +2531,7 @@ export function EvCalcBody({
               <div className="ev-foes">
                 {picked.foes.map((m) => (
                   <span key={m.id} className="ev-foe-slot">
-                    {foeFace(m, false)}
+                    {foeFace(m)}
                     {foeGear(m)}
                   </span>
                 ))}
@@ -2659,9 +2672,6 @@ export function EvCalcBody({
       played={played}
       onDrop={(id) => setTheirMoves(theirIds.filter((x) => x !== id))}
       onAdd={(m) => setTheirMoves([...theirIds, toId(m.name)].slice(0, SLOTS))}
-      note={guessed.some((g) => g.id === against.id)
-        ? 'No set on record for it, so these started as the moves the format plays that it can learn.'
-        : undefined}
     />
   )
 

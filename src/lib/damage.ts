@@ -511,6 +511,17 @@ const weightOf = (side: Side) => {
   return raw
 }
 
+/** A stat with its stage on it, the way the games apply one. */
+const staged = (raw: number, stage: number) => {
+  if (!stage) return raw
+  const { num, den } = stageOf(stage)
+  return Math.floor((raw * num) / den)
+}
+
+/** Stages gained and not lost, which three moves are priced in. */
+const raised = (side: Side) => Object.values(side.boosts ?? {})
+  .reduce((n, stage) => n + Math.max(0, stage ?? 0), 0)
+
 /**
  * Whether the paradox machinery is running.
  *
@@ -581,6 +592,17 @@ export function basePowerOf(
       if (ratio >= 1) return 60
       return 40
     }
+    /*
+     * Twenty a stage, which is what makes a Calm Mind sweep frightening
+     * rather than slow. Only the raised ones count — a Pokémon that has
+     * been Intimidated is not worse at it.
+     */
+    case 'Stored Power':
+    case 'Power Trip':
+      return Math.min(860, 20 + 20 * raised(attacker))
+    /* Twice as hard with nothing in its hands. */
+    case 'Acrobatics':
+      return attacker.item ? 55 : 110
     // Both sides whole, which is what every reading here assumes.
     case 'Flail':
     case 'Reversal':
@@ -636,6 +658,80 @@ export function basePowerOf(
 /** Whether a move does damage this page can put a number on. */
 export const canReadPower = (move: Move) =>
   move.category !== 'Status' && (move.basePower > 0 || VARIABLE_POWER.has(move.name))
+
+/**
+ * Which stat each side puts into the formula.
+ *
+ * Almost every move reads the obvious pair — Attack against Defense, or
+ * Special Attack against Special Defense — and a handful read something
+ * else entirely. Worked out in one place and before anything else,
+ * because the answer decides more than the division: the burn, the
+ * screen, Sand and Snow, and half the abilities that lift a stat all
+ * ask which stat is being read.
+ *
+ * Tera Blast belongs here and is not: it reads the better of the two
+ * only while Terastallized, and nothing on this page knows whether a
+ * Pokémon has Terastallized.
+ */
+interface Reads {
+  /** The move's category for everything that asks — screens, burn, spread. */
+  physical: boolean
+  /** The attacking stat, which is not always an attacking stat. */
+  offKey: StatKey
+  /** And the one it is divided by. */
+  defKey: StatKey
+  /** Foul Play alone: the Attack it swings is the one being swung at. */
+  fromTarget: boolean
+}
+
+function statsFor(move: Move, attacker: Side, defender: Side): Reads {
+  const plain = move.category === 'Physical'
+  const base: Reads = {
+    physical: plain,
+    offKey: plain ? 'atk' : 'spa',
+    defKey: plain ? 'def' : 'spd',
+    fromTarget: false,
+  }
+  const asPhysical: Reads = { physical: true, offKey: 'atk', defKey: 'def', fromTarget: false }
+  switch (move.name) {
+    // A physical move that pushes with what it braces with.
+    case 'Body Press':
+      return { ...base, offKey: 'def' }
+    // And one that swings the other Pokémon's own arm.
+    case 'Foul Play':
+      return { ...base, fromTarget: true }
+    // Special moves scored against the body rather than the mind.
+    case 'Psyshock':
+    case 'Psystrike':
+    case 'Secret Sword':
+      return { ...base, defKey: 'def' }
+    /*
+     * Whichever of the user's two is higher, stages and all — and with
+     * it the whole category, so a physical Photon Geyser is stopped by
+     * a Reflect rather than a Light Screen.
+     */
+    case 'Photon Geyser': {
+      const atk = staged(statOf(attacker, 'atk'), attacker.boosts?.atk ?? 0)
+      const spa = staged(statOf(attacker, 'spa'), attacker.boosts?.spa ?? 0)
+      return atk > spa ? asPhysical : base
+    }
+    /*
+     * And whichever side of the target gives the bigger number, which is
+     * the two ratios compared rather than the two stats: a huge Special
+     * Attack into a huge Special Defense is the worse half of the choice.
+     * A tie goes to the special side, the move's own category.
+     */
+    case 'Shell Side Arm': {
+      const atk = staged(statOf(attacker, 'atk'), attacker.boosts?.atk ?? 0)
+      const spa = staged(statOf(attacker, 'spa'), attacker.boosts?.spa ?? 0)
+      const def = staged(statOf(defender, 'def'), defender.boosts?.def ?? 0)
+      const spd = staged(statOf(defender, 'spd'), defender.boosts?.spd ?? 0)
+      return atk * spd > spa * def ? asPhysical : base
+    }
+    default:
+      return base
+  }
+}
 
 /** Doubles against a target that is suffering, by which kinds count. */
 const STATUS_POWER: Record<string, 'any' | 'poison'> = {
@@ -737,7 +833,24 @@ function core(
    * away. Passing nothing would fall back to the whole list, which is how
    * the credit below would conclude that Levitate changed nothing.
    */
-  const effect = defensiveMultiplier(chart, kind, shielded.pokemon, true, guard)
+  let effect = defensiveMultiplier(chart, kind, shielded.pokemon, true, guard)
+  /*
+   * The two moves the type chart cannot answer on its own.
+   *
+   * Freeze-Dry is an Ice move that is super effective on Water, which is
+   * the only thing in the game that contradicts the chart outright — so
+   * it is a doubling applied on top rather than a second chart.
+   *
+   * Flying Press is thrown as Fighting and lands as Fighting and Flying
+   * at once, which is the two columns multiplied: four times into a
+   * Grass type and nothing at all into a Ghost.
+   */
+  if (move.name === 'Freeze-Dry' && shielded.pokemon.types.includes('Water')) {
+    effect *= 4
+  }
+  if (move.name === 'Flying Press') {
+    effect *= defensiveMultiplier(chart, 'Flying', shielded.pokemon, true, guard)
+  }
   if (effect === 0) return { rolls: [], hp }
   // An Air Balloon is a Ground immunity until something pops it, and
   // nothing here has popped it.
@@ -749,7 +862,18 @@ function core(
   if (guard === 'Soundproof' && move.sound) return { rolls: [], hp }
   if (guard === 'Bulletproof' && move.bullet) return { rolls: [], hp }
 
-  const physical = move.category === 'Physical'
+  /*
+   * Which stat each side is putting in. Five moves read something other
+   * than the pair their category implies, and everything below asks
+   * this rather than the category: Guts lifts an Attack and so does
+   * nothing for a Body Press, Snow lifts a Defense and so does stop a
+   * Psyshock, and a Foul Play is the other Pokémon's arm throughout.
+   */
+  const { physical, offKey, defKey, fromTarget } = statsFor(move, attacker, shielded)
+  const offFrom = fromTarget ? shielded : attacker
+  const offMine = offFrom.ability ?? ''
+  // Ruin is everyone else's problem, never the holder's own.
+  const offRuin = fromTarget ? mine : guard
   /*
    * The offensive stat, and the defensive one, each with whatever reads
    * only the two Pokémon and the move in front of them: the type-power
@@ -763,6 +887,8 @@ function core(
    * side; Flare Boost wants a burn and pays the special side.
    */
   const sick = attacker.status
+  /** And the status of whoever's stat is being read, which Foul Play moves. */
+  const offSick = offFrom.status
   /*
    * The paradox pair, and the two legendaries built the same way: in their
    * own weather or their own terrain they lend a third to whichever stat
@@ -774,32 +900,41 @@ function core(
    * here holds one, and an item cannot be seen from the two sides and the
    * field alone.
    */
-  const boosted = paradoxOn(attacker, field) ? bestStat(attacker) : null
+  const boosted = paradoxOn(offFrom, field) ? bestStat(offFrom) : null
   const guardBoost = paradoxOn(shielded, field) ? bestStat(shielded) : null
+  /*
+   * Each one against the stat it actually lifts rather than against the
+   * move's category. They are the same question for every move but the
+   * five above: Guts lifts an Attack, so it is worth nothing to a Body
+   * Press pushing with a Defense, and everything to a Foul Play swinging
+   * a Guts Pokémon's own arm.
+   */
   const atkMult = (lends && lends.type === kind ? lends.mult : 1)
-    * (boosted === (physical ? 'atk' : 'spa') ? 1.3 : 1)
-    * (mine === 'Solar Power' && field.weather === 'Sun' && !physical ? 1.5 : 1)
-    * (mine === 'Orichalcum Pulse' && field.weather === 'Sun' && physical ? 5461 / 4096 : 1)
-    * (mine === 'Hadron Engine' && field.terrain === 'Electric' && !physical ? 5461 / 4096 : 1)
-    * (mine === 'Flower Gift' && field.weather === 'Sun' && physical ? 1.5 : 1)
-    * (mine === 'Gorilla Tactics' || mine === 'Hustle' ? (physical ? 1.5 : 1) : 1)
-    * (mine === 'Guts' && sick && physical ? 1.5 : 1)
-    * (mine === 'Toxic Boost' && sick === 'Poison' && physical ? 1.5 : 1)
-    * (mine === 'Flare Boost' && sick === 'Burn' && !physical ? 1.5 : 1)
-    * (RUIN[guard] === (physical ? 'atk' : 'spa') ? 0.75 : 1)
+    * (boosted === offKey ? 1.3 : 1)
+    * (offMine === 'Solar Power' && field.weather === 'Sun' && offKey === 'spa' ? 1.5 : 1)
+    * (offMine === 'Orichalcum Pulse' && field.weather === 'Sun' && offKey === 'atk'
+      ? 5461 / 4096 : 1)
+    * (offMine === 'Hadron Engine' && field.terrain === 'Electric' && offKey === 'spa'
+      ? 5461 / 4096 : 1)
+    * (offMine === 'Flower Gift' && field.weather === 'Sun' && offKey === 'atk' ? 1.5 : 1)
+    * ((offMine === 'Gorilla Tactics' || offMine === 'Hustle') && offKey === 'atk' ? 1.5 : 1)
+    * (offMine === 'Guts' && offSick && offKey === 'atk' ? 1.5 : 1)
+    * (offMine === 'Toxic Boost' && offSick === 'Poison' && offKey === 'atk' ? 1.5 : 1)
+    * (offMine === 'Flare Boost' && offSick === 'Burn' && offKey === 'spa' ? 1.5 : 1)
+    * (RUIN[offRuin] === offKey ? 0.75 : 1)
   /*
    * Sand gives a Rock type half again its Special Defense and Snow gives
    * an Ice type half again its Defense — the only two weathers that touch
    * a stat rather than a move.
    */
-  const weathered = (field.weather === 'Sand' && !physical
+  const weathered = (field.weather === 'Sand' && defKey === 'spd'
     && shielded.pokemon.types.includes('Rock'))
-    || (field.weather === 'Snow' && physical && shielded.pokemon.types.includes('Ice'))
+    || (field.weather === 'Snow' && defKey === 'def' && shielded.pokemon.types.includes('Ice'))
     ? 1.5 : 1
-  // Marvel Scale wants its owner sick too, and pays the physical side.
-  const scale = guard === 'Marvel Scale' && shielded.status && physical ? 1.5 : 1
-  const defMult = (RUIN[mine] === (physical ? 'def' : 'spd') ? 0.75 : 1) * weathered * scale
-    * (guardBoost === (physical ? 'def' : 'spd') ? 1.3 : 1)
+  // Marvel Scale wants its owner sick too, and pays the Defense side.
+  const scale = guard === 'Marvel Scale' && shielded.status && defKey === 'def' ? 1.5 : 1
+  const defMult = (RUIN[mine] === defKey ? 0.75 : 1) * weathered * scale
+    * (guardBoost === defKey ? 1.3 : 1)
   /*
    * Stat stages, applied to the stat before anything else multiplies it,
    * which is where the games apply them.
@@ -813,24 +948,17 @@ function core(
    * where they are, so a physical hit reads Special Defense with the
    * Defense stage still on it.
    */
-  const offKey: StatKey = physical ? 'atk' : 'spa'
-  const defKey: StatKey = physical ? 'def' : 'spd'
   const offStage = field.crit
-    ? Math.max(0, attacker.boosts?.[offKey] ?? 0)
-    : attacker.boosts?.[offKey] ?? 0
+    ? Math.max(0, offFrom.boosts?.[offKey] ?? 0)
+    : offFrom.boosts?.[offKey] ?? 0
   const defStage = field.crit
     ? Math.min(0, shielded.boosts?.[defKey] ?? 0)
     : shielded.boosts?.[defKey] ?? 0
-  const staged = (raw: number, stage: number) => {
-    if (!stage) return raw
-    const { num, den } = stageOf(stage)
-    return Math.floor((raw * num) / den)
-  }
   const readKey: StatKey = field.wonderRoom
-    ? (physical ? 'spd' : 'def')
+    ? (defKey === 'def' ? 'spd' : 'def')
     : defKey
 
-  const atk = Math.floor(staged(statOf(attacker, offKey), offStage) * atkMult)
+  const atk = Math.floor(staged(statOf(offFrom, offKey), offStage) * atkMult)
   const def = Math.max(
     1, Math.floor(staged(statOf(shielded, readKey), defStage) * defMult),
   )
@@ -878,6 +1006,19 @@ function core(
   // full: these are first-hit questions. Half damage, and it says so.
   const shield = guard === 'Multiscale' || guard === 'Shadow Shield' ? 0.5 : 1
   const belt = attacker.item === 'Expert Belt' && effect > 1 ? 1.2 : 1
+  /*
+   * The two that are paid for landing well: a third again where the hit
+   * was already super effective, which is what makes them worth their
+   * drawback.
+   */
+  const rewarded = (move.name === 'Collision Course' || move.name === 'Electro Drift')
+    && effect > 1 ? 5461 / 4096 : 1
+  /*
+   * Half again for the thing it knocks off, which is most of why it is
+   * clicked. Nothing to take, nothing extra — and a Pokémon holding the
+   * item it was built around keeps it, so neither is it taken here.
+   */
+  const prising = move.name === 'Knock Off' && shielded.item ? 6144 / 4096 : 1
   /*
    * Two of the attacker's that read nothing but the move in front of
    * them. Tough Claws is a third again on anything that touches, which
@@ -982,7 +1123,7 @@ function core(
    * paid it a third again above.
    */
   const burn = sick === 'Burn' && physical && mine !== 'Guts' ? 0.5 : 1
-  const after = itemMult * shield * belt * claws * tech * lent * ated * gritty * forced
+  const after = itemMult * shield * belt * prising * rewarded * claws * tech * lent * ated * gritty * forced
     * bond * reckless * punk * aura * lens * force
     * sky * lifts * mist * grass * screen * berry * hand * crit * burn
     * friend * charged
