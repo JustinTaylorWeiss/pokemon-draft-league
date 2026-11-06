@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { listsOf, useStored } from '../../lib/useStored'
 import type { LearnsetDex, MoveDex, SetDex, TypeChart, TypeName } from '../../data/types'
 import { attackingTypes, coverage } from '../../lib/matchup'
 import { canReadPower } from '../../lib/damage'
@@ -14,6 +15,9 @@ interface TipMove { name: string; power: number; inSet: boolean }
 
 interface Props {
   attackers: Team
+  /** Which team's panel this is, so each remembers its own. */
+  side: 'one' | 'two'
+
   defenders: Team
   chart: TypeChart
   moves: MoveDex
@@ -37,11 +41,13 @@ interface Props {
  * the list rather than hunted for down it.
  */
 export function CoverageBody({
-  attackers, defenders, chart, moves, learnsets, useAbilities, minPower, sets, played,
+  attackers, side, defenders, chart, moves, learnsets, useAbilities, minPower, sets, played,
 }: Props) {
   // A Pokémon appears here only once it has been toggled; until then it uses
   // the default selection below.
-  const [custom, setCustom] = useState<Record<string, Set<TypeName>>>({})
+  const [custom, setCustom] = useStored<Record<string, Set<TypeName>>>(
+    `coverage:${side}:tera`, {}, listsOf<TypeName>(),
+  )
 
   /** Every type the Pokémon could attack with, split by category. */
   const available = useMemo(() => {

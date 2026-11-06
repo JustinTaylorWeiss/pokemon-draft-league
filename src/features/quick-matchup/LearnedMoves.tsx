@@ -1,4 +1,5 @@
-import { memo, useMemo, useState } from 'react'
+import { memo, useMemo } from 'react'
+import { listOf, useStored } from '../../lib/useStored'
 import type { LearnsetDex, MoveDex, Pokemon, TypeName } from '../../data/types'
 import { MOVE_TAGS, tagsFor, type MoveTag } from '../../lib/matchup'
 import { TypeChip } from '../../components/TypeChip'
@@ -10,6 +11,9 @@ import { Sprite } from '../../components/Sprite'
 
 interface Props {
   team: Team
+  /** Which team's panel this is, so each remembers its own. */
+  side: 'one' | 'two'
+
   /** Built by the parent, which survives tab switches — see buildMoveRows. */
   rows: Row[]
   byId: Record<string, Pokemon>
@@ -57,9 +61,11 @@ export function buildMoveRows(team: Team, moves: MoveDex, learnsets: LearnsetDex
     .sort((a, b) => a.name.localeCompare(b.name))
 }
 
-export function LearnedMovesBody({ team, rows, byId }: Props) {
-  const [query, setQuery] = useState('')
-  const [activeTags, setActiveTags] = useState<Set<MoveTag>>(new Set())
+export function LearnedMovesBody({ team, side, rows, byId }: Props) {
+  const [query, setQuery] = useStored(`moves:${side}:find`, '')
+  const [activeTags, setActiveTags] = useStored<Set<MoveTag>>(
+    `moves:${side}:tags`, () => new Set(), listOf<MoveTag>(),
+  )
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()

@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from 'react'
+import { listOf, useStored } from '../../lib/useStored'
 import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../../data/types'
 import { STAT_LABELS, RULES, type Rules } from '../../lib/stats'
 import {
@@ -1762,7 +1763,7 @@ function MoveSide({
 export function EvCalcBody({
   teamOne, teamTwo, chart, moves, learnsets, sets, played, dex, level, mode,
 }: Props) {
-  const [chosen, setChosen] = useState<string | null>(null)
+  const [chosen, setChosen] = useStored<string | null>('ev-calc:chosen', null)
   /*
    * Everything about one Pokémon is kept under its id, not thrown away
    * when another is picked.
@@ -1775,7 +1776,7 @@ export function EvCalcBody({
    * being built for is on the other team and Garchomp is the one being
    * built. There is one Garchomp.
    */
-  const [spreads, setSpreads] = useState<Record<string, Spread>>({})
+  const [spreads, setSpreads] = useStored<Record<string, Spread>>('ev-calc:spreads', {})
   /**
    * Opponents switched off.
    *
@@ -1784,19 +1785,19 @@ export function EvCalcBody({
    * something you are never bringing this into is a row between you and the
    * ones that matter.
    */
-  const [off, setOff] = useState<Set<string>>(() => new Set())
+  const [off, setOff] = useStored<Set<string>>('ev-calc:off', () => new Set(), listOf<string>())
   /** What each of the other side is credited with, one answer per Pokémon. */
-  const [assume, setAssume] = useState<Record<string, Assumptions>>({})
+  const [assume, setAssume] = useStored<Record<string, Assumptions>>('ev-calc:assume', {})
   // How it is usually built, until somebody says otherwise. A Pokémon over
   // there is far likelier to be built the way it is usually built than to
   // have nothing anywhere, which is where these used to start.
   const credit = (id: string) => assume[id] ?? assumeFrom(sets?.[id], rules)
   /** Moves named by hand, credited to every opponent that can learn one. */
-  const [extra, setExtra] = useState<Record<string, string[]>>({})
+  const [extra, setExtra] = useStored<Record<string, string[]>>('ev-calc:named', {})
   const names = (id: string, next: string[]) =>
     setExtra((prev) => ({ ...prev, [id]: next }))
   /** Which shape to read it in, for the ones that have more than one. */
-  const [shapes, setShapes] = useState<Record<string, string>>({})
+  const [shapes, setShapes] = useStored<Record<string, string>>('ev-calc:formes', {})
   /**
    * The four it is throwing, where somebody has said.
    *
@@ -1805,22 +1806,22 @@ export function EvCalcBody({
    * columns are populated before the overlay has ever been opened, and
    * opening it and closing it again changes nothing.
    */
-  const [mysets, setMysets] = useState<Record<string, string[]>>({})
+  const [mysets, setMysets] = useStored<Record<string, string[]>>('ev-calc:sets', {})
   const [movesOpen, setMovesOpen] = useState(false)
   const [moveQuery, setMoveQuery] = useState('')
   /** Items and abilities given out by hand, on either side. */
-  const [gear, setGear] = useState<Record<string, Gear>>({})
+  const [gear, setGear] = useStored<Record<string, Gear>>('ev-calc:gear', {})
   /** The turn around all of them, which belongs to none of them. */
-  const [field, setField] = useState<PlanField>({})
+  const [field, setField] = useStored<PlanField>('ev-calc:field', {})
   /** The league plays doubles; singles is a question someone might ask. */
-  const [doubles, setDoubles] = useState(true)
+  const [doubles, setDoubles] = useStored('ev-calc:doubles', true)
   /*
    * Champions spends SP and Gen 9 spends EVs — 66 points with 32 to a
    * stat against 508 with 252, and one at a time rather than four. Both
    * come to the same place maxed at level 50, so the difference is what
    * a partial investment costs and how finely it can be cut.
    */
-  const [rules, setRules] = useState<Rules>('champions')
+  const [rules, setRules] = useStored<Rules>('ev-calc:rules', 'champions')
   const limits = RULES[rules]
   /** Which Pokémon everything above is about, once one has been picked. */
   const mine = chosen ?? ''
@@ -2075,7 +2076,7 @@ export function EvCalcBody({
    * right-hand column is a Pokémon rather than a team, with the other
    * five a click away under it.
    */
-  const [facing, setFacing] = useState<string | null>(null)
+  const [facing, setFacing] = useStored<string | null>('ev-calc:facing', null)
 
   const trade = useMemo(() => {
     if (!picked || mode !== 'damage') return null

@@ -14,6 +14,7 @@ import { STAT_LABELS } from '../../lib/stats'
 import type { LeagueDex } from '../../data/league'
 import type { Team } from './TeamEditor'
 import { LoadingBall } from '../../components/LoadingBall'
+import { useStored, type Store } from '../../lib/useStored'
 
 /*
  * Speed tiers sit third, after the two team-wide readings and before the move
@@ -21,6 +22,30 @@ import { LoadingBall } from '../../components/LoadingBall'
  * only when the screen was too narrow for two; that card is gone, so this is
  * simply where they live.
  */
+/**
+ * The ways the EV tab can be read, in the order the menu offers them.
+ * The planner is first, because it is the one the tab is named for.
+ */
+const CALC_MODES: { key: CalcMode; label: string }[] = [
+  { key: 'evs', label: 'EV calc' },
+  { key: 'damage', label: 'Damage calc' },
+]
+
+/**
+ * A sort written down last time, where it still names a column.
+ *
+ * A stored key that no longer exists would sort by nothing at all and
+ * look like a bug in the table rather than in what was remembered.
+ */
+const KEPT_SORT: Store<SummarySort> = {
+  save: (sort) => sort,
+  load: (raw) => {
+    const held = raw as Partial<SummarySort> | null
+    if (!held || typeof held.key !== 'string') return BY_BST
+    return { key: held.key as SummaryKey, dir: held.dir === 1 ? 1 : -1 }
+  },
+}
+
 const TABS = [
   { key: 'summary', label: 'Summary' },
   { key: 'types', label: 'Defensive Type Chart' },
@@ -97,11 +122,11 @@ export function AnalysisCard({
    * two rosters each sorted their own way are two lists, and two sorted
    * the same way are a matchup. A heading on either side moves both.
    */
-  const [summarySort, setSummarySort] = useState<SummarySort>(BY_BST)
+  const [summarySort, setSummarySort] = useStored<SummarySort>('matchup:sort', BY_BST, KEPT_SORT)
   const sortSummary = (key: SummaryKey) =>
     setSummarySort((prev) => nextSummarySort(prev, key))
-  const [defenseAbilities, setDefenseAbilities] = useState(true)
-  const [coverageAbilities, setCoverageAbilities] = useState(true)
+  const [defenseAbilities, setDefenseAbilities] = useStored('matchup:type-abilities', true)
+  const [coverageAbilities, setCoverageAbilities] = useStored('matchup:cover-abilities', true)
   /**
    * How the two teams sit on a tab. Side by side answers "how do these
    * compare"; one above the other gives each panel the card's full width,
@@ -109,14 +134,14 @@ export function AnalysisCard({
    * right for every tab or every window, so it is the reader's call, and it
    * is one call for the card rather than one per tab.
    */
-  const [abreast, setAbreast] = useState(true)
+  const [abreast, setAbreast] = useStored('matchup:abreast', true)
   /**
    * One level for the card, not one per tab. The speed tiers and the EV
    * calculator are answering the same question at the same level, and two
    * pickers that could disagree is two chances to read the wrong number.
    * The league plays at 50; 100 is there for reading singles across.
    */
-  const [level, setLevel] = useState(50)
+  const [level, setLevel] = useStored('matchup:level', 50)
 
   const speed = useSpeedTiersPanel(teamOne, teamTwo, dex, level)
   // Coverage is the one reading that needs somebody on the other side: what a
@@ -203,19 +228,22 @@ export function AnalysisCard({
           ?
         </button>
         {levelPicker}
-        <span className="calc-mode" role="group" aria-label="How to read the calculator">
-          {([['evs', 'EV calc'], ['damage', 'Damage calc']] as const).map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              className={`pill-toggle${calcMode === key ? ' is-on' : ''}`}
-              aria-pressed={calcMode === key}
-              onClick={() => setCalcMode(key)}
-            >
-              {label}
-            </button>
-          ))}
-        </span>
+        {/* A menu rather than the two pills it was, because the tab is
+            one page laid out two ways and there is room for a third:
+            a list says "pick a view" where a pair of pills says "on or
+            off" twice. Named like the level beside it. */}
+        <label className="level-picker calc-mode">
+          <span>View</span>
+          <select
+            value={calcMode}
+            aria-label="How to read the calculator"
+            onChange={(e) => setCalcMode(e.target.value as CalcMode)}
+          >
+            {CALC_MODES.map(({ key, label }) => (
+              <option key={key} value={key}>{label}</option>
+            ))}
+          </select>
+        </label>
       </>
     ),
   }[tab]
@@ -303,7 +331,9 @@ export function AnalysisCard({
         {learnsets
           ? (
             <TeamPair one={teamOne} two={teamTwo} abreast={abreast}>
-              {(team, side) => <LearnedMovesBody team={team} rows={moveRows[side]} byId={byId} />}
+              {(team, side) => (
+                <LearnedMovesBody team={team} side={side} rows={moveRows[side]} byId={byId} />
+              )}
             </TeamPair>
           )
           : <LoadingBall label="Loading learnsets…" inline />}
@@ -329,7 +359,7 @@ export function AnalysisCard({
             <TeamPair one={teamOne} two={teamTwo} abreast={abreast}>
               {(team, side) => (
                 <CoverageBody
-                  attackers={team} defenders={side === 'one' ? teamTwo : teamOne}
+                  attackers={team} side={side} defenders={side === 'one' ? teamTwo : teamOne}
                   chart={chart} moves={moves} learnsets={learnsets}
                   useAbilities={coverageAbilities} minPower={MIN_POWER} sets={sets} played={played}
                 />

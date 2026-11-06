@@ -2153,10 +2153,35 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 
 /* Inside a column the planner's own wrappers have nothing left to do. */
 .ev-calc.is-damage .ev-mons { display: contents; }
-/* The middle is a column too, so the turn's three boxes stack down it. */
-.ev-calc.is-damage .ev-field { flex-direction: column; align-items: stretch; gap: 0.4rem; }
-.ev-calc.is-damage .ev-field-set,
-.ev-calc.is-damage .ev-field-shared { flex-wrap: wrap; }
+/*
+ * The turn as three columns of its own: yours on the left against your
+ * Pokémon, theirs on the right against theirs, and what both are
+ * standing in down the middle. Everything in each runs top to bottom, so
+ * a modifier is always in the same place whichever side you are reading
+ * and the three read as one picture of the turn rather than three lists.
+ */
+.ev-calc.is-damage .ev-field {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; align-items: start;
+}
+/* The row named as well as the column. Placed by column alone the shared
+   box asks for the second one after the other two have already filled
+   the first row past it, and drops to a row of its own underneath. */
+.ev-calc.is-damage .ev-field > .is-mine { grid-area: 1 / 1; }
+.ev-calc.is-damage .ev-field > .is-both { grid-area: 1 / 2; }
+.ev-calc.is-damage .ev-field > .is-theirs { grid-area: 1 / 3; }
+.ev-calc.is-damage .ev-field > *,
+.ev-calc.is-damage .ev-field-shared .ev-field-set {
+  display: flex; flex-direction: column; align-items: stretch; gap: 0.22rem;
+}
+/* A heading rather than something on the line it labels. */
+.ev-calc.is-damage .ev-field > * > em,
+.ev-calc.is-damage .ev-field-shared .ev-field-set > em {
+  min-width: 0; text-align: left;
+}
+.ev-calc.is-damage .ev-field-shared .ev-field-set { margin-top: 0.1rem; }
+/* Full width of its column, so a pill reads as a row that is on or off. */
+.ev-calc.is-damage .ev-field-pill { text-align: center; }
+.ev-calc.is-damage .ev-field-menu { width: 100%; }
 
 /* Both spreads run down their own column, which is where a damage
    calculator keeps one. */
@@ -2203,7 +2228,6 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
  */
 @media (max-width: 1100px) {
   .ev-calc.is-damage { grid-template-columns: 1fr; }
-  .ev-calc.is-damage .ev-field { flex-direction: row; flex-wrap: wrap; }
   .ev-calc.is-damage .ev-foes { flex-direction: row; flex-wrap: wrap; }
   .dc-via { margin-left: 0; flex-basis: 100%; }
 }
@@ -2250,16 +2274,6 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 }
 .dc-find:disabled { opacity: 0.45; }
 .dc-finds { margin-top: 0.25rem; }
-
-/*
- * Each side's half of the turn against the column it belongs to, with the
- * shared half between them: the turn reads left to right the way the two
- * Pokémon do.
- */
-.ev-calc.is-damage .ev-field-set.is-mine { order: 1; align-self: flex-start; }
-.ev-calc.is-damage .ev-field-shared.is-both { order: 2; align-self: stretch; }
-.ev-calc.is-damage .ev-field-set.is-theirs { order: 3; align-self: flex-end; }
-.ev-calc.is-damage .ev-field > .ev-field-set { max-width: 88%; }
 
 /*
  * The two Pokémon choosers given the same height, which is what makes
