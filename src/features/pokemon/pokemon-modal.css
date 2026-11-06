@@ -351,3 +351,38 @@
   .move-table { min-width: 40rem; }
   .move-table .effect { min-width: 12rem; }
 }
+
+/*
+ * Two halves of one page: how the Pokémon is being built, and what the
+ * Pokémon is. The first is what a click in the EV calculator was
+ * asking, so it is the one that opens — and the dex entry is a tab
+ * away rather than somewhere else entirely.
+ */
+.modal-tabs {
+  display: flex; gap: 0.3rem; margin: 0 0 0.8rem; flex-wrap: wrap;
+}
+.modal-tabs button {
+  padding: 0.3rem 0.8rem; font: inherit; font-size: 0.8rem; font-weight: 600;
+  background: none; border: 1px solid var(--line); border-radius: 999px;
+  color: var(--muted); cursor: pointer;
+}
+.modal-tabs button:hover { border-color: var(--fg); color: var(--fg); }
+.modal-tabs button.is-active {
+  border-color: var(--accent); color: var(--accent);
+  background: color-mix(in oklab, var(--accent), transparent 88%);
+}
+
+/* `display: grid` beats the browser's own rule for a hidden element. */
+.modal-grid[hidden] { display: none; }
+
+/*
+ * The box the loadout is rendered into. It carries none of the panel's
+ * own styling — the panel brings that with it from the page it belongs
+ * to — only the width, since here it has a whole dialog rather than the
+ * space under a sprite.
+ */
+.modal-slot .ev-gear-pop {
+  position: static; inset: auto; transform: none; margin: 0;
+  width: 100%; min-width: 0; max-width: none; box-shadow: none;
+  max-height: none;
+}

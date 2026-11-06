@@ -1174,7 +1174,7 @@ button.type-chip { cursor: pointer; }
  * above it do.
  */
 .ev-gear-out {
-  width: 100%; margin-top: 0.1rem; padding: 0.1rem 0.3rem;
+  width: 100%; margin: 0.1rem 0 0.05rem; padding: 0.1rem 0.3rem;
   font: inherit; font-size: 0.6rem; letter-spacing: 0.03em; text-transform: uppercase;
   background: none; border: 1px solid var(--line); border-radius: 999px;
   color: var(--muted); cursor: pointer;

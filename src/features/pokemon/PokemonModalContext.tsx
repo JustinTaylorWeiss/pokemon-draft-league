@@ -1,11 +1,39 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
+import {
+  createContext, useCallback, useContext, useMemo, useState, type ReactNode,
+} from 'react'
+
+/**
+ * A tab the thing that opened the modal wants to put in it.
+ *
+ * The modal knows about a Pokémon; it knows nothing about how one is being
+ * built on the page behind it, and should not have to. So the opener says
+ * what to call the tab and fills it in itself, through `slot`.
+ */
+export interface ModalTab {
+  /** What the tab says. */
+  label: string
+  /** Which Pokémon it was opened for, so a stale panel never shows. */
+  id: string
+}
 
 interface ModalApi {
-  /** Opens the detail view for a dex id. */
-  open: (id: string) => void
+  /** Opens the detail view for a dex id, with an extra tab where one is given. */
+  open: (id: string, tab?: ModalTab | null) => void
   close: () => void
   /** Currently open dex id, or null. */
   openId: string | null
+  /** The extra tab this one was opened with, if any. */
+  tab: ModalTab | null
+  /**
+   * Where that tab's content goes.
+   *
+   * The modal puts an empty box in the page and says where it is; whoever
+   * asked for the tab renders into it from where it lives, so the panel
+   * stays part of the page that owns its state rather than becoming a
+   * copy of it that has to be kept up to date.
+   */
+  slot: HTMLElement | null
+  setSlot: (el: HTMLElement | null) => void
 }
 
 const Ctx = createContext<ModalApi | null>(null)
@@ -17,11 +45,21 @@ const Ctx = createContext<ModalApi | null>(null)
  */
 export function PokemonModalProvider({ children }: { children: ReactNode }) {
   const [openId, setOpenId] = useState<string | null>(null)
+  const [tab, setTab] = useState<ModalTab | null>(null)
+  const [slot, setSlot] = useState<HTMLElement | null>(null)
 
-  const open = useCallback((id: string) => setOpenId(id), [])
-  const close = useCallback(() => setOpenId(null), [])
+  // Both at once, so the modal's first render already knows whether it has
+  // a second tab and which one to open on.
+  const open = useCallback((id: string, next: ModalTab | null = null) => {
+    setOpenId(id)
+    setTab(next)
+  }, [])
+  const close = useCallback(() => { setOpenId(null); setTab(null) }, [])
 
-  const api = useMemo(() => ({ open, close, openId }), [open, close, openId])
+  const api = useMemo(
+    () => ({ open, close, openId, tab, slot, setSlot }),
+    [open, close, openId, tab, slot],
+  )
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>
 }
 

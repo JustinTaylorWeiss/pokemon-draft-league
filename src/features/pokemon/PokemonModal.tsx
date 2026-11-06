@@ -31,7 +31,13 @@ const MOVE_GROUPS: { key: string; label: string; match: (s: string) => boolean }
 ]
 
 export function PokemonModal() {
-  const { openId, close } = usePokemonModal()
+  const { openId, close, tab: asked, setSlot } = usePokemonModal()
+  /*
+   * And only while it is still about this Pokémon. Stepping through a
+   * family from inside the modal changes which one is open, and a tab
+   * belonging to the one you started on would be an empty tab.
+   */
+  const tab = asked && asked.id === openId ? asked : null
   const [dex, setDex] = useState<PokemonDex | null>(null)
   const [league, setLeague] = useState<League | null>(null)
   const [abilities, setAbilities] = useState<AbilityDex | null>(null)
@@ -45,6 +51,15 @@ export function PokemonModal() {
   const [enabled, setEnabled] = useState<Set<string>>(new Set(MOVE_GROUPS.map((g) => g.key)))
   const [moveQuery, setMoveQuery] = useState('')
   const dialogRef = useRef<HTMLDivElement>(null)
+  /*
+   * Which half is up, where something opened this with a second one.
+   *
+   * On the tab it was opened for: a click on a Pokémon in the EV
+   * calculator is a click about its spread, and the dex entry is the
+   * thing you go to afterwards rather than the thing you asked for.
+   */
+  const [showing, setShowing] = useState<'tab' | 'dex'>('dex')
+  useEffect(() => { setShowing(tab ? 'tab' : 'dex') }, [tab, openId])
 
   // Everything here is already cached by the loaders, so opening the modal
   // rarely costs a request.
@@ -404,7 +419,32 @@ export function PokemonModal() {
 
             </header>
 
-            <div className="modal-grid">
+            {tab && (
+              <nav className="modal-tabs" role="tablist" aria-label="What to show">
+                {([['tab', tab.label], ['dex', 'Pokédex']] as const).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    aria-selected={showing === key}
+                    className={showing === key ? 'is-active' : ''}
+                    onClick={() => setShowing(key)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </nav>
+            )}
+
+            {/* Empty on purpose: whoever asked for the tab renders into
+                it from where it lives. Kept in the page while the dex
+                side is up rather than unmounted, so what is half-typed
+                into it survives a look at the type chart. */}
+            {tab && (
+              <div className="modal-slot" ref={setSlot} hidden={showing !== 'tab'} />
+            )}
+
+            <div className="modal-grid" hidden={Boolean(tab) && showing !== 'dex'}>
               {/* Three across, so the set sits beside the stats it modifies
                   rather than below the fold. */}
               <div className="modal-row-3">

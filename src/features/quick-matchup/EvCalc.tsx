@@ -19,7 +19,9 @@ import {
 import { Sprite } from '../../components/Sprite'
 import { TypeChip } from '../../components/TypeChip'
 import { MoveCategory } from '../../components/MoveCategory'
+import { createPortal } from 'react-dom'
 import { PokemonLink } from '../../components/PokemonLink'
+import { usePokemonModal, type ModalTab } from '../pokemon/PokemonModalContext'
 import { toId } from '../../data/load'
 import { DropPicker, type DropItem } from '../../components/DropPicker'
 import { isMega, megaBaseId, type LeagueDex } from '../../data/league'
@@ -1003,15 +1005,25 @@ function GearPicker({
   onOut?: (next: boolean) => void
 }) {
   /**
-   * One panel, holding everything there is to say about the Pokémon.
+   * One panel, and it opens inside the Pokémon's own page.
    *
    * It was two for a while — the spread in one and the item, the ability
    * and the moves in the other — on the grounds that a single panel was
    * one you had to scroll past half of. But which half anything was in
    * was a thing to learn, and two buttons under a sprite in a row of six
-   * is two buttons too many. The sprite opens all of it.
+   * is two buttons too many.
+   *
+   * And a panel that opened over the page was a second, smaller place to
+   * read about a Pokémon, a click away from the real one. It is a tab on
+   * the real one now — the tab it opens on, since a click on a Pokémon
+   * here is a question about how it is built, and the dex entry is what
+   * you go to afterwards. The panel is still rendered from here, through
+   * the box the modal leaves for it, so everything in it stays part of
+   * the page that owns it.
    */
-  const [open, setOpen] = useState(false)
+  const asTab: ModalTab = { label: 'Loadout', id }
+  const { open: openPage, close: closePage, openId, tab: openTab, slot } = usePokemonModal()
+  const open = openId === id && openTab?.label === asTab.label
   const [find, setFind] = useState('')
   /*
    * Six number boxes, folded away.
@@ -1022,7 +1034,7 @@ function GearPicker({
    * the reason the panel was opened.
    */
   const [ivsOpen, setIvsOpen] = useState(() => lowered(gear?.ivs).length > 0)
-  const toggle = () => setOpen((v) => !v)
+  const toggle = () => (open ? closePage() : openPage(id, asTab))
   /*
    * What has been said about this Pokemon, on the button itself: the spread
    * it is credited with first, then what it is holding. Closed, the button
@@ -1297,6 +1309,23 @@ function GearPicker({
           {face}
         </button>
       )}
+      {/* Whether to read it at all, directly under the picture it is
+          about — above the tags rather than below them, so it is in the
+          same place under every Pokémon however much or little has been
+          said about this one. */}
+      {!inline && onOut && (
+        <button
+          type="button"
+          className={`ev-gear-out${out ? ' is-out' : ''}`}
+          aria-pressed={out}
+          title={out
+            ? `${pokemon.name} is not in the columns \u2014 click to put it back`
+            : `Take ${pokemon.name} out of the columns`}
+          onClick={() => onOut(!out)}
+        >
+          {out ? 'Hidden' : 'Hide'}
+        </button>
+      )}
       {/* What has been said, and the way to say more — two buttons rather
           than one, so the plus can keep its own shape instead of stretching
           to whatever is written above it. Either opens the same panel.
@@ -1340,40 +1369,10 @@ function GearPicker({
           Edit loadout
         </button>
       )}
-      {/* And the one button under it, which is whether to read it at all. */}
-      {!inline && onOut && (
-        <button
-          type="button"
-          className={`ev-gear-out${out ? ' is-out' : ''}`}
-          aria-pressed={out}
-          title={out
-            ? `${pokemon.name} is not in the columns \u2014 click to put it back`
-            : `Take ${pokemon.name} out of the columns`}
-          onClick={() => onOut(!out)}
-        >
-          {out ? 'Hidden' : 'Hide'}
-        </button>
-      )}
 
-      {(inline || open) && (
+      {(inline || (open && slot)) && portalled(!inline && slot ? slot : null,
         <>
-          {/* Click anywhere else and it closes, which is what a reader
-              expects of something that opened over the page. Nothing to
-              close when it was never opened. */}
-          {!inline && (
-            <button
-              type="button" className="ev-gear-away" aria-label="Close"
-              onClick={() => setOpen(false)}
-            />
-          )}
           <div className={`ev-gear-pop${inline ? ' is-inline' : ''}`}>
-            {/* The Pokémon itself, at the top of both panels. The sprite
-                is a switch now — clicking it takes the Pokémon in and out
-                of the columns — so the thing a picture of a Pokémon does
-                everywhere else on the site needed somewhere to go. */}
-            <PokemonLink id={id} className="ev-gear-open-page" title={`Open ${pokemon.name}`}>
-              View {pokemon.name}
-            </PokemonLink>
             {/* What it is built like, per Pokémon rather than one setting for
                 the whole side: they are not all built the same way, and a
                 spread chosen against "everything at 252" is chosen against a
@@ -1627,11 +1626,20 @@ function GearPicker({
               </button>
             )}
           </div>
-        </>
-      )}
+        </>)}
     </span>
   )
 }
+
+/**
+ * The panel where the modal left room for it, or where it stands.
+ *
+ * Laid open in a damage calculator's column it is part of the column;
+ * folded away in the planner it belongs to a Pokémon's page, which is
+ * somewhere else in the document entirely.
+ */
+const portalled = (into: HTMLElement | null, what: ReactNode) =>
+  (into ? createPortal(what, into) : what)
 
 interface Props {
   teamOne: Team
