@@ -2291,20 +2291,22 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   /* Told outright rather than left to the tallest thing in it. The six
      sprites size themselves to the room they are given, so with the row
      sized to them instead they would each ask for their own height and
-     the two columns would never agree on one. */
-  height: 10.5rem;
+     the two columns would never agree on one. Two rows of tile is what
+     sets it; the other side's picture sits in the same space. */
+  height: 8.1rem;
 }
 /* The picture and nothing round it, the same whether it is a span on
    your side or the switch it is on theirs. */
 .dc-pick > .ev-open {
-  flex: none; align-self: center;
+  flex: none; align-self: center; margin-left: auto;
   display: block; background: none; border: 1px solid transparent;
   border-radius: 8px; padding: 0.1rem; line-height: 0;
 }
 .dc-pick > button.ev-open { cursor: pointer; }
 .dc-pick > button.ev-open:hover { border-color: var(--team-accent, var(--accent)); }
 .ev-calc.is-damage .dc-pick .ev-side {
-  flex: 1 1 auto; justify-content: center; width: auto; min-width: 0; min-height: 0;
+  flex: 0 1 auto; justify-content: center;
+  width: var(--ev-control); min-width: 0; min-height: 0;
 }
 .ev-calc.is-damage .dc-pick .ev-picker,
 .ev-calc.is-damage .dc-pick .ev-picker .drop-current { width: 100%; }
@@ -2314,23 +2316,44 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
  * sized by the space, the six are as big as they can be and the two
  * columns still start their loadouts on the same line.
  */
+/*
+ * Six square tiles the size of the sprite in them, not the size of the
+ * column. Stretched to the width they had, each was half as wide again
+ * as the picture it held and the six read as a wall of empty boxes.
+ *
+ * A stated size rather than a share of the row, too: a sprite told to
+ * fill its row and a row told to fit its sprite are each waiting on the
+ * other, and the browser settles that by making the picture square.
+ */
 .ev-calc.is-damage .dc-switch {
-  flex: 1 1 auto; min-width: 0; align-self: center;
-  /* Under one column there is a whole page of width and nothing to
-     line up against, and six tiles would take all of it. */
-  max-width: 24rem;
+  flex: 0 0 auto; min-width: 0; align-self: center;
   display: grid; gap: 0.25rem;
-  grid-template-columns: repeat(3, 1fr);
-  /* Two rows of a stated height rather than two of `1fr`. A sprite told
-     to fill its row and a row told to fit its sprite are each waiting on
-     the other, and the browser settles that by making the picture square. */
-  grid-template-rows: repeat(2, 4.9rem);
+  grid-template-columns: repeat(3, 3.9rem);
+  grid-template-rows: repeat(2, 3.9rem);
 }
-/* `min-height: 0`, or the grid's automatic minimum floors each tile at
-   the sprite's own 96 pixels and the picture hangs out of its row. */
+/*
+ * The picture, and a box only round the one being read.
+ *
+ * Left as buttons they came with the platform's own grey face and six
+ * millimetres of padding, which is where the wall of squares came from
+ * — and the padding is the difference between a tile that is a sprite
+ * and a tile that is a box with a sprite in it.
+ *
+ * `min-height: 0`, or the grid's automatic minimum floors each one at
+ * the sprite's own 96 pixels and the picture hangs out of its row.
+ */
 .ev-calc.is-damage .dc-switch .ev-open {
   min-width: 0; min-height: 0; height: 100%;
   display: flex; align-items: center; justify-content: center;
+  background: none; border: 1px solid transparent;
+  border-radius: 8px; padding: 0.1rem;
+}
+.ev-calc.is-damage .dc-switch .ev-open:hover {
+  border-color: var(--team-accent, var(--accent));
+}
+/* The one being read keeps its box, which is the whole point of it. */
+.ev-calc.is-damage .dc-switch .ev-open.is-facing {
+  background: var(--chip); border-color: var(--team-accent, var(--accent));
 }
 .ev-calc.is-damage .dc-switch .ev-open img {
   width: auto; height: auto; max-width: 100%; max-height: 100%;
