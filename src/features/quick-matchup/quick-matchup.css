@@ -2298,14 +2298,18 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   /* Told outright rather than left to the tallest thing in it. The six
      sprites size themselves to the room they are given, so with the row
      sized to them instead they would each ask for their own height and
-     the two columns would never agree on one. Two rows of tile is what
-     sets it; the other side's picture sits in the same space. */
-  height: 8.1rem;
+     the two columns would never agree on one. The picture sets it, and
+     the two rows of tile beside it fit in the same space.
+
+     Each side's Pokémon sits at the inside edge of its column, so the
+     two of them face each other across the turn. */
+  height: 6.5rem; justify-content: space-between;
 }
+.ev-calc.is-damage .dc-col.is-theirs .dc-pick > .ev-open { order: -1; }
 /* The picture and nothing round it, the same whether it is a span on
    your side or the switch it is on theirs. */
 .dc-pick > .ev-open {
-  flex: none; align-self: center; margin-left: auto;
+  flex: none; align-self: center;
   display: block; background: none; border: 1px solid transparent;
   border-radius: 8px; padding: 0.1rem; line-height: 0;
 }
@@ -2334,14 +2338,14 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
  */
 .ev-calc.is-damage .dc-switch {
   flex: 0 1 auto; min-width: 0; align-self: center;
-  display: grid; gap: 0.25rem;
-  /* Three across and two down, and never wider than the column it is
-     in: at a stated width the six ran past the edge and over the turn
-     beside them wherever the three columns were near their narrowest.
-     The rows keep their height, so both sides stay the same height
-     however much the tiles have to give. */
-  grid-template-columns: repeat(3, minmax(0, 3.9rem));
-  grid-template-rows: repeat(2, 3.9rem);
+  display: grid; gap: 0.2rem;
+  /* Two rows and half the roster across, counted in the markup — and
+     never wider than the column it is in: at a stated width the tiles
+     ran past the edge and over the turn beside them wherever the three
+     columns were near their narrowest. The rows keep their height, so
+     both sides stay the same height however much the tiles give up. */
+  grid-template-columns: repeat(var(--cols, 3), minmax(0, 2.9rem));
+  grid-template-rows: repeat(2, 2.9rem);
 }
 /*
  * The picture, and a box only round the one being read.

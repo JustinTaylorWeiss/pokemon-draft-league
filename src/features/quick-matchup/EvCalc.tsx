@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { listOf, useStored } from '../../lib/useStored'
 import type { LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart } from '../../data/types'
 import { STAT_LABELS, RULES, type Rules } from '../../lib/stats'
@@ -2458,13 +2458,22 @@ export function EvCalcBody({
   )
 
   /*
-   * The whole team, two rows of three, which is what lets each of them
-   * be big enough to recognise. Six across a column meant six sprites
-   * the width of a thumbnail; the question "which of these am I reading
-   * against" is asked by looking at them, so they have to be lookable at.
+   * The whole team, two rows of however many that takes.
+   *
+   * Two rows and no more: the height of this is the height of the same
+   * row on the other side, and a roster of ten over four rows would
+   * push one column's loadout half a screen below the other's.
    */
   const theirSwitch = picked && picked.foes.length > 1 && (
-    <div className="dc-switch" role="group" aria-label="Read against">
+    <div
+      className="dc-switch"
+      role="group"
+      aria-label="Read against"
+      /* Two rows, however many there are: told the column count rather
+         than left to wrap, which gave a fourth row the moment a roster
+         ran past six and pushed everything under it down the page. */
+      style={{ '--cols': Math.ceil(picked.foes.length / 2) } as CSSProperties}
+    >
       {picked.foes.map((m) => (
         <button
           key={m.id}
