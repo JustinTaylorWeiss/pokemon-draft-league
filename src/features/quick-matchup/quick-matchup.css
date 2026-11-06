@@ -2161,7 +2161,10 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
  * and the three read as one picture of the turn rather than three lists.
  */
 .ev-calc.is-damage .ev-field {
-  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; align-items: start;
+  display: grid; gap: 0.4rem; align-items: start;
+  /* `minmax(0, …)`, or a pill wider than a third of the column pushes
+     its box out over the one beside it. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 /* The row named as well as the column. Placed by column alone the shared
    box asks for the second one after the other two have already filled
@@ -2179,8 +2182,12 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
   min-width: 0; text-align: left;
 }
 .ev-calc.is-damage .ev-field-shared .ev-field-set { margin-top: 0.1rem; }
-/* Full width of its column, so a pill reads as a row that is on or off. */
-.ev-calc.is-damage .ev-field-pill { text-align: center; }
+/* Full width of its column, so a pill reads as a row that is on or off
+   — and over two lines rather than over the edge where a third of the
+   column is narrower than the words on it. */
+.ev-calc.is-damage .ev-field-pill {
+  text-align: center; white-space: normal; min-width: 0; padding-inline: 0.3rem;
+}
 .ev-calc.is-damage .ev-field-menu { width: 100%; }
 
 /* Both spreads run down their own column, which is where a damage
@@ -2293,7 +2300,7 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
      sized to them instead they would each ask for their own height and
      the two columns would never agree on one. Two rows of tile is what
      sets it; the other side's picture sits in the same space. */
-  height: 10.75rem;
+  height: 8.1rem;
 }
 /* The picture and nothing round it, the same whether it is a span on
    your side or the switch it is on theirs. */
@@ -2306,7 +2313,7 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 .dc-pick > button.ev-open:hover { border-color: var(--team-accent, var(--accent)); }
 .ev-calc.is-damage .dc-pick .ev-side {
   flex: 0 1 auto; justify-content: center;
-  width: var(--ev-control); min-width: 0; min-height: 0;
+  width: var(--ev-control); max-width: 100%; min-width: 0; min-height: 0;
 }
 .ev-calc.is-damage .dc-pick .ev-picker,
 .ev-calc.is-damage .dc-pick .ev-picker .drop-current { width: 100%; }
@@ -2326,10 +2333,15 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
  * other, and the browser settles that by making the picture square.
  */
 .ev-calc.is-damage .dc-switch {
-  flex: 0 0 auto; min-width: 0; align-self: center;
+  flex: 0 1 auto; min-width: 0; align-self: center;
   display: grid; gap: 0.25rem;
-  grid-template-columns: repeat(2, 3.4rem);
-  grid-template-rows: repeat(3, 3.4rem);
+  /* Three across and two down, and never wider than the column it is
+     in: at a stated width the six ran past the edge and over the turn
+     beside them wherever the three columns were near their narrowest.
+     The rows keep their height, so both sides stay the same height
+     however much the tiles have to give. */
+  grid-template-columns: repeat(3, minmax(0, 3.9rem));
+  grid-template-rows: repeat(2, 3.9rem);
 }
 /*
  * The picture, and a box only round the one being read.
