@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { LearnsetDex, MoveDex, SetDex, TypeChart } from '../../data/types'
 import { loadSets } from '../../data/load'
 import {
@@ -278,7 +278,7 @@ export function AnalysisCard({
       {help && <EvHelp onClose={() => setHelp(false)} />}
 
       <div className="analysis-body">
-      {tab === 'summary' && (
+      <Panel on={tab === 'summary'}>
         <TeamPair one={teamOne} two={teamTwo} abreast={abreast}>
           {(team) => (
             <DraftSummaryBody
@@ -287,8 +287,8 @@ export function AnalysisCard({
             />
           )}
         </TeamPair>
-      )}
-      {tab === 'types' && (
+      </Panel>
+      <Panel on={tab === 'types'}>
         <TeamPair one={teamOne} two={teamTwo} abreast={abreast}>
           {(team) => (
             <DefensiveChartBody
@@ -296,46 +296,88 @@ export function AnalysisCard({
             />
           )}
         </TeamPair>
-      )}
+      </Panel>
       {/* Only these two need the learnsets, so the other tabs stay usable while
           that file is still downloading. */}
-      {tab === 'moves' && (learnsets
-        ? (
-          <TeamPair one={teamOne} two={teamTwo} abreast={abreast}>
-            {(team, side) => <LearnedMovesBody team={team} rows={moveRows[side]} byId={byId} />}
-          </TeamPair>
-        )
-        : <LoadingBall label="Loading learnsets…" inline />)}
-      {tab === 'speed' && speed.body}
+      <Panel on={tab === 'moves'}>
+        {learnsets
+          ? (
+            <TeamPair one={teamOne} two={teamTwo} abreast={abreast}>
+              {(team, side) => <LearnedMovesBody team={team} rows={moveRows[side]} byId={byId} />}
+            </TeamPair>
+          )
+          : <LoadingBall label="Loading learnsets…" inline />}
+      </Panel>
+      <Panel on={tab === 'speed'}>{speed.body}</Panel>
       {/* Not a pair: it reads one Pokemon against the whole of the other side,
           and picks which from either team itself. */}
-      {tab === 'evs' && (learnsets
-        ? (
-          <EvCalcBody
-            teamOne={teamOne} teamTwo={teamTwo}
-            chart={chart} moves={moves} learnsets={learnsets} sets={sets} played={played}
-            dex={dex} level={level}
-            mode={calcMode}
-          />
-        )
-        : <LoadingBall label="Loading learnsets…" inline />)}
-      {tab === 'coverage' && (learnsets
-        ? (
-          <TeamPair one={teamOne} two={teamTwo} abreast={abreast}>
-            {(team, side) => (
-              <CoverageBody
-                attackers={team} defenders={side === 'one' ? teamTwo : teamOne}
-                chart={chart} moves={moves} learnsets={learnsets}
-                useAbilities={coverageAbilities} minPower={MIN_POWER} sets={sets} played={played}
-              />
-            )}
-          </TeamPair>
-        )
-        : <LoadingBall label="Loading learnsets…" inline />)}
+      <Panel on={tab === 'evs'} has={!solo}>
+        {learnsets
+          ? (
+            <EvCalcBody
+              teamOne={teamOne} teamTwo={teamTwo}
+              chart={chart} moves={moves} learnsets={learnsets} sets={sets} played={played}
+              dex={dex} level={level}
+              mode={calcMode}
+            />
+          )
+          : <LoadingBall label="Loading learnsets…" inline />}
+      </Panel>
+      <Panel on={tab === 'coverage'} has={!solo}>
+        {learnsets
+          ? (
+            <TeamPair one={teamOne} two={teamTwo} abreast={abreast}>
+              {(team, side) => (
+                <CoverageBody
+                  attackers={team} defenders={side === 'one' ? teamTwo : teamOne}
+                  chart={chart} moves={moves} learnsets={learnsets}
+                  useAbilities={coverageAbilities} minPower={MIN_POWER} sets={sets} played={played}
+                />
+              )}
+            </TeamPair>
+          )
+          : <LoadingBall label="Loading learnsets…" inline />}
+      </Panel>
       </div>
       {footnote && <p className="widget-note analysis-note">{footnote}</p>}
     </>
   )
+}
+
+/**
+ * One tab's panel, which stays alive once it has been opened.
+ *
+ * Switching tabs used to throw the panel away and build a fresh one on
+ * the way back, and everything the panel was holding went with it: the
+ * EV calc's spreads and loadouts, the move list's search and its tags,
+ * the Tera types picked on Coverage. None of that is in the address, so
+ * none of it came back — and leaving the tab is how you check a speed
+ * tier against the spread you are in the middle of writing.
+ *
+ * Nothing is built before it is first asked for. A card only ever read
+ * on Summary pays for Summary, which is what the tabs were doing right;
+ * after that the panel is kept and simply not drawn.
+ *
+ * `display` set outright rather than the `hidden` attribute, because the
+ * wrapper is `contents` while the tab is up — the panel lays out exactly
+ * as it would if this element were not here, and the browser's own
+ * `[hidden] { display: none }` is the rule that would lose.
+ */
+function Panel({ on, has = true, children }: {
+  on: boolean
+  /**
+   * Whether the tab is on the bar at all. A tab that has been taken away
+   * — Coverage and the EV calc, against a single team — is let go rather
+   * than kept: there is no way back to it to find the work again.
+   */
+  has?: boolean
+  children: ReactNode
+}) {
+  const opened = useRef(false)
+  if (on) opened.current = true
+  if (!has) opened.current = false
+  if (!opened.current) return null
+  return <div style={{ display: on ? 'contents' : 'none' }}>{children}</div>
 }
 
 /**
