@@ -399,6 +399,8 @@
 /* A list of moves is the taller half; let it use the height it needs
    rather than matching the menus beside it. */
 .modal-slot .ev-gear-half.is-moves .ev-gear-moves { margin: 0; }
+/* The undo under both of them, the width of the pair. */
+.modal-slot .ev-gear-reset { width: 100%; margin-top: 0.8rem; }
 
 @media (max-width: 760px) {
   .modal-slot .ev-gear-pop { grid-template-columns: minmax(0, 1fr); }

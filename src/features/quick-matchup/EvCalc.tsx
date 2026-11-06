@@ -1600,46 +1600,23 @@ function GearPicker({
               </div>
             )}
             </div>
-            {/* Each panel undoes its own. Shown only where there is
-                something to undo: a reset with nothing to reset is a
-                button that does nothing and looks like it does. */}
-            {!inline && open && (
-              <div className="ev-gear-resets">
-                {/* Back to how usage says it is built, and the IVs it was
-                    born with. Not its item or its moves — those are the
-                    other panel's and are undone there. */}
-                {spreadSaid && (
-                  <button
-                    type="button"
-                    className="ev-gear-reset"
-                    onClick={() => {
-                      onAssume?.(base ?? emptySpread())
-                      onChange({ ...gear, ivs: undefined })
-                    }}
-                  >
-                    Reset spread
-                  </button>
-                )}
-                {/* And nothing at all in it, which is a different question
-                    from "as it is usually built" and the one you ask when
-                    working out what a stat is worth from the floor up. */}
-                {onAssume && (
-                  <button
-                    type="button"
-                    className="ev-gear-reset"
-                    onClick={() => onAssume(emptySpread())}
-                  >
-                    Clear to zero
-                  </button>
-                )}
-              </div>
-            )}
-            {only !== 'moves' && (inline || open) && kitSaid && (
+            {/* One undo for the whole panel, across the foot of both
+                halves. There were two — one per half — from when the
+                panel was two panels, which left the reader working out
+                which of them a thing they had changed belonged to.
+                Shown only where there is something to undo: a reset
+                with nothing to reset is a button that does nothing and
+                looks like it does. */}
+            {(inline || open) && (spreadSaid || kitSaid) && (
               <button
                 type="button"
                 className="ev-gear-reset"
+                title={`Everything about ${pokemon.name} back to how it starts`}
                 onClick={() => {
-                  onChange({ ivs: gear?.ivs })
+                  // How usage says it is built, perfect IVs, nothing
+                  // given to it by hand and no move named or struck off.
+                  onAssume?.(base ?? emptySpread())
+                  onChange({})
                   onNamed?.([])
                 }}
               >
