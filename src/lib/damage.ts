@@ -205,6 +205,17 @@ export const MODELLED_ABILITIES: ReadonlySet<string> = new Set([
   // Pokemon did, which is why they only read once a field is set.
   'Protosynthesis', 'Quark Drive', 'Solar Power', 'Sand Force',
   'Orichalcum Pulse', 'Hadron Engine', 'Flower Gift',
+  /*
+   * Read by the arithmetic and missing from this list, which is how an
+   * ability comes to be called no effect while quietly changing every
+   * number on the page.
+   */
+  'Unaware', 'Sturdy', 'Disguise', 'Ice Face', 'Scrappy', "Mind's Eye",
+  'Libero', 'Sniper', 'Corrosion',
+  // Why a status set by hand is sometimes ignored: it could not be caught.
+  'Water Veil', 'Water Bubble', 'Thermal Exchange', 'Comatose', 'Purifying Salt',
+  'Limber', 'Immunity', 'Pastel Veil', 'Magma Armor', 'Insomnia',
+  'Vital Spirit', 'Sweet Veil',
 ])
 
 const ALWAYS_MATTERS = new Set([
@@ -493,7 +504,7 @@ export function thrownType(move: Move, attacker: Side, field: Field): TypeName {
  * business halving a number somebody is reading off the page.
  */
 const speedOf = (side: Side) =>
-  Math.floor(statOf(side, 'spe') * (side.status === 'Paralysis' && side.ability !== 'Quick Feet'
+  Math.floor(statOf(side, 'spe') * (holds(side, side) === 'Paralysis' && side.ability !== 'Quick Feet'
     ? 0.5 : 1))
 
 /**
@@ -516,6 +527,43 @@ const staged = (raw: number, stage: number) => {
   if (!stage) return raw
   const { num, den } = stageOf(stage)
   return Math.floor((raw * num) / den)
+}
+
+/**
+ * Types that simply cannot take a status, and the abilities that refuse
+ * one. Both sides of this page let a status be set by hand, and a burn
+ * set on a Charizard would otherwise halve its Flare Blitz.
+ */
+const CANNOT: Record<Status, readonly TypeName[]> = {
+  Burn: ['Fire'],
+  Paralysis: ['Electric'],
+  Poison: ['Poison', 'Steel'],
+  Freeze: ['Ice'],
+  Sleep: [],
+}
+const REFUSED: Record<Status, readonly string[]> = {
+  Burn: ['Water Veil', 'Water Bubble', 'Thermal Exchange', 'Comatose', 'Purifying Salt'],
+  Paralysis: ['Limber', 'Comatose', 'Purifying Salt'],
+  Poison: ['Immunity', 'Pastel Veil', 'Comatose', 'Purifying Salt'],
+  Freeze: ['Magma Armor', 'Comatose', 'Purifying Salt'],
+  Sleep: ['Insomnia', 'Vital Spirit', 'Sweet Veil', 'Comatose', 'Purifying Salt'],
+}
+
+/**
+ * What a Pokémon is actually suffering from, which is nothing where it
+ * could not have caught it.
+ *
+ * Corrosion is the one thing that argues: it poisons the two types that
+ * cannot be poisoned, and nothing else does. It beats the types and not
+ * the abilities — an Immunity Pokémon stays clean whoever asked.
+ */
+function holds(side: Side, other: Side): Status | undefined {
+  const status = side.status
+  if (!status) return undefined
+  if (REFUSED[status].includes(side.ability ?? '')) return undefined
+  const corroded = status === 'Poison' && other.ability === 'Corrosion'
+  if (!corroded && CANNOT[status].some((t) => side.pokemon.types.includes(t))) return undefined
+  return status
 }
 
 /** Stages gained and not lost, which three moves are priced in. */
@@ -851,6 +899,22 @@ function core(
   if (move.name === 'Flying Press') {
     effect *= defensiveMultiplier(chart, 'Flying', shielded.pokemon, true, guard)
   }
+  /*
+   * And the two abilities that argue with it: a Ghost is not immune to
+   * Normal or to Fighting from a Pokémon that can see it. Asked of the
+   * chart again without the Ghost rather than multiplied, because the
+   * rest of the type still counts — a Gengar is still half of Fighting
+   * for being Poison.
+   */
+  if ((mine === 'Scrappy' || mine === "Mind's Eye")
+    && (kind === 'Normal' || kind === 'Fighting')
+    && shielded.pokemon.types.includes('Ghost')) {
+    effect = defensiveMultiplier(
+      chart, kind,
+      { ...shielded.pokemon, types: shielded.pokemon.types.filter((t) => t !== 'Ghost') },
+      true, guard,
+    )
+  }
   if (effect === 0) return { rolls: [], hp }
   // An Air Balloon is a Ground immunity until something pops it, and
   // nothing here has popped it.
@@ -861,6 +925,9 @@ function core(
   // Bulletproof to anything thrown.
   if (guard === 'Soundproof' && move.sound) return { rolls: [], hp }
   if (guard === 'Bulletproof' && move.bullet) return { rolls: [], hp }
+  // An Ice Face eats one physical hit whole, and every reading here is
+  // of a Pokémon that has not been hit yet.
+  if (guard === 'Ice Face' && move.category === 'Physical') return { rolls: [], hp }
 
   /*
    * Which stat each side is putting in. Five moves read something other
@@ -886,9 +953,9 @@ function core(
    * status at all and Toxic Boost only poison, both on the physical
    * side; Flare Boost wants a burn and pays the special side.
    */
-  const sick = attacker.status
+  const sick = holds(attacker, shielded)
   /** And the status of whoever's stat is being read, which Foul Play moves. */
-  const offSick = offFrom.status
+  const offSick = fromTarget ? holds(shielded, attacker) : sick
   /*
    * The paradox pair, and the two legendaries built the same way: in their
    * own weather or their own terrain they lend a third to whichever stat
@@ -932,7 +999,8 @@ function core(
     || (field.weather === 'Snow' && defKey === 'def' && shielded.pokemon.types.includes('Ice'))
     ? 1.5 : 1
   // Marvel Scale wants its owner sick too, and pays the Defense side.
-  const scale = guard === 'Marvel Scale' && shielded.status && defKey === 'def' ? 1.5 : 1
+  const scale = guard === 'Marvel Scale' && holds(shielded, attacker) && defKey === 'def'
+    ? 1.5 : 1
   const defMult = (RUIN[mine] === defKey ? 0.75 : 1) * weathered * scale
     * (guardBoost === defKey ? 1.3 : 1)
   /*
@@ -948,12 +1016,18 @@ function core(
    * where they are, so a physical hit reads Special Defense with the
    * Defense stage still on it.
    */
-  const offStage = field.crit
-    ? Math.max(0, offFrom.boosts?.[offKey] ?? 0)
-    : offFrom.boosts?.[offKey] ?? 0
-  const defStage = field.crit
-    ? Math.min(0, shielded.boosts?.[defKey] ?? 0)
-    : shielded.boosts?.[defKey] ?? 0
+  /*
+   * Unaware looks straight past what the other Pokémon has done to
+   * itself: a Clodsire reads a +6 Swords Dance as a +0, and the Pokémon
+   * swinging it reads the Clodsire's own Amnesia the same way. It never
+   * ignores its own stages, only the other side's.
+   */
+  const blindGuard = guard === 'Unaware'
+  const blindMine = mine === 'Unaware'
+  const offRaw = blindGuard ? 0 : offFrom.boosts?.[offKey] ?? 0
+  const defRaw = blindMine ? 0 : shielded.boosts?.[defKey] ?? 0
+  const offStage = field.crit ? Math.max(0, offRaw) : offRaw
+  const defStage = field.crit ? Math.min(0, defRaw) : defRaw
   const readKey: StatKey = field.wonderRoom
     ? (defKey === 'def' ? 'spd' : 'def')
     : defKey
@@ -994,7 +1068,7 @@ function core(
   if (doubles && spreads) base = pokeRound(base * 0.75)
 
   // Protean makes the move's type the user's, so everything is same-type.
-  const stab = mine === 'Protean' || attacker.pokemon.types.includes(kind)
+  const stab = mine === 'Protean' || mine === 'Libero' || attacker.pokemon.types.includes(kind)
     ? (mine === 'Adaptability' ? 2 : 1.5)
     : 1
 
@@ -1093,9 +1167,11 @@ function core(
    * so Toxapex into something poisoned is half again whether or not the
    * box is ticked.
    */
-  const sureCrit = mine === 'Merciless' && shielded.status === 'Poison'
-  const crit = (field.crit || sureCrit)
-    && guard !== 'Shell Armor' && guard !== 'Battle Armor' ? 1.5 : 1
+  const sureCrit = mine === 'Merciless' && holds(shielded, attacker) === 'Poison'
+  const landed = (field.crit || sureCrit)
+    && guard !== 'Shell Armor' && guard !== 'Battle Armor'
+  // Sniper is paid for the crit rather than for the chance of one.
+  const crit = landed ? (mine === 'Sniper' ? 2.25 : 1.5) : 1
   // An Aurora Veil is both screens at once, so either one standing is
   // the same question: is this side behind something.
   const behind = (physical ? field.reflect : field.lightScreen) || field.auroraVeil
@@ -1136,6 +1212,19 @@ function core(
     if (after !== 1) d = pokeRound(d * after)
     rolls.push(Math.max(1, d))
   }
+
+  /*
+   * The two that will not be knocked out by the first thing thrown at
+   * them. Both read a Pokémon at full health, which is what every
+   * reading on this page is of, so both apply to every roll here.
+   *
+   * A Sturdy is left on one point; a Disguise takes an eighth of itself
+   * breaking and nothing from the move at all. Which turns every
+   * guaranteed OHKO down the column into a 2HKO, and that is the whole
+   * question an EV calculator is asked.
+   */
+  if (guard === 'Disguise') return { rolls: rolls.map(() => Math.floor(hp / 8)), hp }
+  if (guard === 'Sturdy') return { rolls: rolls.map((d) => Math.min(d, hp - 1)), hp }
 
   return { rolls, hp }
 }

@@ -157,7 +157,13 @@ export function procChance(shot: Shot): number | null {
   if (kind === 'status') {
     const status = move.secondaryStatus ?? ''
     if (target.status) return null
-    if ((IMMUNE[status] ?? []).some((t) => target.types.includes(t))) return null
+    /*
+     * Corrosion poisons the two types that cannot be poisoned, which is
+     * the whole of what it does. The type is all it beats: an Immunity
+     * Pokémon stays clean whoever asked, so the wards below still hold.
+     */
+    const corroding = is(attacker.ability, 'Corrosion') && (status === 'psn' || status === 'tox')
+    if (!corroding && (IMMUNE[status] ?? []).some((t) => target.types.includes(t))) return null
     if (is(target.ability, ...(WARDS[status] ?? []))) return null
     if (field.safeguard) return null
     if (/misty/i.test(field.terrain)) return null
