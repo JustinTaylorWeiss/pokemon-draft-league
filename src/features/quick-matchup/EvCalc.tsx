@@ -1607,11 +1607,23 @@ function GearPicker({
                 Shown only where there is something to undo: a reset
                 with nothing to reset is a button that does nothing and
                 looks like it does. */}
-            {(inline || open) && (spreadSaid || kitSaid) && (
+            {(inline || (open && (spreadSaid || kitSaid))) && (
               <button
                 type="button"
                 className="ev-gear-reset"
-                title={`Everything about ${pokemon.name} back to how it starts`}
+                /*
+                 * Laid open in a column it is always there, and greyed
+                 * where there is nothing to undo: the two columns are
+                 * lined up row for row, and a button that comes and goes
+                 * takes everything under it up and down half an inch.
+                 * Folded into a panel there is nothing to line up with,
+                 * so it stays out of the way until there is something
+                 * for it to do.
+                 */
+                disabled={!spreadSaid && !kitSaid}
+                title={spreadSaid || kitSaid
+                  ? `Everything about ${pokemon.name} back to how it starts`
+                  : `Nothing has been changed about ${pokemon.name}`}
                 onClick={() => {
                   // How usage says it is built, perfect IVs, nothing
                   // given to it by hand and no move named or struck off.

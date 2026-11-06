@@ -2449,3 +2449,7 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
  * calculator's column or stacked on a phone.
  */
 .ev-gear-half { display: contents; }
+
+/* Nothing to undo: there, holding its place, and plainly not for clicking. */
+.ev-gear-reset:disabled { opacity: 0.4; cursor: default; }
+.ev-gear-reset:disabled:hover { border-color: var(--line); color: var(--muted); }
