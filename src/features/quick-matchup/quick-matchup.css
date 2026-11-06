@@ -2441,3 +2441,13 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 /* A bar over each spread, so both sides read the same way down. */
 .dc-col .dc-budget { display: flex; align-items: center; gap: 0.4rem; width: 100%; }
 .dc-col .dc-budget .ev-budget-bar { flex: 1; }
+
+/*
+ * The loadout's two halves.
+ *
+ * Nowhere but the Pokémon's own page has the width for two, so the
+ * boxes carry nothing anywhere else: `display: contents` leaves the
+ * panel laid out exactly as it was, whether it is folded into a damage
+ * calculator's column or stacked on a phone.
+ */
+.ev-gear-half { display: contents; }

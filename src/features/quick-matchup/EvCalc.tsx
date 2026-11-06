@@ -1382,6 +1382,15 @@ function GearPicker({
       {(inline || (open && slot)) && portalled(!inline && slot ? slot : null,
         <>
           <div className={`ev-gear-pop${inline ? ' is-inline' : ''}`}>
+            {/* Two halves, side by side where there is room for two.
+                What it is built like and what it is holding on one side,
+                what it throws on the other: the one is a page of sliders
+                and menus and the other is a list, and stacked they made
+                a column you scrolled through to reach the half you
+                opened it for. `display: contents` where there is not the
+                width, so the two sides lay out as though neither box
+                were here. */}
+            <div className="ev-gear-half is-kit">
             {/* What it is built like, per Pokémon rather than one setting for
                 the whole side: they are not all built the same way, and a
                 spread chosen against "everything at 252" is chosen against a
@@ -1530,6 +1539,8 @@ function GearPicker({
               </select>
             </label>
             )}
+            </div>
+            <div className="ev-gear-half is-moves">
             {/* Anything it might be carrying that its set does not say.
                 Its own movepool and nothing else: a move it cannot learn
                 is not a thing it might bring. */}
@@ -1588,6 +1599,7 @@ function GearPicker({
                 )}
               </div>
             )}
+            </div>
             {/* Each panel undoes its own. Shown only where there is
                 something to undo: a reset with nothing to reset is a
                 button that does nothing and looks like it does. */}
