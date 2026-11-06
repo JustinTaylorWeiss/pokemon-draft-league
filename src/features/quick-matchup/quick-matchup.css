@@ -2293,7 +2293,7 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
      sized to them instead they would each ask for their own height and
      the two columns would never agree on one. Two rows of tile is what
      sets it; the other side's picture sits in the same space. */
-  height: 8.1rem;
+  height: 10.75rem;
 }
 /* The picture and nothing round it, the same whether it is a span on
    your side or the switch it is on theirs. */
@@ -2328,8 +2328,8 @@ button.ev-set-slot:hover .ev-extra-drop { color: #e05563; }
 .ev-calc.is-damage .dc-switch {
   flex: 0 0 auto; min-width: 0; align-self: center;
   display: grid; gap: 0.25rem;
-  grid-template-columns: repeat(3, 3.9rem);
-  grid-template-rows: repeat(2, 3.9rem);
+  grid-template-columns: repeat(2, 3.4rem);
+  grid-template-rows: repeat(3, 3.4rem);
 }
 /*
  * The picture, and a box only round the one being read.
