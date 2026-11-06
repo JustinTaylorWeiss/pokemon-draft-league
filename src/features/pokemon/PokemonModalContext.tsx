@@ -48,11 +48,20 @@ export function PokemonModalProvider({ children }: { children: ReactNode }) {
   const [tab, setTab] = useState<ModalTab | null>(null)
   const [slot, setSlot] = useState<HTMLElement | null>(null)
 
-  // Both at once, so the modal's first render already knows whether it has
-  // a second tab and which one to open on.
+  /*
+   * Both at once, so the modal's first render already knows whether it
+   * has a second tab and which one to open on.
+   *
+   * A tab given without one is kept rather than cleared: stepping
+   * through a family from inside the modal is how you check what a
+   * Pokémon's other forme does, and coming back should find the panel
+   * where you left it. It is pinned to the Pokémon it was opened for,
+   * so it shows only once you are back on that one — and closing the
+   * modal is what lets it go.
+   */
   const open = useCallback((id: string, next: ModalTab | null = null) => {
     setOpenId(id)
-    setTab(next)
+    setTab((held) => next ?? held)
   }, [])
   const close = useCallback(() => { setOpenId(null); setTab(null) }, [])
 
