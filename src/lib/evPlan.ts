@@ -2,7 +2,8 @@ import type {
   LearnsetDex, Move, MoveDex, Pokemon, SetDex, StatKey, TypeChart, TypeName,
 } from '../data/types'
 import {
-  canReadPower, damage, koCurve, statOf, type Field, type Side, type Status,
+  canReadPower, damage, koCurve, statOf, thrownType,
+  type Field, type Side, type Status,
 } from './damage'
 import { natureMultiplier, statAtLevel, RULES, type Rules } from './stats'
 
@@ -692,6 +693,12 @@ export const ailingSide = (side: Side, of?: SideField): Side =>
 /** One move read from one side to the other, which is all a damage calc is. */
 export interface Exchange {
   move: Move
+  /**
+   * The type it is actually thrown as, which is not always the type the
+   * move list prints: a Terrain Pulse takes the ground's and a Weather
+   * Ball the sky's, and those are the whole point of both moves.
+   */
+  type: TypeName
   /** The Pokémon at the other end. */
   foe: Opponent
   low: number
@@ -726,6 +733,7 @@ export function tradeFor(input: PlanInput): { out: Exchange[]; in: Exchange[] } 
     const curve = koCurve(live, MEANINGFUL_HITS)
     return {
       move,
+      type: thrownType(move, from, field),
       foe,
       low: share(live.rolls[0] ?? 0, live.hp),
       high: share(live.rolls[live.rolls.length - 1] ?? 0, live.hp),
@@ -828,7 +836,7 @@ export function planFor(input: PlanInput): Plan {
       targetName: '',
       move: move.name,
       moveName: move.name,
-      moveType: move.type,
+      moveType: thrownType(move, from, to === meNow ? taking : landing),
       at: live.bestCase,
       chance: curve[live.bestCase - 1] ?? 0,
       via: live.via,

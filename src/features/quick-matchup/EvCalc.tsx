@@ -1776,7 +1776,11 @@ function MoveSide({
           <li key={slot.move.name} className={`dc-row${mine ? ' is-mine' : ' is-theirs'}`}>
             <span className="dc-what">
               <span className="dc-line">
-                <TypeChip type={slot.move.type} />
+                {/* The type it is thrown as, not the one the move list
+                    prints: in Electric Terrain a Terrain Pulse is an
+                    Electric move, and a chip still saying Normal reads
+                    as the terrain having done nothing. */}
+                <TypeChip type={slot.roll?.type ?? slot.move.type} />
                 <span className="dc-move">{slot.move.name}</span>
               </span>
               <span className="dc-line">
