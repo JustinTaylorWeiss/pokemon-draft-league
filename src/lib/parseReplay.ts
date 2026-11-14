@@ -262,6 +262,8 @@ export function parseReplayLog(
   data: BattleData | null = null,
 ): ReplayGame {
   const teams: Record<string, string[]> = { p1: [], p2: [] }
+  /** How many of the previewed six each side brings; 0 where it is not said. */
+  let picked = 0
   const accounts: Record<string, string> = { p1: players[0] ?? 'p1', p2: players[1] ?? 'p2' }
   // Counted per team slot rather than per name, so a forme change cannot
   // scatter one Pokemon's record across two keys.
@@ -509,6 +511,18 @@ export function parseReplayLog(
 
     } else if (kind === 'poke' && parts[2] && parts[3]) {
       teams[parts[2]]?.push(speciesOf(parts[3]))
+
+    } else if (kind === 'teampreview') {
+      /*
+       * How many of the six each side actually brings.
+       *
+       * `|teampreview|4` is the line every format here opens with, and
+       * it is the only place the bring is stated: nothing in the log
+       * says which four were chosen, only which of them were sent out.
+       * Without a number the whole team is brought, and without the
+       * line at all there was no preview.
+       */
+      picked = Number(parts[2]) || 0
 
     } else if (kind === 'switch' || kind === 'drag' || kind === 'replace') {
       const who = parseIdent(parts[2] ?? '')
@@ -990,13 +1004,28 @@ export function parseReplayLog(
   const a = sideOf('p1')
   const b = sideOf('p2')
   const won = winner === 'p1' ? 'a' : winner === 'p2' ? 'b' : null
-  // Survivors are counted from the team that actually brought Pokemon, so a
-  // team preview of six does not inflate a four-Pokemon VGC bring.
+  /*
+   * What the winner had left standing, which is the tiebreaker the rules
+   * call Pokémon Differential.
+   *
+   * Counted off the bring and not off what came out. A Pokémon held in
+   * reserve and never revealed is a Pokémon that never fainted, and it
+   * was being left out of the count entirely — a side that won having
+   * shown two of its four read as two left when it had four. Twenty-one
+   * of this season's games were short by one or two that way.
+   *
+   * The bring is the team preview's own number where the log states one,
+   * and what was seen where it does not: an older log with no preview
+   * line brought whatever it showed.
+   */
   const winSide = won === 'a' ? a : won === 'b' ? b : null
-  const played = winSide ? winSide.lines.filter((l) => l.brought).length : 0
-  const lost = winSide ? winSide.lines.reduce((n, l) => n + l.deaths, 0) : 0
+  const shown = winSide ? winSide.lines.filter((l) => l.brought).length : 0
+  const bring = winSide ? Math.min(picked || shown, winSide.lines.length) : 0
+  // Down and still down: a Revival Blessing puts one back on its feet,
+  // and a Pokémon that fainted twice fainted once more than it came back.
+  const down = winSide ? winSide.lines.filter((l) => l.deaths > l.revived).length : 0
 
-  return { format, winner: won, a, b, survivors: Math.max(0, played - lost) }
+  return { format, winner: won, a, b, survivors: Math.max(0, bring - down) }
 }
 
 /** Two places is far finer than anything read off these, and keeps rows small. */
